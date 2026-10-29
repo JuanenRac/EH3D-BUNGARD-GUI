@@ -27,3 +27,7 @@ eframe = { version = "0.37.0", default-features = false, features = ["glow", "de
 name = "bungard-gui"
 path = "src/bin/bungard_gui.rs"
 required-features = ["gui"]
+
+[profile.dev]
+# a lighter debug build: the file and line of a panic stay, the full debug symbols (the bulk of the target folder) do not
+debug = "line-tables-only"

@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **A lighter debug build:** the `dev` profile keeps the file and line of a panic (`debug = "line-tables-only"`) but not the full debug symbols, so the `target` folder of a test run is about a tenth of its size.
 - **Open files:** an Open window with a folder browser (and the drives), files dropped on the window, Ctrl+O, and files given on the command line; a drilling file, a routing file or a ZIP archive is opened as what its extension says.
 - **Move around the views:** the plan view is dragged and zoomed with the wheel, the 3D view is turned with a drag, zoomed with the wheel and moved with Shift or the right button; a button (or a double click) puts the view back.
 - **Panelization:** copies of the board in columns and rows, placed by the gap between boards, by the distance from one to the next, or as many as fit in the table; the copies are drawn and the job makes them.

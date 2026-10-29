@@ -2,8 +2,8 @@
 
 use eh3d_drillpro::config;
 use eh3d_drillpro::ncd::DrillFile;
-use eh3d_view::scene::{Hole, Path, Scene, Table};
 use eh3d_routepro::hpgl::{Plot, UNIT_MM};
+use eh3d_view::scene::{Hole, Path, Scene, Table};
 
 /// The table of the Bungard CCD when the configuration says nothing else.
 pub const DEFAULT_TABLE: Table = Table::new(495.0, 325.0);

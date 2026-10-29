@@ -13,6 +13,7 @@ use eframe::egui::{
     self, Align2, Color32, FontData, FontDefinitions, FontFamily, FontId, Pos2, Rect, Sense, Shape,
     Stroke, StrokeKind, Vec2,
 };
+use eh3d_archive::{Archive, Kind};
 use eh3d_drillpro::classic::engine::{ClassicEngine, Question};
 use eh3d_drillpro::job::JobOptions;
 use eh3d_view::scene::{Iso, Scene, Table};
@@ -57,6 +58,8 @@ enum Act {
     Stop,
     Back,
     Answer(bool),
+    /// A file of the ZIP archive of the job (by its place among the drilling and routing files).
+    Entry(usize),
 }
 
 /// One of the two programs inside the window: its engine and what the views show of its file.
@@ -114,6 +117,8 @@ pub struct App {
     shot: Option<Shot>,
     close: bool,
     auto_ok: bool,
+    archive: Option<Archive>,
+    archive_dir: PathBuf,
     base_dir: PathBuf,
 }
 
@@ -170,6 +175,9 @@ impl App {
             }),
             close: false,
             auto_ok: o.auto_ok,
+            archive: None,
+            archive_dir: std::env::temp_dir()
+                .join(format!("eh3d-bungard-gui-{}", std::process::id())),
             base_dir: std::env::current_exe()
                 .ok()
                 .and_then(|p| p.parent().map(Path::to_path_buf))
@@ -180,6 +188,9 @@ impl App {
         }
         if let Some(f) = &o.route {
             app.load_route(f);
+        }
+        if let Some(z) = &o.zip {
+            app.open_zip(z);
         }
         app.refit_table();
         app
@@ -241,6 +252,49 @@ impl App {
             }
         }
         self.route.last_done = 0;
+    }
+
+    /// Opens a job archive: its first drilling file and its first routing file are loaded and the others can be chosen from the list.
+    fn open_zip(&mut self, path: &Path) {
+        match Archive::open(path) {
+            Ok(a) => {
+                let first_drill = a.first(Kind::Drill).map(|e| e.name.clone());
+                let first_route = a.first(Kind::Route).map(|e| e.name.clone());
+                self.archive = Some(a);
+                for name in [first_drill, first_route].into_iter().flatten() {
+                    self.load_named(&name);
+                }
+                self.refit_table();
+            }
+            Err(e) => self.message = Some(e),
+        }
+    }
+
+    /// Takes a file of the archive out into the work folder and loads it as what its extension says.
+    fn load_named(&mut self, name: &str) {
+        let Some(a) = self.archive.as_mut() else {
+            return;
+        };
+        match a.extract(name, &self.archive_dir) {
+            Ok(p) => match eh3d_archive::kind_of(name) {
+                Kind::Drill => self.load_drill(&p),
+                Kind::Route => self.load_route(&p),
+                Kind::Other => {}
+            },
+            Err(e) => self.message = Some(e),
+        }
+    }
+
+    fn load_entry(&mut self, i: usize) {
+        let name = self
+            .archive
+            .as_ref()
+            .and_then(|a| a.entries.iter().filter(|e| e.kind != Kind::Other).nth(i))
+            .map(|e| e.name.clone());
+        if let Some(n) = name {
+            self.load_named(&n);
+            self.refit_table();
+        }
     }
 
     fn remember_settings(&mut self) {
@@ -394,6 +448,7 @@ impl App {
                 self.remember_settings();
             }
             Act::Layer(i) => self.layers[i] = !self.layers[i],
+            Act::Entry(i) => self.load_entry(i),
             Act::Start => self.start_job(),
             Act::Stop => self.stop_job(),
             Act::Back => {
@@ -938,6 +993,28 @@ impl App {
                 );
             }
             y += 68.0;
+        }
+        if let Some(a) = &self.archive {
+            y += 6.0;
+            cv.text(38.0, y, Align2::LEFT_BOTTOM, "ZIP", 12.0, col(t.dim));
+            let usable: Vec<_> = a.entries.iter().filter(|e| e.kind != Kind::Other).collect();
+            for (i, e) in usable.iter().take(6).enumerate() {
+                let ry = y + 8.0 + i as f32 * 22.0;
+                let tag = if e.kind == Kind::Drill { "D" } else { "R" };
+                let file = e.name.rsplit('/').next().unwrap_or(&e.name);
+                let shown: String = file.chars().take(24).collect();
+                cv.text(
+                    38.0,
+                    ry + 15.0,
+                    Align2::LEFT_BOTTOM,
+                    &format!("{tag}  {shown}"),
+                    13.0,
+                    col(t.text),
+                );
+                cv.hits
+                    .push((cv.rect(38.0, ry, 244.0, 20.0), Act::Entry(i)));
+            }
+            y += 10.0 + usable.len().min(6) as f32 * 22.0;
         }
         y += 14.0;
         cv.text(38.0, y, Align2::LEFT_BOTTOM, "LAYERS", 12.0, col(t.dim));

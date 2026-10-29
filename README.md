@@ -16,9 +16,10 @@ The modern interface for the Bungard CCD machines. One window with a launcher (t
 
 ```
 cargo run --release --features gui -- --drill FILE.NCD --route FILE.PLT
+cargo run --release --features gui -- --zip JOB.ZIP
 ```
 
-`--connection FILE` points to the machine file the classic programs read; without one the job runs on the simulator. `--theme forge|neon|glass|windows-classic|system` and `--lang en|es|it|de|fr|pt|zh|ja` choose the look and the language; `--screen launcher|viewer` the first screen. The window needs the sibling folders `EH3D-DRILLPRO`, `EH3D-ROUTEPRO` and `EH3D-COMMON` to build (until their shared code is split out).
+`--zip JOB.ZIP` opens a job packed in a ZIP archive: its first drilling file and its first routing file are shown, and the others are listed on the job card to be loaded with a click. `--connection FILE` points to the machine file the classic programs read; without one the job runs on the simulator. `--theme forge|neon|glass|windows-classic|system` and `--lang en|es|it|de|fr|pt|zh|ja` choose the look and the language; `--screen launcher|viewer` the first screen. The window needs the sibling folders `EH3D-DRILLPRO`, `EH3D-ROUTEPRO` and `EH3D-COMMON` to build (until their shared code is split out).
 
 ## Test
 

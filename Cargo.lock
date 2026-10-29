@@ -612,10 +612,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "eh3d-archive"
+version = "0.0.1"
+dependencies = [
+ "zip",
+]
+
+[[package]]
 name = "eh3d-bungard-gui"
 version = "0.0.1"
 dependencies = [
  "eframe",
+ "eh3d-archive",
  "eh3d-drillpro",
  "eh3d-routepro",
  "eh3d-view",

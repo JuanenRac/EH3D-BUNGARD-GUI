@@ -19,6 +19,8 @@ pub struct Options {
     /// The drilling file (`--drill FILE`) and the routing file (`--route FILE`) to show.
     pub drill: Option<PathBuf>,
     pub route: Option<PathBuf>,
+    /// A job packed in a ZIP archive (`--zip FILE`): its first drilling file and its first routing file are shown.
+    pub zip: Option<PathBuf>,
     /// The folder of the machine and tool files (`--data DIR`).
     pub data: Option<PathBuf>,
     /// The machine file with the connection (`--connection FILE`), the same one the classic programs read.
@@ -53,6 +55,7 @@ impl Options {
                 }
                 "--drill" => o.drill = Some(PathBuf::from(value("--drill")?)),
                 "--route" => o.route = Some(PathBuf::from(value("--route")?)),
+                "--zip" => o.zip = Some(PathBuf::from(value("--zip")?)),
                 "--data" => o.data = Some(PathBuf::from(value("--data")?)),
                 "--connection" => o.connection = Some(PathBuf::from(value("--connection")?)),
                 "--screen" => {
@@ -89,11 +92,12 @@ mod tests {
 
     #[test]
     fn the_options_are_read() {
-        let o = parse("--lang es --theme windows-classic --drill a.ncd --route b.plt --data cfg --connection m.cfg --screen viewer --shot s.png --wait 9 --start --auto-ok").unwrap();
+        let o = parse("--lang es --theme windows-classic --drill a.ncd --route b.plt --zip job.zip --data cfg --connection m.cfg --screen viewer --shot s.png --wait 9 --start --auto-ok").unwrap();
         assert_eq!(o.lang, Some(Lang::Es));
         assert_eq!(o.theme, Some(ThemeId::WindowsClassic));
         assert_eq!(o.drill, Some(PathBuf::from("a.ncd")));
         assert_eq!(o.route, Some(PathBuf::from("b.plt")));
+        assert_eq!(o.zip, Some(PathBuf::from("job.zip")));
         assert_eq!(o.data, Some(PathBuf::from("cfg")));
         assert_eq!(o.connection, Some(PathBuf::from("m.cfg")));
         assert_eq!(o.screen, Some(Screen::Viewer));

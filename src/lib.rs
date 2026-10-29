@@ -6,6 +6,7 @@
 
 pub mod boards;
 pub mod cli;
+pub mod defaults;
 pub mod jobs;
 pub mod launcher;
 pub mod link;

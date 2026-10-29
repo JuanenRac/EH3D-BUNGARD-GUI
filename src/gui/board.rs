@@ -30,15 +30,15 @@ pub(crate) struct ToolLine {
 }
 
 /// How a cell of the tool table is edited: the smallest and the largest value, whether it has decimals, and the size of a step.
-struct CellSpec {
-    label: &'static str,
-    min: f64,
-    max: f64,
-    decimals: bool,
-    step: f64,
+pub(super) struct CellSpec {
+    pub(super) label: &'static str,
+    pub(super) min: f64,
+    pub(super) max: f64,
+    pub(super) decimals: bool,
+    pub(super) step: f64,
 }
 
-fn specs(kind: EngineKind) -> &'static [CellSpec] {
+pub(super) fn specs(kind: EngineKind) -> &'static [CellSpec] {
     match kind {
         EngineKind::Drill => &[
             CellSpec {
@@ -104,7 +104,7 @@ fn specs(kind: EngineKind) -> &'static [CellSpec] {
 }
 
 impl App {
-    fn engine_of(&self, p: Program) -> &dyn ClassicEngine {
+    pub(super) fn engine_of(&self, p: Program) -> &dyn ClassicEngine {
         match p {
             Program::Drill => &*self.drill.engine,
             Program::Route => &*self.route.engine,
@@ -633,6 +633,17 @@ impl App {
                 20.0,
                 col(t.text),
             );
+            let rv = cv.rect(rx + 270.0, yy, 100.0, 38.0);
+            cv.p.rect_stroke(
+                rv,
+                6.0 * cv.u,
+                Stroke::new(cv.u, alpha(col(t.line), 70)),
+                StrokeKind::Inside,
+            );
+            cv.hits.push((
+                rv,
+                Act::Edit(EditTarget::BoardSize(width), rx + 272.0, yy + 2.0, 96.0),
+            ));
         }
         cv.chip(
             x + w - 200.0,
@@ -679,7 +690,7 @@ impl App {
             );
             for (i, s) in sp.iter().enumerate() {
                 cv.text(
-                    x + 230.0 + i as f32 * 230.0 + 95.0,
+                    x + 230.0 + i as f32 * 215.0 + 95.0,
                     ry + 16.0,
                     Align2::CENTER_BOTTOM,
                     s.label,
@@ -712,7 +723,7 @@ impl App {
                 );
                 for (ci, s) in sp.iter().enumerate() {
                     let v = r.cells.get(ci).map_or("", |c| c.trim());
-                    let bx = x + 230.0 + ci as f32 * 230.0;
+                    let bx = x + 230.0 + ci as f32 * 215.0;
                     cv.chip(
                         bx,
                         ry,
@@ -740,7 +751,27 @@ impl App {
                         Act::ToolAdj(p, ri, ci, 1.0),
                     );
                     let _ = s;
+                    let rv = cv.rect(bx + 45.0, ry, 100.0, 38.0);
+                    cv.p.rect_stroke(
+                        rv,
+                        6.0 * cv.u,
+                        Stroke::new(cv.u, alpha(col(t.line), 70)),
+                        StrokeKind::Inside,
+                    );
+                    cv.hits.push((
+                        rv,
+                        Act::Edit(EditTarget::ToolCell(p, ri, ci), bx + 47.0, ry + 2.0, 96.0),
+                    ));
                 }
+                cv.chip(
+                    x + 1290.0,
+                    ry,
+                    76.0,
+                    38.0,
+                    "Def.",
+                    false,
+                    Act::ToolDefault(p, ri),
+                );
                 ry += 46.0;
                 index += 1;
             }
@@ -758,7 +789,7 @@ impl App {
         }
         if self.saved {
             cv.text(
-                x + 30.0,
+                x + 300.0,
                 y + h - 30.0,
                 Align2::LEFT_BOTTOM,
                 self.tr(Text::Saved),
@@ -766,6 +797,23 @@ impl App {
                 col(t.ok),
             );
         }
+        cv.text(
+            x + 30.0,
+            y + h - 30.0,
+            Align2::LEFT_BOTTOM,
+            self.tr(Text::TypeValueHint),
+            14.0,
+            col(t.dim),
+        );
+        cv.chip(
+            x + w - 620.0,
+            y + h - 60.0,
+            200.0,
+            42.0,
+            self.tr(Text::DefaultValues),
+            false,
+            Act::ToolsDefaults,
+        );
         cv.chip(
             x + w - 400.0,
             y + h - 60.0,
@@ -831,7 +879,7 @@ impl App {
 
     pub(super) fn paint_settings_modal(&self, cv: &mut Cv) {
         let t = cv.t.clone();
-        let (x, y, w, h) = (380.0, 50.0, 840.0, 800.0);
+        let (x, y, w, h) = (380.0, 30.0, 840.0, 840.0);
         cv.p.rect_filled(
             Rect::from_min_size(Pos2::ZERO, Vec2::new(10_000.0, 10_000.0)),
             0.0,
@@ -857,10 +905,18 @@ impl App {
             [-10.0, -1.0, 1.0, 10.0],
             true,
         );
+        cv.text(
+            x + 30.0,
+            y + 196.0,
+            Align2::LEFT_BOTTOM,
+            self.tr(Text::TypeValueHint),
+            13.0,
+            col(t.dim),
+        );
         // the theme
         cv.text(
             x + 30.0,
-            y + 224.0,
+            y + 232.0,
             Align2::LEFT_BOTTOM,
             &self.tr(Text::ThemeLabel).to_uppercase(),
             12.0,
@@ -876,7 +932,7 @@ impl App {
         for (i, (id, n)) in names.into_iter().enumerate() {
             cv.chip(
                 x + 30.0 + (i % 2) as f32 * 390.0,
-                y + 236.0 + (i / 2) as f32 * 46.0,
+                y + 244.0 + (i / 2) as f32 * 46.0,
                 380.0,
                 38.0,
                 self.tr(n),
@@ -887,7 +943,7 @@ impl App {
         // the language
         cv.text(
             x + 30.0,
-            y + 394.0,
+            y + 402.0,
             Align2::LEFT_BOTTOM,
             &self.tr(Text::Language).to_uppercase(),
             12.0,
@@ -896,7 +952,7 @@ impl App {
         for (i, (l, n)) in LANG_NAMES.into_iter().enumerate() {
             cv.chip(
                 x + 30.0 + (i % 4) as f32 * 196.0,
-                y + 406.0 + (i / 4) as f32 * 46.0,
+                y + 414.0 + (i / 4) as f32 * 46.0,
                 188.0,
                 38.0,
                 n,
@@ -904,10 +960,30 @@ impl App {
                 Act::SetLang(l),
             );
         }
+        // the speed of the simulation
+        cv.text(
+            x + 30.0,
+            y + 534.0,
+            Align2::LEFT_BOTTOM,
+            &self.tr(Text::SimSpeed).to_uppercase(),
+            12.0,
+            col(t.dim),
+        );
+        for (i, v) in [0.5f32, 1.0, 2.0, 5.0, 10.0, 50.0].into_iter().enumerate() {
+            cv.chip(
+                x + 30.0 + i as f32 * 130.0,
+                y + 546.0,
+                122.0,
+                38.0,
+                &format!("x{v}"),
+                (self.settings.sim_speed - v).abs() < 1e-3,
+                Act::SetSpeed(v),
+            );
+        }
         // the choices
         cv.chip(
             x + 30.0,
-            y + 520.0,
+            y + 604.0,
             780.0,
             40.0,
             self.tr(Text::SetAskOperator),
@@ -916,7 +992,7 @@ impl App {
         );
         cv.chip(
             x + 30.0,
-            y + 568.0,
+            y + 652.0,
             780.0,
             40.0,
             self.tr(Text::SetSkipLauncher),
@@ -926,7 +1002,7 @@ impl App {
         // what is in use
         cv.text(
             x + 30.0,
-            y + 650.0,
+            y + 728.0,
             Align2::LEFT_BOTTOM,
             &format!("{}: {}", self.tr(Text::Connection), self.connection),
             15.0,
@@ -934,7 +1010,7 @@ impl App {
         );
         cv.text(
             x + 30.0,
-            y + 676.0,
+            y + 752.0,
             Align2::LEFT_BOTTOM,
             &format!("{}: {}", self.tr(Text::BoardTitle), self.board.describe()),
             15.0,
@@ -942,7 +1018,7 @@ impl App {
         );
         cv.text(
             x + 30.0,
-            y + 702.0,
+            y + 776.0,
             Align2::LEFT_BOTTOM,
             &format!(
                 "{} - {}",
@@ -955,7 +1031,7 @@ impl App {
         if self.saved {
             cv.text(
                 x + 30.0,
-                y + 764.0,
+                y + 818.0,
                 Align2::LEFT_BOTTOM,
                 self.tr(Text::Saved),
                 18.0,
@@ -964,7 +1040,7 @@ impl App {
         }
         cv.chip(
             x + 440.0,
-            y + 736.0,
+            y + h - 66.0,
             180.0,
             44.0,
             self.tr(Text::Save),
@@ -973,7 +1049,7 @@ impl App {
         );
         cv.chip(
             x + 630.0,
-            y + 736.0,
+            y + h - 66.0,
             180.0,
             44.0,
             self.tr(Text::Close),

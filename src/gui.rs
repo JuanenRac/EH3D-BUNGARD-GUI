@@ -28,9 +28,11 @@ use crate::machines;
 
 mod board;
 mod extra;
+mod numedit;
 mod opener;
 use board::BoardPick;
 use extra::{Field, Modal, Nav2, Nav3, PanelCfg, PanelMode, Zone};
+use numedit::{EditTarget, NumEdit};
 use opener::Browser;
 use std::sync::mpsc::Receiver;
 
@@ -77,6 +79,11 @@ enum Act {
     ToolAdj(Program, usize, usize, f32),
     ToolsSave,
     SetTheme(ThemeId),
+    /// A value to type: what it is and where its box goes (x, y, width).
+    Edit(EditTarget, f32, f32, f32),
+    ToolDefault(Program, usize),
+    ToolsDefaults,
+    SetSpeed(f32),
     SetLang(Lang),
     ToggleAsk,
     ToggleSkip,
@@ -175,6 +182,11 @@ pub struct App {
     drag_zone: Option<Zone>,
     ui_scale: f32,
     ui_origin: Pos2,
+    pointer: Option<Pos2>,
+    pointer_down: bool,
+    /// The value being typed, and the seconds the last frame took (the simulated job follows the clock of the machine).
+    edit: Option<NumEdit>,
+    dt: f64,
     /// The board of the job and the maker whose materials the board window lists.
     board: crate::boards::Board,
     maker: usize,
@@ -266,6 +278,10 @@ impl App {
             drag_zone: None,
             ui_scale: 1.0,
             ui_origin: Pos2::ZERO,
+            pointer: None,
+            pointer_down: false,
+            edit: None,
+            dt: 0.016,
             board,
             maker,
             conn,
@@ -497,6 +513,7 @@ impl App {
             return;
         }
         let auto_ok = self.auto_ok;
+        let dt = self.dt * self.settings.sim_speed as f64;
         let side = self.side_mut(p);
         if side.engine.question().is_some() {
             if auto_ok {
@@ -504,7 +521,7 @@ impl App {
             }
             return;
         }
-        let more = side.engine.tick(1);
+        let more = side.engine.tick_for(dt);
         let done = side.engine.done();
         let view = side.engine.job_view();
         let head = view.as_ref().map(|v| (v.x_mm, v.y_mm));
@@ -601,6 +618,13 @@ impl App {
             Act::ToolAdj(p, row, c, d) => self.tool_adjust(p, row, c, d),
             Act::ToolsSave => self.tools_save(),
             Act::SetTheme(id) => self.set_theme(id),
+            Act::Edit(t, x, y, w) => self.start_edit(t, x, y, w),
+            Act::ToolDefault(p, row) => self.tool_default(p, row),
+            Act::ToolsDefaults => self.tools_defaults(),
+            Act::SetSpeed(v) => {
+                self.settings.sim_speed = v;
+                self.remember_settings();
+            }
             Act::SetLang(l) => self.set_lang(l),
             Act::ToggleAsk => self.toggle_ask(),
             Act::ToggleSkip => self.toggle_skip(),
@@ -656,6 +680,9 @@ struct Cv<'a> {
     hits: Vec<(Rect, Act)>,
     zones: Vec<(Rect, Zone)>,
     modal_from: usize,
+    /// Where the pointer is and whether its button is held down: the buttons answer to both.
+    pointer: Option<Pos2>,
+    down: bool,
 }
 
 impl<'a> Cv<'a> {
@@ -750,42 +777,135 @@ impl<'a> Cv<'a> {
         );
     }
 
-    /// A button: filled with a colour, a label in the middle.
+    /// Is the pointer over this rectangle, and is the button held down on it?
+    pub(crate) fn touch(&self, rect: Rect) -> (bool, bool) {
+        let hover = self.pointer.is_some_and(|p| rect.contains(p));
+        (hover, hover && self.down)
+    }
+
+    /// A button: filled with a colour, a label in the middle. It lights up under the pointer, sinks when it is pressed and has a shadow,
+    /// a shine on its top edge and an edge that follows the corner style of the theme.
     #[allow(clippy::too_many_arguments)]
     fn button(&mut self, x: f32, y: f32, w: f32, h: f32, label: &str, c: Color32, act: Act) {
         let rect = self.rect(x, y, w, h);
+        let (hover, down) = self.touch(rect);
         let ink = if self.t.corner == Corner::Square {
             Color32::BLACK
         } else {
             col(self.t.background.0)
         };
+        // pressed: darker and lower; under the pointer: brighter with a glow
+        let fill = if down {
+            shade(c, 0.78)
+        } else if hover {
+            shade(c, 1.14)
+        } else {
+            c
+        };
+        let sink = if down { 3.0 } else { 0.0 };
+        let (y, corner) = (y + sink, 12.0);
+        let shape: Vec<(f32, f32)> = if self.t.corner == Corner::Cut {
+            vec![
+                (x + corner, y),
+                (x + w, y),
+                (x + w, y + h - corner),
+                (x + w - corner, y + h),
+                (x, y + h),
+                (x, y + corner),
+            ]
+        } else {
+            vec![(x, y), (x + w, y), (x + w, y + h), (x, y + h)]
+        };
+        let r = match self.t.corner {
+            Corner::Round => 12.0 * self.u,
+            _ => 0.0,
+        };
+        if !down {
+            // the shadow under the button, wider when it is lit
+            let k = if hover { 7.0 } else { 4.0 };
+            for (i, a) in [(2.0, 26u8), (1.0, 40)] {
+                let grow = k * i / 2.0;
+                if self.t.corner == Corner::Cut {
+                    let s: Vec<(f32, f32)> =
+                        shape.iter().map(|&(px, py)| (px, py + grow)).collect();
+                    self.poly(&s, alpha(Color32::BLACK, a), Stroke::NONE);
+                } else {
+                    self.p.rect_filled(
+                        self.rect(x, y + grow, w, h).expand(grow * 0.4 * self.u),
+                        r,
+                        alpha(Color32::BLACK, a),
+                    );
+                }
+            }
+        }
+        if hover && !down {
+            // the glow around the button under the pointer
+            for (g, a) in [(8.0, 18u8), (4.0, 34)] {
+                if self.t.corner == Corner::Cut {
+                    let s = [
+                        (x + corner - g, y - g),
+                        (x + w + g, y - g),
+                        (x + w + g, y + h - corner + g),
+                        (x + w - corner + g, y + h + g),
+                        (x - g, y + h + g),
+                        (x - g, y + corner - g),
+                    ];
+                    self.poly(&s, alpha(c, a), Stroke::NONE);
+                } else {
+                    self.p
+                        .rect_filled(rect.expand(g * self.u), r + g * self.u, alpha(c, a));
+                }
+            }
+        }
         if self.t.corner == Corner::Cut {
             self.poly(
-                &[
-                    (x + 12.0, y),
-                    (x + w, y),
-                    (x + w, y + h - 12.0),
-                    (x + w - 12.0, y + h),
-                    (x, y + h),
-                    (x, y + 12.0),
-                ],
-                c,
-                Stroke::NONE,
+                &shape,
+                fill,
+                Stroke::new(
+                    1.2 * self.u,
+                    alpha(shade(c, 1.35), if hover { 255 } else { 140 }),
+                ),
             );
         } else {
-            let r = if self.t.corner == Corner::Round {
-                12.0
-            } else {
-                0.0
-            } * self.u;
-            self.p.rect_filled(rect, r, c);
+            let body = self.rect(x, y, w, h);
+            self.p.rect_filled(body, r, fill);
+            self.p.rect_stroke(
+                body,
+                r,
+                Stroke::new(
+                    1.2 * self.u,
+                    alpha(shade(c, 1.35), if hover { 255 } else { 140 }),
+                ),
+                StrokeKind::Inside,
+            );
         }
+        // the shine along the top edge, and the shade along the bottom one
+        let (sx0, sx1) = (
+            x + if self.t.corner == Corner::Cut {
+                corner
+            } else {
+                6.0
+            },
+            x + w - 6.0,
+        );
+        self.line(
+            (sx0, y + 3.0),
+            (sx1, y + 3.0),
+            1.6,
+            alpha(Color32::WHITE, if down { 12 } else { 70 }),
+        );
+        self.line(
+            (x + 6.0, y + h - 3.0),
+            (x + w - corner.min(10.0), y + h - 3.0),
+            1.4,
+            alpha(Color32::BLACK, if down { 20 } else { 55 }),
+        );
         self.text(
             x + w / 2.0,
             y + h / 2.0 + 6.0,
             Align2::CENTER_BOTTOM,
             &label.to_uppercase(),
-            17.0,
+            if hover { 17.5 } else { 17.0 },
             ink,
         );
         self.hits.push((rect, act));
@@ -862,6 +982,8 @@ impl App {
             hits: Vec::new(),
             zones: Vec::new(),
             modal_from: 0,
+            pointer: self.pointer,
+            down: self.pointer_down,
         };
         match self.screen {
             Screen::Launcher => self.paint_launcher(&mut cv),
@@ -1942,6 +2064,9 @@ impl eframe::App for App {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let ctx = ui.ctx().clone();
         self.frame += 1;
+        (self.pointer, self.pointer_down) =
+            ctx.input(|i| (i.pointer.hover_pos(), i.pointer.primary_down()));
+        self.dt = ctx.input(|i| i.stable_dt as f64).clamp(0.001, 0.1);
         if self.start_at_frame == Some(self.frame) {
             self.start_job();
         }
@@ -1950,7 +2075,9 @@ impl eframe::App for App {
             self.act(Act::Choose(Choice::Modern));
         }
         if ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
-            if self.modal.is_some() {
+            if self.edit.is_some() {
+                self.edit = None;
+            } else if self.modal.is_some() {
                 self.modal = None;
             } else if self.running.is_some() {
                 self.stop_job();
@@ -2004,6 +2131,7 @@ impl eframe::App for App {
         if self.modal == Some(Modal::Open) {
             self.open_fields(&ctx);
         }
+        self.edit_overlay(&ctx);
         let mut clicked: Option<Pos2> = None;
         let mut double: Option<Pos2> = None;
         egui::Frame::NONE.show(ui, |ui| {
@@ -2031,6 +2159,22 @@ impl eframe::App for App {
                 clicked = resp.interact_pointer_pos();
             }
         });
+        if let Some(p) = self.pointer {
+            let from = if self.modal.is_some() {
+                self.modal_from
+            } else {
+                0
+            };
+            if self
+                .hits
+                .get(from..)
+                .unwrap_or(&[])
+                .iter()
+                .any(|(r, _)| r.contains(p))
+            {
+                ctx.set_cursor_icon(egui::CursorIcon::PointingHand);
+            }
+        }
         if let Some(pos) = double {
             if let Some(z) = self.zone_at(pos) {
                 self.reset_view(z);

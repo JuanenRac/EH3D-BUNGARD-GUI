@@ -144,26 +144,85 @@ pub(crate) fn wrap(s: &str, max: usize) -> Vec<String> {
 }
 
 impl<'a> Cv<'a> {
-    /// A small button with a border: filled when it is the one in use.
+    /// A small button with a border: filled when it is the one in use. It brightens under the pointer, with a line of light on its top edge,
+    /// and sinks a little when it is pressed.
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn chip(&mut self, x: f32, y: f32, w: f32, h: f32, label: &str, on: bool, act: Act) {
         let rect = self.rect(x, y, w, h);
+        let (hover, down) = self.touch(rect);
         let r = if self.t.corner == Corner::Square {
             0.0
         } else {
             8.0 * self.u
         };
-        let fill = if on {
+        let base = if on {
             col(self.t.accent)
         } else {
             col(self.t.panel_raised)
         };
-        self.p.rect_filled(rect, r, fill);
+        let fill = if down {
+            shade(base, 0.8)
+        } else if hover {
+            if on {
+                shade(base, 1.12)
+            } else {
+                // a button that is not in use takes a trace of the accent colour under the pointer
+                let a = col(self.t.accent);
+                Color32::from_rgb(
+                    ((base.r() as u16 * 3 + a.r() as u16) / 4) as u8,
+                    ((base.g() as u16 * 3 + a.g() as u16) / 4) as u8,
+                    ((base.b() as u16 * 3 + a.b() as u16) / 4) as u8,
+                )
+            }
+        } else {
+            base
+        };
+        let drop = if down { 2.0 * self.u } else { 0.0 };
+        let body = rect.translate(Vec2::new(0.0, drop));
+        if !down {
+            self.p.rect_filled(
+                rect.translate(Vec2::new(0.0, 2.0 * self.u)),
+                r,
+                alpha(Color32::BLACK, if hover { 70 } else { 40 }),
+            );
+        }
+        if hover && !down {
+            self.p.rect_filled(
+                rect.expand(3.0 * self.u),
+                r + 3.0 * self.u,
+                alpha(col(self.t.accent), 40),
+            );
+        }
+        self.p.rect_filled(body, r, fill);
         self.p.rect_stroke(
-            rect,
+            body,
             r,
-            Stroke::new(self.u, alpha(col(self.t.accent), 170)),
+            Stroke::new(
+                if hover { 1.6 } else { 1.0 } * self.u,
+                alpha(col(self.t.accent), if hover { 255 } else { 170 }),
+            ),
             StrokeKind::Inside,
+        );
+        // the shine along the top edge
+        let top = body.min.y + 2.5 * self.u;
+        self.p.line_segment(
+            [
+                Pos2::new(body.min.x + 7.0 * self.u, top),
+                Pos2::new(body.max.x - 7.0 * self.u, top),
+            ],
+            Stroke::new(
+                1.3 * self.u,
+                alpha(
+                    Color32::WHITE,
+                    if down {
+                        8
+                    } else if on {
+                        60
+                    } else {
+                        28
+                    },
+                ),
+            ),
         );
         let ink = if on {
             col(self.t.background.0)
@@ -172,7 +231,7 @@ impl<'a> Cv<'a> {
         };
         self.text(
             x + w / 2.0,
-            y + h / 2.0 + 6.0,
+            y + h / 2.0 + 6.0 + if down { 2.0 } else { 0.0 },
             Align2::CENTER_BOTTOM,
             label,
             14.0,
@@ -194,6 +253,8 @@ impl<'a> Cv<'a> {
             hits: Vec::new(),
             zones: Vec::new(),
             modal_from: 0,
+            pointer: self.pointer,
+            down: self.down,
         }
     }
 }
@@ -516,6 +577,18 @@ impl App {
             );
         }
         cv.text(960.0, y + 32.0, Align2::CENTER_BOTTOM, value, 22.0, ink);
+        if live {
+            // the value can be clicked and typed
+            let r = cv.rect(900.0, y, 120.0, 42.0);
+            cv.p.rect_stroke(
+                r,
+                6.0 * cv.u,
+                Stroke::new(1.0 * cv.u, alpha(col(t.line), 70)),
+                StrokeKind::Inside,
+            );
+            cv.hits
+                .push((r, Act::Edit(EditTarget::Field(f), 905.0, y + 4.0, 110.0)));
+        }
     }
 
     pub(super) fn paint_modal(&self, cv: &mut Cv, m: Modal) {

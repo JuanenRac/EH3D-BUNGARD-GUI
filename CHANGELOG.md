@@ -4,6 +4,11 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The buttons answer to the pointer:** they light up with a glow and a stronger edge under it, sink and darken when they are pressed, have a shadow and a shine on their top edge, and the pointer turns into a hand over them.
+- **The simulation goes at the speed of the machine:** a job takes the time it would take with the feed and the speed of each tool; the Settings window chooses how many times faster than the machine it runs (x0.5 to x50).
+- **Every value can be typed:** the numbers with buttons to step them (the table, the panel, the board, the feeds and the speeds of the tools) can be clicked and written with the keyboard (a comma is a decimal point; Enter or a click elsewhere accepts, Esc leaves it as it was).
+- **Default values and the operator's:** the tools have default values chosen from the diameter of the drill and the material of the board (per tool or all at once), and any value can be typed over them.
+
 - **A lighter debug build:** the `dev` profile keeps the file and line of a panic (`debug = "line-tables-only"`) but not the full debug symbols, so the `target` folder of a test run is about a tenth of its size.
 - **Open files:** an Open window with a folder browser (and the drives), files dropped on the window, Ctrl+O, and files given on the command line; a drilling file, a routing file or a ZIP archive is opened as what its extension says.
 - **Move around the views:** the plan view is dragged and zoomed with the wheel, the 3D view is turned with a drag, zoomed with the wheel and moved with Shift or the right button; a button (or a double click) puts the view back.

@@ -103,6 +103,8 @@ pub struct Settings {
     pub board: crate::boards::Board,
     /// The job stops at the questions of the machine (the tool change, the spindle start).
     pub ask_operator: bool,
+    /// How many times faster than the machine the simulation of a job runs (1 is the speed of the machine).
+    pub sim_speed: f32,
 }
 
 impl Default for Settings {
@@ -113,6 +115,7 @@ impl Default for Settings {
             theme: ThemeId::Forge,
             board: crate::boards::Board::standard(),
             ask_operator: true,
+            sim_speed: 1.0,
         }
     }
 }
@@ -129,6 +132,14 @@ impl Settings {
                 "choice" => s.choice = Choice::from_key(v),
                 "lang" => s.lang = Lang::from_code(v).unwrap_or(s.lang),
                 "theme" => s.theme = ThemeId::from_key(v).unwrap_or(s.theme),
+                "sim_speed" => {
+                    s.sim_speed = v
+                        .trim()
+                        .parse()
+                        .ok()
+                        .filter(|x: &f32| (0.1..=1000.0).contains(x))
+                        .unwrap_or(s.sim_speed)
+                }
                 "ask_operator" => {
                     s.ask_operator = !matches!(v.trim(), "no" | "off" | "false" | "0")
                 }
@@ -141,12 +152,13 @@ impl Settings {
 
     pub fn to_text(&self) -> String {
         format!(
-            "choice = {}\nlang = {}\ntheme = {}\nboard = {}\nask_operator = {}\n",
+            "choice = {}\nlang = {}\ntheme = {}\nboard = {}\nask_operator = {}\nsim_speed = {}\n",
             self.choice.map_or("ask", |c| c.key()),
             self.lang.code(),
             self.theme.key(),
             crate::boards::to_text(&self.board),
-            if self.ask_operator { "yes" } else { "no" }
+            if self.ask_operator { "yes" } else { "no" },
+            self.sim_speed
         )
     }
 
@@ -247,6 +259,7 @@ mod tests {
             theme: ThemeId::WindowsClassic,
             board: crate::boards::Board::standard().with_material(3),
             ask_operator: false,
+            sim_speed: 5.0,
         };
         s.save(&path).unwrap();
         assert_eq!(Settings::load(&path), s);

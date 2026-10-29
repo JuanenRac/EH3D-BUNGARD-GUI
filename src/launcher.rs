@@ -105,6 +105,13 @@ pub struct Settings {
     pub ask_operator: bool,
     /// How many times faster than the machine the simulation of a job runs (1 is the speed of the machine).
     pub sim_speed: f32,
+    /// The model of the machine (`CCD MTC`, `CCD/2 ATC`...).
+    pub model: String,
+    /// The emergency button is on the window, and where (in the units of the canvas).
+    pub emergency: bool,
+    pub estop_pos: (f32, f32),
+    /// Lengths are shown in mils (0.001 inch) instead of millimetres.
+    pub display_mil: bool,
 }
 
 impl Default for Settings {
@@ -116,6 +123,10 @@ impl Default for Settings {
             board: crate::boards::Board::standard(),
             ask_operator: true,
             sim_speed: 1.0,
+            model: "CCD MTC".to_string(),
+            emergency: true,
+            estop_pos: (1020.0, 770.0),
+            display_mil: false,
         }
     }
 }
@@ -140,6 +151,20 @@ impl Settings {
                         .filter(|x: &f32| (0.1..=1000.0).contains(x))
                         .unwrap_or(s.sim_speed)
                 }
+                "model" => {
+                    if crate::machines::Model::from_name(v).is_some() {
+                        s.model = v.trim().to_string();
+                    }
+                }
+                "emergency" => s.emergency = !matches!(v.trim(), "no" | "off" | "false" | "0"),
+                "estop_pos" => {
+                    if let Some((x, y)) = v.split_once(',') {
+                        if let (Ok(x), Ok(y)) = (x.trim().parse::<f32>(), y.trim().parse::<f32>()) {
+                            s.estop_pos = (x.clamp(0.0, 1600.0), y.clamp(0.0, 900.0));
+                        }
+                    }
+                }
+                "display_units" => s.display_mil = v.trim().eq_ignore_ascii_case("mil"),
                 "ask_operator" => {
                     s.ask_operator = !matches!(v.trim(), "no" | "off" | "false" | "0")
                 }
@@ -152,13 +177,18 @@ impl Settings {
 
     pub fn to_text(&self) -> String {
         format!(
-            "choice = {}\nlang = {}\ntheme = {}\nboard = {}\nask_operator = {}\nsim_speed = {}\n",
+            "choice = {}\nlang = {}\ntheme = {}\nboard = {}\nask_operator = {}\nsim_speed = {}\nmodel = {}\nemergency = {}\nestop_pos = {},{}\ndisplay_units = {}\n",
             self.choice.map_or("ask", |c| c.key()),
             self.lang.code(),
             self.theme.key(),
             crate::boards::to_text(&self.board),
             if self.ask_operator { "yes" } else { "no" },
-            self.sim_speed
+            self.sim_speed,
+            self.model,
+            if self.emergency { "yes" } else { "no" },
+            self.estop_pos.0,
+            self.estop_pos.1,
+            if self.display_mil { "mil" } else { "mm" }
         )
     }
 
@@ -178,6 +208,11 @@ impl Settings {
 
 /// Where the settings file is: the settings folder of the user, with the other EH3D programs.
 pub fn settings_path() -> PathBuf {
+    // the tests never touch the settings of the user
+    if cfg!(test) {
+        return std::env::temp_dir()
+            .join(format!("eh3d-bungard-gui-test-{}.cfg", std::process::id()));
+    }
     if cfg!(windows) {
         let base = std::env::var_os("APPDATA")
             .map(PathBuf::from)
@@ -260,6 +295,10 @@ mod tests {
             board: crate::boards::Board::standard().with_material(3),
             ask_operator: false,
             sim_speed: 5.0,
+            model: "CCD/2 ATC".to_string(),
+            emergency: false,
+            estop_pos: (300.0, 400.5),
+            display_mil: true,
         };
         s.save(&path).unwrap();
         assert_eq!(Settings::load(&path), s);

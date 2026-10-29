@@ -300,10 +300,13 @@ impl App {
             }
             y += 52.0;
         }
-        cv.hits.push((
-            cv.rect(38.0, y0 + 52.0, 244.0, 52.0 * lines.len().min(7) as f32),
-            Act::Show(Modal::Tools),
-        ));
+        // a click on a tool takes the plan view to its work
+        for (i, l) in lines.iter().take(7).enumerate() {
+            cv.hits.push((
+                cv.rect(38.0, y0 + 52.0 + 52.0 * i as f32, 244.0, 48.0),
+                Act::CenterTool(l.prog, l.tool),
+            ));
+        }
         y
     }
 
@@ -359,6 +362,7 @@ impl App {
     }
 
     pub(crate) fn board_adjust(&mut self, width: bool, d: f32) {
+        let d = self.len_from_display(d as f64) as f32;
         let (w, h) = self.board.size_mm.unwrap_or_else(|| {
             self.board_rect()
                 .map_or((100.0, 80.0), |(a, b, c, e)| (c - a, e - b))
@@ -887,151 +891,310 @@ impl App {
         );
         cv.card(x, y, w, h, true, None);
         cv.title(x + 30.0, y + 44.0, self.tr(Text::SettingsTitle));
-        self.stepper(
-            cv,
-            y + 70.0,
-            self.tr(Text::TableWidth),
-            &format!("{:.0}", self.table.width_mm),
-            Field::TableW,
-            [-10.0, -1.0, 1.0, 10.0],
-            true,
-        );
-        self.stepper(
-            cv,
-            y + 128.0,
-            self.tr(Text::TableDepth),
-            &format!("{:.0}", self.table.depth_mm),
-            Field::TableD,
-            [-10.0, -1.0, 1.0, 10.0],
-            true,
-        );
+        // the tabs
+        for (i, n) in [Text::TabGeneral, Text::LayerMachine, Text::TabJob]
+            .into_iter()
+            .enumerate()
+        {
+            cv.chip(
+                x + 30.0 + i as f32 * 210.0,
+                y + 62.0,
+                200.0,
+                40.0,
+                self.tr(n),
+                self.settings_tab as usize == i,
+                Act::Tab(i as u8),
+            );
+        }
+        let top = y + 120.0;
+        match self.settings_tab {
+            0 => {
+                // the theme
+                cv.text(
+                    x + 30.0,
+                    top + 8.0,
+                    Align2::LEFT_BOTTOM,
+                    &self.tr(Text::ThemeLabel).to_uppercase(),
+                    12.0,
+                    col(t.dim),
+                );
+                let names = [
+                    (ThemeId::Forge, Text::ThemeForge),
+                    (ThemeId::Neon, Text::ThemeNeon),
+                    (ThemeId::Glass, Text::ThemeGlass),
+                    (ThemeId::WindowsClassic, Text::ThemeWindowsClassic),
+                    (ThemeId::System, Text::ThemeSystem),
+                ];
+                for (i, (id, n)) in names.into_iter().enumerate() {
+                    cv.chip(
+                        x + 30.0 + (i % 2) as f32 * 390.0,
+                        top + 20.0 + (i / 2) as f32 * 46.0,
+                        380.0,
+                        38.0,
+                        self.tr(n),
+                        self.theme.id == id,
+                        Act::SetTheme(id),
+                    );
+                }
+                // the language
+                let ly = top + 168.0;
+                cv.text(
+                    x + 30.0,
+                    ly,
+                    Align2::LEFT_BOTTOM,
+                    &self.tr(Text::Language).to_uppercase(),
+                    12.0,
+                    col(t.dim),
+                );
+                for (i, (l, n)) in LANG_NAMES.into_iter().enumerate() {
+                    cv.chip(
+                        x + 30.0 + (i % 4) as f32 * 196.0,
+                        ly + 12.0 + (i / 4) as f32 * 46.0,
+                        188.0,
+                        38.0,
+                        n,
+                        self.lang == l,
+                        Act::SetLang(l),
+                    );
+                }
+                // the units of the lengths on the screen
+                let uy = ly + 124.0;
+                cv.text(
+                    x + 30.0,
+                    uy,
+                    Align2::LEFT_BOTTOM,
+                    &self.tr(Text::Units).to_uppercase(),
+                    12.0,
+                    col(t.dim),
+                );
+                cv.chip(
+                    x + 30.0,
+                    uy + 12.0,
+                    380.0,
+                    38.0,
+                    self.tr(Text::UnitMm),
+                    !self.settings.display_mil,
+                    Act::DisplayMil(false),
+                );
+                cv.chip(
+                    x + 420.0,
+                    uy + 12.0,
+                    380.0,
+                    38.0,
+                    self.tr(Text::UnitMil),
+                    self.settings.display_mil,
+                    Act::DisplayMil(true),
+                );
+                // the speed of the simulation
+                let sy = uy + 78.0;
+                cv.text(
+                    x + 30.0,
+                    sy,
+                    Align2::LEFT_BOTTOM,
+                    &self.tr(Text::SimSpeed).to_uppercase(),
+                    12.0,
+                    col(t.dim),
+                );
+                for (i, v) in [0.5f32, 1.0, 2.0, 5.0, 10.0, 50.0].into_iter().enumerate() {
+                    cv.chip(
+                        x + 30.0 + i as f32 * 130.0,
+                        sy + 12.0,
+                        122.0,
+                        38.0,
+                        &format!("x{v}"),
+                        (self.settings.sim_speed - v).abs() < 1e-3,
+                        Act::SetSpeed(v),
+                    );
+                }
+            }
+            1 => {
+                // the model of the machine
+                cv.text(
+                    x + 30.0,
+                    top + 8.0,
+                    Align2::LEFT_BOTTOM,
+                    &self.tr(Text::ModelLabel).to_uppercase(),
+                    12.0,
+                    col(t.dim),
+                );
+                let models = crate::machines::models();
+                for (i, m) in models.iter().enumerate() {
+                    cv.chip(
+                        x + 30.0 + (i % 4) as f32 * 196.0,
+                        top + 20.0 + (i / 4) as f32 * 46.0,
+                        188.0,
+                        38.0,
+                        &m.name(),
+                        self.model() == i,
+                        Act::Model(i),
+                    );
+                }
+                let m = models[self.model().min(models.len() - 1)];
+                let pr = m.profile();
+                let ty = top + 20.0 + (models.len().div_ceil(4)) as f32 * 46.0 + 14.0;
+                let tc = if m.change == crate::machines::ToolChange::Automatic {
+                    self.tr(Text::TcAuto)
+                } else {
+                    self.tr(Text::TcManual)
+                };
+                cv.text(
+                    x + 30.0,
+                    ty + 16.0,
+                    Align2::LEFT_BOTTOM,
+                    &format!("{}: {}", self.tr(Text::ToolChange), tc),
+                    16.0,
+                    col(t.text),
+                );
+                let (ww, wd, wz) = pr.work_mm;
+                let (ow, od, oz) = pr.overall_mm;
+                cv.text(
+                    x + 30.0,
+                    ty + 40.0,
+                    Align2::LEFT_BOTTOM,
+                    &format!(
+                        "{} {}x{}x{} - {} {}x{}x{} - {:.0} kg{}",
+                        self.len_unit(),
+                        self.len_text(ww).trim_end_matches(' '),
+                        self.len_text(wd).trim_end_matches(' '),
+                        self.len_text(wz).trim_end_matches(' '),
+                        "|",
+                        self.len_text(ow),
+                        self.len_text(od),
+                        self.len_text(oz),
+                        pr.weight_kg,
+                        if m.rack_places() > 0 {
+                            format!(" - {} {}", m.rack_places(), self.tr(Text::RackPlaces))
+                        } else {
+                            String::new()
+                        }
+                    ),
+                    14.0,
+                    col(t.dim),
+                );
+                // the rack of the machine file
+                let rack = self.drill.engine.settings().map_or(0, |s| s.atc.len());
+                if m.change == crate::machines::ToolChange::Automatic && rack == 0 {
+                    cv.text(
+                        x + 30.0,
+                        ty + 64.0,
+                        Align2::LEFT_BOTTOM,
+                        "The machine file has no rack positions yet",
+                        14.0,
+                        col(t.danger),
+                    );
+                }
+                // the usable area, which can be bigger than the published one
+                self.stepper(
+                    cv,
+                    ty + 80.0,
+                    self.tr(Text::TableWidth),
+                    &format!("{} {}", self.len_text(self.table.width_mm), self.len_unit()),
+                    Field::TableW,
+                    [-10.0, -1.0, 1.0, 10.0],
+                    true,
+                );
+                self.stepper(
+                    cv,
+                    ty + 138.0,
+                    self.tr(Text::TableDepth),
+                    &format!("{} {}", self.len_text(self.table.depth_mm), self.len_unit()),
+                    Field::TableD,
+                    [-10.0, -1.0, 1.0, 10.0],
+                    true,
+                );
+                // the unit of the coordinates of the files, as the classic programs have it
+                let fy = ty + 232.0;
+                cv.text(
+                    x + 30.0,
+                    fy,
+                    Align2::LEFT_BOTTOM,
+                    "FILE COORDINATES",
+                    12.0,
+                    col(t.dim),
+                );
+                let cur = self.file_unit();
+                for (i, n) in ["0.1 mil", "1 mil", "0.025 mm", "0.01 mm"]
+                    .into_iter()
+                    .enumerate()
+                {
+                    cv.chip(
+                        x + 30.0 + i as f32 * 196.0,
+                        fy + 12.0,
+                        188.0,
+                        38.0,
+                        n,
+                        cur == Some(i as u8),
+                        Act::FileUnit(i as u8),
+                    );
+                }
+                cv.text(
+                    x + 30.0,
+                    fy + 76.0,
+                    Align2::LEFT_BOTTOM,
+                    &format!("{}: {}", self.tr(Text::Connection), self.connection),
+                    15.0,
+                    col(t.dim),
+                );
+            }
+            _ => {
+                cv.checkbox(
+                    x + 30.0,
+                    top + 10.0,
+                    780.0,
+                    self.tr(Text::SetAskOperator),
+                    self.settings.ask_operator,
+                    Act::ToggleAsk,
+                );
+                cv.checkbox(
+                    x + 30.0,
+                    top + 58.0,
+                    780.0,
+                    self.tr(Text::SetSkipLauncher),
+                    self.settings.choice == Some(Choice::Modern),
+                    Act::ToggleSkip,
+                );
+                cv.checkbox(
+                    x + 30.0,
+                    top + 106.0,
+                    780.0,
+                    self.tr(Text::EmergencyShow),
+                    self.settings.emergency,
+                    Act::ToggleEmergency,
+                );
+                cv.text(
+                    x + 30.0,
+                    top + 200.0,
+                    Align2::LEFT_BOTTOM,
+                    &format!("{}: {}", self.tr(Text::BoardTitle), self.board.describe()),
+                    15.0,
+                    col(t.dim),
+                );
+                cv.text(
+                    x + 30.0,
+                    top + 226.0,
+                    Align2::LEFT_BOTTOM,
+                    &format!(
+                        "{} - {}",
+                        crate::launcher::settings_path().display(),
+                        env!("CARGO_PKG_VERSION")
+                    ),
+                    12.0,
+                    col(t.dim),
+                );
+            }
+        }
         cv.text(
             x + 30.0,
-            y + 196.0,
+            y + h - 90.0,
             Align2::LEFT_BOTTOM,
             self.tr(Text::TypeValueHint),
             13.0,
             col(t.dim),
         );
-        // the theme
-        cv.text(
-            x + 30.0,
-            y + 232.0,
-            Align2::LEFT_BOTTOM,
-            &self.tr(Text::ThemeLabel).to_uppercase(),
-            12.0,
-            col(t.dim),
-        );
-        let names = [
-            (ThemeId::Forge, Text::ThemeForge),
-            (ThemeId::Neon, Text::ThemeNeon),
-            (ThemeId::Glass, Text::ThemeGlass),
-            (ThemeId::WindowsClassic, Text::ThemeWindowsClassic),
-            (ThemeId::System, Text::ThemeSystem),
-        ];
-        for (i, (id, n)) in names.into_iter().enumerate() {
-            cv.chip(
-                x + 30.0 + (i % 2) as f32 * 390.0,
-                y + 244.0 + (i / 2) as f32 * 46.0,
-                380.0,
-                38.0,
-                self.tr(n),
-                self.theme.id == id,
-                Act::SetTheme(id),
-            );
-        }
-        // the language
-        cv.text(
-            x + 30.0,
-            y + 402.0,
-            Align2::LEFT_BOTTOM,
-            &self.tr(Text::Language).to_uppercase(),
-            12.0,
-            col(t.dim),
-        );
-        for (i, (l, n)) in LANG_NAMES.into_iter().enumerate() {
-            cv.chip(
-                x + 30.0 + (i % 4) as f32 * 196.0,
-                y + 414.0 + (i / 4) as f32 * 46.0,
-                188.0,
-                38.0,
-                n,
-                self.lang == l,
-                Act::SetLang(l),
-            );
-        }
-        // the speed of the simulation
-        cv.text(
-            x + 30.0,
-            y + 534.0,
-            Align2::LEFT_BOTTOM,
-            &self.tr(Text::SimSpeed).to_uppercase(),
-            12.0,
-            col(t.dim),
-        );
-        for (i, v) in [0.5f32, 1.0, 2.0, 5.0, 10.0, 50.0].into_iter().enumerate() {
-            cv.chip(
-                x + 30.0 + i as f32 * 130.0,
-                y + 546.0,
-                122.0,
-                38.0,
-                &format!("x{v}"),
-                (self.settings.sim_speed - v).abs() < 1e-3,
-                Act::SetSpeed(v),
-            );
-        }
-        // the choices
-        cv.chip(
-            x + 30.0,
-            y + 604.0,
-            780.0,
-            40.0,
-            self.tr(Text::SetAskOperator),
-            self.settings.ask_operator,
-            Act::ToggleAsk,
-        );
-        cv.chip(
-            x + 30.0,
-            y + 652.0,
-            780.0,
-            40.0,
-            self.tr(Text::SetSkipLauncher),
-            self.settings.choice == Some(Choice::Modern),
-            Act::ToggleSkip,
-        );
-        // what is in use
-        cv.text(
-            x + 30.0,
-            y + 728.0,
-            Align2::LEFT_BOTTOM,
-            &format!("{}: {}", self.tr(Text::Connection), self.connection),
-            15.0,
-            col(t.dim),
-        );
-        cv.text(
-            x + 30.0,
-            y + 752.0,
-            Align2::LEFT_BOTTOM,
-            &format!("{}: {}", self.tr(Text::BoardTitle), self.board.describe()),
-            15.0,
-            col(t.dim),
-        );
-        cv.text(
-            x + 30.0,
-            y + 776.0,
-            Align2::LEFT_BOTTOM,
-            &format!(
-                "{} - {}",
-                crate::launcher::settings_path().display(),
-                env!("CARGO_PKG_VERSION")
-            ),
-            12.0,
-            col(t.dim),
-        );
         if self.saved {
             cv.text(
                 x + 30.0,
-                y + 818.0,
+                y + h - 30.0,
                 Align2::LEFT_BOTTOM,
                 self.tr(Text::Saved),
                 18.0,
@@ -1056,5 +1219,103 @@ impl App {
             true,
             Act::CloseModal,
         );
+    }
+
+    /// The model of the machine in use.
+    pub(crate) fn model(&self) -> usize {
+        crate::machines::Model::from_name(&self.settings.model).unwrap_or(0)
+    }
+
+    /// The unit of the coordinates of the files in the machine file (0.1 mil, mil, plotter step, 0.01 mm), as an index.
+    pub(crate) fn file_unit(&self) -> Option<u8> {
+        self.drill.engine.settings().map(|s| s.unit.index() as u8)
+    }
+
+    /// Takes a model: the usable area becomes the published one, the tool change is the manual or the automatic one, and the choice is
+    /// remembered. The rack positions are the machine file's own.
+    pub(crate) fn apply_model(&mut self, i: usize) {
+        let models = crate::machines::models();
+        let Some(m) = models.get(i).copied() else {
+            return;
+        };
+        let (w, d) = m.profile().work_mm_xy();
+        let automatic = m.change == crate::machines::ToolChange::Automatic;
+        for (k, side) in [&mut self.drill, &mut self.route].into_iter().enumerate() {
+            if let Some(s) = side.engine.settings_mut() {
+                s.clip_mm = (w, d);
+                // only the drilling program has the tool changer
+                if k == 0 {
+                    s.auto_change = automatic;
+                }
+            }
+            side.engine.settings_changed();
+        }
+        self.settings.model = m.name();
+        self.table = Table::new(w, d);
+        self.drill.scene.table = self.table;
+        self.route.scene.table = self.table;
+        self.saved = false;
+        self.apply_panel();
+        self.remember_settings();
+    }
+
+    /// Changes how the coordinates of the files are read (as the Parameter window of the classic programs does) and reads the files again.
+    pub(crate) fn set_file_unit(&mut self, i: u8) {
+        let Some(unit) = eh3d_drillpro::config::CoordUnit::from_index(i as u32) else {
+            return;
+        };
+        for side in [&mut self.drill, &mut self.route] {
+            if let Some(s) = side.engine.settings_mut() {
+                s.unit = unit;
+            }
+            side.engine.settings_changed();
+        }
+        self.saved = false;
+        self.reload_jobs();
+    }
+
+    /// Reads the files of the job again (after a change of the unit of the coordinates).
+    pub(crate) fn reload_jobs(&mut self) {
+        if let Some(p) = self.drill_path.clone() {
+            self.load_drill(&p);
+        }
+        if let Some(p) = self.route_path.clone() {
+            self.load_route(&p);
+        }
+        self.apply_panel();
+    }
+
+    /// A length as it is shown: millimetres with a decimal, or mils (0.001 inch) whole.
+    pub(crate) fn len_text(&self, mm: f64) -> String {
+        if self.settings.display_mil {
+            format!("{:.0}", mm / 0.0254)
+        } else {
+            format!("{mm:.1}")
+        }
+    }
+
+    pub(crate) fn len_unit(&self) -> &'static str {
+        if self.settings.display_mil {
+            "mil"
+        } else {
+            "mm"
+        }
+    }
+
+    /// A typed length in the units on the screen, in millimetres.
+    pub(crate) fn len_from_display(&self, v: f64) -> f64 {
+        if self.settings.display_mil {
+            v * 0.0254
+        } else {
+            v
+        }
+    }
+
+    pub(crate) fn len_to_display(&self, mm: f64) -> f64 {
+        if self.settings.display_mil {
+            mm / 0.0254
+        } else {
+            mm
+        }
     }
 }

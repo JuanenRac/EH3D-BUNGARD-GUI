@@ -64,6 +64,69 @@ pub const PROFILES: [Profile; 4] = [
     },
 ];
 
+/// How the tools are changed: by the operator (the MTC models) or by the machine from its rack (the ATC models).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ToolChange {
+    Manual,
+    Automatic,
+}
+
+/// A model of the machine as it is sold: a machine of the family with the tool change by hand or by the changer.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Model {
+    pub profile: usize,
+    pub change: ToolChange,
+}
+
+/// Every model: each machine of the family as the MTC (manual change) and as the ATC (changer with its rack).
+pub fn models() -> Vec<Model> {
+    (0..PROFILES.len())
+        .flat_map(|profile| {
+            [ToolChange::Manual, ToolChange::Automatic].map(|change| Model { profile, change })
+        })
+        .collect()
+}
+
+impl Model {
+    pub fn profile(&self) -> &'static Profile {
+        &PROFILES[self.profile.min(PROFILES.len() - 1)]
+    }
+
+    /// The name of the model: the machine and how it changes the tools (`CCD MTC`, `CCD/2 ATC`).
+    pub fn name(&self) -> String {
+        format!(
+            "{} {}",
+            self.profile().name,
+            match self.change {
+                ToolChange::Manual => "MTC",
+                ToolChange::Automatic => "ATC",
+            }
+        )
+    }
+
+    /// The places of the rack: none on the models with the manual change.
+    pub fn rack_places(&self) -> u8 {
+        match self.change {
+            ToolChange::Manual => 0,
+            ToolChange::Automatic => self.profile().tool_places,
+        }
+    }
+
+    /// The model of a name (`CCD MTC`); `None` when there is none.
+    pub fn from_name(name: &str) -> Option<usize> {
+        models().iter().position(|m| m.name() == name.trim())
+    }
+
+    /// The model that a table is most like, with the manual change.
+    pub fn for_table(table: &Table) -> usize {
+        let p = for_table(table);
+        models()
+            .iter()
+            .position(|m| m.profile().name == p.name && m.change == ToolChange::Manual)
+            .unwrap_or(0)
+    }
+}
+
 /// The machine for a table: the one whose published work area is the most like it. The published sizes are where the machines start;
 /// the usable area is whatever the configuration says, and a machine often has a couple of centimetres more in X and Y, so a table a
 /// little bigger (or smaller) than the published one stays on the same machine.
@@ -98,6 +161,28 @@ impl Profile {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn every_machine_is_a_model_with_the_manual_and_with_the_automatic_change() {
+        let all = models();
+        assert_eq!(all.len(), PROFILES.len() * 2);
+        for m in &all {
+            assert_eq!(
+                Model::from_name(&m.name()),
+                models().iter().position(|x| x == m)
+            );
+            assert_eq!(m.rack_places() > 0, m.change == ToolChange::Automatic);
+        }
+        assert_eq!(
+            all[Model::for_table(&Table::new(495.0, 325.0))].name(),
+            "CCD MTC"
+        );
+        assert_eq!(
+            Model::from_name("CCD/2 ATC").map(|i| all[i].rack_places()),
+            Some(15)
+        );
+        assert_eq!(Model::from_name("nothing"), None);
+    }
 
     #[test]
     fn the_machine_is_the_one_the_table_is_most_like() {

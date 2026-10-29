@@ -7,7 +7,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use eframe::egui::{
     self, Align2, Color32, FontData, FontDefinitions, FontFamily, FontId, Pos2, Rect, Sense, Shape,
@@ -27,10 +27,13 @@ use crate::launcher::{self, Choice, Machine, Program, Settings};
 use crate::machines;
 
 mod board;
+mod controls;
 mod extra;
 mod numedit;
 mod opener;
+mod view2d;
 use board::BoardPick;
+use controls::apply_visuals;
 use extra::{Field, Modal, Nav2, Nav3, PanelCfg, PanelMode, Zone};
 use numedit::{EditTarget, NumEdit};
 use opener::Browser;
@@ -79,6 +82,19 @@ enum Act {
     ToolAdj(Program, usize, usize, f32),
     ToolsSave,
     SetTheme(ThemeId),
+    Emergency,
+    ToggleFollow,
+    ToggleMoveBoard,
+    ToggleBig,
+    Rotate(i8),
+    FitPlan(bool),
+    CenterTool(Program, u8),
+    ToggleEmergency,
+    /// A tab of the settings window.
+    Tab(u8),
+    Model(usize),
+    FileUnit(u8),
+    DisplayMil(bool),
     /// A value to type: what it is and where its box goes (x, y, width).
     Edit(EditTarget, f32, f32, f32),
     ToolDefault(Program, usize),
@@ -186,7 +202,24 @@ pub struct App {
     pointer_down: bool,
     /// The value being typed, and the seconds the last frame took (the simulated job follows the clock of the machine).
     edit: Option<NumEdit>,
-    dt: f64,
+    /// The emergency stop is on: nothing starts until the button is pressed again.
+    estop: bool,
+    /// The plan view follows the tool that works; a drag in it moves the board instead of the view; it takes the room of the 3D view;
+    /// the work is turned by this many quarter turns.
+    follow: bool,
+    move_board: bool,
+    plan_big: bool,
+    rotation: u8,
+    plan_scale: std::cell::Cell<f64>,
+    settings_tab: u8,
+    visuals_theme: Option<ThemeId>,
+    /// The files of the job as they were opened (they are read again when the unit of the coordinates changes).
+    drill_path: Option<PathBuf>,
+    route_path: Option<PathBuf>,
+    /// When the simulation was last advanced: the job follows the clock of the machine, so it goes on (and catches up) even when the
+    /// window is behind another one or has not been drawn for a while. A test sets `fixed_dt` instead.
+    last_tick: Instant,
+    fixed_dt: Option<f64>,
     /// The board of the job and the maker whose materials the board window lists.
     board: crate::boards::Board,
     maker: usize,
@@ -281,7 +314,18 @@ impl App {
             pointer: None,
             pointer_down: false,
             edit: None,
-            dt: 0.016,
+            estop: false,
+            follow: false,
+            move_board: false,
+            plan_big: false,
+            rotation: 0,
+            plan_scale: std::cell::Cell::new(1.0),
+            settings_tab: 0,
+            visuals_theme: None,
+            drill_path: None,
+            route_path: None,
+            last_tick: Instant::now(),
+            fixed_dt: None,
             board,
             maker,
             conn,
@@ -322,6 +366,9 @@ impl App {
         if let Some(y) = o.yaw {
             app.view3d.yaw = y.clamp(-40.0, 40.0);
         }
+        if let Some(t) = o.tab {
+            app.settings_tab = t.min(2);
+        }
         match o.modal.as_deref() {
             Some("about") => app.show_modal(Modal::About),
             Some("open") => app.show_modal(Modal::Open),
@@ -347,6 +394,9 @@ impl App {
     }
 
     fn load_drill(&mut self, path: &Path) {
+        self.drill_path = Some(path.to_path_buf());
+        let turned = self.source_for(path, true);
+        let path = turned.as_path();
         self.drill.engine.load(path);
         let file = jobs::read_latin1(path)
             .ok()
@@ -373,6 +423,9 @@ impl App {
     }
 
     fn load_route(&mut self, path: &Path) {
+        self.route_path = Some(path.to_path_buf());
+        let turned = self.source_for(path, false);
+        let path = turned.as_path();
         self.route.engine.load(path);
         let plot = jobs::read_latin1(path)
             .ok()
@@ -508,12 +561,17 @@ impl App {
             self.conn_result = Some(r);
             self.conn_rx = None;
         }
+        let now = Instant::now();
+        let real = self
+            .fixed_dt
+            .unwrap_or_else(|| now.duration_since(self.last_tick).as_secs_f64().min(3600.0));
+        self.last_tick = now;
         let Some(p) = self.running else { return };
         if self.paused {
             return;
         }
         let auto_ok = self.auto_ok;
-        let dt = self.dt * self.settings.sim_speed as f64;
+        let dt = real * self.settings.sim_speed as f64;
         let side = self.side_mut(p);
         if side.engine.question().is_some() {
             if auto_ok {
@@ -618,6 +676,31 @@ impl App {
             Act::ToolAdj(p, row, c, d) => self.tool_adjust(p, row, c, d),
             Act::ToolsSave => self.tools_save(),
             Act::SetTheme(id) => self.set_theme(id),
+            Act::Emergency => self.emergency(),
+            Act::ToggleFollow => {
+                self.follow = !self.follow;
+                if self.follow {
+                    self.view2d.focus = None;
+                    self.view2d.pan = (0.0, 0.0);
+                    self.view2d.zoom = self.view2d.zoom.max(3.0);
+                }
+            }
+            Act::ToggleMoveBoard => self.move_board = !self.move_board,
+            Act::ToggleBig => self.plan_big = !self.plan_big,
+            Act::Rotate(q) => self.rotate_work(q),
+            Act::FitPlan(b) => self.fit_plan(b),
+            Act::CenterTool(p, t) => self.center_on_tool(p, t),
+            Act::ToggleEmergency => {
+                self.settings.emergency = !self.settings.emergency;
+                self.remember_settings();
+            }
+            Act::Tab(i) => self.settings_tab = i,
+            Act::Model(i) => self.apply_model(i),
+            Act::FileUnit(i) => self.set_file_unit(i),
+            Act::DisplayMil(v) => {
+                self.settings.display_mil = v;
+                self.remember_settings();
+            }
             Act::Edit(t, x, y, w) => self.start_edit(t, x, y, w),
             Act::ToolDefault(p, row) => self.tool_default(p, row),
             Act::ToolsDefaults => self.tools_defaults(),
@@ -650,7 +733,13 @@ impl App {
             Act::BrowseBack => self.browse_back(),
             Act::BrowseOpen => self.browse_open(),
             Act::ResetView(z) => self.reset_view(z),
-            Act::Start => self.start_job(),
+            Act::Start => {
+                if self.paused {
+                    self.paused = false;
+                } else if !self.estop {
+                    self.start_job();
+                }
+            }
             Act::Pause => self.paused = self.running.is_some() && !self.paused,
             Act::Stop => self.stop_job(),
             Act::Back => {
@@ -1347,19 +1436,38 @@ impl App {
         }
 
         // ---- centre: the plan from above
-        let (cx, cw) = (316.0, mid_w);
+        let (cx, cw) = (
+            316.0,
+            if self.plan_big {
+                mid_w + right_w + 16.0
+            } else {
+                mid_w
+            },
+        );
         cv.card(cx, top, cw, card_h, true, None);
         cv.title(cx + 18.0, top + 32.0, self.tr(Text::ViewPlan));
-        let (vx, vy, vw, vh) = (cx + 14.0, top + 48.0, cw - 28.0, card_h - 96.0);
+        let (vx, vy, vw, vh) = (cx + 14.0, top + 48.0, cw - 28.0, card_h - 48.0 - 108.0);
+        let head_pos = self.head();
         let mut plan = Scene::new(self.table).view2d(vw as f64, vh as f64, 10.0);
         {
             let (z, pan) = (self.view2d.zoom as f64, self.view2d.pan);
             let (mx, my) = (vw as f64 / 2.0, vh as f64 / 2.0);
             plan.scale *= z;
-            plan.origin = (
-                mx + (plan.origin.0 - mx) * z + pan.0 as f64,
-                my + (plan.origin.1 - my) * z + pan.1 as f64,
-            );
+            plan.origin = (mx + (plan.origin.0 - mx) * z, my + (plan.origin.1 - my) * z);
+            // centred on the tool that works, or on the point chosen
+            let focus = if self.follow {
+                head_pos
+            } else {
+                self.view2d.focus
+            };
+            if let Some((fx, fy)) = focus {
+                let (px, py) = plan.to_screen(&self.table, fx, fy);
+                plan.origin.0 += mx - px;
+                plan.origin.1 += my - py;
+            }
+            plan.origin.0 += pan.0 as f64;
+            plan.origin.1 += pan.1 as f64;
+            self.plan_scale.set(plan.scale);
         }
         let screen = |x: f64, y: f64| {
             let (px, py) = plan.to_screen(&self.table, x, y);
@@ -1509,45 +1617,53 @@ impl App {
             );
         }
 
+        self.paint_plan_tools(cv, cx + 14.0, top + card_h - 104.0, cw - 28.0);
+
         // ---- right: the machine
-        let rx = DESIGN_W - 20.0 - right_w;
-        cv.card(rx, top, right_w, card_h, false, None);
-        cv.title(rx + 18.0, top + 32.0, self.tr(Text::ViewMachine));
-        if self.layers[2] {
-            let clip =
-                cv.p.with_clip_rect(cv.rect(rx + 4.0, top + 44.0, right_w - 8.0, card_h - 44.0));
-            let mut inner = cv.with_painter(&clip);
-            self.paint_machine(
-                &mut inner,
-                rx,
-                top + 44.0,
-                right_w,
-                card_h - 70.0,
-                &sizes,
-                head,
+        if !self.plan_big {
+            let rx = DESIGN_W - 20.0 - right_w;
+            cv.card(rx, top, right_w, card_h, false, None);
+            cv.title(rx + 18.0, top + 32.0, self.tr(Text::ViewMachine));
+            if self.layers[2] {
+                let clip = cv.p.with_clip_rect(cv.rect(
+                    rx + 4.0,
+                    top + 44.0,
+                    right_w - 8.0,
+                    card_h - 44.0,
+                ));
+                let mut inner = cv.with_painter(&clip);
+                self.paint_machine(
+                    &mut inner,
+                    rx,
+                    top + 44.0,
+                    right_w,
+                    card_h - 70.0,
+                    &sizes,
+                    head,
+                );
+            }
+            cv.zones.push((
+                cv.rect(rx + 4.0, top + 44.0, right_w - 8.0, card_h - 70.0),
+                Zone::Machine,
+            ));
+            cv.chip(
+                rx + right_w - 204.0,
+                top + 8.0,
+                190.0,
+                30.0,
+                self.tr(Text::ResetView),
+                false,
+                Act::ResetView(Zone::Machine),
+            );
+            cv.text(
+                rx + right_w - 18.0,
+                top + card_h - 16.0,
+                Align2::RIGHT_BOTTOM,
+                self.tr(Text::NavHint3d),
+                13.0,
+                col(t.dim),
             );
         }
-        cv.zones.push((
-            cv.rect(rx + 4.0, top + 44.0, right_w - 8.0, card_h - 70.0),
-            Zone::Machine,
-        ));
-        cv.chip(
-            rx + right_w - 204.0,
-            top + 8.0,
-            190.0,
-            30.0,
-            self.tr(Text::ResetView),
-            false,
-            Act::ResetView(Zone::Machine),
-        );
-        cv.text(
-            rx + right_w - 18.0,
-            top + card_h - 16.0,
-            Align2::RIGHT_BOTTOM,
-            self.tr(Text::NavHint3d),
-            13.0,
-            col(t.dim),
-        );
 
         // ---- bottom: the numbers and the buttons
         cv.card(20.0, hud_y, DESIGN_W - 40.0, 176.0, false, None);
@@ -1555,11 +1671,19 @@ impl App {
         let vals = [
             (
                 "X",
-                format!("{:07.2}", view.as_ref().map_or(0.0, |v| v.x_mm)),
+                format!(
+                    "{} {}",
+                    self.len_text(view.as_ref().map_or(0.0, |v| v.x_mm)),
+                    self.len_unit()
+                ),
             ),
             (
                 "Y",
-                format!("{:07.2}", view.as_ref().map_or(0.0, |v| v.y_mm)),
+                format!(
+                    "{} {}",
+                    self.len_text(view.as_ref().map_or(0.0, |v| v.y_mm)),
+                    self.len_unit()
+                ),
             ),
             (
                 "FEED Z",
@@ -1620,37 +1744,83 @@ impl App {
             18.0,
             col(t.text),
         );
-        cv.button(
-            1084.0,
-            hud_y + 28.0,
-            150.0,
-            86.0,
-            self.tr(Text::Pause),
+        // the buttons of the job: Start goes out when the job runs and comes back with Pause or Stop; Pause and Stop work only while it runs
+        let (can_start, can_pause, can_stop) = self.job_buttons();
+        let (pause_c, start_c, stop_c) = (
             if self.paused {
                 col(t.accent)
             } else {
                 col(t.accent2)
             },
-            Act::Pause,
-        );
-        cv.button(
-            1250.0,
-            hud_y + 28.0,
-            150.0,
-            86.0,
-            self.tr(Text::Start),
             col(t.ok),
-            Act::Start,
-        );
-        cv.button(
-            1416.0,
-            hud_y + 28.0,
-            150.0,
-            86.0,
-            self.tr(Text::Stop),
             col(t.danger),
-            Act::Stop,
         );
+        if can_pause {
+            cv.button(
+                1084.0,
+                hud_y + 28.0,
+                150.0,
+                86.0,
+                self.tr(Text::Pause),
+                pause_c,
+                Act::Pause,
+            );
+        } else {
+            cv.button_off(
+                1084.0,
+                hud_y + 28.0,
+                150.0,
+                86.0,
+                self.tr(Text::Pause),
+                pause_c,
+            );
+        }
+        if can_start {
+            let label = if self.paused {
+                self.tr(Text::Resume)
+            } else {
+                self.tr(Text::Start)
+            };
+            cv.button(
+                1250.0,
+                hud_y + 28.0,
+                150.0,
+                86.0,
+                label,
+                start_c,
+                Act::Start,
+            );
+        } else {
+            cv.button_off(
+                1250.0,
+                hud_y + 28.0,
+                150.0,
+                86.0,
+                self.tr(Text::Start),
+                start_c,
+            );
+        }
+        if can_stop {
+            cv.button(
+                1416.0,
+                hud_y + 28.0,
+                150.0,
+                86.0,
+                self.tr(Text::Stop),
+                stop_c,
+                Act::Stop,
+            );
+        } else {
+            cv.button_off(
+                1416.0,
+                hud_y + 28.0,
+                150.0,
+                86.0,
+                self.tr(Text::Stop),
+                stop_c,
+            );
+        }
+        self.paint_estop(cv);
         cv.text(
             1250.0,
             hud_y + 152.0,
@@ -1795,6 +1965,8 @@ impl App {
             draw_boxes(cv, &iso, o, shift, list, edge);
         };
         let (hx, hy) = head.unwrap_or((tw / 2.0, td / 2.0));
+        // the work is drawn as in the plan view: Y of the files goes away from the operator, and the machine's Y comes towards him
+        let hy = td - hy;
         let board_z = 30.0;
         // the frame: the plate goes from -px_m to wx + px_m along the rails and from -py_m to wy + py_m across them
         let (fx0, fx1) = (-px_m, wx + px_m);
@@ -1892,7 +2064,7 @@ impl App {
                 cv,
                 &[(
                     x0b - 3.0,
-                    y0b - 3.0,
+                    td - y1b - 3.0,
                     board_z,
                     x1b - x0b + 6.0,
                     y1b - y0b + 6.0,
@@ -1909,7 +2081,7 @@ impl App {
                     .position(|d| (*d - hole.diameter_mm).abs() < 0.005)
                     .unwrap_or(0);
                 let c = col(t.size_color(idx));
-                let (px, py) = p(hole.x_mm, hole.y_mm, top);
+                let (px, py) = p(hole.x_mm, td - hole.y_mm, top);
                 let r = ((hole.diameter_mm * iso.k * 0.9).max(1.4)) as f32;
                 let pts: Vec<(f32, f32)> = (0..10)
                     .map(|i| {
@@ -1930,7 +2102,11 @@ impl App {
         }
         if self.layers[1] {
             for path in &self.route.scene.paths {
-                let pts: Vec<(f32, f32)> = path.points.iter().map(|&(x, y)| p(x, y, top)).collect();
+                let pts: Vec<(f32, f32)> = path
+                    .points
+                    .iter()
+                    .map(|&(x, y)| p(x, td - y, top))
+                    .collect();
                 cv.polyline(&pts, 1.8, col(t.accent2), true);
                 if path.reached > 1 {
                     cv.polyline(&pts[..path.reached.min(pts.len())], 2.2, col(t.ok), false);
@@ -2064,9 +2240,12 @@ impl eframe::App for App {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let ctx = ui.ctx().clone();
         self.frame += 1;
+        if self.visuals_theme != Some(self.theme.id) {
+            apply_visuals(&ctx, &self.theme);
+            self.visuals_theme = Some(self.theme.id);
+        }
         (self.pointer, self.pointer_down) =
             ctx.input(|i| (i.pointer.hover_pos(), i.pointer.primary_down()));
-        self.dt = ctx.input(|i| i.stable_dt as f64).clamp(0.001, 0.1);
         if self.start_at_frame == Some(self.frame) {
             self.start_job();
         }
@@ -2151,6 +2330,9 @@ impl eframe::App for App {
                 }
             }
             if resp.drag_stopped() {
+                if self.drag_zone == Some(Zone::Estop) {
+                    self.remember_settings();
+                }
                 self.drag_zone = None;
             }
             if resp.double_clicked() {

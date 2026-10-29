@@ -32,10 +32,10 @@ impl App {
             EditTarget::Field(f) => match f {
                 Field::Columns => self.panel.columns as f64,
                 Field::Rows => self.panel.rows as f64,
-                Field::SpacingX => self.panel.spacing.0,
-                Field::SpacingY => self.panel.spacing.1,
-                Field::TableW => self.table.width_mm,
-                Field::TableD => self.table.depth_mm,
+                Field::SpacingX => self.len_to_display(self.panel.spacing.0),
+                Field::SpacingY => self.len_to_display(self.panel.spacing.1),
+                Field::TableW => self.len_to_display(self.table.width_mm),
+                Field::TableD => self.len_to_display(self.table.depth_mm),
             },
             EditTarget::ToolCell(p, row, c) => self
                 .used_tools(p)
@@ -50,11 +50,7 @@ impl App {
                     .board
                     .size_mm
                     .or_else(|| self.board_rect().map(|(a, b, c, e)| (c - a, e - b)))?;
-                if width {
-                    w
-                } else {
-                    d
-                }
+                self.len_to_display(if width { w } else { d })
             }
         })
     }
@@ -326,6 +322,7 @@ mod tests {
             let mut a = app();
             a.settings.sim_speed = speed;
             a.auto_ok = true;
+            a.fixed_dt = Some(0.016);
             a.start_job();
             let mut n = 0;
             while a.running.is_some() && n < 5_000_000 {

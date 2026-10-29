@@ -27,6 +27,8 @@ pub struct Options {
     pub modal: Option<String>,
     pub panel: Option<(u32, u32)>,
     pub yaw: Option<f32>,
+    /// The tab of the settings window to show (`--tab 0|1|2`).
+    pub tab: Option<u8>,
     /// The folder of the machine and tool files (`--data DIR`).
     pub data: Option<PathBuf>,
     /// The machine file with the connection (`--connection FILE`), the same one the classic programs read.
@@ -91,6 +93,10 @@ impl Options {
                 "--yaw" => {
                     let v = value("--yaw")?;
                     o.yaw = Some(v.parse().map_err(|_| "--yaw needs a number")?);
+                }
+                "--tab" => {
+                    let v = value("--tab")?;
+                    o.tab = Some(v.parse().map_err(|_| "--tab needs a number")?);
                 }
                 "--start" => o.start = true,
                 "--auto-ok" => o.auto_ok = true,

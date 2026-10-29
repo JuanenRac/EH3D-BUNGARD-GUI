@@ -8,6 +8,8 @@ use super::*;
 pub(crate) enum Zone {
     Plan,
     Machine,
+    /// The emergency button, which is dragged to where the operator wants it.
+    Estop,
 }
 
 /// A number that a stepper changes.
@@ -80,6 +82,8 @@ impl Default for PanelCfg {
 pub(crate) struct Nav2 {
     pub zoom: f32,
     pub pan: (f32, f32),
+    /// A point of the table the view is centred on (the tool that works, or the work of a tool); the pan is added to it.
+    pub focus: Option<(f64, f64)>,
 }
 
 /// Turn, zoom and shift of the 3D view.
@@ -96,6 +100,7 @@ impl Default for Nav2 {
         Nav2 {
             zoom: 1.0,
             pan: (0.0, 0.0),
+            focus: None,
         }
     }
 }
@@ -354,20 +359,26 @@ impl App {
 
     pub(crate) fn adjust(&mut self, f: Field, d: f32) {
         let d = d as f64;
+        // the steps are in the units on the screen
+        let dl = self.len_from_display(d);
         self.saved = false;
         match f {
             Field::Columns => {
                 self.panel.columns = (self.panel.columns as f64 + d).clamp(1.0, 99.0) as u32
             }
             Field::Rows => self.panel.rows = (self.panel.rows as f64 + d).clamp(1.0, 99.0) as u32,
-            Field::SpacingX => self.panel.spacing.0 = (self.panel.spacing.0 + d).clamp(0.0, 5000.0),
-            Field::SpacingY => self.panel.spacing.1 = (self.panel.spacing.1 + d).clamp(0.0, 5000.0),
+            Field::SpacingX => {
+                self.panel.spacing.0 = (self.panel.spacing.0 + dl).clamp(0.0, 5000.0)
+            }
+            Field::SpacingY => {
+                self.panel.spacing.1 = (self.panel.spacing.1 + dl).clamp(0.0, 5000.0)
+            }
             Field::TableW | Field::TableD => {
                 let (w, h) = (self.table.width_mm, self.table.depth_mm);
                 let new = if f == Field::TableW {
-                    ((w + d).clamp(50.0, 3000.0), h)
+                    ((w + dl).clamp(50.0, 3000.0), h)
                 } else {
-                    (w, (h + d).clamp(50.0, 3000.0))
+                    (w, (h + dl).clamp(50.0, 3000.0))
                 };
                 for side in [&mut self.drill, &mut self.route] {
                     if let Some(s) = side.engine.settings_mut() {
@@ -499,8 +510,19 @@ impl App {
     pub(crate) fn drag(&mut self, z: Zone, d: (f32, f32), pan: bool) {
         match z {
             Zone::Plan => {
-                self.view2d.pan.0 += d.0;
-                self.view2d.pan.1 += d.1;
+                let scale = self.plan_scale.get().max(1e-6);
+                if self.move_board {
+                    // the board goes where it is dragged: millimetres, with Y going up
+                    self.shift_board(d.0 as f64 / scale, -(d.1 as f64) / scale);
+                } else {
+                    self.view2d.pan.0 += d.0;
+                    self.view2d.pan.1 += d.1;
+                }
+            }
+            Zone::Estop => {
+                let (x, y) = self.settings.estop_pos;
+                self.settings.estop_pos =
+                    ((x + d.0).clamp(50.0, 1550.0), (y + d.1).clamp(100.0, 850.0));
             }
             Zone::Machine => {
                 if pan {
@@ -519,6 +541,7 @@ impl App {
         match z {
             Zone::Plan => self.view2d.zoom = (self.view2d.zoom * k).clamp(0.3, 20.0),
             Zone::Machine => self.view3d.zoom = (self.view3d.zoom * k).clamp(0.3, 8.0),
+            Zone::Estop => {}
         }
     }
 
@@ -526,6 +549,7 @@ impl App {
         match z {
             Zone::Plan => self.view2d = Nav2::default(),
             Zone::Machine => self.view3d = Nav3::default(),
+            Zone::Estop => self.settings.estop_pos = crate::launcher::Settings::default().estop_pos,
         }
     }
 
@@ -954,6 +978,7 @@ mod tests {
     fn a_paused_job_holds_and_goes_on() {
         let mut a = app();
         a.auto_ok = true;
+        a.fixed_dt = Some(0.05);
         a.open_path(&testdata().join("05_small_board.ncd"));
         a.start_job();
         for _ in 0..30 {

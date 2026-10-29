@@ -620,7 +620,7 @@ dependencies = [
 
 [[package]]
 name = "eh3d-bungard-gui"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "eframe",
  "eh3d-archive",
@@ -646,7 +646,7 @@ dependencies = [
 
 [[package]]
 name = "eh3d-drillpro"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "eh3d-archive",
  "eh3d-drillpro-protocol",
@@ -662,7 +662,7 @@ dependencies = [
 
 [[package]]
 name = "eh3d-routepro"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "eh3d-drillpro",
  "eh3d-routepro-protocol",

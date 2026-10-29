@@ -12,14 +12,14 @@
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
-  <img src="https://img.shields.io/badge/Tests-32-0f6cbd.svg" alt="Tests">
-  <img src="https://img.shields.io/badge/Version-0.0.1-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Tests-39-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Version-0.0.2-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
 ---
 
-**Verifica di onestà - cosa funziona oggi:** un programma Rust con una finestra e 32 test che girano su un computer. L'avviatore offre l'interfaccia moderna o i programmi classici di foratura e fresatura per una macchina con cambio utensile manuale (MTC) o automatico (ATC). Il visualizzatore apre file di foratura, file di tracciato HP-GL e archivi ZIP di lavori (da un browser di cartelle, con trascinamento o dalla riga di comando), disegna la vista in pianta con ogni foro per diametro di punta e i percorsi di fresatura sopra, mostra la macchina in 3D con il piano della misura scelta nella configurazione, pannellizza la scheda e segue il lavoro mentre procede. Il lavoro gira nel **simulatore** dei motori di EH3D-DRILLPRO e EH3D-ROUTEPRO; lo stesso file di macchina che essi leggono decide come si raggiunge una macchina reale (l'RS-232 del computer, un adattatore USB-RS232, o l'EH3D-NODE-BUNGARD direttamente o tramite EH3D-SERVER), e **nessuna di queste vie è stata provata da questa finestra**. Non ci sono ancora una schermata di connessione, una pausa né la modifica dei file di macchina e utensili, e la vista 3D non mostra l'altezza dei percorsi.
+**Verifica di onestà - cosa funziona oggi:** un programma Rust con una finestra e 39 test che girano su un computer. L'avviatore offre l'interfaccia moderna o i programmi classici di foratura e fresatura per una macchina con cambio utensile manuale (MTC) o automatico (ATC). Il visualizzatore apre file di foratura, file di tracciato HP-GL e archivi ZIP di lavori (da un browser di cartelle, con trascinamento o dalla riga di comando), disegna la vista in pianta con ogni foro per diametro di punta e i percorsi di fresatura sopra, mostra la macchina in 3D con il piano della misura scelta nella configurazione, pannellizza la scheda e segue il lavoro mentre procede. Il lavoro gira nel **simulatore** dei motori di EH3D-DRILLPRO e EH3D-ROUTEPRO; lo stesso file di macchina che essi leggono decide come si raggiunge una macchina reale (l'RS-232 del computer, un adattatore USB-RS232, o l'EH3D-NODE-BUNGARD direttamente o tramite EH3D-SERVER), e **nessuna di queste vie è stata provata da questa finestra**. Non ci sono ancora una schermata di connessione, una pausa né la modifica dei file di macchina e utensili, e la vista 3D non mostra l'altezza dei percorsi.
 
 ---
 
@@ -29,9 +29,9 @@
 
 | | |
 |---|---|
-| Versione | `0.0.1` |
+| Versione | `0.0.2` |
 | Maturità | Impalcatura |
-| Test | 32 |
+| Test | 39 |
 | Stack tecnologico | Rust |
 | Su hardware reale | No. Ha girato solo sul simulatore e su un computer; nessuna macchina è stata pilotata da questa finestra |
 
@@ -50,7 +50,7 @@ Ogni riga è una parte di questo repository e il semaforo dice a che punto è og
 | File e pannellizzazione | 🟡 | I file di foratura, HP-GL e gli archivi ZIP si aprono da un browser, con trascinamento o dalla riga di comando; la scheda si ripete in tre modi. Provato con i piccoli file di esempio di questo repository. |
 | Impostazioni | 🟠 | Larghezza e profondità utili del piano si cambiano e si salvano nei file della macchina; il resto dei file di macchina e utensili si modifica ancora con i programmi classici. |
 | Controllo della macchina | 🔴 | Il lavoro passa per i motori di EH3D-DRILLPRO e EH3D-ROUTEPRO, quindi in linea di principio ci sono tutte le loro connessioni; ha girato solo sul simulatore. La finestra di Connessione sceglie il collegamento (l'RS-232 del computer, un adattatore USB-RS232, il nodo EH3D o il server EH3D), lo prova e lo salva nel file della macchina, e Pausa ferma il lavoro tra due movimenti. |
-| Test | 🟡 | 32 test passano su un computer (`cargo test --features gui`): l'avviatore, le impostazioni, la lettura dei file nella scena, i profili di macchina, il pannello e la riga di comando. Nessuno tocca una macchina. |
+| Test | 🟡 | 39 test passano su un computer (`cargo test --features gui`): l'avviatore, le impostazioni, la lettura dei file nella scena, i profili di macchina, il pannello e la riga di comando. Nessuno tocca una macchina. |
 | Pacchetti già pronti | 🟠 | Un workflow compila il programma per Windows (64 e 32 bit), Linux e macOS con i file di esempio; nessuna versione è ancora stata pubblicata. |
 
 ## 🎯 Panoramica
@@ -61,6 +61,8 @@ Ogni riga è una parte di questo repository e il semaforo dice a che punto è og
 * **Aprire file**: un file di foratura, un file HP-GL o un archivio ZIP con un lavoro dentro, da una finestra Apri con browser di cartelle e unità, lasciando i file sulla finestra, con `Ctrl+O`, o dati sulla riga di comando. Un nome in un archivio che uscirebbe dalla cartella di lavoro non viene elencato, e nessun file viene letto oltre un limite di dimensione.
 * **Pannellizzazione**: copie della scheda in colonne e righe, posizionate per spazio tra le schede, per distanza dall'una all'altra o quante ne stanno sul piano; le copie vengono disegnate e il lavoro le esegue.
 * Il **lavoro**: gira con i motori dei programmi classici e il loro file di macchina (`demo` simulatore, `rs232`, `usb`, `node` o `server`), mostra l'avanzamento e pone all'operatore le domande della macchina (il mandrino, il cambio utensile).
+* La **piastra e gli utensili**: una libreria di materiali di base di molti produttori (Bungard, Fortex, CIF, FR-4 generico, CEM e FR-2, Isola, Panasonic, Shengyi, ITEQ, Ventec, Nelco, Arlon, Rogers, Taconic, Bergquist, DuPont) scelta per materiale, spessore, rame, facce di rame e misura, e ricordata; gli utensili del lavoro sono elencati come foratura o fresatura con avanzamento e velocità, quello che lavora si illumina, e ogni valore ha valori predefiniti (dal diametro della punta e dal materiale della piastra) oppure si può cliccare e digitare.
+* Le **impostazioni**: il tema, la lingua, la misura utile del piano, la velocità della simulazione (un lavoro dura quanto durerebbe sulla macchina, da x0,5 a x50), se il lavoro chiede ai cambi utensile e all'avvio del mandrino, e se questa finestra si apre direttamente la prossima volta. I pulsanti si illuminano sotto il puntatore e si abbassano quando si premono.
 
 ## 🧩 Ruolo in EH3D
 
@@ -108,7 +110,7 @@ Avvialo con `run.bat` (Windows) o `./run.sh` (Linux e macOS); entrambi compilano
 
 ## 🧪 Test
 
-La suite ha 32 test (`cargo test --features gui`). Verificano l'avviatore e ciò che ricorda, le impostazioni, come un file di foratura o HP-GL diventa la scena, i profili di macchina, il pannello e la riga di comando. I motori che usa (protocollo, movimento, porta di sicurezza) sono testati in EH3D-DRILLPRO e EH3D-ROUTEPRO. La CI esegue anche `cargo fmt --check` e `cargo clippy` con gli avvisi come errori, e `python -I tools/ci_validate.py` controlla il manifesto, le versioni, il changelog e gli otto README.
+La suite ha 39 test (`cargo test --features gui`). Verificano l'avviatore e ciò che ricorda, le impostazioni, come un file di foratura o HP-GL diventa la scena, i profili di macchina, il pannello e la riga di comando. I motori che usa (protocollo, movimento, porta di sicurezza) sono testati in EH3D-DRILLPRO e EH3D-ROUTEPRO. La CI esegue anche `cargo fmt --check` e `cargo clippy` con gli avvisi come errori, e `python -I tools/ci_validate.py` controlla il manifesto, le versioni, il changelog e gli otto README.
 
 ## 🏗️ Compilazione e rilascio
 

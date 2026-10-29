@@ -84,6 +84,7 @@ pub(crate) struct Nav2 {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) struct Nav3 {
     pub yaw: f32,
+    pub pitch: f32,
     pub zoom: f32,
     pub pan: (f32, f32),
 }
@@ -101,6 +102,7 @@ impl Default for Nav3 {
     fn default() -> Self {
         Nav3 {
             yaw: 0.0,
+            pitch: 30.0,
             zoom: 1.0,
             pan: (0.0, 0.0),
         }
@@ -539,6 +541,7 @@ impl App {
                     self.view3d.pan.1 += d.1;
                 } else {
                     self.view3d.yaw = (self.view3d.yaw + d.0 * 0.35).clamp(-40.0, 40.0);
+                    self.view3d.pitch = (self.view3d.pitch + d.1 * 0.25).clamp(15.0, 60.0);
                 }
             }
         }
@@ -1123,8 +1126,8 @@ mod tests {
         a.drag(Zone::Plan, (10.0, -5.0), false);
         a.zoom(Zone::Plan, 200.0);
         assert!(a.view2d.zoom > 1.0 && a.view2d.pan == (10.0, -5.0));
-        a.drag(Zone::Machine, (1000.0, 0.0), false);
-        assert_eq!(a.view3d.yaw, 40.0);
+        a.drag(Zone::Machine, (1000.0, 1000.0), false);
+        assert_eq!((a.view3d.yaw, a.view3d.pitch), (40.0, 60.0));
         a.reset_view(Zone::Plan);
         a.reset_view(Zone::Machine);
         assert_eq!((a.view2d, a.view3d), (Nav2::default(), Nav3::default()));
@@ -1137,6 +1140,36 @@ mod tests {
         a.adjust(Field::TableW, 10.0);
         assert_eq!(a.table.width_mm, w + 10.0);
         assert_eq!(a.drill.scene.table.width_mm, w + 10.0);
+    }
+
+    #[test]
+    fn a_paused_job_holds_and_goes_on() {
+        let mut a = app();
+        a.auto_ok = true;
+        a.open_path(&testdata().join("05_small_board.ncd"));
+        a.start_job();
+        for _ in 0..30 {
+            a.tick();
+        }
+        a.act(Act::Pause);
+        let (done, progress) = (a.drill.engine.done(), a.progress());
+        for _ in 0..200 {
+            a.tick();
+        }
+        assert_eq!((a.drill.engine.done(), a.progress()), (done, progress));
+        a.act(Act::Pause);
+        for _ in 0..200_000 {
+            if a.running.is_none() {
+                break;
+            }
+            a.tick();
+        }
+        assert!(
+            a.running.is_none(),
+            "still running after the loop: done {} was {done}",
+            a.drill.engine.done()
+        );
+        assert!(a.progress() > progress);
     }
 
     #[test]

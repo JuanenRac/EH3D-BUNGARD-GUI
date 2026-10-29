@@ -60,6 +60,7 @@ enum Act {
     NextLang,
     Layer(usize),
     Start,
+    Pause,
     Stop,
     Back,
     Answer(bool),
@@ -129,6 +130,8 @@ pub struct App {
     layers: [bool; 4],
     remember: bool,
     running: Option<Program>,
+    /// The job is held between two moves: the engine is not asked for the next one.
+    paused: bool,
     message: Option<String>,
     connection: String,
     hits: Vec<(Rect, Act)>,
@@ -204,6 +207,7 @@ impl App {
             layers: [true; 4],
             remember: false,
             running: None,
+            paused: false,
             message: None,
             connection,
             hits: Vec::new(),
@@ -433,10 +437,12 @@ impl App {
                 pth.reached = 0;
             }
             self.running = Some(p);
+            self.paused = false;
         }
     }
 
     fn stop_job(&mut self) {
+        self.paused = false;
         if let Some(p) = self.running.take() {
             self.side_mut(p).engine.stop();
         }
@@ -456,6 +462,9 @@ impl App {
             self.conn_rx = None;
         }
         let Some(p) = self.running else { return };
+        if self.paused {
+            return;
+        }
         let auto_ok = self.auto_ok;
         let side = self.side_mut(p);
         if side.engine.question().is_some() {
@@ -573,6 +582,7 @@ impl App {
             Act::BrowseScroll(d) => self.browse_scroll(d),
             Act::ResetView(z) => self.reset_view(z),
             Act::Start => self.start_job(),
+            Act::Pause => self.paused = self.running.is_some() && !self.paused,
             Act::Stop => self.stop_job(),
             Act::Back => {
                 self.stop_job();
@@ -1497,6 +1507,19 @@ impl App {
             col(t.text),
         );
         cv.button(
+            1084.0,
+            hud_y + 28.0,
+            150.0,
+            86.0,
+            self.tr(Text::Pause),
+            if self.paused {
+                col(t.accent)
+            } else {
+                col(t.accent2)
+            },
+            Act::Pause,
+        );
+        cv.button(
             1250.0,
             hud_y + 28.0,
             150.0,
@@ -1631,6 +1654,7 @@ impl App {
         {
             let nav = self.view3d;
             iso.yaw_deg = nav.yaw as f64;
+            iso.pitch_deg = nav.pitch as f64;
             iso.pivot = (
                 (wx + 2.0 * shift.0) / 2.0,
                 (wy + 2.0 * shift.1 + 80.0) / 2.0,

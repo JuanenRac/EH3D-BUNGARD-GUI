@@ -1,0 +1,938 @@
+//! What the viewer adds around the three views: opening files (a browser in the window, drag and drop), panelization, the settings of the
+//! table, the About window and moving around the 2D and 3D views.
+
+use super::*;
+
+/// The two views that can be moved around.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) enum Zone {
+    Plan,
+    Machine,
+}
+
+/// A number that a stepper changes.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) enum Field {
+    Columns,
+    Rows,
+    SpacingX,
+    SpacingY,
+    TableW,
+    TableD,
+}
+
+/// A window on top of the viewer.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) enum Modal {
+    About,
+    Open,
+    Panel,
+    Settings,
+}
+
+/// How the copies of a panel are placed.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) enum PanelMode {
+    /// The spacing is the distance from the start of one board to the start of the next.
+    Pitch,
+    /// The spacing is the empty space between the boards.
+    Gap,
+    /// As many copies as fit in the table, with the empty space between them.
+    Fit,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) struct PanelCfg {
+    pub columns: u32,
+    pub rows: u32,
+    pub spacing: (f64, f64),
+    pub mode: PanelMode,
+}
+
+impl Default for PanelCfg {
+    fn default() -> Self {
+        PanelCfg {
+            columns: 1,
+            rows: 1,
+            spacing: (5.0, 5.0),
+            mode: PanelMode::Gap,
+        }
+    }
+}
+
+/// Zoom and shift of the plan view.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) struct Nav2 {
+    pub zoom: f32,
+    pub pan: (f32, f32),
+}
+
+/// Turn, zoom and shift of the 3D view.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) struct Nav3 {
+    pub yaw: f32,
+    pub zoom: f32,
+    pub pan: (f32, f32),
+}
+
+impl Default for Nav2 {
+    fn default() -> Self {
+        Nav2 {
+            zoom: 1.0,
+            pan: (0.0, 0.0),
+        }
+    }
+}
+
+impl Default for Nav3 {
+    fn default() -> Self {
+        Nav3 {
+            yaw: 0.0,
+            zoom: 1.0,
+            pan: (0.0, 0.0),
+        }
+    }
+}
+
+/// The file browser of the Open window: a folder (or the list of drives) and what is in it.
+pub(crate) struct Browser {
+    pub dir: Option<PathBuf>,
+    pub entries: Vec<(String, bool)>,
+    pub scroll: usize,
+}
+
+/// The rows the browser shows at once.
+pub(crate) const BROWSER_ROWS: usize = 12;
+
+pub(super) fn is_job(name: &str) -> bool {
+    name.to_ascii_lowercase().ends_with(".zip") || eh3d_archive::kind_of(name) != Kind::Other
+}
+
+impl Browser {
+    pub fn new(dir: PathBuf) -> Browser {
+        let mut b = Browser {
+            dir: Some(dir),
+            entries: Vec::new(),
+            scroll: 0,
+        };
+        b.refresh();
+        b
+    }
+
+    /// Lists the folder again: the folders first, then the files a job can be made of (drilling, routing, ZIP).
+    pub fn refresh(&mut self) {
+        self.scroll = 0;
+        let (mut dirs, mut files) = (Vec::new(), Vec::new());
+        match &self.dir {
+            None => {
+                for l in b'A'..=b'Z' {
+                    let d = format!("{}:\\", l as char);
+                    if Path::new(&d).exists() {
+                        dirs.push(d);
+                    }
+                }
+            }
+            Some(d) => {
+                if let Ok(rd) = std::fs::read_dir(d) {
+                    for e in rd.flatten() {
+                        let name = e.file_name().to_string_lossy().to_string();
+                        if e.path().is_dir() {
+                            if !name.starts_with('.') {
+                                dirs.push(name);
+                            }
+                        } else if is_job(&name) {
+                            files.push(name);
+                        }
+                    }
+                }
+            }
+        }
+        dirs.sort_by_key(|n| n.to_lowercase());
+        files.sort_by_key(|n| n.to_lowercase());
+        self.entries.clear();
+        if self.dir.is_some() {
+            self.entries.push(("..".to_string(), true));
+        }
+        self.entries.extend(dirs.into_iter().map(|n| (n, true)));
+        self.entries.extend(files.into_iter().map(|n| (n, false)));
+    }
+}
+
+/// Breaks a text into lines of about `max` characters (at spaces; a text without spaces, as the Chinese and the Japanese, at any letter).
+pub(crate) fn wrap(s: &str, max: usize) -> Vec<String> {
+    let mut lines = Vec::new();
+    let mut cur = String::new();
+    if s.contains(' ') {
+        for w in s.split(' ') {
+            if !cur.is_empty() && cur.chars().count() + 1 + w.chars().count() > max {
+                lines.push(std::mem::take(&mut cur));
+            }
+            if !cur.is_empty() {
+                cur.push(' ');
+            }
+            cur.push_str(w);
+        }
+    } else {
+        for c in s.chars() {
+            if cur.chars().count() >= max / 2 {
+                lines.push(std::mem::take(&mut cur));
+            }
+            cur.push(c);
+        }
+    }
+    if !cur.is_empty() {
+        lines.push(cur);
+    }
+    lines
+}
+
+impl<'a> Cv<'a> {
+    /// A small button with a border: filled when it is the one in use.
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn chip(&mut self, x: f32, y: f32, w: f32, h: f32, label: &str, on: bool, act: Act) {
+        let rect = self.rect(x, y, w, h);
+        let r = if self.t.corner == Corner::Square {
+            0.0
+        } else {
+            8.0 * self.u
+        };
+        let fill = if on {
+            col(self.t.accent)
+        } else {
+            col(self.t.panel_raised)
+        };
+        self.p.rect_filled(rect, r, fill);
+        self.p.rect_stroke(
+            rect,
+            r,
+            Stroke::new(self.u, alpha(col(self.t.accent), 170)),
+            StrokeKind::Inside,
+        );
+        let ink = if on {
+            col(self.t.background.0)
+        } else {
+            col(self.t.text)
+        };
+        self.text(
+            x + w / 2.0,
+            y + h / 2.0 + 6.0,
+            Align2::CENTER_BOTTOM,
+            label,
+            14.0,
+            ink,
+        );
+        self.hits.push((rect, act));
+    }
+
+    /// The same canvas on another painter (one that cuts at the edge of a view).
+    pub(crate) fn with_painter<'b>(&self, p: &'b egui::Painter) -> Cv<'b>
+    where
+        'a: 'b,
+    {
+        Cv {
+            p,
+            o: self.o,
+            u: self.u,
+            t: self.t,
+            hits: Vec::new(),
+            zones: Vec::new(),
+            modal_from: 0,
+        }
+    }
+}
+
+impl App {
+    // ------------------------------------------------------------------------------------------ opening files
+
+    /// Opens what the extension says it is: a job archive, a drilling file or a routing file.
+    pub(crate) fn open_path(&mut self, path: &Path) {
+        let name = path
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_default();
+        if name.to_ascii_lowercase().ends_with(".zip") {
+            self.open_zip(path);
+        } else {
+            match eh3d_archive::kind_of(&name) {
+                Kind::Drill => {
+                    self.archive = None;
+                    self.load_drill(path);
+                }
+                Kind::Route => {
+                    self.archive = None;
+                    self.load_route(path);
+                }
+                Kind::Other => {
+                    self.message = Some(format!("{name}: {}", self.tr(Text::DropHint)));
+                    return;
+                }
+            }
+        }
+        if let Some(d) = path.parent() {
+            self.last_dir = d.to_path_buf();
+        }
+        self.refit_table();
+        self.apply_panel();
+    }
+
+    pub(crate) fn show_modal(&mut self, m: Modal) {
+        self.saved = false;
+        if m == Modal::Open {
+            self.browser = Some(Browser::new(self.last_dir.clone()));
+        }
+        self.modal = Some(m);
+    }
+
+    /// A click on a row of the browser: into a folder, up, or the file is opened.
+    pub(crate) fn browse(&mut self, i: usize) {
+        let Some(b) = self.browser.as_mut() else {
+            return;
+        };
+        let Some((name, is_dir)) = b.entries.get(i).cloned() else {
+            return;
+        };
+        if name == ".." {
+            match b.dir.as_ref().and_then(|d| d.parent()) {
+                Some(p) => b.dir = Some(p.to_path_buf()),
+                None if cfg!(windows) => b.dir = None,
+                None => {}
+            }
+            b.refresh();
+        } else if b.dir.is_none() {
+            b.dir = Some(PathBuf::from(name));
+            b.refresh();
+        } else if is_dir {
+            if let Some(d) = &b.dir {
+                b.dir = Some(d.join(name));
+            }
+            b.refresh();
+        } else if let Some(d) = b.dir.clone() {
+            self.modal = None;
+            self.open_path(&d.join(name));
+        }
+    }
+
+    pub(crate) fn browse_scroll(&mut self, delta: i32) {
+        if let Some(b) = self.browser.as_mut() {
+            let max = b.entries.len().saturating_sub(BROWSER_ROWS);
+            b.scroll = (b.scroll as i64 + delta as i64).clamp(0, max as i64) as usize;
+        }
+    }
+
+    // ------------------------------------------------------------------------------------------ panelization
+
+    /// The size of the board (both files together), where it starts on the table.
+    fn board(&self) -> Option<(f64, f64, f64, f64)> {
+        let mut all = self.drill.base.clone();
+        all.overlay(&self.route.base);
+        all.bounds()
+    }
+
+    /// The columns, the rows and the distance between copies, as the mode and the spacing say.
+    pub(crate) fn panel_plan(&self) -> (u32, u32, (f64, f64)) {
+        let c = self.panel;
+        let (x0, y0, x1, y1) = self.board().unwrap_or((0.0, 0.0, 0.0, 0.0));
+        let size = (x1 - x0, y1 - y0);
+        match c.mode {
+            PanelMode::Pitch => (c.columns, c.rows, c.spacing),
+            PanelMode::Gap => (
+                c.columns,
+                c.rows,
+                (size.0 + c.spacing.0, size.1 + c.spacing.1),
+            ),
+            PanelMode::Fit => {
+                let pitch = (size.0 + c.spacing.0, size.1 + c.spacing.1);
+                let (cols, rows) = Scene::panel_fit(
+                    (x0, y0),
+                    size,
+                    (self.table.width_mm, self.table.depth_mm),
+                    pitch,
+                );
+                (cols, rows, pitch)
+            }
+        }
+    }
+
+    /// The copies of the panel are drawn and the job will make them.
+    pub(crate) fn apply_panel(&mut self) {
+        let (c, r, pitch) = self.panel_plan();
+        let many = c * r > 1;
+        self.panel_applied = many.then_some((c, r, pitch));
+        let table = self.table;
+        for side in [&mut self.drill, &mut self.route] {
+            side.scene = if many {
+                side.base.panelized(c, r, pitch)
+            } else {
+                side.base.clone()
+            };
+            side.scene.table = table;
+            side.last_done = 0;
+        }
+    }
+
+    pub(crate) fn adjust(&mut self, f: Field, d: f32) {
+        let d = d as f64;
+        self.saved = false;
+        match f {
+            Field::Columns => {
+                self.panel.columns = (self.panel.columns as f64 + d).clamp(1.0, 99.0) as u32
+            }
+            Field::Rows => self.panel.rows = (self.panel.rows as f64 + d).clamp(1.0, 99.0) as u32,
+            Field::SpacingX => self.panel.spacing.0 = (self.panel.spacing.0 + d).clamp(0.0, 5000.0),
+            Field::SpacingY => self.panel.spacing.1 = (self.panel.spacing.1 + d).clamp(0.0, 5000.0),
+            Field::TableW | Field::TableD => {
+                let (w, h) = (self.table.width_mm, self.table.depth_mm);
+                let new = if f == Field::TableW {
+                    ((w + d).clamp(50.0, 3000.0), h)
+                } else {
+                    (w, (h + d).clamp(50.0, 3000.0))
+                };
+                for side in [&mut self.drill, &mut self.route] {
+                    if let Some(s) = side.engine.settings_mut() {
+                        s.clip_mm = new;
+                    }
+                    side.engine.settings_changed();
+                }
+                self.table = Table::new(new.0, new.1);
+                self.drill.scene.table = self.table;
+                self.route.scene.table = self.table;
+            }
+        }
+        self.apply_panel();
+    }
+
+    pub(crate) fn save_settings(&mut self) {
+        let a = self.drill.engine.save_config();
+        let b = self.route.engine.save_config();
+        match (a, b) {
+            (Ok(_), Ok(_)) => {
+                self.saved = true;
+                self.message = None;
+            }
+            (Err(e), _) | (_, Err(e)) => self.message = Some(e),
+        }
+    }
+
+    // ------------------------------------------------------------------------------------------ moving around the views
+
+    pub(crate) fn zone_at(&self, pos: Pos2) -> Option<Zone> {
+        if self.modal.is_some() {
+            return None;
+        }
+        self.zones
+            .iter()
+            .rev()
+            .find(|(r, _)| r.contains(pos))
+            .map(|(_, z)| *z)
+    }
+
+    /// A drag in design units: the plan view is moved, the 3D view is turned (or moved with Shift or the right button).
+    pub(crate) fn drag(&mut self, z: Zone, d: (f32, f32), pan: bool) {
+        match z {
+            Zone::Plan => {
+                self.view2d.pan.0 += d.0;
+                self.view2d.pan.1 += d.1;
+            }
+            Zone::Machine => {
+                if pan {
+                    self.view3d.pan.0 += d.0;
+                    self.view3d.pan.1 += d.1;
+                } else {
+                    self.view3d.yaw = (self.view3d.yaw + d.0 * 0.35).clamp(-40.0, 40.0);
+                }
+            }
+        }
+    }
+
+    pub(crate) fn zoom(&mut self, z: Zone, scroll: f32) {
+        let k = (scroll * 0.002).exp();
+        match z {
+            Zone::Plan => self.view2d.zoom = (self.view2d.zoom * k).clamp(0.3, 20.0),
+            Zone::Machine => self.view3d.zoom = (self.view3d.zoom * k).clamp(0.3, 8.0),
+        }
+    }
+
+    pub(crate) fn reset_view(&mut self, z: Zone) {
+        match z {
+            Zone::Plan => self.view2d = Nav2::default(),
+            Zone::Machine => self.view3d = Nav3::default(),
+        }
+    }
+
+    // ------------------------------------------------------------------------------------------ the windows
+
+    fn modal_card(&self, cv: &mut Cv, title: &str, h: f32) -> (f32, f32) {
+        let t = cv.t.clone();
+        let (x, y, w) = (430.0, 130.0, 740.0);
+        cv.p.rect_filled(
+            Rect::from_min_size(Pos2::new(0.0, 0.0), Vec2::new(10_000.0, 10_000.0)),
+            0.0,
+            alpha(Color32::BLACK, 170),
+        );
+        cv.card(x, y, w, h, true, None);
+        cv.title(x + 30.0, y + 44.0, title);
+        cv.line(
+            (x + 30.0, y + 56.0),
+            (x + w - 30.0, y + 56.0),
+            1.0,
+            alpha(col(t.line), 120),
+        );
+        (x, y)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn stepper(
+        &self,
+        cv: &mut Cv,
+        y: f32,
+        label: &str,
+        value: &str,
+        f: Field,
+        steps: [f32; 4],
+        live: bool,
+    ) {
+        let t = cv.t.clone();
+        let ink = if live { col(t.text) } else { col(t.dim) };
+        cv.text(460.0, y + 32.0, Align2::LEFT_BOTTOM, label, 17.0, ink);
+        let xs = [790.0, 850.0, 1020.0, 1080.0];
+        for (x, s) in xs.into_iter().zip(steps) {
+            cv.chip(
+                x,
+                y,
+                54.0,
+                42.0,
+                &format!("{s:+}"),
+                false,
+                Act::Adjust(f, s),
+            );
+        }
+        cv.text(960.0, y + 32.0, Align2::CENTER_BOTTOM, value, 22.0, ink);
+    }
+
+    pub(super) fn paint_modal(&self, cv: &mut Cv, m: Modal) {
+        let t = cv.t.clone();
+        match m {
+            Modal::About => {
+                let (x, y) = self.modal_card(cv, self.tr(Text::About), 420.0);
+                cv.text(
+                    x + 30.0,
+                    y + 120.0,
+                    Align2::LEFT_BOTTOM,
+                    "EH3D-BUNGARD-GUI",
+                    30.0,
+                    col(t.text),
+                );
+                cv.text(
+                    x + 30.0,
+                    y + 156.0,
+                    Align2::LEFT_BOTTOM,
+                    &format!("{} {}", self.tr(Text::Version), env!("CARGO_PKG_VERSION")),
+                    18.0,
+                    col(t.accent),
+                );
+                for (i, l) in wrap(self.tr(Text::AboutBody), 62).iter().enumerate() {
+                    cv.text(
+                        x + 30.0,
+                        y + 206.0 + i as f32 * 26.0,
+                        Align2::LEFT_BOTTOM,
+                        l,
+                        18.0,
+                        col(t.text),
+                    );
+                }
+                cv.text(
+                    x + 30.0,
+                    y + 290.0,
+                    Align2::LEFT_BOTTOM,
+                    &format!("{}: GPL-3.0-or-later", self.tr(Text::Licence)),
+                    16.0,
+                    col(t.dim),
+                );
+                cv.text(
+                    x + 30.0,
+                    y + 318.0,
+                    Align2::LEFT_BOTTOM,
+                    &format!("{}: {}", self.tr(Text::Connection), self.connection),
+                    16.0,
+                    col(t.dim),
+                );
+                cv.text(
+                    x + 30.0,
+                    y + 346.0,
+                    Align2::LEFT_BOTTOM,
+                    "github.com/JuanenRac/EH3D-BUNGARD-GUI",
+                    16.0,
+                    col(t.dim),
+                );
+                cv.chip(
+                    x + 540.0,
+                    y + 350.0,
+                    170.0,
+                    44.0,
+                    self.tr(Text::Close),
+                    true,
+                    Act::CloseModal,
+                );
+            }
+            Modal::Open => {
+                let (x, y) = self.modal_card(cv, self.tr(Text::OpenFile), 640.0);
+                let Some(b) = &self.browser else { return };
+                let path = b
+                    .dir
+                    .as_ref()
+                    .map_or_else(|| "\\".to_string(), |d| d.display().to_string());
+                let shown: String = if path.chars().count() > 70 {
+                    let tail: String = path
+                        .chars()
+                        .rev()
+                        .take(68)
+                        .collect::<Vec<_>>()
+                        .into_iter()
+                        .rev()
+                        .collect();
+                    format!("..{tail}")
+                } else {
+                    path
+                };
+                cv.text(
+                    x + 30.0,
+                    y + 86.0,
+                    Align2::LEFT_BOTTOM,
+                    &shown,
+                    15.0,
+                    col(t.dim),
+                );
+                for k in 0..BROWSER_ROWS {
+                    let i = b.scroll + k;
+                    let Some((name, is_dir)) = b.entries.get(i) else {
+                        break;
+                    };
+                    let ry = y + 100.0 + k as f32 * 36.0;
+                    cv.p.rect_filled(
+                        cv.rect(x + 30.0, ry, 640.0, 32.0),
+                        6.0 * cv.u,
+                        col(t.panel_raised),
+                    );
+                    let (tag, c) = if *is_dir {
+                        (">", col(t.accent))
+                    } else {
+                        ("-", col(t.ok))
+                    };
+                    cv.text(x + 44.0, ry + 23.0, Align2::LEFT_BOTTOM, tag, 16.0, c);
+                    let label = if name == ".." {
+                        self.tr(Text::OpenFolderUp).to_string()
+                    } else {
+                        name.clone()
+                    };
+                    cv.text(
+                        x + 74.0,
+                        ry + 23.0,
+                        Align2::LEFT_BOTTOM,
+                        &label,
+                        16.0,
+                        col(t.text),
+                    );
+                    cv.hits
+                        .push((cv.rect(x + 30.0, ry, 640.0, 32.0), Act::Browse(i)));
+                }
+                cv.chip(
+                    x + 680.0,
+                    y + 100.0,
+                    36.0,
+                    36.0,
+                    "▲",
+                    false,
+                    Act::BrowseScroll(-3),
+                );
+                cv.chip(
+                    x + 680.0,
+                    y + 140.0,
+                    36.0,
+                    36.0,
+                    "▼",
+                    false,
+                    Act::BrowseScroll(3),
+                );
+                cv.text(
+                    x + 30.0,
+                    y + 604.0,
+                    Align2::LEFT_BOTTOM,
+                    self.tr(Text::DropHint),
+                    14.0,
+                    col(t.dim),
+                );
+                cv.chip(
+                    x + 540.0,
+                    y + 574.0,
+                    170.0,
+                    44.0,
+                    self.tr(Text::Close),
+                    true,
+                    Act::CloseModal,
+                );
+            }
+            Modal::Panel => {
+                let (x, y) = self.modal_card(cv, self.tr(Text::PanelTitle), 660.0);
+                let (c, r, pitch) = self.panel_plan();
+                let (x0, y0, x1, y1) = self.board().unwrap_or((0.0, 0.0, 0.0, 0.0));
+                let size = (x1 - x0, y1 - y0);
+                cv.text(
+                    x + 30.0,
+                    y + 96.0,
+                    Align2::LEFT_BOTTOM,
+                    &format!(
+                        "{c} x {r} = {} {}   -   {:.1} x {:.1} mm",
+                        c * r,
+                        self.tr(Text::PanelCopies),
+                        size.0,
+                        size.1
+                    ),
+                    18.0,
+                    col(t.text),
+                );
+                let modes = [
+                    (PanelMode::Gap, Text::PanelModeGap),
+                    (PanelMode::Pitch, Text::PanelModePitch),
+                    (PanelMode::Fit, Text::PanelModeFit),
+                ];
+                for (i, (m2, n)) in modes.into_iter().enumerate() {
+                    cv.chip(
+                        x + 30.0 + i as f32 * 228.0,
+                        y + 116.0,
+                        216.0,
+                        44.0,
+                        self.tr(n),
+                        self.panel.mode == m2,
+                        Act::PanelMode(m2),
+                    );
+                }
+                let live = self.panel.mode != PanelMode::Fit;
+                self.stepper(
+                    cv,
+                    y + 196.0,
+                    self.tr(Text::Columns),
+                    &format!("{c}"),
+                    Field::Columns,
+                    [-5.0, -1.0, 1.0, 5.0],
+                    live,
+                );
+                self.stepper(
+                    cv,
+                    y + 256.0,
+                    self.tr(Text::Rows),
+                    &format!("{r}"),
+                    Field::Rows,
+                    [-5.0, -1.0, 1.0, 5.0],
+                    live,
+                );
+                self.stepper(
+                    cv,
+                    y + 316.0,
+                    self.tr(Text::SpacingX),
+                    &format!("{:.1}", self.panel.spacing.0),
+                    Field::SpacingX,
+                    [-10.0, -1.0, 1.0, 10.0],
+                    true,
+                );
+                self.stepper(
+                    cv,
+                    y + 376.0,
+                    self.tr(Text::SpacingY),
+                    &format!("{:.1}", self.panel.spacing.1),
+                    Field::SpacingY,
+                    [-10.0, -1.0, 1.0, 10.0],
+                    true,
+                );
+                let ext = (
+                    x0 + (c.saturating_sub(1)) as f64 * pitch.0 + size.0,
+                    y0 + (r.saturating_sub(1)) as f64 * pitch.1 + size.1,
+                );
+                cv.text(
+                    x + 30.0,
+                    y + 460.0,
+                    Align2::LEFT_BOTTOM,
+                    &format!(
+                        "{:.1} x {:.1} mm  /  {:.0} x {:.0} mm",
+                        ext.0 - x0,
+                        ext.1 - y0,
+                        self.table.width_mm,
+                        self.table.depth_mm
+                    ),
+                    16.0,
+                    col(t.dim),
+                );
+                if ext.0 > self.table.width_mm + 0.01 || ext.1 > self.table.depth_mm + 0.01 {
+                    cv.text(
+                        x + 30.0,
+                        y + 490.0,
+                        Align2::LEFT_BOTTOM,
+                        self.tr(Text::OutsideTable),
+                        18.0,
+                        col(t.danger),
+                    );
+                }
+                cv.chip(
+                    x + 540.0,
+                    y + 590.0,
+                    170.0,
+                    44.0,
+                    self.tr(Text::Close),
+                    true,
+                    Act::CloseModal,
+                );
+            }
+            Modal::Settings => {
+                let (x, y) = self.modal_card(cv, self.tr(Text::SettingsTitle), 470.0);
+                self.stepper(
+                    cv,
+                    y + 100.0,
+                    self.tr(Text::TableWidth),
+                    &format!("{:.0}", self.table.width_mm),
+                    Field::TableW,
+                    [-10.0, -1.0, 1.0, 10.0],
+                    true,
+                );
+                self.stepper(
+                    cv,
+                    y + 164.0,
+                    self.tr(Text::TableDepth),
+                    &format!("{:.0}", self.table.depth_mm),
+                    Field::TableD,
+                    [-10.0, -1.0, 1.0, 10.0],
+                    true,
+                );
+                cv.text(
+                    x + 30.0,
+                    y + 262.0,
+                    Align2::LEFT_BOTTOM,
+                    &format!("{}: {}", self.tr(Text::Connection), self.connection),
+                    16.0,
+                    col(t.dim),
+                );
+                if self.saved {
+                    cv.text(
+                        x + 30.0,
+                        y + 400.0,
+                        Align2::LEFT_BOTTOM,
+                        self.tr(Text::Saved),
+                        18.0,
+                        col(t.ok),
+                    );
+                }
+                cv.chip(
+                    x + 330.0,
+                    y + 400.0,
+                    180.0,
+                    44.0,
+                    self.tr(Text::Save),
+                    false,
+                    Act::SaveSettings,
+                );
+                cv.chip(
+                    x + 530.0,
+                    y + 400.0,
+                    180.0,
+                    44.0,
+                    self.tr(Text::Close),
+                    true,
+                    Act::CloseModal,
+                );
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::cli::Options;
+
+    fn testdata() -> PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("testdata")
+    }
+
+    fn app() -> App {
+        App::new(&Options {
+            data: Some(testdata()),
+            screen: Some(Screen::Viewer),
+            ..Default::default()
+        })
+    }
+
+    #[test]
+    fn a_file_is_opened_as_what_its_extension_says() {
+        let mut a = app();
+        a.open_path(&testdata().join("05_small_board.ncd"));
+        assert!(!a.drill.scene.holes.is_empty());
+        a.open_path(&testdata().join("05_board_outline.plt"));
+        assert!(!a.route.scene.paths.is_empty());
+        a.open_path(&testdata().join("DRILLPRO.DCF"));
+        assert!(a.message.is_some());
+    }
+
+    #[test]
+    fn the_panel_makes_the_copies_of_the_board() {
+        let mut a = app();
+        a.open_path(&testdata().join("05_small_board.ncd"));
+        let one = a.drill.scene.holes.len();
+        a.adjust(Field::Columns, 2.0);
+        a.adjust(Field::Rows, 1.0);
+        assert_eq!(a.drill.scene.holes.len(), one * 6);
+        assert_eq!(a.panel_applied.map(|p| (p.0, p.1)), Some((3, 2)));
+        // the mode that fills the table gives as many copies as fit
+        a.panel.mode = PanelMode::Fit;
+        a.apply_panel();
+        let (c, r, _) = a.panel_plan();
+        assert!(c * r >= 1);
+        assert_eq!(a.drill.scene.holes.len(), one * (c * r) as usize);
+    }
+
+    #[test]
+    fn the_browser_goes_into_folders_and_opens_files() {
+        let mut a = app();
+        a.last_dir = testdata();
+        a.show_modal(Modal::Open);
+        let b = a.browser.as_ref().unwrap();
+        let i = b
+            .entries
+            .iter()
+            .position(|e| e.0 == "05_small_board.ncd")
+            .unwrap();
+        assert_eq!(b.entries[0].0, "..");
+        a.browse(i);
+        assert!(a.modal.is_none());
+        assert!(!a.drill.scene.holes.is_empty());
+        // up from the folder: the folder above is listed
+        a.show_modal(Modal::Open);
+        a.browse(0);
+        assert_ne!(a.browser.as_ref().unwrap().dir, Some(testdata()));
+    }
+
+    #[test]
+    fn the_views_move_and_come_back() {
+        let mut a = app();
+        a.drag(Zone::Plan, (10.0, -5.0), false);
+        a.zoom(Zone::Plan, 200.0);
+        assert!(a.view2d.zoom > 1.0 && a.view2d.pan == (10.0, -5.0));
+        a.drag(Zone::Machine, (1000.0, 0.0), false);
+        assert_eq!(a.view3d.yaw, 40.0);
+        a.reset_view(Zone::Plan);
+        a.reset_view(Zone::Machine);
+        assert_eq!((a.view2d, a.view3d), (Nav2::default(), Nav3::default()));
+    }
+
+    #[test]
+    fn the_table_of_the_settings_follows_the_steppers() {
+        let mut a = app();
+        let w = a.table.width_mm;
+        a.adjust(Field::TableW, 10.0);
+        assert_eq!(a.table.width_mm, w + 10.0);
+        assert_eq!(a.drill.scene.table.width_mm, w + 10.0);
+    }
+
+    #[test]
+    fn long_texts_are_wrapped() {
+        assert_eq!(wrap("one two three", 7), vec!["one two", "three"]);
+        assert!(wrap("这是一个很长的中文句子需要换行显示", 10).len() > 1);
+    }
+}

@@ -15,7 +15,7 @@ use eframe::egui::{
 };
 use eh3d_archive::{Archive, Kind};
 use eh3d_drillpro::classic::engine::{ClassicEngine, Question};
-use eh3d_drillpro::job::JobOptions;
+use eh3d_drillpro::job::{JobOptions, Panel};
 use eh3d_view::scene::{Iso, Scene, Table};
 use eh3d_view::texts::{tr, Lang, Text};
 use eh3d_view::theme::{Corner, Rgb, Theme, ThemeId};
@@ -24,6 +24,9 @@ use crate::cli::{Options, Screen};
 use crate::jobs;
 use crate::launcher::{self, Choice, Machine, Program, Settings};
 use crate::machines;
+
+mod extra;
+use extra::{Browser, Field, Modal, Nav2, Nav3, PanelCfg, PanelMode, Zone};
 
 /// The design size of the canvas; everything is laid out in these units and scaled to the window.
 const DESIGN_W: f32 = 1600.0;
@@ -60,12 +63,23 @@ enum Act {
     Answer(bool),
     /// A file of the ZIP archive of the job (by its place among the drilling and routing files).
     Entry(usize),
+    Show(Modal),
+    CloseModal,
+    Adjust(Field, f32),
+    PanelMode(PanelMode),
+    SaveSettings,
+    /// A row of the browser of the Open window.
+    Browse(usize),
+    BrowseScroll(i32),
+    ResetView(Zone),
 }
 
 /// One of the two programs inside the window: its engine and what the views show of its file.
 struct Side {
     engine: Box<dyn ClassicEngine>,
     scene: Scene,
+    /// The file as it is on the table, before the panel makes its copies.
+    base: Scene,
     last_done: usize,
     /// Where the work starts on the table (the offset of the configuration), added to every point of the file.
     offset: (f64, f64),
@@ -75,6 +89,7 @@ impl Side {
     fn new(engine: Box<dyn ClassicEngine>) -> Side {
         Side {
             scene: Scene::new(jobs::DEFAULT_TABLE),
+            base: Scene::new(jobs::DEFAULT_TABLE),
             engine,
             last_done: 0,
             offset: (0.0, 0.0),
@@ -120,6 +135,19 @@ pub struct App {
     archive: Option<Archive>,
     archive_dir: PathBuf,
     base_dir: PathBuf,
+    last_dir: PathBuf,
+    modal: Option<Modal>,
+    /// Where the hits of the window on top begin: a click goes only to those.
+    modal_from: usize,
+    browser: Option<Browser>,
+    panel: PanelCfg,
+    panel_applied: Option<(u32, u32, (f64, f64))>,
+    saved: bool,
+    view2d: Nav2,
+    view3d: Nav3,
+    zones: Vec<(Rect, Zone)>,
+    drag_zone: Option<Zone>,
+    ui_scale: f32,
 }
 
 impl App {
@@ -182,6 +210,28 @@ impl App {
                 .ok()
                 .and_then(|p| p.parent().map(Path::to_path_buf))
                 .unwrap_or_else(|| PathBuf::from(".")),
+            last_dir: PathBuf::new(),
+            modal: None,
+            modal_from: 0,
+            browser: None,
+            panel: PanelCfg::default(),
+            panel_applied: None,
+            saved: false,
+            view2d: Nav2::default(),
+            view3d: Nav3::default(),
+            zones: Vec::new(),
+            drag_zone: None,
+            ui_scale: 1.0,
+        };
+        let examples = app.base_dir.join("examples");
+        let has_jobs = std::fs::read_dir(&examples).is_ok_and(|rd| {
+            rd.flatten()
+                .any(|e| extra::is_job(&e.file_name().to_string_lossy()))
+        });
+        app.last_dir = if has_jobs {
+            examples
+        } else {
+            app.drill.engine.dir()
         };
         if let Some(f) = &o.drill {
             app.load_drill(f);
@@ -191,6 +241,24 @@ impl App {
         }
         if let Some(z) = &o.zip {
             app.open_zip(z);
+        }
+        for f in &o.open {
+            app.open_path(f);
+        }
+        if let Some((c, r)) = o.panel {
+            app.panel.columns = c.max(1);
+            app.panel.rows = r.max(1);
+            app.apply_panel();
+        }
+        if let Some(y) = o.yaw {
+            app.view3d.yaw = y.clamp(-40.0, 40.0);
+        }
+        match o.modal.as_deref() {
+            Some("about") => app.show_modal(Modal::About),
+            Some("open") => app.show_modal(Modal::Open),
+            Some("panel") => app.show_modal(Modal::Panel),
+            Some("settings") => app.show_modal(Modal::Settings),
+            _ => {}
         }
         app.refit_table();
         app
@@ -224,6 +292,7 @@ impl App {
                     h.x_mm += offset.0;
                     h.y_mm += offset.1;
                 }
+                self.drill.base = self.drill.scene.clone();
                 self.message = None;
             }
             None => self.message = Some(self.drill.engine.error().unwrap_or("?").to_string()),
@@ -250,6 +319,7 @@ impl App {
                     pt.1 += offset.1;
                 }
             }
+            self.route.base = self.route.scene.clone();
         }
         self.route.last_done = 0;
     }
@@ -321,9 +391,15 @@ impl App {
     }
 
     fn start_job(&mut self) {
+        let panel = self.panel_applied.map(|(columns, rows, pitch_mm)| Panel {
+            columns,
+            rows,
+            pitch_mm,
+        });
         if let Some((p, side)) = self.active() {
             side.engine.set_job_options(JobOptions {
                 ask_operator: true,
+                panel,
                 ..Default::default()
             });
             side.engine.start();
@@ -448,7 +524,21 @@ impl App {
                 self.remember_settings();
             }
             Act::Layer(i) => self.layers[i] = !self.layers[i],
-            Act::Entry(i) => self.load_entry(i),
+            Act::Entry(i) => {
+                self.load_entry(i);
+                self.apply_panel();
+            }
+            Act::Show(m) => self.show_modal(m),
+            Act::CloseModal => self.modal = None,
+            Act::Adjust(f, d) => self.adjust(f, d),
+            Act::PanelMode(m) => {
+                self.panel.mode = m;
+                self.apply_panel();
+            }
+            Act::SaveSettings => self.save_settings(),
+            Act::Browse(i) => self.browse(i),
+            Act::BrowseScroll(d) => self.browse_scroll(d),
+            Act::ResetView(z) => self.reset_view(z),
             Act::Start => self.start_job(),
             Act::Stop => self.stop_job(),
             Act::Back => {
@@ -476,6 +566,8 @@ struct Cv<'a> {
     u: f32,
     t: &'a Theme,
     hits: Vec<(Rect, Act)>,
+    zones: Vec<(Rect, Zone)>,
+    modal_from: usize,
 }
 
 impl<'a> Cv<'a> {
@@ -680,10 +772,16 @@ impl App {
             u,
             t: &t,
             hits: Vec::new(),
+            zones: Vec::new(),
+            modal_from: 0,
         };
         match self.screen {
             Screen::Launcher => self.paint_launcher(&mut cv),
             Screen::Viewer => self.paint_viewer(&mut cv),
+        }
+        if let Some(m) = self.modal {
+            cv.modal_from = cv.hits.len();
+            self.paint_modal(&mut cv, m);
         }
         if let Some(m) = &self.message {
             cv.text(
@@ -696,6 +794,13 @@ impl App {
             );
         }
         self.hits = std::mem::take(&mut cv.hits);
+        self.zones = std::mem::take(&mut cv.zones);
+        self.modal_from = if self.modal.is_some() {
+            cv.modal_from
+        } else {
+            0
+        };
+        self.ui_scale = u;
     }
 
     fn top_bar(&self, cv: &mut Cv, back: bool) {
@@ -752,6 +857,34 @@ impl App {
             col(t.dim),
         );
         cv.hits.push((r.expand(6.0), Act::NextLang));
+        // the windows: open a file, panelization, settings, about
+        if back {
+            let items = [
+                (480.0, Text::OpenFile, Modal::Open),
+                (640.0, Text::PanelTitle, Modal::Panel),
+                (800.0, Text::SettingsTitle, Modal::Settings),
+            ];
+            for (x, n, m) in items {
+                cv.chip(
+                    x,
+                    14.0,
+                    150.0,
+                    36.0,
+                    self.tr(n),
+                    self.modal == Some(m),
+                    Act::Show(m),
+                );
+            }
+        }
+        cv.chip(
+            960.0,
+            14.0,
+            150.0,
+            36.0,
+            self.tr(Text::About),
+            self.modal == Some(Modal::About),
+            Act::Show(Modal::About),
+        );
     }
 
     fn paint_launcher(&self, cv: &mut Cv) {
@@ -1059,96 +1192,111 @@ impl App {
         cv.card(cx, top, cw, card_h, true, None);
         cv.title(cx + 18.0, top + 32.0, self.tr(Text::ViewPlan));
         let (vx, vy, vw, vh) = (cx + 14.0, top + 48.0, cw - 28.0, card_h - 96.0);
-        let plan = Scene::new(self.table).view2d(vw as f64, vh as f64, 10.0);
+        let mut plan = Scene::new(self.table).view2d(vw as f64, vh as f64, 10.0);
+        {
+            let (z, pan) = (self.view2d.zoom as f64, self.view2d.pan);
+            let (mx, my) = (vw as f64 / 2.0, vh as f64 / 2.0);
+            plan.scale *= z;
+            plan.origin = (
+                mx + (plan.origin.0 - mx) * z + pan.0 as f64,
+                my + (plan.origin.1 - my) * z + pan.1 as f64,
+            );
+        }
         let screen = |x: f64, y: f64| {
             let (px, py) = plan.to_screen(&self.table, x, y);
             (vx + px as f32, vy + py as f32)
         };
-        let (tx0, ty0) = screen(0.0, self.table.depth_mm);
-        let (tx1, ty1) = screen(self.table.width_mm, 0.0);
-        cv.p.rect_filled(
-            cv.rect(tx0, ty0, tx1 - tx0, ty1 - ty0),
-            4.0 * cv.u,
-            col(t.table),
-        );
-        if self.layers[3] {
-            let mut gx = 0.0;
-            while gx <= self.table.width_mm {
-                let (a, _) = screen(gx, 0.0);
-                cv.line(
-                    (a, ty0),
-                    (a, ty1),
-                    if gx % 100.0 == 0.0 { 1.4 } else { 0.6 },
-                    col(t.grid),
-                );
-                gx += 25.0;
-            }
-            let mut gy = 0.0;
-            while gy <= self.table.depth_mm {
-                let (_, b) = screen(0.0, gy);
-                cv.line(
-                    (tx0, b),
-                    (tx1, b),
-                    if gy % 100.0 == 0.0 { 1.4 } else { 0.6 },
-                    col(t.grid),
-                );
-                gy += 25.0;
-            }
-        }
-        cv.p.rect_stroke(
-            cv.rect(tx0, ty0, tx1 - tx0, ty1 - ty0),
-            4.0 * cv.u,
-            Stroke::new(1.2 * cv.u, alpha(col(t.line), 140)),
-            StrokeKind::Inside,
-        );
-        if let Some((x0, y0, x1, y1)) = all.bounds() {
-            let (a, b) = screen(x0 - 3.0, y1 + 3.0);
-            let (c, d) = screen(x1 + 3.0, y0 - 3.0);
-            cv.p.rect_filled(
-                cv.rect(a, b, c - a, d - b),
-                4.0 * cv.u,
-                alpha(col(t.board), 200),
-            );
-        }
-        if self.layers[1] {
-            for path in &self.route.scene.paths {
-                let pts: Vec<(f32, f32)> = path.points.iter().map(|&(x, y)| screen(x, y)).collect();
-                cv.polyline(&pts, 2.0, col(t.accent2), true);
-                if path.reached > 1 {
-                    cv.polyline(&pts[..path.reached.min(pts.len())], 2.4, col(t.ok), false);
-                }
-            }
-        }
-        if self.layers[0] {
-            for h in &self.drill.scene.holes {
-                let idx = sizes
-                    .iter()
-                    .position(|d| (*d - h.diameter_mm).abs() < 0.005)
-                    .unwrap_or(0);
-                let c = col(t.size_color(idx));
-                let r = plan.hole_radius(h.diameter_mm, 2.0) as f32;
-                let (px, py) = screen(h.x_mm, h.y_mm);
-                if h.done {
-                    cv.p.circle_filled(cv.pt(px, py), r * cv.u, c);
-                } else {
-                    cv.p.circle_stroke(
-                        cv.pt(px, py),
-                        r * cv.u,
-                        Stroke::new(1.4 * cv.u, alpha(c, 220)),
-                    );
-                }
-            }
-        }
         let head = self.head();
-        if let Some((hx, hy)) = head {
-            let (px, py) = screen(hx, hy);
-            cv.p.circle_stroke(
-                cv.pt(px, py),
-                13.0 * cv.u,
-                Stroke::new(2.0 * cv.u, col(t.ok)),
+        {
+            let clip = cv.p.with_clip_rect(cv.rect(vx, vy, vw, vh));
+            let mut inner = cv.with_painter(&clip);
+            let cv = &mut inner;
+            let (tx0, ty0) = screen(0.0, self.table.depth_mm);
+            let (tx1, ty1) = screen(self.table.width_mm, 0.0);
+            cv.p.rect_filled(
+                cv.rect(tx0, ty0, tx1 - tx0, ty1 - ty0),
+                4.0 * cv.u,
+                col(t.table),
             );
-            cv.line((px - 22.0, py), (px + 22.0, py), 1.5, col(t.ok));
-            cv.line((px, py - 22.0), (px, py + 22.0), 1.5, col(t.ok));
+            if self.layers[3] {
+                let mut gx = 0.0;
+                while gx <= self.table.width_mm {
+                    let (a, _) = screen(gx, 0.0);
+                    cv.line(
+                        (a, ty0),
+                        (a, ty1),
+                        if gx % 100.0 == 0.0 { 1.4 } else { 0.6 },
+                        col(t.grid),
+                    );
+                    gx += 25.0;
+                }
+                let mut gy = 0.0;
+                while gy <= self.table.depth_mm {
+                    let (_, b) = screen(0.0, gy);
+                    cv.line(
+                        (tx0, b),
+                        (tx1, b),
+                        if gy % 100.0 == 0.0 { 1.4 } else { 0.6 },
+                        col(t.grid),
+                    );
+                    gy += 25.0;
+                }
+            }
+            cv.p.rect_stroke(
+                cv.rect(tx0, ty0, tx1 - tx0, ty1 - ty0),
+                4.0 * cv.u,
+                Stroke::new(1.2 * cv.u, alpha(col(t.line), 140)),
+                StrokeKind::Inside,
+            );
+            if let Some((x0, y0, x1, y1)) = all.bounds() {
+                let (a, b) = screen(x0 - 3.0, y1 + 3.0);
+                let (c, d) = screen(x1 + 3.0, y0 - 3.0);
+                cv.p.rect_filled(
+                    cv.rect(a, b, c - a, d - b),
+                    4.0 * cv.u,
+                    alpha(col(t.board), 200),
+                );
+            }
+            if self.layers[1] {
+                for path in &self.route.scene.paths {
+                    let pts: Vec<(f32, f32)> =
+                        path.points.iter().map(|&(x, y)| screen(x, y)).collect();
+                    cv.polyline(&pts, 2.0, col(t.accent2), true);
+                    if path.reached > 1 {
+                        cv.polyline(&pts[..path.reached.min(pts.len())], 2.4, col(t.ok), false);
+                    }
+                }
+            }
+            if self.layers[0] {
+                for h in &self.drill.scene.holes {
+                    let idx = sizes
+                        .iter()
+                        .position(|d| (*d - h.diameter_mm).abs() < 0.005)
+                        .unwrap_or(0);
+                    let c = col(t.size_color(idx));
+                    let r = plan.hole_radius(h.diameter_mm, 2.0) as f32;
+                    let (px, py) = screen(h.x_mm, h.y_mm);
+                    if h.done {
+                        cv.p.circle_filled(cv.pt(px, py), r * cv.u, c);
+                    } else {
+                        cv.p.circle_stroke(
+                            cv.pt(px, py),
+                            r * cv.u,
+                            Stroke::new(1.4 * cv.u, alpha(c, 220)),
+                        );
+                    }
+                }
+            }
+            if let Some((hx, hy)) = head {
+                let (px, py) = screen(hx, hy);
+                cv.p.circle_stroke(
+                    cv.pt(px, py),
+                    13.0 * cv.u,
+                    Stroke::new(2.0 * cv.u, col(t.ok)),
+                );
+                cv.line((px - 22.0, py), (px + 22.0, py), 1.5, col(t.ok));
+                cv.line((px, py - 22.0), (px, py + 22.0), 1.5, col(t.ok));
+            }
         }
         cv.text(
             cx + 18.0,
@@ -1164,13 +1312,83 @@ impl App {
             col(t.dim),
         );
 
+        cv.zones.push((cv.rect(vx, vy, vw, vh), Zone::Plan));
+        cv.chip(
+            cx + cw - 204.0,
+            top + 8.0,
+            190.0,
+            30.0,
+            self.tr(Text::ResetView),
+            false,
+            Act::ResetView(Zone::Plan),
+        );
+        cv.text(
+            cx + cw - 18.0,
+            top + card_h - 16.0,
+            Align2::RIGHT_BOTTOM,
+            self.tr(Text::NavHint2d),
+            13.0,
+            col(t.dim),
+        );
+        if self.drill.scene.holes.is_empty() && self.route.scene.paths.is_empty() {
+            cv.text(
+                cx + cw / 2.0,
+                top + card_h / 2.0,
+                Align2::CENTER_CENTER,
+                self.tr(Text::DropHint),
+                22.0,
+                col(t.dim),
+            );
+            cv.chip(
+                cx + cw / 2.0 - 100.0,
+                top + card_h / 2.0 + 30.0,
+                200.0,
+                44.0,
+                self.tr(Text::OpenFile),
+                true,
+                Act::Show(Modal::Open),
+            );
+        }
+
         // ---- right: the machine
         let rx = DESIGN_W - 20.0 - right_w;
         cv.card(rx, top, right_w, card_h, false, None);
         cv.title(rx + 18.0, top + 32.0, self.tr(Text::ViewMachine));
         if self.layers[2] {
-            self.paint_machine(cv, rx, top + 44.0, right_w, card_h - 70.0, &sizes, head);
+            let clip =
+                cv.p.with_clip_rect(cv.rect(rx + 4.0, top + 44.0, right_w - 8.0, card_h - 44.0));
+            let mut inner = cv.with_painter(&clip);
+            self.paint_machine(
+                &mut inner,
+                rx,
+                top + 44.0,
+                right_w,
+                card_h - 70.0,
+                &sizes,
+                head,
+            );
         }
+        cv.zones.push((
+            cv.rect(rx + 4.0, top + 44.0, right_w - 8.0, card_h - 70.0),
+            Zone::Machine,
+        ));
+        cv.chip(
+            rx + right_w - 204.0,
+            top + 8.0,
+            190.0,
+            30.0,
+            self.tr(Text::ResetView),
+            false,
+            Act::ResetView(Zone::Machine),
+        );
+        cv.text(
+            rx + right_w - 18.0,
+            top + card_h - 16.0,
+            Align2::RIGHT_BOTTOM,
+            self.tr(Text::NavHint3d),
+            13.0,
+            col(t.dim),
+        );
 
         // ---- bottom: the numbers and the buttons
         cv.card(20.0, hud_y, DESIGN_W - 40.0, 176.0, false, None);
@@ -1369,12 +1587,26 @@ impl App {
         let (px_m, py_m) = profile.plate_margins((tw, td));
         // the view holds the whole frame: the plate, the rails, the motor and the rack
         let shift = (px_m + 60.0, py_m + 60.0);
-        let iso = Iso::fit(
+        let mut iso = Iso::fit(
             &Table::new(wx + 2.0 * shift.0, wy + 2.0 * shift.1 + 80.0),
             150.0,
             w as f64,
             h as f64,
         );
+        {
+            let nav = self.view3d;
+            iso.yaw_deg = nav.yaw as f64;
+            iso.pivot = (
+                (wx + 2.0 * shift.0) / 2.0,
+                (wy + 2.0 * shift.1 + 80.0) / 2.0,
+            );
+            let (mx, my, z) = (w as f64 / 2.0, h as f64 / 2.0, nav.zoom as f64);
+            iso.k *= z;
+            iso.origin = (
+                mx + (iso.origin.0 - mx) * z + nav.pan.0 as f64,
+                my + (iso.origin.1 - my) * z + nav.pan.1 as f64,
+            );
+        }
         let o = (x0, y0);
         let p = |x: f64, y: f64, z: f64| {
             let (px, py) = iso.project(x + shift.0, y + shift.1, z);
@@ -1666,8 +1898,29 @@ impl eframe::App for App {
         if ctx.input(|i| i.key_pressed(egui::Key::Enter)) && self.screen == Screen::Launcher {
             self.act(Act::Choose(Choice::Modern));
         }
-        if ctx.input(|i| i.key_pressed(egui::Key::Escape)) && self.running.is_some() {
-            self.stop_job();
+        if ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
+            if self.modal.is_some() {
+                self.modal = None;
+            } else if self.running.is_some() {
+                self.stop_job();
+            }
+        }
+        if ctx.input(|i| i.modifiers.command && i.key_pressed(egui::Key::O))
+            && self.screen == Screen::Viewer
+        {
+            self.show_modal(Modal::Open);
+        }
+        let dropped: Vec<PathBuf> = ctx.input(|i| {
+            i.raw
+                .dropped_files
+                .iter()
+                .map(|f| f.path().to_path_buf())
+                .collect()
+        });
+        for p in dropped {
+            self.screen = Screen::Viewer;
+            self.modal = None;
+            self.open_path(&p);
         }
         self.tick();
         let shot_file = self
@@ -1695,18 +1948,54 @@ impl eframe::App for App {
             ctx.send_viewport_cmd(egui::ViewportCommand::Close);
         }
         let mut clicked: Option<Pos2> = None;
+        let mut double: Option<Pos2> = None;
         egui::Frame::NONE.show(ui, |ui| {
-            let (rect, resp) = ui.allocate_exact_size(ui.available_size(), Sense::click());
+            let (rect, resp) = ui.allocate_exact_size(ui.available_size(), Sense::click_and_drag());
             let painter = ui.painter_at(rect);
             self.paint(&painter, rect);
-            if resp.clicked() {
+            if resp.drag_started() {
+                self.drag_zone = resp.interact_pointer_pos().and_then(|p| self.zone_at(p));
+            }
+            if resp.dragged() {
+                if let Some(z) = self.drag_zone {
+                    let d = resp.drag_delta() / self.ui_scale.max(0.01);
+                    let pan = resp.dragged_by(egui::PointerButton::Secondary)
+                        || resp.dragged_by(egui::PointerButton::Middle)
+                        || ctx.input(|i| i.modifiers.shift);
+                    self.drag(z, (d.x, d.y), pan);
+                }
+            }
+            if resp.drag_stopped() {
+                self.drag_zone = None;
+            }
+            if resp.double_clicked() {
+                double = resp.interact_pointer_pos();
+            } else if resp.clicked() {
                 clicked = resp.interact_pointer_pos();
             }
         });
+        if let Some(pos) = double {
+            if let Some(z) = self.zone_at(pos) {
+                self.reset_view(z);
+            }
+        }
+        let scroll = ctx.input(|i| i.smooth_scroll_delta.y);
+        if scroll != 0.0 {
+            if self.modal == Some(Modal::Open) {
+                self.browse_scroll(if scroll > 0.0 { -2 } else { 2 });
+            } else if let Some(z) = ctx
+                .input(|i| i.pointer.hover_pos())
+                .and_then(|p| self.zone_at(p))
+            {
+                self.zoom(z, scroll);
+            }
+        }
         if let Some(pos) = clicked {
-            // the last card or button drawn on top is the one that is hit
+            // the last card or button drawn on top is the one that is hit; with a window on top, only its own
             let hit = self
                 .hits
+                .get(self.modal_from..)
+                .unwrap_or(&[])
                 .iter()
                 .rev()
                 .find(|(r, _)| r.contains(pos))

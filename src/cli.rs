@@ -21,6 +21,12 @@ pub struct Options {
     pub route: Option<PathBuf>,
     /// A job packed in a ZIP archive (`--zip FILE`): its first drilling file and its first routing file are shown.
     pub zip: Option<PathBuf>,
+    /// Files given without an option: each one is opened as what its extension says (a drilling file, a routing file or a ZIP archive).
+    pub open: Vec<PathBuf>,
+    /// A window to open at the start (`--modal about|open|panel|settings`), the panel (`--panel COLUMNS,ROWS`) and the turn of the 3D view (`--yaw DEGREES`): for the pictures.
+    pub modal: Option<String>,
+    pub panel: Option<(u32, u32)>,
+    pub yaw: Option<f32>,
     /// The folder of the machine and tool files (`--data DIR`).
     pub data: Option<PathBuf>,
     /// The machine file with the connection (`--connection FILE`), the same one the classic programs read.
@@ -73,8 +79,22 @@ impl Options {
                         .parse()
                         .map_err(|_| format!("--wait needs a number, not '{v}'"))?;
                 }
+                "--modal" => o.modal = Some(value("--modal")?),
+                "--panel" => {
+                    let v = value("--panel")?;
+                    let (c, r) = v.split_once(',').ok_or("--panel needs COLUMNS,ROWS")?;
+                    o.panel = Some((
+                        c.parse().map_err(|_| "--panel needs numbers")?,
+                        r.parse().map_err(|_| "--panel needs numbers")?,
+                    ));
+                }
+                "--yaw" => {
+                    let v = value("--yaw")?;
+                    o.yaw = Some(v.parse().map_err(|_| "--yaw needs a number")?);
+                }
                 "--start" => o.start = true,
                 "--auto-ok" => o.auto_ok = true,
+                other if !other.starts_with("--") => o.open.push(PathBuf::from(other)),
                 other => return Err(format!("unknown option '{other}'")),
             }
         }
@@ -124,5 +144,14 @@ mod tests {
         assert!(parse("--wait many").unwrap_err().contains("number"));
         assert!(parse("--drill").unwrap_err().contains("needs a value"));
         assert!(parse("--fast").unwrap_err().contains("unknown option"));
+    }
+
+    #[test]
+    fn files_without_an_option_are_opened() {
+        let o = parse("job.zip board.ncd").unwrap();
+        assert_eq!(
+            o.open,
+            vec![PathBuf::from("job.zip"), PathBuf::from("board.ncd")]
+        );
     }
 }

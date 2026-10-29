@@ -9,6 +9,7 @@ All notable changes to this project are documented here.
 - **Panelization:** copies of the board in columns and rows, placed by the gap between boards, by the distance from one to the next, or as many as fit in the table; the copies are drawn and the job makes them.
 - **Settings and About:** the usable width and depth of the table can be changed and saved to the machine files; the About window says the version, the licence and the connection.
 - **Command line:** files without an option are opened, and `--modal`, `--panel` and `--yaw` set the window, the panel and the turn of the 3D view for the pictures.
+- **Repository:** the README in eight languages with the architecture and structure pictures, the CI and release workflows (the program is built for Windows 64 and 32 bits, Linux and macOS, with the test files as examples), the issue and pull-request templates and the contribution, security and support notes.
 
 ## [0.0.1] - The launcher and the viewer
 

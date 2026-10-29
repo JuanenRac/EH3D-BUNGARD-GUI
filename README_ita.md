@@ -1,0 +1,204 @@
+<p align="center">
+  <img src="images/EH3D_BANNER.svg" alt="EH3D-BUNGARD-GUI banner" width="100%">
+</p>
+
+# 🖥️ EH3D-BUNGARD-GUI
+
+<p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | 🇮🇹 <b>Italiano</b> | <a href="README_deu.md">🇩🇪 Deutsch</a> | <a href="README_zho.md">🇨🇳 中文</a> | <a href="README_jpn.md">🇯🇵 日本語</a> | <a href="README_por.md">🇵🇹 Português</a></p>
+
+### La finestra moderna per le macchine Bungard CCD: un avviatore, una vista 2D e una 3D del lavoro, foratura e fresatura insieme, in otto lingue
+
+<p align="center">
+  <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
+  <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
+  <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
+  <img src="https://img.shields.io/badge/Tests-24-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Version-0.0.1-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
+</p>
+
+---
+
+**Verifica di onestà - cosa funziona oggi:** un programma Rust con una finestra e 24 test che girano su un computer. L'avviatore offre l'interfaccia moderna o i programmi classici di foratura e fresatura per una macchina con cambio utensile manuale (MTC) o automatico (ATC). Il visualizzatore apre file di foratura, file di tracciato HP-GL e archivi ZIP di lavori (da un browser di cartelle, con trascinamento o dalla riga di comando), disegna la vista in pianta con ogni foro per diametro di punta e i percorsi di fresatura sopra, mostra la macchina in 3D con il piano della misura scelta nella configurazione, pannellizza la scheda e segue il lavoro mentre procede. Il lavoro gira nel **simulatore** dei motori di EH3D-DRILLPRO e EH3D-ROUTEPRO; lo stesso file di macchina che essi leggono decide come si raggiunge una macchina reale (l'RS-232 del computer, un adattatore USB-RS232, o l'EH3D-NODE-BUNGARD direttamente o tramite EH3D-SERVER), e **nessuna di queste vie è stata provata da questa finestra**. Non ci sono ancora una schermata di connessione, una pausa né la modifica dei file di macchina e utensili, e la vista 3D non mostra l'altezza dei percorsi.
+
+---
+
+> **Stato di sicurezza funzionale e informatica:** questo programma non è un sistema di sicurezza. Non gestisce i finecorsa né un arresto di emergenza e non ha mai mosso una macchina reale. Con una connessione reale nel file della macchina il lavoro muoverebbe la macchina tramite i motori di EH3D-DRILLPRO e EH3D-ROUTEPRO: leggi prima le loro note, togli l'utensile, tieni una mano sull'interruttore della macchina e sii pronto a fermare il lavoro. Il progetto è indipendente: non è realizzato, approvato né supportato da Bungard Elektronik, e i nomi dei prodotti compaiono solo per dire con quali formati di file e macchine è pensato per funzionare.
+
+## 📋 In breve
+
+| | |
+|---|---|
+| Versione | `0.0.1` |
+| Maturità | Impalcatura |
+| Test | 24 |
+| Stack tecnologico | Rust |
+| Su hardware reale | No. Ha girato solo sul simulatore e su un computer; nessuna macchina è stata pilotata da questa finestra |
+
+**Vai a:** [Panoramica](#-panoramica) · [Architettura](#-architettura) · [Avvio rapido](#-avvio-rapido) · [Test](#-test) · [Struttura](#-struttura-del-repository) · [Correlati](#-progetti-correlati)
+
+## 🚦 Stato del progetto
+
+Ogni riga è una parte di questo repository e il semaforo dice a che punto è oggi. È scritta in base a ciò che il repository può mostrare (test, compilazioni, esecuzioni), non a ciò che è previsto.
+
+🟢 Fatto e verificato · 🟡 Funziona, con limiti noti · 🟠 Fatto a metà o non ancora verificato · 🔴 Non fatto o non funzionante
+
+| Area | Stato | Cosa significa qui |
+|---|---|---|
+| Finestra e avviatore | 🟡 | Una finestra Rust con un avviatore (l'interfaccia moderna o i programmi classici), cinque temi e otto lingue; gira su un computer ed è stata guardata con immagini del lavoro simulato. |
+| Viste | 🟡 | La vista in pianta (fori per diametro, percorsi di fresatura) e la vista 3D della macchina con guide, piano forato, portale mobile e magazzino utensili, adattata alla misura del piano; entrambe si trascinano e si ingrandiscono. La vista 3D non mostra ancora l'altezza dei percorsi. |
+| File e pannellizzazione | 🟡 | I file di foratura, HP-GL e gli archivi ZIP si aprono da un browser, con trascinamento o dalla riga di comando; la scheda si ripete in tre modi. Provato con i piccoli file di esempio di questo repository. |
+| Impostazioni | 🟠 | Larghezza e profondità utili del piano si cambiano e si salvano nei file della macchina; il resto dei file di macchina e utensili si modifica ancora con i programmi classici. |
+| Controllo della macchina | 🔴 | Il lavoro passa per i motori di EH3D-DRILLPRO e EH3D-ROUTEPRO, quindi in linea di principio ci sono tutte le loro connessioni; ha girato solo sul simulatore, e non ci sono schermata di connessione né pausa. |
+| Test | 🟡 | 24 test passano su un computer (`cargo test --features gui`): l'avviatore, le impostazioni, la lettura dei file nella scena, i profili di macchina, il pannello e la riga di comando. Nessuno tocca una macchina. |
+| Pacchetti già pronti | 🟠 | Un workflow compila il programma per Windows (64 e 32 bit), Linux e macOS con i file di esempio; nessuna versione è ancora stata pubblicata. |
+
+## 🎯 Panoramica
+
+* L'**avviatore**: l'interfaccia moderna, o i programmi classici di foratura e fresatura per una macchina con cambio utensile manuale o automatico; si avviano come i programmi che sono quando si trovano accanto a questo. La scelta si può ricordare.
+* La **vista in pianta**: il piano con ogni foro per diametro di punta e i percorsi di fresatura sopra, trascinato con il mouse e ingrandito con la rotella; un pulsante (o un doppio clic) rimette la vista a posto.
+* La **vista 3D della macchina**: guide, piano forato, portale mobile e magazzino utensili, con il piano della misura impostata nella configurazione. Si ruota trascinando, si ingrandisce con la rotella e si sposta con Maiusc o il pulsante destro. I profili di macchina (CCD/2, CCD, CCD Premium e CCD XL) vengono dalle misure pubblicate; la macchina si riconosce dal piano della configurazione.
+* **Aprire file**: un file di foratura, un file HP-GL o un archivio ZIP con un lavoro dentro, da una finestra Apri con browser di cartelle e unità, lasciando i file sulla finestra, con `Ctrl+O`, o dati sulla riga di comando. Un nome in un archivio che uscirebbe dalla cartella di lavoro non viene elencato, e nessun file viene letto oltre un limite di dimensione.
+* **Pannellizzazione**: copie della scheda in colonne e righe, posizionate per spazio tra le schede, per distanza dall'una all'altra o quante ne stanno sul piano; le copie vengono disegnate e il lavoro le esegue.
+* Il **lavoro**: gira con i motori dei programmi classici e il loro file di macchina (`demo` simulatore, `rs232`, `usb`, `node` o `server`), mostra l'avanzamento e pone all'operatore le domande della macchina (il mandrino, il cambio utensile).
+
+## 🧩 Ruolo in EH3D
+
+EH3D-BUNGARD-GUI è l'interfaccia moderna delle macchine Bungard nella famiglia EH3D. Dipende per percorso dalle cartelle sorelle EH3D-COMMON (la scena, i temi e i testi in otto lingue di `eh3d-view`, e il lettore ZIP di `eh3d-archive`), EH3D-DRILLPRO e EH3D-ROUTEPRO (i loro motori e i loro programmi classici): devono stare accanto a questa.
+
+## 🏛️ Architettura
+
+<p align="center">
+  <img src="images/architecture.svg" alt="Architettura di EH3D-BUNGARD-GUI: chi lo usa, che cosa contiene e da che cosa dipende" width="100%">
+</p>
+
+Come si incastrano le parti di questo repository: chi lo usa, che cosa contiene e da che cosa dipende. L'immagine è disegnata da `docs/architecture.json` e verificata rispetto al codice.
+
+## ✨ Funzionalità
+
+* Temi: Forge (predefinito), Neon Arcade, Glass Pro, il grigio classico di Windows e uno che segue i colori di Windows.
+* Otto lingue in tutta la finestra: inglese, spagnolo, francese, italiano, tedesco, cinese, giapponese e portoghese europeo.
+* Profili di macchina con le misure pubblicate e un piano regolabile: la macchina in 3D cresce con l'area utile della configurazione.
+* Lavori in archivi ZIP: si mostrano il primo file di foratura e il primo di fresatura, gli altri sono elencati per caricarli con un clic.
+* Pannellizzazione in tre modi (spazio, passo, quante ne stanno) con le copie disegnate sul piano.
+* Avanzamento del lavoro in diretta e domande della macchina all'operatore.
+* Una finestra Informazioni con la versione, la licenza e la connessione in uso.
+
+## 🔌 Interfacce
+
+* **Finestra:** l'avviatore e il visualizzatore, con mouse e tastiera (`Invio` accetta la scelta dell'avviatore, `Esc` torna indietro, `Ctrl+O` apre file).
+* **Riga di comando:** `bungard-gui [FILE...] [--drill FILE.NCD] [--route FILE.PLT] [--zip LAVORO.ZIP] [--lang CODICE] [--theme NOME] [--data CARTELLA] [--connection FILE] [--screen launcher|viewer]`; i file senza opzione si aprono come dice la loro estensione. `--modal`, `--panel`, `--yaw`, `--shot` e `--start` impostano una finestra, il pannello, la rotazione della vista 3D, un'immagine della finestra e l'avvio del lavoro, per le immagini.
+* **Macchina:** tramite i motori di EH3D-DRILLPRO e EH3D-ROUTEPRO e il file di macchina che condividono: l'RS-232 del computer, un adattatore USB-RS232, l'EH3D-NODE-BUNGARD o EH3D-SERVER. Senza file di macchina il lavoro gira sul simulatore.
+
+## ⚙️ Configurazione
+
+La connessione è il **file di macchina** di EH3D-DRILLPRO e EH3D-ROUTEPRO (`machine.cfg`, con `connection = demo|rs232|usb|node|server` e ogni valore tarato su una macchina reale): `--connection FILE` vi punta, e senza di esso il lavoro gira sul simulatore. `--data CARTELLA` è la cartella con i file di macchina e utensili dei programmi classici (`DRILLPRO.DCF`, `DRILLPRO.DTD`, `ROUTEPRO.RCF`, `ROUTEPRO.RTD`; la cartella `testdata/` ha esempi). La finestra delle impostazioni cambia larghezza e profondità utili del piano e le salva in quei file. Ciò che la finestra ricorda (la scelta dell'avviatore, la lingua e il tema) è conservato in un piccolo file nella cartella delle impostazioni dell'utente, con gli altri programmi EH3D. `--theme forge|neon|glass|windows-classic|system` e `--lang en|es|it|de|fr|pt|zh|ja` scelgono l'aspetto e la lingua.
+
+## 🚀 Avvio rapido
+
+```bash
+cargo build --release --features gui
+cargo test --features gui
+cargo clippy --all-targets --features gui -- -D warnings
+cargo fmt --all --check
+python -I tools/ci_validate.py
+```
+
+Avvialo con `run.bat` (Windows) o `./run.sh` (Linux e macOS); entrambi compilano prima la finestra se serve e, senza argomenti, aprono l'avviatore con la scheda di prova di `testdata/`. Servono Rust e le cartelle sorelle `EH3D-COMMON`, `EH3D-DRILLPRO` e `EH3D-ROUTEPRO`. `cargo run --release --features gui -- --zip LAVORO.ZIP` apre un lavoro impacchettato in un archivio ZIP. Su Linux la finestra richiede X11 o Wayland.
+
+## 🧪 Test
+
+La suite ha 24 test (`cargo test --features gui`). Verificano l'avviatore e ciò che ricorda, le impostazioni, come un file di foratura o HP-GL diventa la scena, i profili di macchina, il pannello e la riga di comando. I motori che usa (protocollo, movimento, porta di sicurezza) sono testati in EH3D-DRILLPRO e EH3D-ROUTEPRO. La CI esegue anche `cargo fmt --check` e `cargo clippy` con gli avvisi come errori, e `python -I tools/ci_validate.py` controlla il manifesto, le versioni, il changelog e gli otto README.
+
+## 🏗️ Compilazione e rilascio
+
+La versione sta in `Cargo.toml` e in `eh3d.project.json`, e ogni versione ha la sua voce in [CHANGELOG.md](CHANGELOG.md). `build.bat` / `build.sh` compilano la finestra (`cargo build --release --features gui`) e `test.bat` / `test.sh` eseguono i test; nessuno cambia la versione.
+
+**Pacchetti già pronti:** il workflow `Release binaries` di questo repository compila il programma per Windows (64 e 32 bit), Linux e macOS (Apple silicon e Intel), ogni pacchetto con la licenza, questo README e i file di prova come esempi, e il suo SHA-256. Nessuna versione è ancora stata pubblicata.
+
+## 📂 Struttura del repository
+
+<p align="center">
+  <img src="images/repository-structure.svg" alt="Struttura del repository EH3D-BUNGARD-GUI" width="100%">
+</p>
+
+<details>
+<summary>Versione testuale dell'albero</summary>
+
+```text
+EH3D-BUNGARD-GUI/
+├── src/
+│   ├── gui.rs                                   la finestra: avviatore, vista in pianta, vista 3D, avanzamento del lavoro
+│   ├── gui/extra.rs                             aprire file, pannellizzazione, impostazioni del piano, Informazioni, muovere le viste
+│   ├── jobs.rs                                  un file di foratura o HP-GL trasformato nella scena disegnata dalle viste
+│   ├── machines.rs                              i profili delle macchine Bungard e l'area di lavoro dal piano
+│   ├── launcher.rs                              le scelte dell'avviatore, i programmi classici e ciò che viene ricordato
+│   ├── cli.rs                                   la riga di comando
+│   └── lib.rs bin/                              la radice della libreria e l'eseguibile bungard-gui
+├── testdata/                                    una piccola scheda: file di foratura e contorno, e file di esempio di macchina e utensili
+├── docs/                                        le fonti delle due immagini
+├── tools/                                       controllo CI, controllo del README e strumenti delle immagini
+├── images/                                      banner e le due immagini
+├── .github/                                     workflow di CI e di rilascio, modelli per issue e pull request
+├── build.sh build.bat                           compilano la finestra
+├── run.sh run.bat                               avviano la finestra, con i file di prova se non ci sono argomenti
+├── eh3d.project.json bump_manifest_version.py   manifesto e utilità di versione
+├── Cargo.toml Cargo.lock                        il pacchetto Rust e le sue dipendenze bloccate
+├── CHANGELOG.md                                 cosa è cambiato in ogni versione
+├── SECURITY.md SUPPORT.md                       come segnalare una vulnerabilità e dove chiedere
+└── CONTRIBUTING.md CODE_OF_CONDUCT.md LICENSE   come contribuire, il codice di condotta e la licenza
+```
+
+</details>
+
+## 🗺️ Roadmap e limiti noti
+
+**Limiti noti oggi**
+
+* Nessun lavoro è stato pilotato da questa finestra su una macchina reale: ha girato solo sul simulatore dei motori di EH3D-DRILLPRO e EH3D-ROUTEPRO.
+* Non c'è una schermata di connessione: il file della macchina si scrive a mano o con i programmi classici. La finestra delle impostazioni cambia solo la misura del piano; i file di macchina e utensili non si modificano qui.
+* Non c'è una vera pausa di un lavoro in corso, e la vista 3D non mostra l'altezza dei percorsi.
+* Si pilotano solo le macchine CCD e CCD/2; i profili della CCD Premium e della CCD XL sono disegnati, ma la loro unità di controllo non è supportata.
+* La finestra richiede le cartelle sorelle EH3D-COMMON, EH3D-DRILLPRO e EH3D-ROUTEPRO accanto a sé, perché dipende da esse per percorso.
+
+**Prossimi passi**
+
+* Una schermata di Connessione per scegliere e provare come si raggiunge la macchina.
+* Una vera pausa del lavoro.
+* L'altezza (Z) dei percorsi nella vista 3D.
+* Caricare e salvare tutta la configurazione, non solo la misura del piano.
+* Un pacchetto con i programmi classici, così un solo download ha tutto.
+* Una prova su una macchina reale.
+
+## 🌍 Lingue
+
+Il README e i testi esistono in inglese, spagnolo, francese, italiano, tedesco, cinese, giapponese e portoghese europeo.
+
+## 🔗 Progetti correlati
+
+* [EH3D-DRILLPRO](https://github.com/JuanenRac/EH3D-DRILLPRO): il programma di foratura; questa finestra usa il suo motore e il suo programma classico
+* [EH3D-ROUTEPRO](https://github.com/JuanenRac/EH3D-ROUTEPRO): il programma di fresatura; questa finestra usa il suo motore e il suo programma classico
+* [EH3D-COMMON](https://github.com/JuanenRac/EH3D-COMMON): la vista (scena, temi, testi in otto lingue) e il lettore ZIP che questa finestra usa
+* [EH3D-NODE-BUNGARD](https://github.com/JuanenRac/EH3D-NODE-BUNGARD): un nodo ESP32-S3 che sta nella scatola della macchina e invia i passi dalla propria porta seriale
+* [EH3D-SERVER](https://github.com/JuanenRac/EH3D-SERVER): il centro della famiglia EH3D: può eseguire il lavoro sulla macchina tramite il suo nodo
+
+## 📚 Documentazione
+
+* [Connessione e taratura](https://github.com/JuanenRac/EH3D-DRILLPRO/blob/main/docs/CONNECTION.md): il file della macchina, le connessioni e ogni valore (EH3D-DRILLPRO)
+* [Note sul protocollo](https://github.com/JuanenRac/EH3D-DRILLPRO/blob/main/docs/PROTOCOL.md): ciò che si sa su come si pilota l'unità di controllo (EH3D-DRILLPRO)
+* [Changelog](CHANGELOG.md)
+
+## 🤝 Contribuire e comunità
+
+* Prima di una pull request esegui `cargo fmt --all --check`, `cargo clippy --all-targets --features gui -- -D warnings`, `cargo test --features gui` e `python -I tools/ci_validate.py`: tutto deve passare. Vedi [CONTRIBUTING.md](CONTRIBUTING.md) e il [codice di condotta](CODE_OF_CONDUCT.md).
+* Il README esiste in otto lingue: una modifica al testo si fa in tutti gli otto file, e le due immagini si disegnano da `docs/architecture.json` e `docs/structure.json` con `tools/make_architecture.py` e `tools/make_structure.py`.
+* Non descrivere come funzionante su una macchina ciò che è stato provato solo sul simulatore.
+* Segnala una vulnerabilità in privato: [SECURITY.md](SECURITY.md). Domande, idee e segnalazioni: electrohobby3d@gmail.com ([SUPPORT.md](SUPPORT.md)).
+
+## 👤 AUTORE
+
+**JuanenRac (Electro Hobby 3D)** · electrohobby3d@gmail.com
+
+## 📜 LICENZA
+
+Software: GPL-3.0-or-later. Vedi [LICENSE](LICENSE). I progetti hardware della suite usano la CERN OHL-S.

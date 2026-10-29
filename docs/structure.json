@@ -1,0 +1,353 @@
+{
+  "repo": "EH3D-BUNGARD-GUI",
+  "exempt": [
+    "test.bat",
+    "test.sh"
+  ],
+  "ecosystem": "eh3d",
+  "svg": "en",
+  "tagline": {
+    "en": "The modern window for the Bungard CCD machines: launcher, 2D and 3D view of the job, in eight languages.",
+    "es": "La ventana moderna para las máquinas Bungard CCD: lanzador, vista 2D y 3D del trabajo, en ocho idiomas.",
+    "de": "Das moderne Fenster für die Bungard-CCD-Maschinen: Starter, 2D- und 3D-Ansicht des Auftrags, in acht Sprachen.",
+    "fr": "La fenêtre moderne pour les machines Bungard CCD : lanceur, vue 2D et 3D du travail, en huit langues.",
+    "it": "La finestra moderna per le macchine Bungard CCD: avviatore, vista 2D e 3D del lavoro, in otto lingue.",
+    "ja": "Bungard CCD マシン向けの新しいウィンドウ：ランチャー、作業の 2D / 3D 表示、8 言語対応。",
+    "zh": "面向 Bungard CCD 机器的现代窗口：启动器、作业的 2D 和 3D 视图，支持八种语言。",
+    "pt": "A janela moderna para as máquinas Bungard CCD: lançador, vista 2D e 3D do trabalho, em oito idiomas."
+  },
+  "cards": [
+    {
+      "name": "src/",
+      "span": 3,
+      "accent": "a",
+      "sub": {
+        "en": "the library and the window: launcher, views, jobs and machines",
+        "es": "la biblioteca y la ventana: lanzador, vistas, trabajos y máquinas",
+        "de": "die Bibliothek und das Fenster: Starter, Ansichten, Aufträge und Maschinen",
+        "fr": "la bibliothèque et la fenêtre : lanceur, vues, travaux et machines",
+        "it": "la libreria e la finestra: avviatore, viste, lavori e macchine",
+        "ja": "ライブラリとウィンドウ：ランチャー、表示、作業、マシン",
+        "zh": "库和窗口：启动器、视图、作业和机器",
+        "pt": "a biblioteca e a janela: lançador, vistas, trabalhos e máquinas"
+      },
+      "rows": [
+        {
+          "name": "gui.rs",
+          "desc": {
+            "en": "the window: launcher, plan view, 3D view, job progress",
+            "es": "la ventana: lanzador, vista en planta, vista 3D, progreso del trabajo",
+            "de": "das Fenster: Starter, Draufsicht, 3D-Ansicht, Auftragsfortschritt",
+            "fr": "la fenêtre : lanceur, vue en plan, vue 3D, avancement du travail",
+            "it": "la finestra: avviatore, vista in pianta, vista 3D, avanzamento del lavoro",
+            "ja": "ウィンドウ：ランチャー、平面図、3D 表示、作業の進行",
+            "zh": "窗口：启动器、平面视图、3D 视图、作业进度",
+            "pt": "a janela: lançador, vista em planta, vista 3D, progresso do trabalho"
+          }
+        },
+        {
+          "name": "gui/extra.rs",
+          "desc": {
+            "en": "open files, panelization, table settings, About, moving the views",
+            "es": "abrir ficheros, panelización, ajustes de la mesa, Acerca de, mover las vistas",
+            "de": "Dateien öffnen, Nutzenbildung, Tischeinstellungen, Info, Ansichten bewegen",
+            "fr": "ouvrir des fichiers, panélisation, réglages de la table, À propos, déplacer les vues",
+            "it": "aprire file, pannellizzazione, impostazioni del piano, Informazioni, muovere le viste",
+            "ja": "ファイルを開く、面付け、テーブル設定、バージョン情報、表示の移動",
+            "zh": "打开文件、拼板、工作台设置、关于、移动视图",
+            "pt": "abrir ficheiros, panelização, definições da mesa, Acerca de, mover as vistas"
+          }
+        },
+        {
+          "name": "jobs.rs",
+          "desc": {
+            "en": "a drilling or HP-GL file turned into the scene the views draw",
+            "es": "un fichero de taladrado o HP-GL convertido en la escena que dibujan las vistas",
+            "de": "eine Bohr- oder HP-GL-Datei als Szene für die Ansichten",
+            "fr": "un fichier de perçage ou HP-GL transformé en scène dessinée par les vues",
+            "it": "un file di foratura o HP-GL trasformato nella scena disegnata dalle viste",
+            "ja": "ドリルまたは HP-GL ファイルを表示用のシーンに変換",
+            "zh": "把钻孔或 HP-GL 文件转换为视图绘制的场景",
+            "pt": "um ficheiro de furação ou HP-GL convertido na cena que as vistas desenham"
+          }
+        },
+        {
+          "name": "machines.rs",
+          "desc": {
+            "en": "the Bungard machine profiles and the work area from the table size",
+            "es": "los perfiles de las máquinas Bungard y el área de trabajo según la mesa",
+            "de": "die Bungard-Maschinenprofile und der Arbeitsbereich aus der Tischgröße",
+            "fr": "les profils des machines Bungard et la zone de travail selon la table",
+            "it": "i profili delle macchine Bungard e l'area di lavoro dal piano",
+            "ja": "Bungard マシンのプロファイルとテーブルサイズから求める作業領域",
+            "zh": "Bungard 机器的配置文件，以及按工作台尺寸得出的工作区",
+            "pt": "os perfis das máquinas Bungard e a área de trabalho a partir da mesa"
+          }
+        },
+        {
+          "name": "launcher.rs",
+          "desc": {
+            "en": "the launcher choices, the classic programs and what is remembered",
+            "es": "las opciones del lanzador, los programas clásicos y lo que se recuerda",
+            "de": "die Starter-Auswahl, die klassischen Programme und was gemerkt wird",
+            "fr": "les choix du lanceur, les programmes classiques et ce qui est mémorisé",
+            "it": "le scelte dell'avviatore, i programmi classici e ciò che viene ricordato",
+            "ja": "ランチャーの選択肢、従来のプログラム、記憶する内容",
+            "zh": "启动器的选项、经典程序以及记住的设置",
+            "pt": "as opções do lançador, os programas clássicos e o que fica memorizado"
+          }
+        },
+        {
+          "name": "cli.rs",
+          "desc": {
+            "en": "the command line",
+            "es": "la línea de órdenes",
+            "de": "die Befehlszeile",
+            "fr": "la ligne de commande",
+            "it": "la riga di comando",
+            "ja": "コマンドライン",
+            "zh": "命令行",
+            "pt": "a linha de comandos"
+          }
+        },
+        {
+          "name": "lib.rs  bin/",
+          "desc": {
+            "en": "the library root and the bungard-gui executable",
+            "es": "la raíz de la biblioteca y el ejecutable bungard-gui",
+            "de": "die Wurzel der Bibliothek und die ausführbare Datei bungard-gui",
+            "fr": "la racine de la bibliothèque et l'exécutable bungard-gui",
+            "it": "la radice della libreria e l'eseguibile bungard-gui",
+            "ja": "ライブラリのルートと実行ファイル bungard-gui",
+            "zh": "库的根文件和可执行文件 bungard-gui",
+            "pt": "a raiz da biblioteca e o executável bungard-gui"
+          },
+          "tree_name": "lib.rs bin/"
+        }
+      ]
+    },
+    {
+      "name": "testdata/",
+      "span": 3,
+      "accent": "b",
+      "tree": {
+        "en": "a small board: drilling and outline files, and the sample machine and tool files",
+        "es": "una placa pequeña: ficheros de taladrado y contorno, y los ficheros de muestra de máquina y herramientas",
+        "de": "eine kleine Platine: Bohr- und Umrissdateien sowie Beispiel-Maschinen- und -Werkzeugdateien",
+        "fr": "une petite carte : fichiers de perçage et de contour, et fichiers d'exemple de machine et d'outils",
+        "it": "una piccola scheda: file di foratura e contorno, e file di esempio di macchina e utensili",
+        "ja": "小さな基板：ドリルと外形のファイル、サンプルのマシン・ツールファイル",
+        "zh": "一块小电路板：钻孔和轮廓文件，以及示例机器和刀具文件",
+        "pt": "uma placa pequena: ficheiros de furação e contorno e os ficheiros de exemplo de máquina e ferramentas"
+      },
+      "rows": [
+        {
+          "name": "05_small_board.ncd  05_board_outline.plt",
+          "desc": {
+            "en": "the drilling file and the outline of the test board",
+            "es": "el fichero de taladrado y el contorno de la placa de prueba",
+            "de": "die Bohrdatei und der Umriss der Testplatine",
+            "fr": "le fichier de perçage et le contour de la carte de test",
+            "it": "il file di foratura e il contorno della scheda di prova",
+            "ja": "テスト基板のドリルファイルと外形",
+            "zh": "测试板的钻孔文件和轮廓",
+            "pt": "o ficheiro de furação e o contorno da placa de teste"
+          }
+        },
+        {
+          "name": "DRILLPRO.DCF  DRILLPRO.DTD",
+          "desc": {
+            "en": "the machine file and the tool table for drilling",
+            "es": "el fichero de la máquina y la tabla de herramientas de taladrado",
+            "de": "die Maschinendatei und die Werkzeugtabelle zum Bohren",
+            "fr": "le fichier de la machine et la table d'outils de perçage",
+            "it": "il file della macchina e la tabella utensili per la foratura",
+            "ja": "ドリル用のマシンファイルとツールテーブル",
+            "zh": "钻孔用的机器文件和刀具表",
+            "pt": "o ficheiro da máquina e a tabela de ferramentas de furação"
+          }
+        },
+        {
+          "name": "ROUTEPRO.RCF  ROUTEPRO.RTD",
+          "desc": {
+            "en": "the machine file and the tool table for routing",
+            "es": "el fichero de la máquina y la tabla de herramientas de fresado",
+            "de": "die Maschinendatei und die Werkzeugtabelle zum Fräsen",
+            "fr": "le fichier de la machine et la table d'outils de fraisage",
+            "it": "il file della macchina e la tabella utensili per la fresatura",
+            "ja": "ルーティング用のマシンファイルとツールテーブル",
+            "zh": "铣削用的机器文件和刀具表",
+            "pt": "o ficheiro da máquina e a tabela de ferramentas de fresagem"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "en": "Other folders and the files at the root",
+        "es": "Otras carpetas y los archivos de la raíz",
+        "de": "Weitere Ordner und die Dateien im Wurzelverzeichnis",
+        "fr": "Autres dossiers et fichiers à la racine",
+        "it": "Altre cartelle e i file nella radice",
+        "ja": "その他のフォルダーとルートのファイル",
+        "zh": "其他文件夹和根目录的文件",
+        "pt": "Outras pastas e os ficheiros da raiz"
+      },
+      "kind": "group",
+      "span": 3,
+      "columns": 2,
+      "accent": "d",
+      "rows": [
+        {
+          "name": "docs/",
+          "desc": {
+            "en": "the sources of the two pictures",
+            "es": "las fuentes de las dos imágenes",
+            "de": "die Quellen der beiden Bilder",
+            "fr": "les sources des deux images",
+            "it": "le fonti delle due immagini",
+            "ja": "2 つの図の元データ",
+            "zh": "两张图片的来源",
+            "pt": "as fontes das duas imagens"
+          }
+        },
+        {
+          "name": "tools/",
+          "desc": {
+            "en": "CI check, README check and the picture tools",
+            "es": "comprobación de CI, comprobación del README y herramientas de las imágenes",
+            "de": "CI-Prüfung, README-Prüfung und die Werkzeuge für die Bilder",
+            "fr": "contrôle CI, contrôle du README et outils des images",
+            "it": "controllo CI, controllo del README e strumenti delle immagini",
+            "ja": "CI チェック、README チェック、図の生成ツール",
+            "zh": "CI 检查、README 检查和图片工具",
+            "pt": "verificação de CI, verificação do README e ferramentas das imagens"
+          }
+        },
+        {
+          "name": "images/",
+          "desc": {
+            "en": "banner and the two pictures",
+            "es": "banner y las dos imágenes",
+            "de": "Banner und die beiden Bilder",
+            "fr": "bannière et les deux images",
+            "it": "banner e le due immagini",
+            "ja": "バナーと 2 つの図",
+            "zh": "横幅图和两张图片",
+            "pt": "faixa e as duas imagens"
+          }
+        },
+        {
+          "name": ".github/",
+          "desc": {
+            "en": "CI and release workflows, issue and pull-request templates",
+            "es": "flujos de CI y de publicación, plantillas de issues y pull requests",
+            "de": "CI- und Release-Workflows, Vorlagen für Issues und Pull Requests",
+            "fr": "workflows de CI et de publication, modèles d'issues et de pull requests",
+            "it": "workflow di CI e di rilascio, modelli per issue e pull request",
+            "ja": "CI とリリースのワークフロー、Issue と PR のテンプレート",
+            "zh": "CI 与发布工作流，Issue 和拉取请求模板",
+            "pt": "fluxos de CI e de publicação, modelos de issues e pull requests"
+          }
+        },
+        {
+          "name": "build.sh  build.bat",
+          "desc": {
+            "en": "build the window",
+            "es": "compilan la ventana",
+            "de": "bauen das Fenster",
+            "fr": "compilent la fenêtre",
+            "it": "compilano la finestra",
+            "ja": "ウィンドウをビルド",
+            "zh": "构建窗口",
+            "pt": "compilam a janela"
+          },
+          "tree_name": "build.sh build.bat"
+        },
+        {
+          "name": "run.sh  run.bat",
+          "desc": {
+            "en": "start the window, with the test files when no arguments are given",
+            "es": "arrancan la ventana, con los ficheros de prueba si no se dan argumentos",
+            "de": "starten das Fenster, ohne Argumente mit den Testdateien",
+            "fr": "démarrent la fenêtre, avec les fichiers de test sans argument",
+            "it": "avviano la finestra, con i file di prova se non ci sono argomenti",
+            "ja": "ウィンドウを起動（引数なしならテストファイルで）",
+            "zh": "启动窗口，无参数时使用测试文件",
+            "pt": "arrancam a janela, com os ficheiros de teste se não houver argumentos"
+          },
+          "tree_name": "run.sh run.bat"
+        },
+        {
+          "name": "eh3d.project.json  bump_manifest_version.py",
+          "desc": {
+            "en": "manifest and version utility",
+            "es": "manifiesto y utilidad de versión",
+            "de": "Manifest und Versionswerkzeug",
+            "fr": "manifeste et utilitaire de version",
+            "it": "manifesto e utilità di versione",
+            "ja": "マニフェストとバージョン用ユーティリティ",
+            "zh": "清单和版本工具",
+            "pt": "manifesto e utilitário de versão"
+          },
+          "tree_name": "eh3d.project.json bump_manifest_version.py"
+        },
+        {
+          "name": "Cargo.toml  Cargo.lock",
+          "desc": {
+            "en": "the Rust package and its locked dependencies",
+            "es": "el paquete de Rust y sus dependencias fijadas",
+            "de": "das Rust-Paket und seine festgelegten Abhängigkeiten",
+            "fr": "le paquet Rust et ses dépendances verrouillées",
+            "it": "il pacchetto Rust e le sue dipendenze bloccate",
+            "ja": "Rust パッケージと固定された依存関係",
+            "zh": "Rust 包及其锁定的依赖",
+            "pt": "o pacote Rust e as suas dependências fixadas"
+          },
+          "tree_name": "Cargo.toml Cargo.lock"
+        },
+        {
+          "name": "CHANGELOG.md",
+          "desc": {
+            "en": "what changed in each version",
+            "es": "qué cambió en cada versión",
+            "de": "was sich in jeder Version geändert hat",
+            "fr": "ce qui a changé dans chaque version",
+            "it": "cosa è cambiato in ogni versione",
+            "ja": "各バージョンの変更点",
+            "zh": "每个版本的变化",
+            "pt": "o que mudou em cada versão"
+          }
+        },
+        {
+          "name": "SECURITY.md  SUPPORT.md",
+          "desc": {
+            "en": "how to report a vulnerability and where to ask",
+            "es": "cómo informar de una vulnerabilidad y dónde preguntar",
+            "de": "wie man eine Schwachstelle meldet und wo man fragt",
+            "fr": "comment signaler une vulnérabilité et où poser des questions",
+            "it": "come segnalare una vulnerabilità e dove chiedere",
+            "ja": "脆弱性の報告方法と質問先",
+            "zh": "如何报告漏洞以及在哪里提问",
+            "pt": "como comunicar uma vulnerabilidade e onde perguntar"
+          },
+          "tree_name": "SECURITY.md SUPPORT.md"
+        },
+        {
+          "name": "CONTRIBUTING.md  LICENSE",
+          "desc": {
+            "en": "how to contribute, the code of conduct and the licence",
+            "es": "cómo contribuir, el código de conducta y la licencia",
+            "de": "wie man beiträgt, der Verhaltenskodex und die Lizenz",
+            "fr": "comment contribuer, le code de conduite et la licence",
+            "it": "come contribuire, il codice di condotta e la licenza",
+            "ja": "貢献の方法、行動規範、ライセンス",
+            "zh": "如何贡献、行为准则和许可证",
+            "pt": "como contribuir, o código de conduta e a licença"
+          },
+          "tree_name": "CONTRIBUTING.md CODE_OF_CONDUCT.md LICENSE"
+        }
+      ]
+    }
+  ]
+}

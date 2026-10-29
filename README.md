@@ -1,30 +1,204 @@
-# EH3D-BUNGARD-GUI
+<p align="center">
+  <img src="images/EH3D_BANNER.svg" alt="EH3D-BUNGARD-GUI banner" width="100%">
+</p>
 
-The modern interface for the Bungard CCD machines. One window with a launcher (the modern interface, or the classic drilling and routing programs for a machine with manual or automatic tool change) and a viewer that shows the job on the table: every hole by drill size, the routing paths over them, the machine in 3D with the table of the size chosen in the configuration, and the progress of the job as it runs.
+# 🖥️ EH3D-BUNGARD-GUI
 
-**Honesty check - what actually runs today:** a Rust program with a window and a test suite that runs on a computer. The launcher, the plan view, the isometric view of the machine and the live progress of a job work; the job runs on the **simulator** of the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO, and the same machine file they read decides how a real machine is reached (the computer's RS-232, a USB-RS232 adapter, or the EH3D node directly or through the EH3D server) - **none of those has been tried from this window**. Five themes (Forge, Neon Arcade, Glass Pro, the classic Windows grey and one that follows the colours of Windows) and eight languages are in. The classic programs are started from the launcher when they are next to it. There is no editing of the machine and tool files, no connection screen, no 3D view with the real tool paths and no pause yet.
+<p align="center">🇺🇸 <b>English</b> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | <a href="README_ita.md">🇮🇹 Italiano</a> | <a href="README_deu.md">🇩🇪 Deutsch</a> | <a href="README_zho.md">🇨🇳 中文</a> | <a href="README_jpn.md">🇯🇵 日本語</a> | <a href="README_por.md">🇵🇹 Português</a></p>
 
-## Project status
+### The modern window for the Bungard CCD machines: a launcher, a 2D and a 3D view of the job, drilling and routing together, in eight languages
+
+<p align="center">
+  <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
+  <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
+  <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
+  <img src="https://img.shields.io/badge/Tests-24-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Version-0.0.1-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
+</p>
+
+---
+
+**Honesty check - what actually runs today:** a Rust program with a window and 24 tests that run on a computer. The launcher offers the modern interface or the classic drilling and routing programs for a machine with manual (MTC) or automatic (ATC) tool change. The viewer opens drilling files, HP-GL plot files and ZIP archives of jobs (from a folder browser, by drag and drop or from the command line), draws the plan view with every hole by drill size and the routing paths over it, shows the machine in 3D with the table of the size chosen in the configuration, panelizes the board and follows the job as it runs. The job runs on the **simulator** of the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO; the same machine file they read decides how a real machine is reached (the computer's RS-232, a USB-RS232 adapter, or the EH3D-NODE-BUNGARD directly or through EH3D-SERVER), and **none of those has been tried from this window**. There is no connection screen, no pause and no editing of the machine and tool files yet, and the 3D view does not show the height of the tool paths.
+
+---
+
+> **Safety and security status:** this program is not a safety system. It does not handle limit switches or an emergency stop, and it has never driven a real machine. With a real connection in the machine file the job would move the machine through the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO: read their notes first, take the tool out, keep a hand on the machine's power switch and be ready to stop the job. The project is independent: it is not made, endorsed or supported by Bungard Elektronik, and product names appear only to say which file formats and machines it is meant to work with.
+
+## 📋 At a glance
+
+| | |
+|---|---|
+| Version | `0.0.1` |
+| Maturity | Scaffolding |
+| Tests | 24 |
+| Stack | Rust |
+| On real hardware | No. It has run on the simulator and on a computer only; no machine has been driven from this window |
+
+**Jump to:** [Overview](#-overview) · [Architecture](#-architecture) · [Quick start](#-quick-start) · [Testing](#-testing) · [Structure](#-repository-structure) · [Related](#-related-projects)
+
+## 🚦 Project status
+
+Each line is one part of this repository and the light says how far it is today. It is written from what the repository can show (tests, builds, runs), not from what is planned.
+
+🟢 Done and verified · 🟡 Works, with known limits · 🟠 Partly done or not verified yet · 🔴 Not done or not working
 
 | Area | State | What it means here |
 |---|---|---|
-| Launcher and viewer | 🟡 | A window that runs on a computer; looked at with pictures of the simulated job. |
-| Machine connection | 🔴 | Reached through the engines of the classic programs; never tried from this window. |
-| Configuration screens | 🔴 | Not started: the machine file is edited with the classic programs. |
+| Window and launcher | 🟡 | A Rust window with a launcher (the modern interface or the classic programs), five themes and eight languages; it runs on a computer and has been looked at with pictures of the simulated job. |
+| Views | 🟡 | The plan view (holes by drill size, routing paths) and the 3D view of the machine with rails, perforated table, moving gantry and tool rack, fitted to the table size; both are dragged and zoomed. The 3D view shows no height of the tool paths yet. |
+| Files and panelization | 🟡 | Drilling files, HP-GL files and ZIP archives are opened from a browser, by drag and drop or from the command line; the board is repeated in three modes. Tried with the small sample files of this repository. |
+| Settings | 🟠 | The usable width and depth of the table are changed and saved to the machine files; the rest of the machine and tool files is still edited with the classic programs. |
+| Machine control | 🔴 | The job goes through the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO, so every connection they have is there in principle; it has run on the simulator only, and there is no connection screen and no pause. |
+| Tests | 🟡 | 24 tests pass on a computer (`cargo test --features gui`): the launcher, the settings, the reading of the files into the scene, the machine profiles, the panel and the command line. None of them touches a machine. |
+| Ready-made packages | 🟠 | A workflow builds the program for Windows (64 and 32 bits), Linux and macOS with the sample files; no release has been published yet. |
 
-## Run
+## 🎯 Overview
 
+* The **launcher**: the modern interface, or the classic drilling and routing programs for a machine with manual or automatic tool change; they are started as the programs they are when they are next to this one. The choice can be remembered.
+* The **plan view**: the table with every hole by drill size and the routing paths over it, dragged with the mouse and zoomed with the wheel; a button (or a double click) puts the view back.
+* The **3D view of the machine**: rails, perforated table, moving gantry and tool rack, with the table of the size set in the configuration. It is turned with a drag, zoomed with the wheel and moved with Shift or the right button. The machine profiles (CCD/2, CCD, CCD Premium and CCD XL) come from the published sizes; the machine is told by the table of the configuration.
+* **Opening files**: a drilling file, an HP-GL file or a ZIP archive with a job inside, from an Open window with a folder browser and the drives, by dropping the files on the window, with `Ctrl+O`, or given on the command line. A name in an archive that would leave the work folder is not listed, and no file is read past a size limit.
+* **Panelization**: copies of the board in columns and rows, placed by the gap between boards, by the distance from one to the next, or as many as fit in the table; the copies are drawn and the job makes them.
+* The **job**: it runs on the engines of the classic programs with their machine file (`demo` simulator, `rs232`, `usb`, `node` or `server`), shows the progress as it goes and puts the questions of the machine to the operator (the spindle, the tool change).
+
+## 🧩 Role in EH3D
+
+EH3D-BUNGARD-GUI is the modern interface of the Bungard machines in the EH3D family. It depends by path on the sibling folders EH3D-COMMON (the scene, the themes and the texts in eight languages of `eh3d-view`, and the ZIP reader of `eh3d-archive`), EH3D-DRILLPRO and EH3D-ROUTEPRO (their engines and their classic programs): they must sit next to this one.
+
+## 🏛️ Architecture
+
+<p align="center">
+  <img src="images/architecture.svg" alt="EH3D-BUNGARD-GUI architecture: who uses it, what it holds and what it depends on" width="100%">
+</p>
+
+How the parts of this repository fit together: who uses it, what it holds and what it depends on. The picture is drawn from `docs/architecture.json` and checked against the code.
+
+## ✨ Features
+
+* Themes: Forge (the default), Neon Arcade, Glass Pro, the classic Windows grey and one that follows the colours of Windows.
+* Eight languages in the whole window: English, Spanish, French, Italian, German, Chinese, Japanese and European Portuguese.
+* Machine profiles with the published sizes and an adjustable table: the machine in 3D grows with the usable area of the configuration.
+* Jobs in ZIP archives: the first drilling file and the first routing file are shown, the others are listed to be loaded with a click.
+* Panelization in three modes (gap, pitch, as many as fit) with the copies drawn on the table.
+* Live progress of the job and the questions of the machine to the operator.
+* An About window with the version, the licence and the connection in use.
+
+## 🔌 Interfaces
+
+* **Window:** the launcher and the viewer, with the mouse and the keyboard (`Enter` accepts the choice of the launcher, `Esc` goes back, `Ctrl+O` opens files).
+* **Command line:** `bungard-gui [FILE...] [--drill FILE.NCD] [--route FILE.PLT] [--zip JOB.ZIP] [--lang CODE] [--theme NAME] [--data DIR] [--connection FILE] [--screen launcher|viewer]`; files without an option are opened as what their extension says. `--modal`, `--panel`, `--yaw`, `--shot` and `--start` set a window, the panel, the turn of the 3D view, a picture of the window and the start of the job, for the pictures.
+* **Machine:** through the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO and the machine file they share: the computer's RS-232, a USB-RS232 adapter, the EH3D-NODE-BUNGARD, or EH3D-SERVER. Without a machine file the job runs on the simulator.
+
+## ⚙️ Configuration
+
+The connection is the **machine file** of EH3D-DRILLPRO and EH3D-ROUTEPRO (`machine.cfg`, with `connection = demo|rs232|usb|node|server` and every value tuned on a real machine): `--connection FILE` points to it, and without one the job runs on the simulator. `--data DIR` is the folder with the machine and tool files of the classic programs (`DRILLPRO.DCF`, `DRILLPRO.DTD`, `ROUTEPRO.RCF`, `ROUTEPRO.RTD`; the folder `testdata/` has samples). The settings window changes the usable width and depth of the table and saves them to those files. What the window remembers (the launcher choice, the language and the theme) is kept in a small file in the settings folder of the user, with the other EH3D programs. `--theme forge|neon|glass|windows-classic|system` and `--lang en|es|it|de|fr|pt|zh|ja` choose the look and the language.
+
+## 🚀 Quick start
+
+```bash
+cargo build --release --features gui
+cargo test --features gui
+cargo clippy --all-targets --features gui -- -D warnings
+cargo fmt --all --check
+python -I tools/ci_validate.py
 ```
-cargo run --release --features gui -- --drill FILE.NCD --route FILE.PLT
-cargo run --release --features gui -- --zip JOB.ZIP
+
+Run it with `run.bat` (Windows) or `./run.sh` (Linux and macOS); both build the window first if needed and, without arguments, open the launcher with the test board of `testdata/`. They need Rust and the sibling folders `EH3D-COMMON`, `EH3D-DRILLPRO` and `EH3D-ROUTEPRO`. `cargo run --release --features gui -- --zip JOB.ZIP` opens a job packed in a ZIP archive. On Linux the window needs X11 or Wayland.
+
+## 🧪 Testing
+
+The suite has 24 tests (`cargo test --features gui`). They check the launcher and what it remembers, the settings, how a drilling or an HP-GL file becomes the scene, the machine profiles, the panel and the command line. The engines it uses (protocol, motion, safety gate) are tested in EH3D-DRILLPRO and EH3D-ROUTEPRO. The CI also runs `cargo fmt --check` and `cargo clippy` with warnings as errors, and `python -I tools/ci_validate.py` checks the manifest, the versions, the changelog and the eight READMEs.
+
+## 🏗️ Build & Release
+
+The version lives in `Cargo.toml` and in `eh3d.project.json`, and each version has its entry in [CHANGELOG.md](CHANGELOG.md). `build.bat` / `build.sh` build the window (`cargo build --release --features gui`) and `test.bat` / `test.sh` run the tests; neither changes the version.
+
+**Ready-made packages:** the `Release binaries` workflow of this repository builds the program for Windows (64 and 32 bits), Linux and macOS (Apple silicon and Intel), each package with the licence, this README and the test files as examples, and its SHA-256. No release has been published yet.
+
+## 📂 Repository Structure
+
+<p align="center">
+  <img src="images/repository-structure.svg" alt="Repository structure of EH3D-BUNGARD-GUI" width="100%">
+</p>
+
+<details>
+<summary>Text version of the tree</summary>
+
+```text
+EH3D-BUNGARD-GUI/
+├── src/
+│   ├── gui.rs                                   the window: launcher, plan view, 3D view, job progress
+│   ├── gui/extra.rs                             open files, panelization, table settings, About, moving the views
+│   ├── jobs.rs                                  a drilling or HP-GL file turned into the scene the views draw
+│   ├── machines.rs                              the Bungard machine profiles and the work area from the table size
+│   ├── launcher.rs                              the launcher choices, the classic programs and what is remembered
+│   ├── cli.rs                                   the command line
+│   └── lib.rs bin/                              the library root and the bungard-gui executable
+├── testdata/                                    a small board: drilling and outline files, and the sample machine and tool files
+├── docs/                                        the sources of the two pictures
+├── tools/                                       CI check, README check and the picture tools
+├── images/                                      banner and the two pictures
+├── .github/                                     CI and release workflows, issue and pull-request templates
+├── build.sh build.bat                           build the window
+├── run.sh run.bat                               start the window, with the test files when no arguments are given
+├── eh3d.project.json bump_manifest_version.py   manifest and version utility
+├── Cargo.toml Cargo.lock                        the Rust package and its locked dependencies
+├── CHANGELOG.md                                 what changed in each version
+├── SECURITY.md SUPPORT.md                       how to report a vulnerability and where to ask
+└── CONTRIBUTING.md CODE_OF_CONDUCT.md LICENSE   how to contribute, the code of conduct and the licence
 ```
 
-`--zip JOB.ZIP` opens a job packed in a ZIP archive: its first drilling file and its first routing file are shown, and the others are listed on the job card to be loaded with a click. `--connection FILE` points to the machine file the classic programs read; without one the job runs on the simulator. `--theme forge|neon|glass|windows-classic|system` and `--lang en|es|it|de|fr|pt|zh|ja` choose the look and the language; `--screen launcher|viewer` the first screen. The window needs the sibling folders `EH3D-DRILLPRO`, `EH3D-ROUTEPRO` and `EH3D-COMMON` to build (until their shared code is split out).
+</details>
 
-## Test
+## 🗺️ Roadmap & Known limits
 
-`cargo test` runs the tests of the launcher, the settings, the reading of the files into the scene and the command line. `build.bat` / `build.sh` build the window and `test.bat` / `test.sh` run the tests.
+**Known limits today**
 
-## Licence
+* No job has been driven from this window on a real machine: it has run on the simulator of the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO only.
+* There is no connection screen: the machine file is written by hand or with the classic programs. The settings window changes the table size only; the machine and tool files are not edited here.
+* There is no real pause of a running job, and the 3D view does not show the height of the tool paths.
+* Only the CCD and CCD/2 machines are driven; the profiles of the CCD Premium and the CCD XL are drawn, but their own control unit is not supported.
+* The window needs the sibling folders EH3D-COMMON, EH3D-DRILLPRO and EH3D-ROUTEPRO next to it, because it depends on them by path.
 
-GPL-3.0-or-later. See `LICENSE`.
+**Next**
+
+* A Connection screen to choose and test how the machine is reached.
+* A real pause of the job.
+* The height (Z) of the tool paths in the 3D view.
+* Loading and saving the whole configuration, not only the table size.
+* Packaging with the classic programs, so one download has everything.
+* A test on a real machine.
+
+## 🌍 Languages
+
+README and texts exist in English, Spanish, French, Italian, German, Chinese, Japanese and European Portuguese.
+
+## 🔗 Related Projects
+
+* [EH3D-DRILLPRO](https://github.com/JuanenRac/EH3D-DRILLPRO): the drilling program; its engine and its classic program are used by this window
+* [EH3D-ROUTEPRO](https://github.com/JuanenRac/EH3D-ROUTEPRO): the routing program; its engine and its classic program are used by this window
+* [EH3D-COMMON](https://github.com/JuanenRac/EH3D-COMMON): the view (scene, themes, texts in eight languages) and the ZIP reader that this window uses
+* [EH3D-NODE-BUNGARD](https://github.com/JuanenRac/EH3D-NODE-BUNGARD): an ESP32-S3 node that sits in the machine's box and sends the steps out of its own serial port
+* [EH3D-SERVER](https://github.com/JuanenRac/EH3D-SERVER): the center of the EH3D family: it can run the job on the machine through its node
+
+## 📚 Documentation
+
+* [Connection and tuning](https://github.com/JuanenRac/EH3D-DRILLPRO/blob/main/docs/CONNECTION.md): the machine file, the connections and every value (EH3D-DRILLPRO)
+* [Protocol notes](https://github.com/JuanenRac/EH3D-DRILLPRO/blob/main/docs/PROTOCOL.md): what is known about how the control unit is driven (EH3D-DRILLPRO)
+* [Changelog](CHANGELOG.md)
+
+## 🤝 Contributing & Community
+
+* Before a pull request run `cargo fmt --all --check`, `cargo clippy --all-targets --features gui -- -D warnings`, `cargo test --features gui` and `python -I tools/ci_validate.py`: all must pass. See [CONTRIBUTING.md](CONTRIBUTING.md) and the [code of conduct](CODE_OF_CONDUCT.md).
+* The README exists in eight languages: a change to the text is made in all eight files, and the two pictures are drawn from `docs/architecture.json` and `docs/structure.json` by `tools/make_architecture.py` and `tools/make_structure.py`.
+* Do not describe as working on a machine what has only been tried on the simulator.
+* Report a vulnerability privately: [SECURITY.md](SECURITY.md). Questions, ideas and reports: electrohobby3d@gmail.com ([SUPPORT.md](SUPPORT.md)).
+
+## 👤 AUTHOR
+
+**JuanenRac (Electro Hobby 3D)** · electrohobby3d@gmail.com
+
+## 📜 LICENSE
+
+Software: GPL-3.0-or-later. See [LICENSE](LICENSE). Hardware designs of the suite use CERN OHL-S.

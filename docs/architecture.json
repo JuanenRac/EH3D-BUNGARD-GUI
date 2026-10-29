@@ -1,0 +1,185 @@
+{
+  "repo": "EH3D-BUNGARD-GUI",
+  "ecosystem": "eh3d",
+  "tagline": "The modern window for the Bungard CCD machines: launcher, 2D and 3D view of the job, drilling and routing together.",
+  "description": "EH3D-BUNGARD-GUI is a window with a launcher and a viewer. It opens drilling files, HP-GL files and ZIP archives of jobs, draws the plan view and the 3D view of the machine from the published sizes of the Bungard machines, panelizes the board and runs the job through the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO. The scene, the themes and the texts in eight languages come from EH3D-COMMON. It has run on the simulator only; no machine has been driven from this window.",
+  "columns": [
+    "WHO USES IT",
+    "THIS REPOSITORY",
+    "WHAT IT BUILDS ON"
+  ],
+  "nodes": [
+    {
+      "id": "op",
+      "column": 0,
+      "level": "external",
+      "title": "The operator",
+      "lines": [
+        "mouse and keyboard, in a window;",
+        "files opened from the browser,",
+        "dropped or on the command line"
+      ]
+    },
+    {
+      "id": "files",
+      "column": 0,
+      "level": "external",
+      "title": "Job and machine files",
+      "lines": [
+        "drilling files, HP-GL plots,",
+        "ZIP archives of jobs, the machine",
+        "and tool files"
+      ]
+    },
+    {
+      "id": "launcher",
+      "column": 1,
+      "level": "tested",
+      "title": "Launcher and options",
+      "lines": [
+        "the modern interface or the classic",
+        "programs; what is remembered;",
+        "the command line"
+      ],
+      "code": [
+        "src/launcher.rs",
+        "src/cli.rs"
+      ]
+    },
+    {
+      "id": "window",
+      "column": 1,
+      "level": "tested",
+      "title": "Window",
+      "lines": [
+        "2D and 3D views, open files,",
+        "panelization, settings, About,",
+        "themes, eight languages"
+      ],
+      "code": [
+        "src/gui.rs",
+        "src/gui/extra.rs"
+      ]
+    },
+    {
+      "id": "jobs",
+      "column": 1,
+      "level": "tested",
+      "title": "Jobs and machines",
+      "lines": [
+        "a drilling or HP-GL file becomes",
+        "the scene; the Bungard machine",
+        "profiles and the table size"
+      ],
+      "code": [
+        "src/jobs.rs",
+        "src/machines.rs"
+      ]
+    },
+    {
+      "id": "view",
+      "column": 2,
+      "level": "external",
+      "title": "EH3D-COMMON",
+      "lines": [
+        "view: scene, themes, texts in eight",
+        "languages; archive: ZIP of jobs"
+      ]
+    },
+    {
+      "id": "classic",
+      "column": 2,
+      "level": "external",
+      "title": "Classic programs",
+      "lines": [
+        "DRILLPRO and ROUTEPRO:",
+        "engines that run the job"
+      ]
+    },
+    {
+      "id": "sim",
+      "column": 2,
+      "level": "tested",
+      "title": "Simulator",
+      "lines": [
+        "the default; no machine needed"
+      ]
+    },
+    {
+      "id": "machine",
+      "column": 2,
+      "level": "untested",
+      "title": "The machine",
+      "lines": [
+        "RS-232, USB-RS232, EH3D node",
+        "or EH3D-SERVER; not tried here"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "op",
+      "to": "window",
+      "label": "mouse, keys",
+      "level": "tested"
+    },
+    {
+      "from": "files",
+      "to": "jobs",
+      "label": "read",
+      "level": "tested"
+    },
+    {
+      "from": "launcher",
+      "to": "window",
+      "level": "tested"
+    },
+    {
+      "from": "jobs",
+      "to": "window",
+      "level": "tested"
+    },
+    {
+      "from": "window",
+      "to": "view",
+      "label": "draws",
+      "level": "tested"
+    },
+    {
+      "from": "jobs",
+      "to": "view",
+      "label": "zip",
+      "level": "tested"
+    },
+    {
+      "from": "launcher",
+      "to": "classic",
+      "label": "starts",
+      "level": "config"
+    },
+    {
+      "from": "window",
+      "to": "classic",
+      "label": "job",
+      "level": "tested"
+    },
+    {
+      "from": "classic",
+      "to": "sim",
+      "level": "tested"
+    },
+    {
+      "from": "classic",
+      "to": "machine",
+      "label": "machine file",
+      "level": "untested"
+    }
+  ],
+  "legend": {
+    "tested": "covered by tests on a computer",
+    "config": "chosen in the settings; not tried for real",
+    "untested": "has not run a job on real hardware",
+    "external": "a person, a file or another repository"
+  },
+  "footer": "No job has been driven from this window on a real machine."
+}

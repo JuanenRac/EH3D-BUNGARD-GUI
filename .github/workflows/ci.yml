@@ -1,0 +1,63 @@
+name: EH3D CI baseline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate the repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Manifest, documentation and language parity
+        run: python -I tools/ci_validate.py
+
+  rust:
+    name: Rust (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: EH3D-BUNGARD-GUI
+      - name: Check out the sibling EH3D-COMMON (a path dependency)
+        uses: actions/checkout@v5
+        with:
+          repository: JuanenRac/EH3D-COMMON
+          path: EH3D-COMMON
+      - name: Check out the sibling EH3D-DRILLPRO (a path dependency)
+        uses: actions/checkout@v5
+        with:
+          repository: JuanenRac/EH3D-DRILLPRO
+          path: EH3D-DRILLPRO
+      - name: Check out the sibling EH3D-ROUTEPRO (a path dependency)
+        uses: actions/checkout@v5
+        with:
+          repository: JuanenRac/EH3D-ROUTEPRO
+          path: EH3D-ROUTEPRO
+      - name: Linux libraries of the window
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libxkbcommon-dev libwayland-dev libx11-dev libxcursor-dev libxrandr-dev libxi-dev libgl1-mesa-dev
+      - name: Rust toolchain
+        run: rustup toolchain install stable --profile minimal --component rustfmt,clippy
+      - name: Format
+        run: cargo fmt --all --check
+        working-directory: EH3D-BUNGARD-GUI
+      - name: Lints
+        run: cargo clippy --all-targets --features gui -- -D warnings
+        working-directory: EH3D-BUNGARD-GUI
+      - name: Tests
+        run: cargo test --all-targets --features gui
+        working-directory: EH3D-BUNGARD-GUI

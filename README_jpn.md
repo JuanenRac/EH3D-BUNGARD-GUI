@@ -1,0 +1,204 @@
+<p align="center">
+  <img src="images/EH3D_BANNER.svg" alt="EH3D-BUNGARD-GUI banner" width="100%">
+</p>
+
+# 🖥️ EH3D-BUNGARD-GUI
+
+<p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | <a href="README_ita.md">🇮🇹 Italiano</a> | <a href="README_deu.md">🇩🇪 Deutsch</a> | <a href="README_zho.md">🇨🇳 中文</a> | 🇯🇵 <b>日本語</b> | <a href="README_por.md">🇵🇹 Português</a></p>
+
+### Bungard CCD マシン向けの新しいウィンドウ：ランチャー、作業の 2D 表示と 3D 表示、ドリルとルーティングを一つに、8 言語対応
+
+<p align="center">
+  <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
+  <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
+  <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
+  <img src="https://img.shields.io/badge/Tests-24-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Version-0.0.1-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
+</p>
+
+---
+
+**正直さの確認 - 現在実際に動くもの：** ウィンドウを持つ Rust プログラムで、コンピューター上で動く 24 件のテストがあります。ランチャーは、手動 (MTC) または自動 (ATC) ツールチェンジのマシン向けに、新しいインターフェースか従来のドリル・ルーティングのプログラムを選べます。ビューアーは、ドリルファイル、HP-GL プロットファイル、作業を収めた ZIP アーカイブをフォルダーブラウザー、ドラッグ＆ドロップ、コマンドラインから開き、ドリル径ごとの穴とその上のルーティング経路を平面図に描き、設定で選んだサイズのテーブルを持つマシンを 3D で表示し、基板を面付けし、実行中の作業を追います。作業は EH3D-DRILLPRO と EH3D-ROUTEPRO のエンジンの**シミュレーター**で動きます。実機への接続方法（コンピューターの RS-232、USB-RS232 アダプター、または EH3D-NODE-BUNGARD を直接あるいは EH3D-SERVER 経由）は、それらが読む同じマシンファイルで決まりますが、**このウィンドウからはどれも試していません**。接続画面、一時停止、マシンファイルとツールファイルの編集はまだなく、3D 表示は経路の高さを示しません。
+
+---
+
+> **安全性とセキュリティの現状：** このプログラムは安全システムではありません。リミットスイッチや非常停止は扱わず、実機を動かしたことは一度もありません。マシンファイルに実際の接続を指定すると、作業は EH3D-DRILLPRO と EH3D-ROUTEPRO のエンジンを通じてマシンを動かします。先にそれらの注意書きを読み、ツールを外し、マシンの電源スイッチに手を置き、いつでも作業を止められるようにしてください。このプロジェクトは独立したもので、Bungard Elektronik が作成・推奨・サポートするものではなく、製品名はどのファイル形式とマシンで動かすことを想定しているかを示すためだけに使っています。
+
+## 📋 ひと目で
+
+| | |
+|---|---|
+| バージョン | `0.0.1` |
+| 成熟度 | 足場 |
+| テスト | 24 |
+| 技術スタック | Rust |
+| 実機での動作 | いいえ。シミュレーターとコンピューター上でのみ動かしました。このウィンドウから実機を動かしたことはありません |
+
+**移動先：** [概要](#-概要) · [アーキテクチャ](#-アーキテクチャ) · [クイックスタート](#-クイックスタート) · [テスト](#-テスト) · [構成](#-リポジトリの構成) · [関連](#-関連プロジェクト)
+
+## 🚦 プロジェクトの状況
+
+各行はこのリポジトリの一部分で、信号は今日どこまで進んでいるかを示します。計画ではなく、リポジトリが示せるもの（テスト、ビルド、実行）に基づいて書かれています。
+
+🟢 完了・検証済み · 🟡 動作する（既知の制限あり） · 🟠 一部のみ、または未検証 · 🔴 未実装または動作しない
+
+| 領域 | 状態 | ここでの意味 |
+|---|---|---|
+| ウィンドウとランチャー | 🟡 | ランチャー（新しいインターフェースか従来のプログラム）、5 つのテーマ、8 言語を備えた Rust のウィンドウ。コンピューター上で動き、シミュレートした作業の画像で確認しました。 |
+| 表示 | 🟡 | 平面図（ドリル径ごとの穴、ルーティング経路）と、レール、穴あきテーブル、可動ガントリー、ツールラックを備えた 3D のマシン表示。テーブルサイズに合わせ、どちらもドラッグとズームができます。3D 表示は経路の高さをまだ示しません。 |
+| ファイルと面付け | 🟡 | ドリルファイル、HP-GL ファイル、ZIP アーカイブをブラウザー、ドラッグ＆ドロップ、コマンドラインから開き、基板を 3 つのモードで繰り返します。このリポジトリの小さなサンプルファイルで試しました。 |
+| 設定 | 🟠 | テーブルの使用可能な幅と奥行きを変更してマシンファイルに保存できます。マシンファイルとツールファイルのそれ以外の部分は、引き続き従来のプログラムで編集します。 |
+| マシンの制御 | 🔴 | 作業は EH3D-DRILLPRO と EH3D-ROUTEPRO のエンジンを通るため、原則としてそれらのすべての接続が使えます。ただしシミュレーターでしか動かしておらず、接続画面も一時停止もありません。 |
+| テスト | 🟡 | コンピューター上で 24 件のテストが通ります（`cargo test --features gui`）：ランチャー、設定、ファイルからシーンへの読み込み、マシンのプロファイル、パネル、コマンドライン。マシンに触れるものはありません。 |
+| ビルド済みパッケージ | 🟠 | ワークフローが Windows（64 ビットと 32 ビット）、Linux、macOS 向けにサンプルファイル付きでビルドします。リリースはまだ公開していません。 |
+
+## 🎯 概要
+
+* **ランチャー**：新しいインターフェース、または手動か自動のツールチェンジのマシン向けの従来のドリル・ルーティングのプログラム。従来のプログラムはこのプログラムの隣にあるとき、そのまま起動されます。選択は記憶できます。
+* **平面図**：ドリル径ごとの穴とその上のルーティング経路を載せたテーブル。マウスでドラッグし、ホイールでズームします。ボタン（またはダブルクリック）で元に戻ります。
+* **マシンの 3D 表示**：レール、穴あきテーブル、可動ガントリー、ツールラック。テーブルは設定で決めたサイズです。ドラッグで回転し、ホイールでズームし、Shift または右ボタンで移動します。マシンのプロファイル（CCD/2、CCD、CCD Premium、CCD XL）は公表されている寸法に基づき、マシンは設定のテーブルから判定されます。
+* **ファイルを開く**：ドリルファイル、HP-GL ファイル、作業を収めた ZIP アーカイブを、フォルダーブラウザーとドライブを備えた「開く」ウィンドウ、ウィンドウへのドロップ、`Ctrl+O`、コマンドラインから開きます。作業フォルダーの外に出てしまうアーカイブ内の名前は一覧に出さず、サイズ上限を超えるファイルは読みません。
+* **面付け**：基板のコピーを列と行に並べます。基板間の隙間、隣との距離、またはテーブルに収まる最大数で配置し、コピーは描画され、作業でも加工されます。
+* **作業**：従来のプログラムのエンジンとそのマシンファイル（`demo` シミュレーター、`rs232`、`usb`、`node`、`server`）で実行し、進行を表示し、マシンからの質問（スピンドル、ツールチェンジ）をオペレーターに尋ねます。
+
+## 🧩 EH3D での役割
+
+EH3D-BUNGARD-GUI は、EH3D ファミリーにおける Bungard マシン用の新しいインターフェースです。隣のフォルダー EH3D-COMMON（`eh3d-view` のシーン、テーマ、8 言語のテキストと `eh3d-archive` の ZIP リーダー）、EH3D-DRILLPRO、EH3D-ROUTEPRO（それらのエンジンと従来のプログラム）にパスで依存するため、これらをこのフォルダーの隣に置く必要があります。
+
+## 🏛️ アーキテクチャ
+
+<p align="center">
+  <img src="images/architecture.svg" alt="EH3D-BUNGARD-GUI のアーキテクチャ：誰が使い、何を持ち、何に依存するか" width="100%">
+</p>
+
+このリポジトリの各部分の関係：誰が使い、何を持ち、何に依存するか。図は `docs/architecture.json` から描かれ、コードと照合されます。
+
+## ✨ 機能
+
+* テーマ：Forge（既定）、Neon Arcade、Glass Pro、従来の Windows グレー、Windows の色に従うもの。
+* ウィンドウ全体が 8 言語：英語、スペイン語、フランス語、イタリア語、ドイツ語、中国語、日本語、ヨーロッパポルトガル語。
+* 公表寸法のマシンプロファイルと調整できるテーブル：3D のマシンは設定の使用可能領域に合わせて大きくなります。
+* ZIP アーカイブ内の作業：最初のドリルファイルと最初のルーティングファイルを表示し、残りは一覧からクリックで読み込めます。
+* 3 つのモード（隙間、ピッチ、収まる最大数）での面付けと、テーブル上へのコピーの描画。
+* 作業の進行のライブ表示と、マシンからオペレーターへの質問。
+* バージョン、ライセンス、使用中の接続を示すバージョン情報ウィンドウ。
+
+## 🔌 インターフェース
+
+* **ウィンドウ：**ランチャーとビューアー。マウスとキーボードで操作します（`Enter` でランチャーの選択を決定、`Esc` で戻る、`Ctrl+O` でファイルを開く）。
+* **コマンドライン：**`bungard-gui [ファイル...] [--drill FILE.NCD] [--route FILE.PLT] [--zip JOB.ZIP] [--lang CODE] [--theme NAME] [--data DIR] [--connection FILE] [--screen launcher|viewer]`。オプションなしのファイルは拡張子に従って開かれます。`--modal`、`--panel`、`--yaw`、`--shot`、`--start` は、画像用にウィンドウ、パネル、3D 表示の回転、ウィンドウの画像、作業の開始を指定します。
+* **マシン：**EH3D-DRILLPRO と EH3D-ROUTEPRO のエンジンと、それらが共有するマシンファイルを通じて、コンピューターの RS-232、USB-RS232 アダプター、EH3D-NODE-BUNGARD、または EH3D-SERVER で接続します。マシンファイルがなければ作業はシミュレーターで動きます。
+
+## ⚙️ 設定
+
+接続は EH3D-DRILLPRO と EH3D-ROUTEPRO の**マシンファイル**（`machine.cfg`。`connection = demo|rs232|usb|node|server` と、実機で調整した各値）で決まります。`--connection FILE` でそれを指定し、なければ作業はシミュレーターで動きます。`--data DIR` は従来のプログラムのマシンファイルとツールファイル（`DRILLPRO.DCF`、`DRILLPRO.DTD`、`ROUTEPRO.RCF`、`ROUTEPRO.RTD`。`testdata/` にサンプルがあります）のフォルダーです。設定ウィンドウはテーブルの使用可能な幅と奥行きを変更し、それらのファイルに保存します。ウィンドウが記憶するもの（ランチャーの選択、言語、テーマ）は、他の EH3D プログラムと同じユーザーの設定フォルダー内の小さなファイルに保存されます。`--theme forge|neon|glass|windows-classic|system` と `--lang en|es|it|de|fr|pt|zh|ja` で外観と言語を選びます。
+
+## 🚀 クイックスタート
+
+```bash
+cargo build --release --features gui
+cargo test --features gui
+cargo clippy --all-targets --features gui -- -D warnings
+cargo fmt --all --check
+python -I tools/ci_validate.py
+```
+
+`run.bat`（Windows）または `./run.sh`（Linux と macOS）で起動します。どちらも必要ならまずウィンドウをビルドし、引数なしなら `testdata/` のテスト基板でランチャーを開きます。Rust と、隣のフォルダー `EH3D-COMMON`、`EH3D-DRILLPRO`、`EH3D-ROUTEPRO` が必要です。`cargo run --release --features gui -- --zip JOB.ZIP` で ZIP アーカイブに収めた作業を開きます。Linux ではウィンドウに X11 または Wayland が必要です。
+
+## 🧪 テスト
+
+テストスイートには 24 件のテストがあります（`cargo test --features gui`）。ランチャーと記憶する内容、設定、ドリルまたは HP-GL ファイルがシーンになる過程、マシンのプロファイル、パネル、コマンドラインを検証します。使用するエンジン（プロトコル、動作、安全ゲート）は EH3D-DRILLPRO と EH3D-ROUTEPRO でテストされています。CI は `cargo fmt --check` と、警告をエラーとする `cargo clippy` も実行し、`python -I tools/ci_validate.py` がマニフェスト、バージョン、変更履歴、8 つの README を検証します。
+
+## 🏗️ ビルドとリリース
+
+バージョンは `Cargo.toml` と `eh3d.project.json` にあり、各バージョンは [CHANGELOG.md](CHANGELOG.md) に項目があります。`build.bat` / `build.sh` はウィンドウをビルドし（`cargo build --release --features gui`）、`test.bat` / `test.sh` はテストを実行します。どちらもバージョンは変更しません。
+
+**ビルド済みパッケージ：**このリポジトリの `Release binaries` ワークフローが、Windows（64 ビットと 32 ビット）、Linux、macOS（Apple シリコンと Intel）向けにプログラムをビルドします。各パッケージにはライセンス、この README、サンプルとしてのテストファイル、SHA-256 が付きます。リリースはまだ公開していません。
+
+## 📂 リポジトリの構成
+
+<p align="center">
+  <img src="images/repository-structure.svg" alt="EH3D-BUNGARD-GUI のリポジトリ構成" width="100%">
+</p>
+
+<details>
+<summary>ツリーのテキスト版</summary>
+
+```text
+EH3D-BUNGARD-GUI/
+├── src/
+│   ├── gui.rs                                   ウィンドウ：ランチャー、平面図、3D 表示、作業の進行
+│   ├── gui/extra.rs                             ファイルを開く、面付け、テーブル設定、バージョン情報、表示の移動
+│   ├── jobs.rs                                  ドリルまたは HP-GL ファイルを表示用のシーンに変換
+│   ├── machines.rs                              Bungard マシンのプロファイルとテーブルサイズから求める作業領域
+│   ├── launcher.rs                              ランチャーの選択肢、従来のプログラム、記憶する内容
+│   ├── cli.rs                                   コマンドライン
+│   └── lib.rs bin/                              ライブラリのルートと実行ファイル bungard-gui
+├── testdata/                                    小さな基板：ドリルと外形のファイル、サンプルのマシン・ツールファイル
+├── docs/                                        2 つの図の元データ
+├── tools/                                       CI チェック、README チェック、図の生成ツール
+├── images/                                      バナーと 2 つの図
+├── .github/                                     CI とリリースのワークフロー、Issue と PR のテンプレート
+├── build.sh build.bat                           ウィンドウをビルド
+├── run.sh run.bat                               ウィンドウを起動（引数なしならテストファイルで）
+├── eh3d.project.json bump_manifest_version.py   マニフェストとバージョン用ユーティリティ
+├── Cargo.toml Cargo.lock                        Rust パッケージと固定された依存関係
+├── CHANGELOG.md                                 各バージョンの変更点
+├── SECURITY.md SUPPORT.md                       脆弱性の報告方法と質問先
+└── CONTRIBUTING.md CODE_OF_CONDUCT.md LICENSE   貢献の方法、行動規範、ライセンス
+```
+
+</details>
+
+## 🗺️ ロードマップと既知の制限
+
+**現時点で分かっている制限**
+
+* このウィンドウから実機で作業を動かしたことはありません。EH3D-DRILLPRO と EH3D-ROUTEPRO のエンジンのシミュレーターでのみ動かしました。
+* 接続画面はありません。マシンファイルは手作業か従来のプログラムで書きます。設定ウィンドウが変更するのはテーブルのサイズだけで、マシンファイルとツールファイルはここでは編集できません。
+* 実行中の作業の本当の一時停止はなく、3D 表示は経路の高さを示しません。
+* 制御できるのは CCD と CCD/2 のみです。CCD Premium と CCD XL のプロファイルは描画しますが、それらの制御ユニットには対応していません。
+* パスで依存しているため、ウィンドウの隣に EH3D-COMMON、EH3D-DRILLPRO、EH3D-ROUTEPRO のフォルダーが必要です。
+
+**次のステップ**
+
+* マシンへの接続方法を選んで試す接続画面。
+* 作業の本当の一時停止。
+* 3D 表示での経路の高さ (Z)。
+* テーブルサイズだけでなく、設定全体の読み込みと保存。
+* 従来のプログラムを同梱し、1 回のダウンロードですべてがそろうパッケージ。
+* 実機でのテスト。
+
+## 🌍 言語
+
+README とテキストは、英語、スペイン語、フランス語、イタリア語、ドイツ語、中国語、日本語、ヨーロッパポルトガル語で提供されています。
+
+## 🔗 関連プロジェクト
+
+* [EH3D-DRILLPRO](https://github.com/JuanenRac/EH3D-DRILLPRO)：ドリルのプログラム。このウィンドウはそのエンジンと従来のプログラムを使います
+* [EH3D-ROUTEPRO](https://github.com/JuanenRac/EH3D-ROUTEPRO)：ルーティングのプログラム。このウィンドウはそのエンジンと従来のプログラムを使います
+* [EH3D-COMMON](https://github.com/JuanenRac/EH3D-COMMON)：このウィンドウが使う表示（シーン、テーマ、8 言語のテキスト）と ZIP リーダー
+* [EH3D-NODE-BUNGARD](https://github.com/JuanenRac/EH3D-NODE-BUNGARD)：マシンの筐体に入り、独自のシリアルポートからステップを送る ESP32-S3 ノード
+* [EH3D-SERVER](https://github.com/JuanenRac/EH3D-SERVER)：EH3D ファミリーの中心。ノードを通じてマシン上で作業を実行できます
+
+## 📚 ドキュメント
+
+* [接続と調整](https://github.com/JuanenRac/EH3D-DRILLPRO/blob/main/docs/CONNECTION.md)：マシンファイル、接続、各値（EH3D-DRILLPRO）
+* [プロトコルの覚え書き](https://github.com/JuanenRac/EH3D-DRILLPRO/blob/main/docs/PROTOCOL.md)：制御ユニットの駆動についてわかっていること（EH3D-DRILLPRO）
+* [変更履歴](CHANGELOG.md)
+
+## 🤝 コントリビュートとコミュニティ
+
+* プルリクエストの前に `cargo fmt --all --check`、`cargo clippy --all-targets --features gui -- -D warnings`、`cargo test --features gui`、`python -I tools/ci_validate.py` を実行し、すべて通してください。[CONTRIBUTING.md](CONTRIBUTING.md) と[行動規範](CODE_OF_CONDUCT.md)を参照してください。
+* README は 8 言語あり、テキストの変更は 8 つのファイルすべてで行います。2 つの図は `docs/architecture.json` と `docs/structure.json` から `tools/make_architecture.py` と `tools/make_structure.py` で描きます。
+* シミュレーターでしか試していないことを、マシンで動作するかのように書かないでください。
+* 脆弱性は非公開で報告してください：[SECURITY.md](SECURITY.md)。質問、アイデア、報告：electrohobby3d@gmail.com（[SUPPORT.md](SUPPORT.md)）。
+
+## 👤 作者
+
+**JuanenRac (Electro Hobby 3D)** · electrohobby3d@gmail.com
+
+## 📜 ライセンス
+
+ソフトウェア：GPL-3.0-or-later。[LICENSE](LICENSE) を参照。スイートのハードウェア設計には CERN OHL-S を使います。

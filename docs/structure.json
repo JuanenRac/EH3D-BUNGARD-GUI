@@ -98,6 +98,19 @@
           }
         },
         {
+          "name": "link.rs",
+          "desc": {
+            "en": "the connection of the machine file: which keys it writes",
+            "es": "la conexión del fichero de máquina: qué claves escribe",
+            "de": "die Verbindung der Maschinendatei: welche Schlüssel geschrieben werden",
+            "fr": "la liaison du fichier de la machine : les clés écrites",
+            "it": "il collegamento del file della macchina: quali chiavi scrive",
+            "ja": "マシンファイルの接続：書き込むキー",
+            "zh": "机器文件中的连接：写入哪些键",
+            "pt": "a ligação do ficheiro da máquina: que chaves escreve"
+          }
+        },
+        {
           "name": "cli.rs",
           "desc": {
             "en": "the command line",

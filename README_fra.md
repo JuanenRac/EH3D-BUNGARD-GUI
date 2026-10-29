@@ -12,14 +12,14 @@
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
-  <img src="https://img.shields.io/badge/Tests-24-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-25-0f6cbd.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.0.1-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
 ---
 
-**Vérification d'honnêteté - ce qui tourne aujourd'hui :** un programme Rust avec une fenêtre et 24 tests qui s'exécutent sur un ordinateur. Le lanceur propose l'interface moderne ou les programmes classiques de perçage et de fraisage pour une machine avec changement d'outil manuel (MTC) ou automatique (ATC). Le visualiseur ouvre des fichiers de perçage, des fichiers de tracé HP-GL et des archives ZIP de travaux (depuis un navigateur de dossiers, par glisser-déposer ou depuis la ligne de commande), dessine la vue en plan avec chaque trou par diamètre de foret et les trajets de fraisage par-dessus, montre la machine en 3D avec la table de la taille choisie dans la configuration, panélise la carte et suit le travail pendant qu'il tourne. Le travail s'exécute dans le **simulateur** des moteurs de EH3D-DRILLPRO et EH3D-ROUTEPRO ; le même fichier de machine qu'ils lisent décide comment on atteint une vraie machine (le RS-232 de l'ordinateur, un adaptateur USB-RS232, ou le EH3D-NODE-BUNGARD directement ou via EH3D-SERVER), et **aucune de ces voies n'a été essayée depuis cette fenêtre**. Il n'y a pas encore d'écran de connexion, de pause ni d'édition des fichiers de machine et d'outils, et la vue 3D ne montre pas la hauteur des trajets.
+**Vérification d'honnêteté - ce qui tourne aujourd'hui :** un programme Rust avec une fenêtre et 25 tests qui s'exécutent sur un ordinateur. Le lanceur propose l'interface moderne ou les programmes classiques de perçage et de fraisage pour une machine avec changement d'outil manuel (MTC) ou automatique (ATC). Le visualiseur ouvre des fichiers de perçage, des fichiers de tracé HP-GL et des archives ZIP de travaux (depuis un navigateur de dossiers, par glisser-déposer ou depuis la ligne de commande), dessine la vue en plan avec chaque trou par diamètre de foret et les trajets de fraisage par-dessus, montre la machine en 3D avec la table de la taille choisie dans la configuration, panélise la carte et suit le travail pendant qu'il tourne. Le travail s'exécute dans le **simulateur** des moteurs de EH3D-DRILLPRO et EH3D-ROUTEPRO ; le même fichier de machine qu'ils lisent décide comment on atteint une vraie machine (le RS-232 de l'ordinateur, un adaptateur USB-RS232, ou le EH3D-NODE-BUNGARD directement ou via EH3D-SERVER), et **aucune de ces voies n'a été essayée depuis cette fenêtre**. Il n'y a pas encore d'écran de connexion, de pause ni d'édition des fichiers de machine et d'outils, et la vue 3D ne montre pas la hauteur des trajets.
 
 ---
 
@@ -31,7 +31,7 @@
 |---|---|
 | Version | `0.0.1` |
 | Maturité | Échafaudage |
-| Tests | 24 |
+| Tests | 25 |
 | Pile technique | Rust |
 | Sur du matériel réel | Non. Il n'a tourné que sur le simulateur et sur un ordinateur ; aucune machine n'a été pilotée depuis cette fenêtre |
 
@@ -49,8 +49,8 @@ Chaque ligne est une partie de ce dépôt et le feu dit où elle en est aujourd'
 | Vues | 🟡 | La vue en plan (trous par diamètre, trajets de fraisage) et la vue 3D de la machine avec rails, table perforée, portique mobile et rack d'outils, ajustée à la taille de la table ; toutes deux se déplacent et se zooment. La vue 3D ne montre pas encore la hauteur des trajets. |
 | Fichiers et panélisation | 🟡 | Les fichiers de perçage, HP-GL et les archives ZIP s'ouvrent depuis un navigateur, par glisser-déposer ou depuis la ligne de commande ; la carte est répétée en trois modes. Essayé avec les petits fichiers d'exemple de ce dépôt. |
 | Réglages | 🟠 | La largeur et la profondeur utiles de la table se changent et s'enregistrent dans les fichiers de la machine ; le reste des fichiers de machine et d'outils s'édite encore avec les programmes classiques. |
-| Pilotage de la machine | 🔴 | Le travail passe par les moteurs de EH3D-DRILLPRO et EH3D-ROUTEPRO, donc en principe toutes leurs connexions sont là ; il n'a tourné que sur le simulateur, et il n'y a ni écran de connexion ni pause. |
-| Tests | 🟡 | 24 tests passent sur un ordinateur (`cargo test --features gui`) : le lanceur, les réglages, la lecture des fichiers vers la scène, les profils de machine, le panneau et la ligne de commande. Aucun ne touche une machine. |
+| Pilotage de la machine | 🔴 | Le travail passe par les moteurs de EH3D-DRILLPRO et EH3D-ROUTEPRO, donc en principe toutes leurs connexions sont là ; il n'a tourné que sur le simulateur. La fenêtre de Connexion choisit la liaison (le RS-232 de l'ordinateur, un adaptateur USB-RS232, le nœud EH3D ou le serveur EH3D), la teste et l'enregistre dans le fichier de la machine, et Pause retient le travail entre deux mouvements. |
+| Tests | 🟡 | 25 tests passent sur un ordinateur (`cargo test --features gui`) : le lanceur, les réglages, la lecture des fichiers vers la scène, les profils de machine, le panneau et la ligne de commande. Aucun ne touche une machine. |
 | Paquets prêts à l'emploi | 🟠 | Un workflow compile le programme pour Windows (64 et 32 bits), Linux et macOS avec les fichiers d'exemple ; aucune version n'a encore été publiée. |
 
 ## 🎯 Présentation
@@ -108,7 +108,7 @@ Lancez-le avec `run.bat` (Windows) ou `./run.sh` (Linux et macOS) ; les deux com
 
 ## 🧪 Tests
 
-La suite compte 24 tests (`cargo test --features gui`). Ils vérifient le lanceur et ce qu'il mémorise, les réglages, comment un fichier de perçage ou HP-GL devient la scène, les profils de machine, le panneau et la ligne de commande. Les moteurs qu'il utilise (protocole, mouvement, porte de sécurité) sont testés dans EH3D-DRILLPRO et EH3D-ROUTEPRO. La CI exécute aussi `cargo fmt --check` et `cargo clippy` avec les avertissements en erreurs, et `python -I tools/ci_validate.py` vérifie le manifeste, les versions, le journal des modifications et les huit README.
+La suite compte 25 tests (`cargo test --features gui`). Ils vérifient le lanceur et ce qu'il mémorise, les réglages, comment un fichier de perçage ou HP-GL devient la scène, les profils de machine, le panneau et la ligne de commande. Les moteurs qu'il utilise (protocole, mouvement, porte de sécurité) sont testés dans EH3D-DRILLPRO et EH3D-ROUTEPRO. La CI exécute aussi `cargo fmt --check` et `cargo clippy` avec les avertissements en erreurs, et `python -I tools/ci_validate.py` vérifie le manifeste, les versions, le journal des modifications et les huit README.
 
 ## 🏗️ Compilation et publication
 
@@ -133,6 +133,7 @@ EH3D-BUNGARD-GUI/
 │   ├── jobs.rs                                  un fichier de perçage ou HP-GL transformé en scène dessinée par les vues
 │   ├── machines.rs                              les profils des machines Bungard et la zone de travail selon la table
 │   ├── launcher.rs                              les choix du lanceur, les programmes classiques et ce qui est mémorisé
+│   ├── link.rs                                  la liaison du fichier de la machine : les clés écrites
 │   ├── cli.rs                                   la ligne de commande
 │   └── lib.rs bin/                              la racine de la bibliothèque et l'exécutable bungard-gui
 ├── testdata/                                    une petite carte : fichiers de perçage et de contour, et fichiers d'exemple de machine et d'outils
@@ -156,15 +157,14 @@ EH3D-BUNGARD-GUI/
 **Limites connues aujourd'hui**
 
 * Aucun travail n'a été piloté depuis cette fenêtre sur une vraie machine : il n'a tourné que sur le simulateur des moteurs de EH3D-DRILLPRO et EH3D-ROUTEPRO.
-* Il n'y a pas d'écran de connexion : le fichier de la machine s'écrit à la main ou avec les programmes classiques. La fenêtre des réglages ne change que la taille de la table ; les fichiers de machine et d'outils ne s'éditent pas ici.
-* Il n'y a pas de vraie pause d'un travail en cours, et la vue 3D ne montre pas la hauteur des trajets.
+* La fenêtre de Connexion n'écrit dans le fichier de la machine que les clés de la liaison ; la fenêtre des réglages ne change que la taille de la table, et les fichiers de machine et d'outils ne s'éditent pas autrement ici.
+* La pause retient le travail entre deux mouvements, pas au milieu d'un, et la vue 3D ne montre pas la hauteur des trajets.
 * Seules les machines CCD et CCD/2 sont pilotées ; les profils de la CCD Premium et de la CCD XL sont dessinés, mais leur propre unité de commande n'est pas prise en charge.
 * La fenêtre demande les dossiers voisins EH3D-COMMON, EH3D-DRILLPRO et EH3D-ROUTEPRO à côté d'elle, car elle en dépend par chemin.
 
 **Ensuite**
 
-* Un écran de Connexion pour choisir et tester comment on atteint la machine.
-* Une vraie pause du travail.
+* Une pause au milieu d'un mouvement, pas seulement entre deux mouvements.
 * La hauteur (Z) des trajets dans la vue 3D.
 * Charger et enregistrer toute la configuration, pas seulement la taille de la table.
 * Un paquet avec les programmes classiques, pour qu'un seul téléchargement contienne tout.

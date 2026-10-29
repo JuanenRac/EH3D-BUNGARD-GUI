@@ -8,6 +8,7 @@ All notable changes to this project are documented here.
 - **Move around the views:** the plan view is dragged and zoomed with the wheel, the 3D view is turned with a drag, zoomed with the wheel and moved with Shift or the right button; a button (or a double click) puts the view back.
 - **Panelization:** copies of the board in columns and rows, placed by the gap between boards, by the distance from one to the next, or as many as fit in the table; the copies are drawn and the job makes them.
 - **Settings and About:** the usable width and depth of the table can be changed and saved to the machine files; the About window says the version, the licence and the connection.
+- **Connection and pause:** a Connection window chooses the link (the computer's RS-232, a USB-RS232 adapter, the EH3D node or the EH3D server), fills in the port, address, token or machine, tests it without blocking the window and saves it to the machine file without touching its other lines; Pause holds a running job between two moves; the 3D view also tilts up and down.
 - **Command line:** files without an option are opened, and `--modal`, `--panel` and `--yaw` set the window, the panel and the turn of the 3D view for the pictures.
 - **Repository:** the README in eight languages with the architecture and structure pictures, the CI and release workflows (the program is built for Windows 64 and 32 bits, Linux and macOS, with the test files as examples), the issue and pull-request templates and the contribution, security and support notes.
 

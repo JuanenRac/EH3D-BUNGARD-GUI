@@ -364,4 +364,25 @@ mod tests {
         a.commit_edit();
         assert!((a.table.width_mm - 508.0).abs() < 0.01);
     }
+
+    #[test]
+    fn the_library_is_big_and_the_list_of_a_maker_scrolls() {
+        assert!(
+            crate::boards::MATERIALS.len() >= 100,
+            "{} materials",
+            crate::boards::MATERIALS.len()
+        );
+        assert!(crate::boards::makers().len() >= 18);
+        let mut a = app();
+        let rogers = crate::boards::makers()
+            .iter()
+            .position(|m| *m == "Rogers")
+            .unwrap();
+        a.board_pick(super::super::board::BoardPick::Maker(rogers));
+        a.mat_scroll_by(1000);
+        let n = crate::boards::of_maker("Rogers").len();
+        assert_eq!(a.mat_scroll, n - super::super::board::MAT_ROWS);
+        a.mat_scroll_by(-1000);
+        assert_eq!(a.mat_scroll, 0);
+    }
 }

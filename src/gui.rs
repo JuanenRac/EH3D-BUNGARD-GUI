@@ -116,6 +116,7 @@ enum Act {
     BrowseFilter,
     BrowsePlace(usize),
     BrowseUp,
+    MatScroll(i32),
     BrowseBack,
     BrowseOpen,
     ResetView(Zone),
@@ -204,6 +205,8 @@ pub struct App {
     edit: Option<NumEdit>,
     /// The emergency stop is on: nothing starts until the button is pressed again.
     estop: bool,
+    /// The first material of the maker that the Board window shows.
+    mat_scroll: usize,
     /// The plan view follows the tool that works; a drag in it moves the board instead of the view; it takes the room of the 3D view;
     /// the work is turned by this many quarter turns.
     follow: bool,
@@ -315,6 +318,7 @@ impl App {
             pointer_down: false,
             edit: None,
             estop: false,
+            mat_scroll: 0,
             follow: false,
             move_board: false,
             plan_big: false,
@@ -730,6 +734,7 @@ impl App {
             Act::BrowseFilter => self.browse_filter(),
             Act::BrowsePlace(i) => self.browse_place(i),
             Act::BrowseUp => self.browse_up(),
+            Act::MatScroll(d) => self.mat_scroll_by(d),
             Act::BrowseBack => self.browse_back(),
             Act::BrowseOpen => self.browse_open(),
             Act::ResetView(z) => self.reset_view(z),
@@ -2366,6 +2371,8 @@ impl eframe::App for App {
         if scroll != 0.0 {
             if self.modal == Some(Modal::Open) {
                 self.browse_scroll(if scroll > 0.0 { -2 } else { 2 });
+            } else if self.modal == Some(Modal::Board) {
+                self.mat_scroll_by(if scroll > 0.0 { -2 } else { 2 });
             } else if let Some(z) = ctx
                 .input(|i| i.pointer.hover_pos())
                 .and_then(|p| self.zone_at(p))

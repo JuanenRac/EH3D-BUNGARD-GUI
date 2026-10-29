@@ -13,6 +13,7 @@ fn material_factors(core: Core) -> (f64, f64) {
         Core::Hydrocarbon | Core::Ptfe => (0.8, 0.8),
         Core::Flex => (1.0, 1.2),
         Core::Aluminium => (0.5, 0.5),
+        Core::Ceramic => (0.3, 0.2),
     }
 }
 

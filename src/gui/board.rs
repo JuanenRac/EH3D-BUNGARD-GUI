@@ -4,6 +4,9 @@
 use super::extra::wrap;
 use super::*;
 use crate::boards::{self, Sides, MATERIALS};
+
+/// The materials of a maker that the Board window shows at once.
+pub(super) const MAT_ROWS: usize = 9;
 use eh3d_drillpro::classic::engine::{Kind as EngineKind, ToolRow};
 
 /// A choice in the window of the board.
@@ -337,6 +340,7 @@ impl App {
         match p {
             BoardPick::Maker(i) => {
                 self.maker = i;
+                self.mat_scroll = 0;
                 return;
             }
             BoardPick::Material(i) => self.board = self.board.with_material(i),
@@ -359,6 +363,15 @@ impl App {
             BoardPick::Size(Some(i)) => self.board.size_mm = m.formats_mm.get(i).copied(),
         }
         self.apply_board();
+    }
+
+    pub(crate) fn mat_scroll_by(&mut self, delta: i32) {
+        let of_maker = MATERIALS
+            .iter()
+            .filter(|m| m.maker == boards::makers()[self.maker.min(boards::makers().len() - 1)])
+            .count();
+        let max = of_maker.saturating_sub(MAT_ROWS);
+        self.mat_scroll = (self.mat_scroll as i64 + delta as i64).clamp(0, max as i64) as usize;
     }
 
     pub(crate) fn board_adjust(&mut self, width: bool, d: f32) {
@@ -444,13 +457,39 @@ impl App {
         // the materials of the maker
         let maker = makers[self.maker.min(makers.len() - 1)];
         let mut ly = y + 70.0 + (makers.len().div_ceil(4)) as f32 * 46.0 + 12.0;
-        for (i, mat) in MATERIALS
+        let of_maker: Vec<(usize, &crate::boards::Material)> = MATERIALS
             .iter()
             .enumerate()
             .filter(|(_, mt)| mt.maker == maker)
-        {
+            .collect();
+        let shown = self.mat_scroll.min(of_maker.len().saturating_sub(MAT_ROWS));
+        if of_maker.len() > MAT_ROWS {
+            cv.chip(x + 596.0, ly, 36.0, 36.0, "^", false, Act::MatScroll(-3));
+            cv.chip(
+                x + 596.0,
+                ly + 42.0,
+                36.0,
+                36.0,
+                "v",
+                false,
+                Act::MatScroll(3),
+            );
+            cv.text(
+                x + 600.0,
+                ly + 110.0,
+                Align2::LEFT_BOTTOM,
+                &format!(
+                    "{}/{}",
+                    (shown + MAT_ROWS).min(of_maker.len()),
+                    of_maker.len()
+                ),
+                12.0,
+                col(t.dim),
+            );
+        }
+        for &(i, mat) in of_maker.iter().skip(shown).take(MAT_ROWS) {
             let on = i == b.material;
-            let r = cv.rect(x + 30.0, ly, 560.0, 34.0);
+            let r = cv.rect(x + 30.0, ly, 556.0, 34.0);
             cv.p.rect_filled(
                 r,
                 6.0 * cv.u,

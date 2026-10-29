@@ -93,12 +93,16 @@ pub fn classic_launch(choice: Choice, dir: &Path) -> Option<Launch> {
 }
 
 /// What is kept between runs.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Settings {
     /// The choice to take without asking (the launcher is skipped).
     pub choice: Option<Choice>,
     pub lang: Lang,
     pub theme: ThemeId,
+    /// The board of the job: material, thickness, copper and size.
+    pub board: crate::boards::Board,
+    /// The job stops at the questions of the machine (the tool change, the spindle start).
+    pub ask_operator: bool,
 }
 
 impl Default for Settings {
@@ -107,6 +111,8 @@ impl Default for Settings {
             choice: None,
             lang: Lang::En,
             theme: ThemeId::Forge,
+            board: crate::boards::Board::standard(),
+            ask_operator: true,
         }
     }
 }
@@ -123,6 +129,10 @@ impl Settings {
                 "choice" => s.choice = Choice::from_key(v),
                 "lang" => s.lang = Lang::from_code(v).unwrap_or(s.lang),
                 "theme" => s.theme = ThemeId::from_key(v).unwrap_or(s.theme),
+                "ask_operator" => {
+                    s.ask_operator = !matches!(v.trim(), "no" | "off" | "false" | "0")
+                }
+                "board" => s.board = crate::boards::from_text(v).unwrap_or(s.board),
                 _ => {}
             }
         }
@@ -131,10 +141,12 @@ impl Settings {
 
     pub fn to_text(&self) -> String {
         format!(
-            "choice = {}\nlang = {}\ntheme = {}\n",
+            "choice = {}\nlang = {}\ntheme = {}\nboard = {}\nask_operator = {}\n",
             self.choice.map_or("ask", |c| c.key()),
             self.lang.code(),
-            self.theme.key()
+            self.theme.key(),
+            crate::boards::to_text(&self.board),
+            if self.ask_operator { "yes" } else { "no" }
         )
     }
 
@@ -233,6 +245,8 @@ mod tests {
             choice: Some(Choice::Classic(Program::Drill, Machine::Atc)),
             lang: Lang::Ja,
             theme: ThemeId::WindowsClassic,
+            board: crate::boards::Board::standard().with_material(3),
+            ask_operator: false,
         };
         s.save(&path).unwrap();
         assert_eq!(Settings::load(&path), s);

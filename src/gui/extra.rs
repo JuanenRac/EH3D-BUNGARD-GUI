@@ -29,6 +29,8 @@ pub(crate) enum Modal {
     Panel,
     Settings,
     Connection,
+    Board,
+    Tools,
 }
 
 /// A text box of the Connection window.
@@ -109,68 +111,8 @@ impl Default for Nav3 {
     }
 }
 
-/// The file browser of the Open window: a folder (or the list of drives) and what is in it.
-pub(crate) struct Browser {
-    pub dir: Option<PathBuf>,
-    pub entries: Vec<(String, bool)>,
-    pub scroll: usize,
-}
-
-/// The rows the browser shows at once.
-pub(crate) const BROWSER_ROWS: usize = 12;
-
 pub(super) fn is_job(name: &str) -> bool {
     name.to_ascii_lowercase().ends_with(".zip") || eh3d_archive::kind_of(name) != Kind::Other
-}
-
-impl Browser {
-    pub fn new(dir: PathBuf) -> Browser {
-        let mut b = Browser {
-            dir: Some(dir),
-            entries: Vec::new(),
-            scroll: 0,
-        };
-        b.refresh();
-        b
-    }
-
-    /// Lists the folder again: the folders first, then the files a job can be made of (drilling, routing, ZIP).
-    pub fn refresh(&mut self) {
-        self.scroll = 0;
-        let (mut dirs, mut files) = (Vec::new(), Vec::new());
-        match &self.dir {
-            None => {
-                for l in b'A'..=b'Z' {
-                    let d = format!("{}:\\", l as char);
-                    if Path::new(&d).exists() {
-                        dirs.push(d);
-                    }
-                }
-            }
-            Some(d) => {
-                if let Ok(rd) = std::fs::read_dir(d) {
-                    for e in rd.flatten() {
-                        let name = e.file_name().to_string_lossy().to_string();
-                        if e.path().is_dir() {
-                            if !name.starts_with('.') {
-                                dirs.push(name);
-                            }
-                        } else if is_job(&name) {
-                            files.push(name);
-                        }
-                    }
-                }
-            }
-        }
-        dirs.sort_by_key(|n| n.to_lowercase());
-        files.sort_by_key(|n| n.to_lowercase());
-        self.entries.clear();
-        if self.dir.is_some() {
-            self.entries.push(("..".to_string(), true));
-        }
-        self.entries.extend(dirs.into_iter().map(|n| (n, true)));
-        self.entries.extend(files.into_iter().map(|n| (n, false)));
-    }
 }
 
 /// Breaks a text into lines of about `max` characters (at spaces; a text without spaces, as the Chinese and the Japanese, at any letter).
@@ -293,45 +235,9 @@ impl App {
     pub(crate) fn show_modal(&mut self, m: Modal) {
         self.saved = false;
         if m == Modal::Open {
-            self.browser = Some(Browser::new(self.last_dir.clone()));
+            self.browser = Some(self.new_browser());
         }
         self.modal = Some(m);
-    }
-
-    /// A click on a row of the browser: into a folder, up, or the file is opened.
-    pub(crate) fn browse(&mut self, i: usize) {
-        let Some(b) = self.browser.as_mut() else {
-            return;
-        };
-        let Some((name, is_dir)) = b.entries.get(i).cloned() else {
-            return;
-        };
-        if name == ".." {
-            match b.dir.as_ref().and_then(|d| d.parent()) {
-                Some(p) => b.dir = Some(p.to_path_buf()),
-                None if cfg!(windows) => b.dir = None,
-                None => {}
-            }
-            b.refresh();
-        } else if b.dir.is_none() {
-            b.dir = Some(PathBuf::from(name));
-            b.refresh();
-        } else if is_dir {
-            if let Some(d) = &b.dir {
-                b.dir = Some(d.join(name));
-            }
-            b.refresh();
-        } else if let Some(d) = b.dir.clone() {
-            self.modal = None;
-            self.open_path(&d.join(name));
-        }
-    }
-
-    pub(crate) fn browse_scroll(&mut self, delta: i32) {
-        if let Some(b) = self.browser.as_mut() {
-            let max = b.entries.len().saturating_sub(BROWSER_ROWS);
-            b.scroll = (b.scroll as i64 + delta as i64).clamp(0, max as i64) as usize;
-        }
     }
 
     // ------------------------------------------------------------------------------------------ panelization
@@ -564,7 +470,7 @@ impl App {
 
     // ------------------------------------------------------------------------------------------ the windows
 
-    fn modal_card(&self, cv: &mut Cv, title: &str, h: f32) -> (f32, f32) {
+    pub(super) fn modal_card(&self, cv: &mut Cv, title: &str, h: f32) -> (f32, f32) {
         let t = cv.t.clone();
         let (x, y, w) = (430.0, 130.0, 740.0);
         cv.p.rect_filled(
@@ -584,7 +490,7 @@ impl App {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn stepper(
+    pub(super) fn stepper(
         &self,
         cv: &mut Cv,
         y: f32,
@@ -615,6 +521,8 @@ impl App {
     pub(super) fn paint_modal(&self, cv: &mut Cv, m: Modal) {
         let t = cv.t.clone();
         match m {
+            Modal::Board => self.paint_board_modal(cv),
+            Modal::Tools => self.paint_tools_modal(cv),
             Modal::About => {
                 let (x, y) = self.modal_card(cv, self.tr(Text::About), 420.0);
                 cv.text(
@@ -677,103 +585,7 @@ impl App {
                     Act::CloseModal,
                 );
             }
-            Modal::Open => {
-                let (x, y) = self.modal_card(cv, self.tr(Text::OpenFile), 640.0);
-                let Some(b) = &self.browser else { return };
-                let path = b
-                    .dir
-                    .as_ref()
-                    .map_or_else(|| "\\".to_string(), |d| d.display().to_string());
-                let shown: String = if path.chars().count() > 70 {
-                    let tail: String = path
-                        .chars()
-                        .rev()
-                        .take(68)
-                        .collect::<Vec<_>>()
-                        .into_iter()
-                        .rev()
-                        .collect();
-                    format!("..{tail}")
-                } else {
-                    path
-                };
-                cv.text(
-                    x + 30.0,
-                    y + 86.0,
-                    Align2::LEFT_BOTTOM,
-                    &shown,
-                    15.0,
-                    col(t.dim),
-                );
-                for k in 0..BROWSER_ROWS {
-                    let i = b.scroll + k;
-                    let Some((name, is_dir)) = b.entries.get(i) else {
-                        break;
-                    };
-                    let ry = y + 100.0 + k as f32 * 36.0;
-                    cv.p.rect_filled(
-                        cv.rect(x + 30.0, ry, 640.0, 32.0),
-                        6.0 * cv.u,
-                        col(t.panel_raised),
-                    );
-                    let (tag, c) = if *is_dir {
-                        (">", col(t.accent))
-                    } else {
-                        ("-", col(t.ok))
-                    };
-                    cv.text(x + 44.0, ry + 23.0, Align2::LEFT_BOTTOM, tag, 16.0, c);
-                    let label = if name == ".." {
-                        self.tr(Text::OpenFolderUp).to_string()
-                    } else {
-                        name.clone()
-                    };
-                    cv.text(
-                        x + 74.0,
-                        ry + 23.0,
-                        Align2::LEFT_BOTTOM,
-                        &label,
-                        16.0,
-                        col(t.text),
-                    );
-                    cv.hits
-                        .push((cv.rect(x + 30.0, ry, 640.0, 32.0), Act::Browse(i)));
-                }
-                cv.chip(
-                    x + 680.0,
-                    y + 100.0,
-                    36.0,
-                    36.0,
-                    "▲",
-                    false,
-                    Act::BrowseScroll(-3),
-                );
-                cv.chip(
-                    x + 680.0,
-                    y + 140.0,
-                    36.0,
-                    36.0,
-                    "▼",
-                    false,
-                    Act::BrowseScroll(3),
-                );
-                cv.text(
-                    x + 30.0,
-                    y + 604.0,
-                    Align2::LEFT_BOTTOM,
-                    self.tr(Text::DropHint),
-                    14.0,
-                    col(t.dim),
-                );
-                cv.chip(
-                    x + 540.0,
-                    y + 574.0,
-                    170.0,
-                    44.0,
-                    self.tr(Text::Close),
-                    true,
-                    Act::CloseModal,
-                );
-            }
+            Modal::Open => self.paint_open_modal(cv),
             Modal::Panel => {
                 let (x, y) = self.modal_card(cv, self.tr(Text::PanelTitle), 660.0);
                 let (c, r, pitch) = self.panel_plan();
@@ -993,63 +805,7 @@ impl App {
                     Act::CloseModal,
                 );
             }
-            Modal::Settings => {
-                let (x, y) = self.modal_card(cv, self.tr(Text::SettingsTitle), 470.0);
-                self.stepper(
-                    cv,
-                    y + 100.0,
-                    self.tr(Text::TableWidth),
-                    &format!("{:.0}", self.table.width_mm),
-                    Field::TableW,
-                    [-10.0, -1.0, 1.0, 10.0],
-                    true,
-                );
-                self.stepper(
-                    cv,
-                    y + 164.0,
-                    self.tr(Text::TableDepth),
-                    &format!("{:.0}", self.table.depth_mm),
-                    Field::TableD,
-                    [-10.0, -1.0, 1.0, 10.0],
-                    true,
-                );
-                cv.text(
-                    x + 30.0,
-                    y + 262.0,
-                    Align2::LEFT_BOTTOM,
-                    &format!("{}: {}", self.tr(Text::Connection), self.connection),
-                    16.0,
-                    col(t.dim),
-                );
-                if self.saved {
-                    cv.text(
-                        x + 30.0,
-                        y + 400.0,
-                        Align2::LEFT_BOTTOM,
-                        self.tr(Text::Saved),
-                        18.0,
-                        col(t.ok),
-                    );
-                }
-                cv.chip(
-                    x + 330.0,
-                    y + 400.0,
-                    180.0,
-                    44.0,
-                    self.tr(Text::Save),
-                    false,
-                    Act::SaveSettings,
-                );
-                cv.chip(
-                    x + 530.0,
-                    y + 400.0,
-                    180.0,
-                    44.0,
-                    self.tr(Text::Close),
-                    true,
-                    Act::CloseModal,
-                );
-            }
+            Modal::Settings => self.paint_settings_modal(cv),
         }
     }
 }
@@ -1097,27 +853,6 @@ mod tests {
         let (c, r, _) = a.panel_plan();
         assert!(c * r >= 1);
         assert_eq!(a.drill.scene.holes.len(), one * (c * r) as usize);
-    }
-
-    #[test]
-    fn the_browser_goes_into_folders_and_opens_files() {
-        let mut a = app();
-        a.last_dir = testdata();
-        a.show_modal(Modal::Open);
-        let b = a.browser.as_ref().unwrap();
-        let i = b
-            .entries
-            .iter()
-            .position(|e| e.0 == "05_small_board.ncd")
-            .unwrap();
-        assert_eq!(b.entries[0].0, "..");
-        a.browse(i);
-        assert!(a.modal.is_none());
-        assert!(!a.drill.scene.holes.is_empty());
-        // up from the folder: the folder above is listed
-        a.show_modal(Modal::Open);
-        a.browse(0);
-        assert_ne!(a.browser.as_ref().unwrap().dir, Some(testdata()));
     }
 
     #[test]

@@ -59,6 +59,19 @@
           }
         },
         {
+          "name": "gui/opener.rs  gui/board.rs",
+          "desc": {
+            "en": "Open, board, tools and settings windows",
+            "es": "ventanas Abrir, placa, herramientas y ajustes",
+            "de": "Fenster Öffnen, Platine, Werkzeuge, Einstellungen",
+            "fr": "fenêtres Ouvrir, carte, outils et réglages",
+            "it": "finestre Apri, piastra, utensili e impostazioni",
+            "ja": "開く・基板・工具・設定のウィンドウ",
+            "zh": "打开、电路板、刀具和设置窗口",
+            "pt": "janelas Abrir, placa, ferramentas e definições"
+          }
+        },
+        {
           "name": "jobs.rs",
           "desc": {
             "en": "a drilling or HP-GL file turned into the scene the views draw",
@@ -69,6 +82,19 @@
             "ja": "ドリルまたは HP-GL ファイルを表示用のシーンに変換",
             "zh": "把钻孔或 HP-GL 文件转换为视图绘制的场景",
             "pt": "um ficheiro de furação ou HP-GL convertido na cena que as vistas desenham"
+          }
+        },
+        {
+          "name": "boards.rs",
+          "desc": {
+            "en": "the library of base materials of many makers",
+            "es": "la biblioteca de materiales base de muchos fabricantes",
+            "de": "die Bibliothek der Basismaterialien vieler Hersteller",
+            "fr": "la bibliothèque des matériaux de base",
+            "it": "la libreria dei materiali di base",
+            "ja": "多くのメーカーの基材ライブラリ",
+            "zh": "众多厂商的基材库",
+            "pt": "a biblioteca de materiais de base"
           }
         },
         {

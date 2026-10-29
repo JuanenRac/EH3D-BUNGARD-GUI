@@ -26,8 +26,12 @@ use crate::jobs;
 use crate::launcher::{self, Choice, Machine, Program, Settings};
 use crate::machines;
 
+mod board;
 mod extra;
-use extra::{Browser, Field, Modal, Nav2, Nav3, PanelCfg, PanelMode, Zone};
+mod opener;
+use board::BoardPick;
+use extra::{Field, Modal, Nav2, Nav3, PanelCfg, PanelMode, Zone};
+use opener::Browser;
 use std::sync::mpsc::Receiver;
 
 /// The design size of the canvas; everything is laid out in these units and scaled to the window.
@@ -68,6 +72,14 @@ enum Act {
     Entry(usize),
     Show(Modal),
     CloseModal,
+    Board(BoardPick),
+    BoardAdj(bool, f32),
+    ToolAdj(Program, usize, usize, f32),
+    ToolsSave,
+    SetTheme(ThemeId),
+    SetLang(Lang),
+    ToggleAsk,
+    ToggleSkip,
     Adjust(Field, f32),
     PanelMode(PanelMode),
     SaveSettings,
@@ -77,6 +89,12 @@ enum Act {
     /// A row of the browser of the Open window.
     Browse(usize),
     BrowseScroll(i32),
+    BrowseSort(usize),
+    BrowseFilter,
+    BrowsePlace(usize),
+    BrowseUp,
+    BrowseBack,
+    BrowseOpen,
     ResetView(Zone),
 }
 
@@ -157,6 +175,9 @@ pub struct App {
     drag_zone: Option<Zone>,
     ui_scale: f32,
     ui_origin: Pos2,
+    /// The board of the job and the maker whose materials the board window lists.
+    board: crate::boards::Board,
+    maker: usize,
     /// The connection being edited in its window, the file it is saved to and the answer of the last test.
     conn: ConnectionConfig,
     conn_path: PathBuf,
@@ -192,6 +213,11 @@ impl App {
                 route.set_error(e);
             }
         }
+        let board = settings.board;
+        let maker = crate::boards::makers()
+            .iter()
+            .position(|m| *m == board.material().maker)
+            .unwrap_or(0);
         let mut app = App {
             screen: o.screen.unwrap_or(match settings.choice {
                 Some(Choice::Modern) => Screen::Viewer,
@@ -240,6 +266,8 @@ impl App {
             drag_zone: None,
             ui_scale: 1.0,
             ui_origin: Pos2::ZERO,
+            board,
+            maker,
             conn,
             conn_path: o
                 .connection
@@ -284,6 +312,8 @@ impl App {
             Some("panel") => app.show_modal(Modal::Panel),
             Some("settings") => app.show_modal(Modal::Settings),
             Some("connection") => app.show_modal(Modal::Connection),
+            Some("board") => app.show_modal(Modal::Board),
+            Some("tools") => app.show_modal(Modal::Tools),
             _ => {}
         }
         app.refit_table();
@@ -417,6 +447,7 @@ impl App {
     }
 
     fn start_job(&mut self) {
+        let ask_operator = self.settings.ask_operator;
         let panel = self.panel_applied.map(|(columns, rows, pitch_mm)| Panel {
             columns,
             rows,
@@ -424,7 +455,7 @@ impl App {
         });
         if let Some((p, side)) = self.active() {
             side.engine.set_job_options(JobOptions {
-                ask_operator: true,
+                ask_operator,
                 panel,
                 ..Default::default()
             });
@@ -565,6 +596,14 @@ impl App {
             }
             Act::Show(m) => self.show_modal(m),
             Act::CloseModal => self.modal = None,
+            Act::Board(p) => self.board_pick(p),
+            Act::BoardAdj(width, d) => self.board_adjust(width, d),
+            Act::ToolAdj(p, row, c, d) => self.tool_adjust(p, row, c, d),
+            Act::ToolsSave => self.tools_save(),
+            Act::SetTheme(id) => self.set_theme(id),
+            Act::SetLang(l) => self.set_lang(l),
+            Act::ToggleAsk => self.toggle_ask(),
+            Act::ToggleSkip => self.toggle_skip(),
             Act::Adjust(f, d) => self.adjust(f, d),
             Act::PanelMode(m) => {
                 self.panel.mode = m;
@@ -580,6 +619,12 @@ impl App {
             Act::ConnSave => self.conn_save(),
             Act::Browse(i) => self.browse(i),
             Act::BrowseScroll(d) => self.browse_scroll(d),
+            Act::BrowseSort(c) => self.browse_sort(c),
+            Act::BrowseFilter => self.browse_filter(),
+            Act::BrowsePlace(i) => self.browse_place(i),
+            Act::BrowseUp => self.browse_up(),
+            Act::BrowseBack => self.browse_back(),
+            Act::BrowseOpen => self.browse_open(),
             Act::ResetView(z) => self.reset_view(z),
             Act::Start => self.start_job(),
             Act::Pause => self.paused = self.running.is_some() && !self.paused,
@@ -905,15 +950,17 @@ impl App {
         if back {
             let items = [
                 (330.0, Text::OpenFile, Modal::Open),
-                (490.0, Text::PanelTitle, Modal::Panel),
-                (650.0, Text::SettingsTitle, Modal::Settings),
-                (810.0, Text::Connection, Modal::Connection),
+                (454.0, Text::BoardTitle, Modal::Board),
+                (578.0, Text::ToolsTitle, Modal::Tools),
+                (702.0, Text::PanelTitle, Modal::Panel),
+                (826.0, Text::SettingsTitle, Modal::Settings),
+                (950.0, Text::Connection, Modal::Connection),
             ];
             for (x, n, m) in items {
                 cv.chip(
                     x,
                     14.0,
-                    150.0,
+                    118.0,
                     36.0,
                     self.tr(n),
                     self.modal == Some(m),
@@ -922,9 +969,9 @@ impl App {
             }
         }
         cv.chip(
-            970.0,
+            if back { 1074.0 } else { 970.0 },
             14.0,
-            150.0,
+            118.0,
             36.0,
             self.tr(Text::About),
             self.modal == Some(Modal::About),
@@ -1116,62 +1163,7 @@ impl App {
             19.0,
             col(t.text),
         );
-        let holes = self.drill.scene.holes.len();
-        cv.text(
-            38.0,
-            top + 94.0,
-            Align2::LEFT_BOTTOM,
-            &format!(
-                "{holes} {} - {} {}",
-                self.tr(Text::Holes),
-                sizes.len(),
-                self.tr(Text::Tools)
-            ),
-            13.0,
-            col(t.dim),
-        );
-        let mut all = self.drill.scene.clone();
-        all.overlay(&self.route.scene);
-        let mut y = top + 116.0;
-        for (i, d) in sizes.iter().enumerate().take(6) {
-            let (n, done) = all.size_count(*d);
-            let c = col(t.size_color(i));
-            cv.p.rect_filled(
-                cv.rect(38.0, y, 244.0, 60.0),
-                6.0 * cv.u,
-                col(t.panel_raised),
-            );
-            cv.p.circle_filled(cv.pt(66.0, y + 30.0), (5.0 + *d as f32 * 3.5) * cv.u, c);
-            cv.text(
-                98.0,
-                y + 26.0,
-                Align2::LEFT_BOTTOM,
-                &format!("{d:.1} mm"),
-                17.0,
-                col(t.text),
-            );
-            cv.text(
-                98.0,
-                y + 47.0,
-                Align2::LEFT_BOTTOM,
-                &format!("{n} {}", self.tr(Text::Holes)),
-                13.0,
-                col(t.dim),
-            );
-            cv.p.rect_filled(
-                cv.rect(186.0, y + 38.0, 84.0, 6.0),
-                3.0 * cv.u,
-                alpha(Color32::WHITE, 26),
-            );
-            if n > 0 {
-                cv.p.rect_filled(
-                    cv.rect(186.0, y + 38.0, 84.0 * done as f32 / n as f32, 6.0),
-                    3.0 * cv.u,
-                    c,
-                );
-            }
-            y += 68.0;
-        }
+        let mut y = self.paint_job_tools(cv, top + 94.0);
         if let Some(a) = &self.archive {
             y += 6.0;
             cv.text(38.0, y, Align2::LEFT_BOTTOM, "ZIP", 12.0, col(t.dim));
@@ -1293,9 +1285,9 @@ impl App {
                 Stroke::new(1.2 * cv.u, alpha(col(t.line), 140)),
                 StrokeKind::Inside,
             );
-            if let Some((x0, y0, x1, y1)) = all.bounds() {
-                let (a, b) = screen(x0 - 3.0, y1 + 3.0);
-                let (c, d) = screen(x1 + 3.0, y0 - 3.0);
+            if let Some((x0, y0, x1, y1)) = self.board_rect() {
+                let (a, b) = screen(x0, y1);
+                let (c, d) = screen(x1, y0);
                 cv.p.rect_filled(
                     cv.rect(a, b, c - a, d - b),
                     4.0 * cv.u,
@@ -2008,6 +2000,9 @@ impl eframe::App for App {
         }
         if self.modal == Some(Modal::Connection) {
             self.connection_fields(&ctx);
+        }
+        if self.modal == Some(Modal::Open) {
+            self.open_fields(&ctx);
         }
         let mut clicked: Option<Pos2> = None;
         let mut double: Option<Pos2> = None;

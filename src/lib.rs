@@ -4,6 +4,7 @@
 //! machine file as the classic programs, so every connection they have (the computer's RS-232, a USB-RS232 adapter, the EH3D node
 //! directly or through the EH3D server) works here too.
 
+pub mod boards;
 pub mod cli;
 pub mod jobs;
 pub mod launcher;

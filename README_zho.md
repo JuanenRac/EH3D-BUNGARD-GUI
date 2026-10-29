@@ -12,14 +12,14 @@
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
-  <img src="https://img.shields.io/badge/Tests-25-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-32-0f6cbd.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.0.1-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
 ---
 
-**诚实性检查 - 今天实际能运行的内容：**一个带窗口的 Rust 程序，有 25 项可在电脑上运行的测试。启动器提供现代界面，或用于手动 (MTC) 或自动 (ATC) 换刀机器的经典钻孔与铣削程序。查看器可从文件夹浏览器、拖放或命令行打开钻孔文件、HP-GL 绘图文件和包含作业的 ZIP 压缩包，在平面视图中按钻头尺寸绘出每个孔并在其上叠加铣削路径，用配置中选定尺寸的工作台以 3D 显示机器，对电路板拼板，并在作业运行时跟踪进度。作业运行在 EH3D-DRILLPRO 和 EH3D-ROUTEPRO 引擎的**模拟器**上；如何连接真实机器（电脑的 RS-232、USB-RS232 适配器，或直接或经由 EH3D-SERVER 连接 EH3D-NODE-BUNGARD）由它们读取的同一个机器文件决定，而**这些方式都没有在此窗口中试过**。目前还没有连接界面、暂停功能，也不能编辑机器和刀具文件，3D 视图也不显示路径的高度。
+**诚实性检查 - 今天实际能运行的内容：**一个带窗口的 Rust 程序，有 32 项可在电脑上运行的测试。启动器提供现代界面，或用于手动 (MTC) 或自动 (ATC) 换刀机器的经典钻孔与铣削程序。查看器可从文件夹浏览器、拖放或命令行打开钻孔文件、HP-GL 绘图文件和包含作业的 ZIP 压缩包，在平面视图中按钻头尺寸绘出每个孔并在其上叠加铣削路径，用配置中选定尺寸的工作台以 3D 显示机器，对电路板拼板，并在作业运行时跟踪进度。作业运行在 EH3D-DRILLPRO 和 EH3D-ROUTEPRO 引擎的**模拟器**上；如何连接真实机器（电脑的 RS-232、USB-RS232 适配器，或直接或经由 EH3D-SERVER 连接 EH3D-NODE-BUNGARD）由它们读取的同一个机器文件决定，而**这些方式都没有在此窗口中试过**。目前还没有连接界面、暂停功能，也不能编辑机器和刀具文件，3D 视图也不显示路径的高度。
 
 ---
 
@@ -31,7 +31,7 @@
 |---|---|
 | 版本 | `0.0.1` |
 | 成熟度 | 脚手架 |
-| 测试 | 25 |
+| 测试 | 32 |
 | 技术栈 | Rust |
 | 真实硬件 | 否。只在模拟器和电脑上运行过；从未通过此窗口驱动过任何机器 |
 
@@ -50,7 +50,7 @@
 | 文件与拼板 | 🟡 | 钻孔文件、HP-GL 文件和 ZIP 压缩包可从浏览器、拖放或命令行打开；电路板可按三种模式重复。已用本仓库的小型示例文件试过。 |
 | 设置 | 🟠 | 可更改工作台的可用宽度和深度并保存到机器文件；机器和刀具文件的其余部分仍用经典程序编辑。 |
 | 机器控制 | 🔴 | 作业通过 EH3D-DRILLPRO 和 EH3D-ROUTEPRO 的引擎，因此原则上具备它们的所有连接；只在模拟器上运行过。连接窗口可选择连接方式（计算机的 RS-232、USB-RS232 适配器、EH3D 节点或 EH3D 服务器），测试并保存到机器文件；暂停会在两次移动之间保持作业。 |
-| 测试 | 🟡 | 电脑上通过 25 项测试（`cargo test --features gui`）：启动器、设置、把文件读入场景、机器配置、面板和命令行。没有任何一项接触真实机器。 |
+| 测试 | 🟡 | 电脑上通过 32 项测试（`cargo test --features gui`）：启动器、设置、把文件读入场景、机器配置、面板和命令行。没有任何一项接触真实机器。 |
 | 预编译包 | 🟠 | 工作流为 Windows（64 位和 32 位）、Linux 和 macOS 构建带示例文件的程序；尚未发布版本。 |
 
 ## 🎯 概述
@@ -108,7 +108,7 @@ python -I tools/ci_validate.py
 
 ## 🧪 测试
 
-测试套件有 25 项测试（`cargo test --features gui`）。它们检查启动器及其记住的内容、设置、钻孔或 HP-GL 文件如何变成场景、机器配置、面板和命令行。它使用的引擎（协议、运动、安全门）在 EH3D-DRILLPRO 和 EH3D-ROUTEPRO 中测试。CI 还运行 `cargo fmt --check` 和把警告当作错误的 `cargo clippy`，`python -I tools/ci_validate.py` 检查清单、版本、更新日志和八个 README。
+测试套件有 32 项测试（`cargo test --features gui`）。它们检查启动器及其记住的内容、设置、钻孔或 HP-GL 文件如何变成场景、机器配置、面板和命令行。它使用的引擎（协议、运动、安全门）在 EH3D-DRILLPRO 和 EH3D-ROUTEPRO 中测试。CI 还运行 `cargo fmt --check` 和把警告当作错误的 `cargo clippy`，`python -I tools/ci_validate.py` 检查清单、版本、更新日志和八个 README。
 
 ## 🏗️ 构建与发布
 
@@ -130,7 +130,9 @@ EH3D-BUNGARD-GUI/
 ├── src/
 │   ├── gui.rs                                   窗口：启动器、平面视图、3D 视图、作业进度
 │   ├── gui/extra.rs                             打开文件、拼板、工作台设置、关于、移动视图
+│   ├── gui/opener.rs  gui/board.rs              打开、电路板、刀具和设置窗口
 │   ├── jobs.rs                                  把钻孔或 HP-GL 文件转换为视图绘制的场景
+│   ├── boards.rs                                众多厂商的基材库
 │   ├── machines.rs                              Bungard 机器的配置文件，以及按工作台尺寸得出的工作区
 │   ├── launcher.rs                              启动器的选项、经典程序以及记住的设置
 │   ├── link.rs                                  机器文件中的连接：写入哪些键

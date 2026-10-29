@@ -560,12 +560,13 @@ fn draw_boxes(
     cv: &Cv,
     iso: &Iso,
     o: (f32, f32),
+    shift: f64,
     faces: &[(f64, f64, f64, f64, f64, f64, Color32)],
     stroke: Color32,
 ) {
     for &(x, y, z, w, d, h, top) in faces {
         let p = |a: f64, b: f64, c: f64| {
-            let (px, py) = iso.project(a, b, c);
+            let (px, py) = iso.project(a + shift, b + shift, c);
             (o.0 + px as f32, o.1 + py as f32)
         };
         let sk = Stroke::new(1.0 * cv.u, stroke);
@@ -859,7 +860,7 @@ impl App {
         let t = cv.t.clone();
         self.top_bar(cv, true);
         let sizes = self.sizes();
-        let right_w = (DESIGN_W * 0.30).clamp(360.0, 520.0);
+        let right_w = (DESIGN_W * 0.38).clamp(420.0, 680.0);
         let mid_w = DESIGN_W - 316.0 - 20.0 - right_w - 16.0;
         let (top, hud_y) = (84.0, DESIGN_H - 196.0);
         let card_h = hud_y - top - 18.0;
@@ -1267,6 +1268,10 @@ impl App {
         all.progress()
     }
 
+    /// The machine in 3D, built as the Bungard CCD machines are: two aluminium rails with black end caps and adjustable feet, the white
+    /// perforated work table between them with its pins and discs, the gantry that runs along the rails (its motor at one end) with the
+    /// head and the spindle, and, on the models with the tool changer, the rack at the short edge with the tools at the positions of
+    /// the configuration. The table has the size chosen in the configuration.
     #[allow(clippy::too_many_arguments)]
     fn paint_machine(
         &self,
@@ -1280,52 +1285,115 @@ impl App {
     ) {
         let t = cv.t.clone();
         let (tw, td) = (self.table.width_mm, self.table.depth_mm);
-        let iso = Iso::fit(&self.table, 190.0, w as f64, h as f64);
+        // the view holds the rails, the rack and the gantry as well: the table plus 70 mm on each side
+        let shift = 70.0;
+        let iso = Iso::fit(
+            &Table::new(tw + 2.0 * shift, td + 2.0 * shift),
+            150.0,
+            w as f64,
+            h as f64,
+        );
         let o = (x0, y0);
         let p = |x: f64, y: f64, z: f64| {
-            let (px, py) = iso.project(x, y, z);
+            let (px, py) = iso.project(x + shift, y + shift, z);
             (o.0 + px as f32, o.1 + py as f32)
         };
-        let line = col(t.line);
-        // the base and the bed
-        draw_boxes(
+        let edge = alpha(col(t.line), 170);
+        let alu = Color32::from_rgb(196, 200, 206);
+        let black = Color32::from_rgb(34, 34, 37);
+        let plate = Color32::from_rgb(214, 215, 210);
+        let steel = Color32::from_rgb(168, 174, 182);
+        let motor = Color32::from_rgb(70, 72, 78);
+        let boxes = |cv: &Cv, list: &[(f64, f64, f64, f64, f64, f64, Color32)]| {
+            draw_boxes(cv, &iso, o, shift, list, edge);
+        };
+        let (hx, hy) = head.unwrap_or((tw / 2.0, td / 2.0));
+        let board_z = 30.0;
+
+        // the rail at the back and its feet
+        boxes(
             cv,
-            &iso,
-            o,
             &[
-                (
-                    -20.0,
-                    -20.0,
-                    -22.0,
-                    tw + 40.0,
-                    td + 40.0,
-                    22.0,
-                    col(t.panel_raised),
-                ),
-                (0.0, 0.0, 0.0, tw, td, 6.0, col(t.table)),
+                (-20.0, -34.0, -18.0, 26.0, 26.0, 18.0, black),
+                (tw - 5.0, -34.0, -18.0, 26.0, 26.0, 18.0, black),
+                (-34.0, -40.0, 0.0, tw + 68.0, 40.0, 40.0, alu),
+                (-38.0, -40.0, 0.0, 4.0, 40.0, 40.0, black),
+                (tw + 34.0, -40.0, 0.0, 4.0, 40.0, 40.0, black),
             ],
-            line,
+        );
+        // the cable chain along the rail
+        boxes(cv, &[(-20.0, -8.0, 40.0, tw + 40.0, 12.0, 8.0, black)]);
+        // the work table: a white plate with a grid of holes, three pins and two discs
+        boxes(cv, &[(0.0, 0.0, 22.0, tw, td, 8.0, plate)]);
+        let mut gx = 20.0;
+        while gx < tw - 10.0 {
+            let mut gy = 20.0;
+            while gy < td - 10.0 {
+                let (px, py) = p(gx, gy, board_z + 0.2);
+                let r = (4.0 * iso.k) as f32;
+                let pts: Vec<(f32, f32)> = (0..8)
+                    .map(|i| {
+                        let a = i as f32 * std::f32::consts::TAU / 8.0;
+                        (px + r * 1.15 * a.cos(), py + r * 0.62 * a.sin())
+                    })
+                    .collect();
+                cv.poly(&pts, alpha(Color32::BLACK, 120), Stroke::NONE);
+                gy += 40.0;
+            }
+            gx += 40.0;
+        }
+        for (cx, cy) in [(tw * 0.62, td * 0.22), (tw * 0.30, td * 0.74)] {
+            let (px, py) = p(cx, cy, board_z + 0.4);
+            let r = (22.0 * iso.k) as f32;
+            let pts: Vec<(f32, f32)> = (0..14)
+                .map(|i| {
+                    let a = i as f32 * std::f32::consts::TAU / 14.0;
+                    (px + r * 1.15 * a.cos(), py + r * 0.62 * a.sin())
+                })
+                .collect();
+            cv.poly(
+                &pts,
+                Color32::from_rgb(244, 244, 240),
+                Stroke::new(1.0 * cv.u, edge),
+            );
+        }
+        boxes(
+            cv,
+            &[
+                (50.0, td - 50.0, board_z, 12.0, 12.0, 6.0, steel),
+                (tw * 0.5, 40.0, board_z, 12.0, 12.0, 6.0, steel),
+                (tw - 60.0, td - 70.0, board_z, 12.0, 12.0, 6.0, steel),
+            ],
+        );
+        // the rail at the front and its feet
+        boxes(
+            cv,
+            &[
+                (-20.0, td + 8.0, -18.0, 26.0, 26.0, 18.0, black),
+                (tw - 5.0, td + 8.0, -18.0, 26.0, 26.0, 18.0, black),
+                (-34.0, td, 0.0, tw + 68.0, 40.0, 40.0, alu),
+                (-38.0, td, 0.0, 4.0, 40.0, 40.0, black),
+                (tw + 34.0, td, 0.0, 4.0, 40.0, 40.0, black),
+            ],
         );
         // the board and the work on it
         let mut all = self.drill.scene.clone();
         all.overlay(&self.route.scene);
         if let Some((x0b, y0b, x1b, y1b)) = all.bounds() {
-            draw_boxes(
+            boxes(
                 cv,
-                &iso,
-                o,
                 &[(
                     x0b - 3.0,
                     y0b - 3.0,
-                    6.0,
+                    board_z,
                     x1b - x0b + 6.0,
                     y1b - y0b + 6.0,
                     3.0,
                     col(t.board),
                 )],
-                col(t.accent),
             );
         }
+        let top = board_z + 3.2;
         if self.layers[0] {
             for hole in &self.drill.scene.holes {
                 let idx = sizes
@@ -1333,7 +1401,7 @@ impl App {
                     .position(|d| (*d - hole.diameter_mm).abs() < 0.005)
                     .unwrap_or(0);
                 let c = col(t.size_color(idx));
-                let (px, py) = p(hole.x_mm, hole.y_mm, 9.0);
+                let (px, py) = p(hole.x_mm, hole.y_mm, top);
                 let r = ((hole.diameter_mm * iso.k * 0.9).max(1.4)) as f32;
                 let pts: Vec<(f32, f32)> = (0..10)
                     .map(|i| {
@@ -1354,33 +1422,73 @@ impl App {
         }
         if self.layers[1] {
             for path in &self.route.scene.paths {
-                let pts: Vec<(f32, f32)> = path.points.iter().map(|&(x, y)| p(x, y, 9.0)).collect();
-                cv.polyline(&pts, 1.6, col(t.accent2), true);
+                let pts: Vec<(f32, f32)> = path.points.iter().map(|&(x, y)| p(x, y, top)).collect();
+                cv.polyline(&pts, 1.8, col(t.accent2), true);
+                if path.reached > 1 {
+                    cv.polyline(&pts[..path.reached.min(pts.len())], 2.2, col(t.ok), false);
+                }
             }
         }
-        // the gantry over the head
-        let (hx, hy) = head.unwrap_or((tw / 2.0, td / 2.0));
-        let gy = hy - 8.0;
-        let panel = col(t.panel_raised);
-        draw_boxes(
+        // the gantry: two carriages on the rails, the beam across, its motor at the end, the head and the spindle
+        boxes(
             cv,
-            &iso,
-            o,
             &[
-                (-14.0, -14.0, 0.0, 12.0, td + 28.0, 8.0, panel),
-                (-14.0, gy - 4.0, 8.0, 12.0, 14.0, 150.0, panel),
-                (tw + 2.0, -14.0, 0.0, 12.0, td + 28.0, 8.0, panel),
-                (tw + 2.0, gy - 4.0, 8.0, 12.0, 14.0, 150.0, panel),
-                (-14.0, gy - 4.0, 150.0, tw + 28.0, 14.0, 18.0, col(t.panel)),
-                (hx - 20.0, gy - 8.0, 120.0, 40.0, 22.0, 40.0, panel),
-                (hx - 7.0, gy - 2.0, 70.0, 14.0, 12.0, 50.0, col(t.panel)),
+                (hx - 34.0, -40.0, 40.0, 64.0, 40.0, 26.0, alu),
+                (hx - 34.0, td, 40.0, 64.0, 40.0, 26.0, alu),
+                (hx - 64.0, -40.0, 66.0, 36.0, td + 80.0, 36.0, alu),
+                (hx - 64.0, td + 40.0, 62.0, 44.0, 44.0, 44.0, motor),
+                (hx - 24.0, hy - 22.0, 44.0, 44.0, 44.0, 76.0, alu),
+                (hx - 9.0, hy - 9.0, 36.0, 18.0, 18.0, 72.0, steel),
             ],
-            line,
         );
-        let tip = p(hx, hy, 9.0);
-        let top = p(hx, gy + 4.0, 70.0);
-        cv.line(top, tip, 2.2, col(t.ok));
+        let tip = p(hx, hy, top);
+        let spindle_foot = p(hx, hy, 40.0);
+        cv.line(spindle_foot, tip, 2.2, col(t.ok));
         cv.p.circle_filled(cv.pt(tip.0, tip.1), 5.0 * cv.u, col(t.ok));
+        // the tool changer: the rack at the short edge with the tools where the configuration puts them
+        let atc = self
+            .drill
+            .engine
+            .settings()
+            .filter(|s| s.auto_change && !s.atc.is_empty())
+            .map(|s| s.atc.clone())
+            .unwrap_or_default();
+        if !atc.is_empty() {
+            let (y_min, y_max) = atc.iter().fold((f64::MAX, f64::MIN), |(a, b), s| {
+                (a.min(s.y_mm), b.max(s.y_mm))
+            });
+            boxes(
+                cv,
+                &[(
+                    tw + 14.0,
+                    y_min - 14.0,
+                    board_z,
+                    46.0,
+                    y_max - y_min + 28.0,
+                    10.0,
+                    alu,
+                )],
+            );
+            for s in &atc {
+                let c = match s.index {
+                    0 => steel,
+                    15 => Color32::from_rgb(90, 200, 190),
+                    n => col(t.size_color((n as usize).saturating_sub(1))),
+                };
+                boxes(
+                    cv,
+                    &[(
+                        s.x_mm - 3.0,
+                        s.y_mm - 3.0,
+                        board_z + 10.0,
+                        6.0,
+                        6.0,
+                        26.0,
+                        c,
+                    )],
+                );
+            }
+        }
     }
 }
 

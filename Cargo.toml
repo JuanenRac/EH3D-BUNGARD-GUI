@@ -1,0 +1,28 @@
+[package]
+name = "eh3d-bungard-gui"
+version = "0.0.1"
+edition = "2021"
+description = "The modern interface for the Bungard machines: launcher, 2D and 3D view of the job, drilling and routing together"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/JuanenRac/EH3D-BUNGARD-GUI"
+readme = "README.md"
+
+[features]
+default = []
+gui = ["dep:eframe", "dep:png"]
+
+[dependencies]
+eh3d-motioncnc = { path = "../EH3D-MOTIONCNC" }
+eh3d-drillpro = { path = "../EH3D-DRILLPRO" }
+eh3d-routepro = { path = "../EH3D-ROUTEPRO" }
+eframe = { version = "0.37.0", default-features = false, features = ["glow", "default_fonts"], optional = true }
+png = { version = "0.17", optional = true }
+
+# the window of Linux needs a windowing system chosen at build time (X11 and Wayland); Windows and macOS have their own
+[target.'cfg(target_os = "linux")'.dependencies]
+eframe = { version = "0.37.0", default-features = false, features = ["glow", "default_fonts", "x11", "wayland"], optional = true }
+
+[[bin]]
+name = "bungard-gui"
+path = "src/bin/bungard_gui.rs"
+required-features = ["gui"]

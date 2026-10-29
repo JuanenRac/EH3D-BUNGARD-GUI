@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "ecosystem": "EH3D",
+  "name": "EH3D-BUNGARD-GUI",
+  "version": "0.0.1",
+  "role": "ui",
+  "stack": "rust",
+  "technologies": [
+    "Rust",
+    "egui / eframe",
+    "Serial port"
+  ],
+  "deployment_target": "user-pc",
+  "maturity": "scaffolding",
+  "evidence": "host-test",
+  "family": "CNC Workflow Tools",
+  "parent": null,
+  "build": "cargo build --release --features gui; cargo test",
+  "notes": "Scaffolding v0.0.1: the modern interface for the Bungard CCD machines, with the classic drilling and routing programs as the other choices of its launcher. The window has a launcher (the modern interface, or the classic programs for a machine with manual or automatic tool change), the plan view of the table with every hole by drill size and the routing paths on top of it, the isometric view of the machine fitted to the table size of the configuration, the live progress of the job and the questions of the machine to the operator. It is themed (Forge by default, Neon Arcade, Glass Pro, classic Windows, or the colours of Windows) and in eight languages. The machine is driven by the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO with the same machine file, so the computer's RS-232, a USB-RS232 adapter and the EH3D node, directly or through the EH3D server, work as they do there; it has run on the simulator only.",
+  "native_version": {
+    "file": "Cargo.toml",
+    "pattern": "^version\s*=\s*\"(\d+\.\d+\.\d+)\""
+  }
+}

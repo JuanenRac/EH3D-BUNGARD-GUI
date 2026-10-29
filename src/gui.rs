@@ -16,6 +16,7 @@ use eframe::egui::{
 use eh3d_archive::{Archive, Kind};
 use eh3d_drillpro::classic::engine::{ClassicEngine, Question};
 use eh3d_drillpro::job::{JobOptions, Panel};
+use eh3d_drillpro::protocol::connection::{ConnectionConfig, Kind as LinkKind};
 use eh3d_view::scene::{Iso, Scene, Table};
 use eh3d_view::texts::{tr, Lang, Text};
 use eh3d_view::theme::{Corner, Rgb, Theme, ThemeId};
@@ -27,6 +28,7 @@ use crate::machines;
 
 mod extra;
 use extra::{Browser, Field, Modal, Nav2, Nav3, PanelCfg, PanelMode, Zone};
+use std::sync::mpsc::Receiver;
 
 /// The design size of the canvas; everything is laid out in these units and scaled to the window.
 const DESIGN_W: f32 = 1600.0;
@@ -68,6 +70,9 @@ enum Act {
     Adjust(Field, f32),
     PanelMode(PanelMode),
     SaveSettings,
+    ConnKind(LinkKind),
+    ConnTest,
+    ConnSave,
     /// A row of the browser of the Open window.
     Browse(usize),
     BrowseScroll(i32),
@@ -148,6 +153,12 @@ pub struct App {
     zones: Vec<(Rect, Zone)>,
     drag_zone: Option<Zone>,
     ui_scale: f32,
+    ui_origin: Pos2,
+    /// The connection being edited in its window, the file it is saved to and the answer of the last test.
+    conn: ConnectionConfig,
+    conn_path: PathBuf,
+    conn_result: Option<Result<(), String>>,
+    conn_rx: Option<Receiver<Result<(), String>>>,
 }
 
 impl App {
@@ -165,9 +176,11 @@ impl App {
         let mut drill = eh3d_drillpro::app::App::new(dlang, &data("DRILLPRO.DCF"));
         let mut route = eh3d_routepro::app::App::new(dlang, &data("ROUTEPRO.RCF"));
         let mut connection = String::from("demo");
+        let mut conn = ConnectionConfig::default();
         match eh3d_drillpro::protocol::connection::load(o.connection.as_deref()) {
             Ok(c) => {
                 connection = c.describe();
+                conn = c.clone();
                 drill.set_connection(c.clone());
                 route.set_connection(c);
             }
@@ -222,6 +235,14 @@ impl App {
             zones: Vec::new(),
             drag_zone: None,
             ui_scale: 1.0,
+            ui_origin: Pos2::ZERO,
+            conn,
+            conn_path: o
+                .connection
+                .clone()
+                .unwrap_or_else(eh3d_drillpro::protocol::connection::default_path),
+            conn_result: None,
+            conn_rx: None,
         };
         let examples = app.base_dir.join("examples");
         let has_jobs = std::fs::read_dir(&examples).is_ok_and(|rd| {
@@ -258,6 +279,7 @@ impl App {
             Some("open") => app.show_modal(Modal::Open),
             Some("panel") => app.show_modal(Modal::Panel),
             Some("settings") => app.show_modal(Modal::Settings),
+            Some("connection") => app.show_modal(Modal::Connection),
             _ => {}
         }
         app.refit_table();
@@ -429,6 +451,10 @@ impl App {
 
     /// Advances the engine and takes from it what the views show.
     fn tick(&mut self) {
+        if let Some(r) = self.conn_rx.as_ref().and_then(|rx| rx.try_recv().ok()) {
+            self.conn_result = Some(r);
+            self.conn_rx = None;
+        }
         let Some(p) = self.running else { return };
         let auto_ok = self.auto_ok;
         let side = self.side_mut(p);
@@ -536,6 +562,13 @@ impl App {
                 self.apply_panel();
             }
             Act::SaveSettings => self.save_settings(),
+            Act::ConnKind(k) => {
+                self.conn.kind = k;
+                self.conn_result = None;
+                self.saved = false;
+            }
+            Act::ConnTest => self.conn_test(),
+            Act::ConnSave => self.conn_save(),
             Act::Browse(i) => self.browse(i),
             Act::BrowseScroll(d) => self.browse_scroll(d),
             Act::ResetView(z) => self.reset_view(z),
@@ -801,6 +834,7 @@ impl App {
             0
         };
         self.ui_scale = u;
+        self.ui_origin = o;
     }
 
     fn top_bar(&self, cv: &mut Cv, back: bool) {
@@ -860,9 +894,10 @@ impl App {
         // the windows: open a file, panelization, settings, about
         if back {
             let items = [
-                (480.0, Text::OpenFile, Modal::Open),
-                (640.0, Text::PanelTitle, Modal::Panel),
-                (800.0, Text::SettingsTitle, Modal::Settings),
+                (330.0, Text::OpenFile, Modal::Open),
+                (490.0, Text::PanelTitle, Modal::Panel),
+                (650.0, Text::SettingsTitle, Modal::Settings),
+                (810.0, Text::Connection, Modal::Connection),
             ];
             for (x, n, m) in items {
                 cv.chip(
@@ -877,7 +912,7 @@ impl App {
             }
         }
         cv.chip(
-            960.0,
+            970.0,
             14.0,
             150.0,
             36.0,
@@ -1946,6 +1981,9 @@ impl eframe::App for App {
         }
         if self.close {
             ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+        }
+        if self.modal == Some(Modal::Connection) {
+            self.connection_fields(&ctx);
         }
         let mut clicked: Option<Pos2> = None;
         let mut double: Option<Pos2> = None;

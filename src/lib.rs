@@ -7,6 +7,7 @@
 pub mod cli;
 pub mod jobs;
 pub mod launcher;
+pub mod link;
 pub mod machines;
 
 #[cfg(feature = "gui")]

@@ -28,6 +28,19 @@ pub(crate) enum Modal {
     Open,
     Panel,
     Settings,
+    Connection,
+}
+
+/// A text box of the Connection window.
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum ConnField {
+    Rs232,
+    Usb,
+    NodeAddr,
+    NodeToken,
+    ServerAddr,
+    ServerToken,
+    ServerMachine,
 }
 
 /// How the copies of a panel are placed.
@@ -399,6 +412,93 @@ impl App {
             }
         }
         self.apply_panel();
+    }
+
+    // ------------------------------------------------------------------------------------------ the connection
+
+    /// The text boxes of the Connection window, over the card (the canvas has no text boxes of its own).
+    pub(super) fn connection_fields(&mut self, ctx: &egui::Context) {
+        let u = self.ui_scale;
+        let rows: Vec<(Text, ConnField)> = match self.conn.kind {
+            LinkKind::Demo => vec![],
+            LinkKind::Rs232 => vec![(Text::ConnPort, ConnField::Rs232)],
+            LinkKind::Usb => vec![(Text::ConnPort, ConnField::Usb)],
+            LinkKind::Node => vec![
+                (Text::ConnAddress, ConnField::NodeAddr),
+                (Text::ConnToken, ConnField::NodeToken),
+            ],
+            LinkKind::Server => vec![
+                (Text::ConnAddress, ConnField::ServerAddr),
+                (Text::ConnToken, ConnField::ServerToken),
+                (Text::ConnMachine, ConnField::ServerMachine),
+            ],
+        };
+        for (i, (_, f)) in rows.into_iter().enumerate() {
+            let pos = Pos2::new(
+                self.ui_origin.x + 700.0 * u,
+                self.ui_origin.y + (130.0 + 214.0 + i as f32 * 62.0) * u,
+            );
+            let secret = matches!(f, ConnField::NodeToken | ConnField::ServerToken);
+            let buf = match f {
+                ConnField::Rs232 => &mut self.conn.rs232_port,
+                ConnField::Usb => &mut self.conn.usb_port,
+                ConnField::NodeAddr => &mut self.conn.node_address,
+                ConnField::NodeToken => &mut self.conn.node_token,
+                ConnField::ServerAddr => &mut self.conn.server_address,
+                ConnField::ServerToken => &mut self.conn.server_token,
+                ConnField::ServerMachine => &mut self.conn.server_machine,
+            };
+            egui::Area::new(egui::Id::unique(("conn-field", i)))
+                .fixed_pos(pos)
+                .order(egui::Order::Foreground)
+                .show(ctx, |ui| {
+                    let r = ui.add(
+                        egui::TextEdit::singleline(buf)
+                            .desired_width(430.0 * u)
+                            .font(FontId::proportional(18.0 * u))
+                            .password(secret),
+                    );
+                    if r.changed() {
+                        self.saved = false;
+                        self.conn_result = None;
+                    }
+                });
+        }
+    }
+
+    /// Tries to open the link with the values of the window (in another thread: a node that does not answer takes its time).
+    pub(super) fn conn_test(&mut self) {
+        let c = self.conn.clone();
+        let (tx, rx) = std::sync::mpsc::channel();
+        std::thread::spawn(move || {
+            let r = c.open().map(|_| ()).map_err(|e| e.to_string());
+            let _ = tx.send(r);
+        });
+        self.conn_rx = Some(rx);
+        self.conn_result = None;
+    }
+
+    /// The machine files get the connection of the window; both programs use it from now on.
+    pub(super) fn conn_save(&mut self) {
+        if self.running.is_some() {
+            self.message = Some(self.tr(Text::Stop).to_string());
+            return;
+        }
+        self.drill.engine.set_connection(self.conn.clone());
+        self.route.engine.set_connection(self.conn.clone());
+        self.connection = self.conn.describe();
+        let old = std::fs::read_to_string(&self.conn_path).unwrap_or_default();
+        let text = crate::link::update(&old, &crate::link::pairs(&self.conn));
+        if let Some(dir) = self.conn_path.parent() {
+            let _ = std::fs::create_dir_all(dir);
+        }
+        match std::fs::write(&self.conn_path, text) {
+            Ok(()) => {
+                self.saved = true;
+                self.message = None;
+            }
+            Err(e) => self.message = Some(format!("{}: {e}", self.conn_path.display())),
+        }
     }
 
     pub(crate) fn save_settings(&mut self) {
@@ -775,6 +875,115 @@ impl App {
                     x + 540.0,
                     y + 590.0,
                     170.0,
+                    44.0,
+                    self.tr(Text::Close),
+                    true,
+                    Act::CloseModal,
+                );
+            }
+            Modal::Connection => {
+                let (x, y) = self.modal_card(cv, self.tr(Text::Connection), 560.0);
+                let kinds = [
+                    (LinkKind::Demo, "Demo"),
+                    (LinkKind::Rs232, "RS-232"),
+                    (LinkKind::Usb, "USB-RS232"),
+                    (LinkKind::Node, "EH3D node"),
+                    (LinkKind::Server, "EH3D server"),
+                ];
+                for (i, (k, n)) in kinds.into_iter().enumerate() {
+                    cv.chip(
+                        x + 30.0 + i as f32 * 140.0,
+                        y + 90.0,
+                        130.0,
+                        44.0,
+                        n,
+                        self.conn.kind == k,
+                        Act::ConnKind(k),
+                    );
+                }
+                let labels: Vec<Text> = match self.conn.kind {
+                    LinkKind::Demo => vec![],
+                    LinkKind::Rs232 | LinkKind::Usb => vec![Text::ConnPort],
+                    LinkKind::Node => vec![Text::ConnAddress, Text::ConnToken],
+                    LinkKind::Server => {
+                        vec![Text::ConnAddress, Text::ConnToken, Text::ConnMachine]
+                    }
+                };
+                for (i, n) in labels.into_iter().enumerate() {
+                    cv.text(
+                        x + 30.0,
+                        y + 214.0 + 30.0 + i as f32 * 62.0,
+                        Align2::LEFT_BOTTOM,
+                        self.tr(n),
+                        17.0,
+                        col(t.text),
+                    );
+                }
+                cv.text(
+                    x + 30.0,
+                    y + 174.0,
+                    Align2::LEFT_BOTTOM,
+                    &format!("{}: {}", self.tr(Text::Connection), self.conn.describe()),
+                    15.0,
+                    col(t.dim),
+                );
+                match &self.conn_result {
+                    Some(Ok(())) => {
+                        cv.text(
+                            x + 30.0,
+                            y + 440.0,
+                            Align2::LEFT_BOTTOM,
+                            self.tr(Text::ConnWorks),
+                            18.0,
+                            col(t.ok),
+                        );
+                    }
+                    Some(Err(e)) => {
+                        let e: String = e.chars().take(80).collect();
+                        cv.text(
+                            x + 30.0,
+                            y + 440.0,
+                            Align2::LEFT_BOTTOM,
+                            &e,
+                            15.0,
+                            col(t.danger),
+                        );
+                    }
+                    None => {
+                        if self.saved {
+                            cv.text(
+                                x + 30.0,
+                                y + 440.0,
+                                Align2::LEFT_BOTTOM,
+                                self.tr(Text::Saved),
+                                18.0,
+                                col(t.ok),
+                            );
+                        }
+                    }
+                }
+                cv.chip(
+                    x + 30.0,
+                    y + 480.0,
+                    230.0,
+                    44.0,
+                    self.tr(Text::ConnTest),
+                    false,
+                    Act::ConnTest,
+                );
+                cv.chip(
+                    x + 330.0,
+                    y + 480.0,
+                    180.0,
+                    44.0,
+                    self.tr(Text::Save),
+                    false,
+                    Act::ConnSave,
+                );
+                cv.chip(
+                    x + 530.0,
+                    y + 480.0,
+                    180.0,
                     44.0,
                     self.tr(Text::Close),
                     true,

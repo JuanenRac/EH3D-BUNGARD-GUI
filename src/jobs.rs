@@ -2,7 +2,7 @@
 
 use eh3d_drillpro::config;
 use eh3d_drillpro::ncd::DrillFile;
-use eh3d_motioncnc::scene::{Hole, Path, Scene, Table};
+use eh3d_view::scene::{Hole, Path, Scene, Table};
 use eh3d_routepro::hpgl::{Plot, UNIT_MM};
 
 /// The table of the Bungard CCD when the configuration says nothing else.

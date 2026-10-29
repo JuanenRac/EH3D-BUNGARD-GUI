@@ -1,0 +1,34 @@
+Basic tool table of EH3D-ROUTEPRO
+
+Written for this program; it is not a copy of any other file.
+
+Table of tool data. 15 lines of data begin at line 20; lines 1 to 19 are comments like these.
+Each data line is six numbers separated by spaces, with a point for decimals:
+
+nn   d.d   ii   xxxx   zzzz   sssss
+
+nn    = the tool number: pen SP1 of the HP-GL file cuts with tool 01, SP2 with tool 02, and so on
+d.d   = total depth to cut in mm (1.6 goes through a 1.6 mm board)
+ii    = passes: the depth is reached in that many passes (2 or 3 is gentler on a small cutter)
+xxxx  = feed of the cutter along the path in mm/min (500 to 1000 for FR4, slower for a small cutter)
+zzzz  = feed of the plunge in mm/min
+sssss = spindle speed in turns per minute: 30000 to 60000 on the CCD
+
+Change the numbers, never the number of lines. Too fast a feed breaks cutters; try on a scrap board first.
+
+Delimiter between the numbers: one or more spaces.
+01 1.8 02 0800 0300 60000
+02 1.8 02 0800 0300 60000
+03 1.8 02 0600 0300 60000
+04 1.0 01 0500 0200 60000
+05 1.0 01 0500 0200 60000
+06 0.5 01 0500 0200 60000
+07 0.5 01 1000 0200 30000
+08 0.5 01 1000 0200 30000
+09 0.5 01 1000 0100 30000
+10 0.5 01 1000 0100 30000
+11 0.5 01 1000 0100 30000
+12 0.5 01 1000 0100 30000
+13 0.5 01 1000 0100 30000
+14 0.5 01 1000 0100 30000
+15 0.5 01 1000 0100 30000

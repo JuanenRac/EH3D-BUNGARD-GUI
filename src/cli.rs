@@ -2,8 +2,8 @@
 
 use std::path::PathBuf;
 
-use eh3d_motioncnc::texts::Lang;
-use eh3d_motioncnc::theme::ThemeId;
+use eh3d_view::texts::Lang;
+use eh3d_view::theme::ThemeId;
 
 /// Which screen the window opens on (`--screen`); without it the launcher, or the modern interface when a choice is remembered.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

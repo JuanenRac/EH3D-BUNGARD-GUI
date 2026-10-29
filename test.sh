@@ -1,7 +1,7 @@
-#!/usr/bin/env sh
-# Runs the tests only.
-set -e
+#!/usr/bin/env bash
+# Runs the tests only (they never change the version).
+set -u
 cd "$(dirname "$0")"
+pause() { [ -n "${NOPAUSE:-}" ] || { read -r -p "Press Enter to close..." _ || true; }; }
+trap pause EXIT
 cargo test
-printf "Press Enter to close... "
-read -r _

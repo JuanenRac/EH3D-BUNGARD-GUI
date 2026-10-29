@@ -15,9 +15,9 @@ use eframe::egui::{
 };
 use eh3d_drillpro::classic::engine::{ClassicEngine, Question};
 use eh3d_drillpro::job::JobOptions;
-use eh3d_motioncnc::scene::{Iso, Scene, Table};
-use eh3d_motioncnc::texts::{tr, Lang, Text};
-use eh3d_motioncnc::theme::{Corner, Rgb, Theme, ThemeId};
+use eh3d_view::scene::{Iso, Scene, Table};
+use eh3d_view::texts::{tr, Lang, Text};
+use eh3d_view::theme::{Corner, Rgb, Theme, ThemeId};
 
 use crate::cli::{Options, Screen};
 use crate::jobs;

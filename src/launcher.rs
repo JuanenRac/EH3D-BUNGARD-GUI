@@ -3,8 +3,8 @@
 
 use std::path::{Path, PathBuf};
 
-use eh3d_motioncnc::texts::Lang;
-use eh3d_motioncnc::theme::ThemeId;
+use eh3d_view::texts::Lang;
+use eh3d_view::theme::ThemeId;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Program {

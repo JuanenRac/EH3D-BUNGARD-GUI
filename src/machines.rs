@@ -5,7 +5,7 @@
 //! are the published ones (length x width x height); which of the two flat sizes runs along the rails is taken from the photographs and
 //! is not confirmed.
 
-use eh3d_motioncnc::scene::Table;
+use eh3d_view::scene::Table;
 
 /// The family a machine belongs to; the XL and the Premium have their own control unit, which this program does not drive yet.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

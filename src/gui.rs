@@ -22,6 +22,7 @@ use eh3d_motioncnc::theme::{Corner, Rgb, Theme, ThemeId};
 use crate::cli::{Options, Screen};
 use crate::jobs;
 use crate::launcher::{self, Choice, Machine, Program, Settings};
+use crate::machines;
 
 /// The design size of the canvas; everything is laid out in these units and scaled to the window.
 const DESIGN_W: f32 = 1600.0;
@@ -560,13 +561,13 @@ fn draw_boxes(
     cv: &Cv,
     iso: &Iso,
     o: (f32, f32),
-    shift: f64,
+    shift: (f64, f64),
     faces: &[(f64, f64, f64, f64, f64, f64, Color32)],
     stroke: Color32,
 ) {
     for &(x, y, z, w, d, h, top) in faces {
         let p = |a: f64, b: f64, c: f64| {
-            let (px, py) = iso.project(a + shift, b + shift, c);
+            let (px, py) = iso.project(a + shift.0, b + shift.1, c);
             (o.0 + px as f32, o.1 + py as f32)
         };
         let sk = Stroke::new(1.0 * cv.u, stroke);
@@ -1268,10 +1269,11 @@ impl App {
         all.progress()
     }
 
-    /// The machine in 3D, built as the Bungard CCD machines are: two aluminium rails with black end caps and adjustable feet, the white
-    /// perforated work table between them with its pins and discs, the gantry that runs along the rails (its motor at one end) with the
-    /// head and the spindle, and, on the models with the tool changer, the rack at the short edge with the tools at the positions of
-    /// the configuration. The table has the size chosen in the configuration.
+    /// The machine in 3D, built as the Bungard CCD machines are and as big as the one the table of the configuration belongs to: two
+    /// aluminium rails with black end caps and adjustable feet, the white perforated plate between them, the gantry that runs along the
+    /// rails (its motor at one end) with the head and the spindle, and, on the models with the tool changer, the rack at the short edge
+    /// with the tools at the positions of the configuration. The published work area is drawn thin and the usable area of the
+    /// configuration (which may be a few centimetres bigger or smaller) dashed; the frame grows when the usable area is bigger.
     #[allow(clippy::too_many_arguments)]
     fn paint_machine(
         &self,
@@ -1285,17 +1287,20 @@ impl App {
     ) {
         let t = cv.t.clone();
         let (tw, td) = (self.table.width_mm, self.table.depth_mm);
-        // the view holds the rails, the rack and the gantry as well: the table plus 70 mm on each side
-        let shift = 70.0;
+        let profile = machines::for_table(&self.table);
+        let (wx, wy) = (profile.work_mm.0.max(tw), profile.work_mm.1.max(td));
+        let (px_m, py_m) = profile.plate_margins((tw, td));
+        // the view holds the whole frame: the plate, the rails, the motor and the rack
+        let shift = (px_m + 60.0, py_m + 60.0);
         let iso = Iso::fit(
-            &Table::new(tw + 2.0 * shift, td + 2.0 * shift),
+            &Table::new(wx + 2.0 * shift.0, wy + 2.0 * shift.1 + 80.0),
             150.0,
             w as f64,
             h as f64,
         );
         let o = (x0, y0);
         let p = |x: f64, y: f64, z: f64| {
-            let (px, py) = iso.project(x + shift, y + shift, z);
+            let (px, py) = iso.project(x + shift.0, y + shift.1, z);
             (o.0 + px as f32, o.1 + py as f32)
         };
         let edge = alpha(col(t.line), 170);
@@ -1309,26 +1314,33 @@ impl App {
         };
         let (hx, hy) = head.unwrap_or((tw / 2.0, td / 2.0));
         let board_z = 30.0;
+        // the frame: the plate goes from -px_m to wx + px_m along the rails and from -py_m to wy + py_m across them
+        let (fx0, fx1) = (-px_m, wx + px_m);
+        let (fy0, fy1) = (-py_m, wy + py_m);
+        let flen = fx1 - fx0;
 
         // the rail at the back and its feet
         boxes(
             cv,
             &[
-                (-20.0, -34.0, -18.0, 26.0, 26.0, 18.0, black),
-                (tw - 5.0, -34.0, -18.0, 26.0, 26.0, 18.0, black),
-                (-34.0, -40.0, 0.0, tw + 68.0, 40.0, 40.0, alu),
-                (-38.0, -40.0, 0.0, 4.0, 40.0, 40.0, black),
-                (tw + 34.0, -40.0, 0.0, 4.0, 40.0, 40.0, black),
+                (fx0 + 10.0, fy0 - 34.0, -18.0, 26.0, 26.0, 18.0, black),
+                (fx1 - 36.0, fy0 - 34.0, -18.0, 26.0, 26.0, 18.0, black),
+                (fx0 - 34.0, fy0 - 40.0, 0.0, flen + 68.0, 40.0, 40.0, alu),
+                (fx0 - 38.0, fy0 - 40.0, 0.0, 4.0, 40.0, 40.0, black),
+                (fx1 + 34.0, fy0 - 40.0, 0.0, 4.0, 40.0, 40.0, black),
             ],
         );
         // the cable chain along the rail
-        boxes(cv, &[(-20.0, -8.0, 40.0, tw + 40.0, 12.0, 8.0, black)]);
-        // the work table: a white plate with a grid of holes, three pins and two discs
-        boxes(cv, &[(0.0, 0.0, 22.0, tw, td, 8.0, plate)]);
-        let mut gx = 20.0;
-        while gx < tw - 10.0 {
-            let mut gy = 20.0;
-            while gy < td - 10.0 {
+        boxes(
+            cv,
+            &[(fx0 + 20.0, fy0 - 8.0, 40.0, flen - 40.0, 12.0, 8.0, black)],
+        );
+        // the plate with its grid of holes, three pins and two discs
+        boxes(cv, &[(fx0, fy0, 22.0, flen, wy + 2.0 * py_m, 8.0, plate)]);
+        let mut gx = fx0 + 25.0;
+        while gx < fx1 - 15.0 {
+            let mut gy = fy0 + 25.0;
+            while gy < fy1 - 15.0 {
                 let (px, py) = p(gx, gy, board_z + 0.2);
                 let r = (4.0 * iso.k) as f32;
                 let pts: Vec<(f32, f32)> = (0..8)
@@ -1342,7 +1354,7 @@ impl App {
             }
             gx += 40.0;
         }
-        for (cx, cy) in [(tw * 0.62, td * 0.22), (tw * 0.30, td * 0.74)] {
+        for (cx, cy) in [(wx * 0.62, wy * 0.22), (wx * 0.30, wy * 0.74)] {
             let (px, py) = p(cx, cy, board_z + 0.4);
             let r = (22.0 * iso.k) as f32;
             let pts: Vec<(f32, f32)> = (0..14)
@@ -1360,20 +1372,34 @@ impl App {
         boxes(
             cv,
             &[
-                (50.0, td - 50.0, board_z, 12.0, 12.0, 6.0, steel),
-                (tw * 0.5, 40.0, board_z, 12.0, 12.0, 6.0, steel),
-                (tw - 60.0, td - 70.0, board_z, 12.0, 12.0, 6.0, steel),
+                (fx0 + 40.0, fy1 - 40.0, board_z, 12.0, 12.0, 6.0, steel),
+                (wx * 0.5, fy0 + 30.0, board_z, 12.0, 12.0, 6.0, steel),
+                (fx1 - 50.0, fy1 - 60.0, board_z, 12.0, 12.0, 6.0, steel),
             ],
         );
+        // the work area of the maker (thin) and the usable area of the configuration (dashed)
+        let ring = |x0r: f64, y0r: f64, x1r: f64, y1r: f64| -> Vec<(f32, f32)> {
+            [(x0r, y0r), (x1r, y0r), (x1r, y1r), (x0r, y1r), (x0r, y0r)]
+                .iter()
+                .map(|&(x, y)| p(x, y, board_z + 0.6))
+                .collect()
+        };
+        cv.polyline(
+            &ring(0.0, 0.0, profile.work_mm.0, profile.work_mm.1),
+            1.0,
+            alpha(col(t.dim), 200),
+            false,
+        );
+        cv.polyline(&ring(0.0, 0.0, tw, td), 1.6, col(t.accent), true);
         // the rail at the front and its feet
         boxes(
             cv,
             &[
-                (-20.0, td + 8.0, -18.0, 26.0, 26.0, 18.0, black),
-                (tw - 5.0, td + 8.0, -18.0, 26.0, 26.0, 18.0, black),
-                (-34.0, td, 0.0, tw + 68.0, 40.0, 40.0, alu),
-                (-38.0, td, 0.0, 4.0, 40.0, 40.0, black),
-                (tw + 34.0, td, 0.0, 4.0, 40.0, 40.0, black),
+                (fx0 + 10.0, fy1 + 8.0, -18.0, 26.0, 26.0, 18.0, black),
+                (fx1 - 36.0, fy1 + 8.0, -18.0, 26.0, 26.0, 18.0, black),
+                (fx0 - 34.0, fy1, 0.0, flen + 68.0, 40.0, 40.0, alu),
+                (fx0 - 38.0, fy1, 0.0, 4.0, 40.0, 40.0, black),
+                (fx1 + 34.0, fy1, 0.0, 4.0, 40.0, 40.0, black),
             ],
         );
         // the board and the work on it
@@ -1433,10 +1459,18 @@ impl App {
         boxes(
             cv,
             &[
-                (hx - 34.0, -40.0, 40.0, 64.0, 40.0, 26.0, alu),
-                (hx - 34.0, td, 40.0, 64.0, 40.0, 26.0, alu),
-                (hx - 64.0, -40.0, 66.0, 36.0, td + 80.0, 36.0, alu),
-                (hx - 64.0, td + 40.0, 62.0, 44.0, 44.0, 44.0, motor),
+                (hx - 34.0, fy0 - 40.0, 40.0, 64.0, 40.0, 26.0, alu),
+                (hx - 34.0, fy1, 40.0, 64.0, 40.0, 26.0, alu),
+                (
+                    hx - 64.0,
+                    fy0 - 40.0,
+                    66.0,
+                    36.0,
+                    fy1 - fy0 + 80.0,
+                    36.0,
+                    alu,
+                ),
+                (hx - 64.0, fy1 + 40.0, 62.0, 44.0, 44.0, 44.0, motor),
                 (hx - 24.0, hy - 22.0, 44.0, 44.0, 44.0, 76.0, alu),
                 (hx - 9.0, hy - 9.0, 36.0, 18.0, 18.0, 72.0, steel),
             ],
@@ -1457,10 +1491,11 @@ impl App {
             let (y_min, y_max) = atc.iter().fold((f64::MAX, f64::MIN), |(a, b), s| {
                 (a.min(s.y_mm), b.max(s.y_mm))
             });
+            let rack_x = atc.iter().map(|s| s.x_mm).fold(f64::MIN, f64::max);
             boxes(
                 cv,
                 &[(
-                    tw + 14.0,
+                    rack_x - 26.0,
                     y_min - 14.0,
                     board_z,
                     46.0,
@@ -1489,6 +1524,21 @@ impl App {
                 );
             }
         }
+        cv.text(
+            x0 + 18.0,
+            y0 + h + 6.0,
+            Align2::LEFT_BOTTOM,
+            &format!(
+                "{} - {:.0} x {:.0} x {:.0} mm - {:.0} kg",
+                profile.name,
+                profile.work_mm.0,
+                profile.work_mm.1,
+                profile.work_mm.2,
+                profile.weight_kg
+            ),
+            12.0,
+            col(t.dim),
+        );
     }
 }
 

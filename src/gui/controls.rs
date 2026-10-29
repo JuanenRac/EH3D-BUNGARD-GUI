@@ -4,6 +4,7 @@
 
 use super::extra::Zone;
 use super::*;
+use eh3d_drillpro::protocol::sound::{Cue, SoundSetting};
 
 /// The colours of the text boxes of egui, made from the theme: the box is the colour of the raised panels, its edge is the accent colour
 /// and brightens under the pointer and in the focus, and the selected text has the accent colour behind it.
@@ -136,6 +137,94 @@ impl<'a> Cv<'a> {
 }
 
 impl App {
+    /// Gives the engines the connection and the sounds of the window as they are now.
+    pub(crate) fn apply_conn(&mut self) {
+        self.drill.engine.set_connection(self.conn.clone());
+        self.route.engine.set_connection(self.conn.clone());
+        self.connection = self.conn.describe();
+    }
+
+    fn sound_mut(&mut self, cue: Cue) -> &mut SoundSetting {
+        match cue {
+            Cue::Finished => &mut self.conn.sound_finish,
+            Cue::ToolChange => &mut self.conn.sound_tool_change,
+        }
+    }
+
+    /// Switches a sound on (the default tone) or off.
+    pub(crate) fn sound_toggle(&mut self, cue: Cue) {
+        let s = self.sound_mut(cue);
+        *s = if s.is_on() {
+            SoundSetting::Off
+        } else {
+            SoundSetting::Default
+        };
+        self.saved = false;
+        self.apply_conn();
+    }
+
+    /// The path typed for a sound: empty is the default tone.
+    pub(crate) fn sound_set_path(&mut self, cue: Cue, text: &str) {
+        let t = text.trim();
+        let s = self.sound_mut(cue);
+        if s.is_on() {
+            *s = if t.is_empty() {
+                SoundSetting::Default
+            } else {
+                SoundSetting::File(PathBuf::from(t))
+            };
+        }
+        self.saved = false;
+        self.apply_conn();
+    }
+
+    /// Plays a sound to hear it.
+    pub(crate) fn sound_test(&self, cue: Cue) {
+        let s = match cue {
+            Cue::Finished => &self.conn.sound_finish,
+            Cue::ToolChange => &self.conn.sound_tool_change,
+        };
+        eh3d_drillpro::protocol::sound::play(s, cue);
+    }
+
+    /// The boxes of the paths of the sounds, over the Job tab of the settings.
+    pub(super) fn sound_fields(&mut self, ctx: &egui::Context) {
+        let u = self.ui_scale;
+        let (x, y) = (380.0, 30.0 + 120.0);
+        for (i, cue) in [Cue::Finished, Cue::ToolChange].into_iter().enumerate() {
+            let s = match cue {
+                Cue::Finished => self.conn.sound_finish.clone(),
+                Cue::ToolChange => self.conn.sound_tool_change.clone(),
+            };
+            if !s.is_on() {
+                continue;
+            }
+            let mut text = match &s {
+                SoundSetting::File(p) => p.display().to_string(),
+                _ => String::new(),
+            };
+            let before = text.clone();
+            let pos = Pos2::new(
+                self.ui_origin.x + (x + 60.0) * u,
+                self.ui_origin.y + (y + 206.0 + i as f32 * 96.0) * u,
+            );
+            egui::Area::new(egui::Id::unique(("sound-path", i)))
+                .fixed_pos(pos)
+                .order(egui::Order::Foreground)
+                .show(ctx, |ui| {
+                    ui.add(
+                        egui::TextEdit::singleline(&mut text)
+                            .desired_width(560.0 * u)
+                            .hint_text(self.tr(Text::SoundFileHint))
+                            .font(FontId::proportional(16.0 * u)),
+                    );
+                });
+            if text != before {
+                self.sound_set_path(cue, &text);
+            }
+        }
+    }
+
     /// The state of the buttons of the job: Start works when nothing runs or the job is paused; Pause and Stop only while it runs.
     pub(super) fn job_buttons(&self) -> (bool, bool, bool) {
         let running = self.running.is_some();
@@ -384,5 +473,29 @@ mod tests {
         assert_eq!(a.mat_scroll, n - super::super::board::MAT_ROWS);
         a.mat_scroll_by(-1000);
         assert_eq!(a.mat_scroll, 0);
+    }
+
+    #[test]
+    fn the_sounds_are_switched_typed_and_written_to_the_machine_file() {
+        use eh3d_drillpro::protocol::sound::{Cue, SoundSetting};
+        let mut a = app();
+        assert_eq!(a.conn.sound_finish, SoundSetting::Off);
+        a.sound_toggle(Cue::Finished);
+        assert_eq!(a.conn.sound_finish, SoundSetting::Default);
+        // typing a path while it is off does nothing; while it is on it becomes the file
+        a.sound_set_path(Cue::ToolChange, "sounds/x.wav");
+        assert_eq!(a.conn.sound_tool_change, SoundSetting::Off);
+        a.sound_toggle(Cue::ToolChange);
+        a.sound_set_path(Cue::ToolChange, " sounds/x.wav ");
+        assert_eq!(
+            a.conn.sound_tool_change,
+            SoundSetting::File(PathBuf::from("sounds/x.wav"))
+        );
+        a.sound_set_path(Cue::ToolChange, "");
+        assert_eq!(a.conn.sound_tool_change, SoundSetting::Default);
+        let text = crate::link::update("", &crate::link::pairs(&a.conn));
+        assert!(
+            text.contains("sound_finish = default") && text.contains("sound_tool_change = default")
+        );
     }
 }

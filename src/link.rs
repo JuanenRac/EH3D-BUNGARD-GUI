@@ -9,6 +9,8 @@ pub fn pairs(c: &ConnectionConfig) -> Vec<(&'static str, String)> {
         ("connection", c.kind.name().to_string()),
         ("rs232_port", c.rs232_port.clone()),
         ("usb_port", c.usb_port.clone()),
+        ("sound_finish", c.sound_finish.to_text()),
+        ("sound_tool_change", c.sound_tool_change.to_text()),
     ];
     if matches!(c.kind, Kind::Node) || !c.node_address.is_empty() {
         v.push(("node_address", c.node_address.clone()));

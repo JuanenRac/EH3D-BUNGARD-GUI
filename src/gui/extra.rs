@@ -491,6 +491,10 @@ impl App {
             }
             (Err(e), _) | (_, Err(e)) => self.message = Some(e),
         }
+        // the sounds and the connection go to the machine file
+        if self.running.is_none() {
+            self.conn_save();
+        }
     }
 
     // ------------------------------------------------------------------------------------------ moving around the views

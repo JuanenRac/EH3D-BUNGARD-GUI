@@ -4,6 +4,7 @@
 use super::extra::wrap;
 use super::*;
 use crate::boards::{self, Sides, MATERIALS};
+use eh3d_drillpro::protocol::sound::Cue;
 
 /// The materials of a maker that the Board window shows at once.
 pub(super) const MAT_ROWS: usize = 9;
@@ -34,7 +35,7 @@ pub(crate) struct ToolLine {
 
 /// How a cell of the tool table is edited: the smallest and the largest value, whether it has decimals, and the size of a step.
 pub(super) struct CellSpec {
-    pub(super) label: &'static str,
+    pub(super) label: Text,
     pub(super) min: f64,
     pub(super) max: f64,
     pub(super) decimals: bool,
@@ -45,21 +46,21 @@ pub(super) fn specs(kind: EngineKind) -> &'static [CellSpec] {
     match kind {
         EngineKind::Drill => &[
             CellSpec {
-                label: "EXTRA mm",
+                label: Text::LblExtraStroke,
                 min: 0.0,
                 max: 20.0,
                 decimals: true,
                 step: 0.1,
             },
             CellSpec {
-                label: "FEED",
+                label: Text::LblFeed,
                 min: 10.0,
                 max: 9999.0,
                 decimals: false,
                 step: 50.0,
             },
             CellSpec {
-                label: "RPM",
+                label: Text::LblSpeedRpm,
                 min: 1000.0,
                 max: 99999.0,
                 decimals: false,
@@ -68,35 +69,35 @@ pub(super) fn specs(kind: EngineKind) -> &'static [CellSpec] {
         ],
         EngineKind::Route => &[
             CellSpec {
-                label: "DEPTH mm",
+                label: Text::LblDepthMm,
                 min: 0.0,
                 max: 20.0,
                 decimals: true,
                 step: 0.1,
             },
             CellSpec {
-                label: "PASSES",
+                label: Text::LblPasses,
                 min: 1.0,
                 max: 99.0,
                 decimals: false,
                 step: 1.0,
             },
             CellSpec {
-                label: "FEED XY",
+                label: Text::LblFeedXy,
                 min: 10.0,
                 max: 9999.0,
                 decimals: false,
                 step: 50.0,
             },
             CellSpec {
-                label: "FEED Z",
+                label: Text::LblFeedZ,
                 min: 10.0,
                 max: 9999.0,
                 decimals: false,
                 step: 50.0,
             },
             CellSpec {
-                label: "RPM",
+                label: Text::LblSpeedRpm,
                 min: 1000.0,
                 max: 99999.0,
                 decimals: false,
@@ -234,9 +235,9 @@ impl App {
                 self.board.thickness_mm,
                 self.board.copper_um,
                 if self.board.layers == 1 {
-                    "1 layer"
+                    self.tr(Text::LblOneSide)
                 } else {
-                    "2 layers"
+                    self.tr(Text::LblTwoSides)
                 }
             ),
             12.0,
@@ -437,7 +438,7 @@ impl App {
             alpha(Color32::BLACK, 170),
         );
         cv.card(x, y, w, h, true, None);
-        cv.title(x + 30.0, y + 44.0, "BOARD");
+        cv.title(x + 30.0, y + 44.0, self.tr(Text::BoardTitle));
         let b = self.board;
         let m = b.material();
         // the makers
@@ -546,7 +547,7 @@ impl App {
                 rx,
                 ry + 14.0,
                 Align2::LEFT_BOTTOM,
-                "Photoresist",
+                self.tr(Text::LblPhotoresist),
                 13.0,
                 col(t.ok),
             );
@@ -557,7 +558,7 @@ impl App {
             rx,
             ry + 14.0,
             Align2::LEFT_BOTTOM,
-            "THICKNESS mm",
+            &self.tr(Text::LblThickness).to_uppercase(),
             12.0,
             col(t.dim),
         );
@@ -578,7 +579,7 @@ impl App {
             rx,
             ry + 14.0,
             Align2::LEFT_BOTTOM,
-            "COPPER um",
+            &self.tr(Text::LblCopper).to_uppercase(),
             12.0,
             col(t.dim),
         );
@@ -599,12 +600,15 @@ impl App {
             rx,
             ry + 14.0,
             Align2::LEFT_BOTTOM,
-            "COPPER SIDES",
+            &self.tr(Text::LblCopperSides).to_uppercase(),
             12.0,
             col(t.dim),
         );
         ry += 20.0;
-        for (n, label) in [(1u8, "1 layer"), (2u8, "2 layers")] {
+        for (n, label) in [
+            (1u8, self.tr(Text::LblOneSide)),
+            (2u8, self.tr(Text::LblTwoSides)),
+        ] {
             cv.chip(
                 rx + (n - 1) as f32 * 132.0,
                 ry,
@@ -620,7 +624,7 @@ impl App {
             rx,
             ry + 14.0,
             Align2::LEFT_BOTTOM,
-            "SIZE mm",
+            &self.tr(Text::LblSize).to_uppercase(),
             12.0,
             col(t.dim),
         );
@@ -630,7 +634,7 @@ impl App {
             ry,
             150.0,
             34.0,
-            "From the files",
+            self.tr(Text::LblFromFiles),
             b.size_mm.is_none(),
             Act::Board(BoardPick::Size(None)),
         );
@@ -650,12 +654,22 @@ impl App {
             .size_mm
             .or_else(|| self.board_rect().map(|(a, bb, c, e)| (c - a, e - bb)))
             .unwrap_or((0.0, 0.0));
-        for (k, (label, val, width)) in [("WIDTH", sw, true), ("DEPTH", sd, false)]
-            .into_iter()
-            .enumerate()
+        for (k, (label, val, width)) in [
+            (self.tr(Text::LblWidth).to_uppercase(), sw, true),
+            (self.tr(Text::LblDepth).to_uppercase(), sd, false),
+        ]
+        .into_iter()
+        .enumerate()
         {
             let yy = ry + k as f32 * 46.0;
-            cv.text(rx, yy + 28.0, Align2::LEFT_BOTTOM, label, 15.0, col(t.text));
+            cv.text(
+                rx,
+                yy + 28.0,
+                Align2::LEFT_BOTTOM,
+                &label,
+                15.0,
+                col(t.text),
+            );
             for (j, s) in [-10.0f32, -1.0, 1.0, 10.0].into_iter().enumerate() {
                 let xx = rx + [130.0, 190.0, 380.0, 440.0][j];
                 cv.chip(
@@ -736,7 +750,7 @@ impl App {
                     x + 230.0 + i as f32 * 215.0 + 95.0,
                     ry + 16.0,
                     Align2::CENTER_BOTTOM,
-                    s.label,
+                    self.tr(s.label),
                     12.0,
                     col(t.dim),
                 );
@@ -811,7 +825,7 @@ impl App {
                     ry,
                     76.0,
                     38.0,
-                    "Def.",
+                    self.tr(Text::LblDefault),
                     false,
                     Act::ToolDefault(p, ri),
                 );
@@ -1091,21 +1105,22 @@ impl App {
                     ty + 40.0,
                     Align2::LEFT_BOTTOM,
                     &format!(
-                        "{} {}x{}x{} - {} {}x{}x{} - {:.0} kg{}",
-                        self.len_unit(),
-                        self.len_text(ww).trim_end_matches(' '),
-                        self.len_text(wd).trim_end_matches(' '),
-                        self.len_text(wz).trim_end_matches(' '),
-                        "|",
+                        "{}: {} x {} x {} {u} | {}: {} x {} x {} {u} | {:.0} kg{}",
+                        self.tr(Text::LblWorkArea),
+                        self.len_text(ww),
+                        self.len_text(wd),
+                        self.len_text(wz),
+                        self.tr(Text::LblWholeMachine),
                         self.len_text(ow),
                         self.len_text(od),
                         self.len_text(oz),
                         pr.weight_kg,
                         if m.rack_places() > 0 {
-                            format!(" - {} {}", m.rack_places(), self.tr(Text::RackPlaces))
+                            format!(" | {} {}", m.rack_places(), self.tr(Text::RackPlaces))
                         } else {
                             String::new()
-                        }
+                        },
+                        u = self.len_unit()
                     ),
                     14.0,
                     col(t.dim),
@@ -1117,7 +1132,7 @@ impl App {
                         x + 30.0,
                         ty + 64.0,
                         Align2::LEFT_BOTTOM,
-                        "The machine file has no rack positions yet",
+                        self.tr(Text::LblNoRack),
                         14.0,
                         col(t.danger),
                     );
@@ -1147,7 +1162,7 @@ impl App {
                     x + 30.0,
                     fy,
                     Align2::LEFT_BOTTOM,
-                    "FILE COORDINATES",
+                    &self.tr(Text::LblFileCoords).to_uppercase(),
                     12.0,
                     col(t.dim),
                 );
@@ -1200,9 +1215,42 @@ impl App {
                     self.settings.emergency,
                     Act::ToggleEmergency,
                 );
+                // the sounds: each one on or off, with the file of the operator's or the default tone
+                for (i, (cue, label)) in [
+                    (Cue::Finished, Text::SoundFinish),
+                    (Cue::ToolChange, Text::SoundTool),
+                ]
+                .into_iter()
+                .enumerate()
+                {
+                    let on = match cue {
+                        Cue::Finished => self.conn.sound_finish.is_on(),
+                        Cue::ToolChange => self.conn.sound_tool_change.is_on(),
+                    };
+                    let yy = top + 154.0 + i as f32 * 96.0;
+                    cv.checkbox(
+                        x + 30.0,
+                        yy,
+                        600.0,
+                        self.tr(label),
+                        on,
+                        Act::ToggleSound(cue),
+                    );
+                    if on {
+                        cv.chip(
+                            x + 650.0,
+                            yy + 50.0,
+                            160.0,
+                            36.0,
+                            self.tr(Text::SoundTest),
+                            false,
+                            Act::SoundTest(cue),
+                        );
+                    }
+                }
                 cv.text(
                     x + 30.0,
-                    top + 200.0,
+                    top + 372.0,
                     Align2::LEFT_BOTTOM,
                     &format!("{}: {}", self.tr(Text::BoardTitle), self.board.describe()),
                     15.0,
@@ -1210,7 +1258,7 @@ impl App {
                 );
                 cv.text(
                     x + 30.0,
-                    top + 226.0,
+                    top + 398.0,
                     Align2::LEFT_BOTTOM,
                     &format!(
                         "{} - {}",

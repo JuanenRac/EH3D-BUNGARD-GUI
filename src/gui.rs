@@ -83,6 +83,8 @@ enum Act {
     ToolsSave,
     SetTheme(ThemeId),
     Emergency,
+    ToggleSound(eh3d_drillpro::protocol::sound::Cue),
+    SoundTest(eh3d_drillpro::protocol::sound::Cue),
     ToggleFollow,
     ToggleMoveBoard,
     ToggleBig,
@@ -681,6 +683,8 @@ impl App {
             Act::ToolsSave => self.tools_save(),
             Act::SetTheme(id) => self.set_theme(id),
             Act::Emergency => self.emergency(),
+            Act::ToggleSound(c) => self.sound_toggle(c),
+            Act::SoundTest(c) => self.sound_test(c),
             Act::ToggleFollow => {
                 self.follow = !self.follow;
                 if self.follow {
@@ -1403,7 +1407,14 @@ impl App {
             y += 10.0 + usable.len().min(6) as f32 * 22.0;
         }
         y += 14.0;
-        cv.text(38.0, y, Align2::LEFT_BOTTOM, "LAYERS", 12.0, col(t.dim));
+        cv.text(
+            38.0,
+            y,
+            Align2::LEFT_BOTTOM,
+            &self.tr(Text::LblLayers).to_uppercase(),
+            12.0,
+            col(t.dim),
+        );
         let layer_names = [
             Text::LayerHoles,
             Text::LayerPaths,
@@ -2314,6 +2325,9 @@ impl eframe::App for App {
         }
         if self.modal == Some(Modal::Open) {
             self.open_fields(&ctx);
+        }
+        if self.modal == Some(Modal::Settings) && self.settings_tab == 2 {
+            self.sound_fields(&ctx);
         }
         self.edit_overlay(&ctx);
         let mut clicked: Option<Pos2> = None;

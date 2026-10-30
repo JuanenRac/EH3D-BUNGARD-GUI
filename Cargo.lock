@@ -628,6 +628,7 @@ version = "0.0.2"
 dependencies = [
  "eframe",
  "eh3d-archive",
+ "eh3d-bungard-formats",
  "eh3d-drillpro",
  "eh3d-routepro",
  "eh3d-view",

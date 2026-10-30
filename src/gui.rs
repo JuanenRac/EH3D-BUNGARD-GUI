@@ -428,7 +428,50 @@ impl App {
         self.drill.last_done = 0;
     }
 
+    /// The outline of a board in Gerber, written as a plotter file in the work folder so that the routing engine can take it as it takes
+    /// any other. A Gerber file that is not an outline (a layer of copper) is said, not loaded.
+    fn gerber_as_plot(&mut self, path: &Path) -> Option<PathBuf> {
+        let name = path.file_name()?.to_string_lossy().to_string();
+        let text = jobs::read_latin1(path).ok()?;
+        if !eh3d_bungard_formats::gerber::looks_like_outline(&name, &text) {
+            self.message = Some(format!("{name}: {}", self.tr(Text::NotAnOutline)));
+            return None;
+        }
+        match eh3d_bungard_formats::gerber::outline_default(&text) {
+            Ok(plot) => {
+                let _ = std::fs::create_dir_all(&self.archive_dir);
+                let out = self
+                    .archive_dir
+                    .join(format!("{}.plt", path.file_stem()?.to_string_lossy()));
+                std::fs::write(&out, plot.to_hpgl()).ok()?;
+                Some(out)
+            }
+            Err(e) => {
+                self.message = Some(format!("{name}: {e}"));
+                None
+            }
+        }
+    }
+
     fn load_route(&mut self, path: &Path) {
+        let is_gerber = path
+            .extension()
+            .map(|e| e.to_string_lossy().to_ascii_lowercase())
+            .is_some_and(|e| {
+                eh3d_bungard_formats::gerber::OUTLINE_EXTENSIONS.contains(&e.as_str())
+            });
+        let converted;
+        let path = if is_gerber {
+            match self.gerber_as_plot(path) {
+                Some(p) => {
+                    converted = p;
+                    converted.as_path()
+                }
+                None => return,
+            }
+        } else {
+            path
+        };
         self.route_path = Some(path.to_path_buf());
         let turned = self.source_for(path, false);
         let path = turned.as_path();

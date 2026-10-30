@@ -412,6 +412,24 @@ mod tests {
     }
 
     #[test]
+    fn the_outline_of_a_gerber_board_opens_as_a_routing_job_and_a_layer_of_copper_does_not() {
+        let mut a = app();
+        let dir = std::env::temp_dir().join(format!("bungard-gerber-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let outline = "%FSLAX24Y24*%\n%MOMM*%\nG01*\nX0Y0D02*\nX500000Y0D01*\nX500000Y300000D01*\nX0Y300000D01*\nX0Y0D01*\nM02*\n";
+        std::fs::write(dir.join("board.gko"), outline).unwrap();
+        std::fs::write(dir.join("copper.gtl"), outline).unwrap();
+        a.open_path(&dir.join("board.gko"));
+        let (x0, y0, x1, y1) = a.route.scene.bounds().unwrap();
+        assert!(((x1 - x0) - 50.0).abs() < 0.01 && ((y1 - y0) - 30.0).abs() < 0.01);
+        // a copper layer is not an outline
+        a.message = None;
+        a.open_path(&dir.join("copper.gtl"));
+        assert!(a.message.is_some());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
     fn a_job_that_does_not_fit_on_the_table_is_refused_before_it_starts() {
         let mut a = app();
         a.auto_ok = true;

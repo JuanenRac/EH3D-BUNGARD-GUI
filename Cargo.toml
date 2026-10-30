@@ -14,6 +14,7 @@ gui = ["dep:eframe", "dep:png"]
 [dependencies]
 eh3d-view = { path = "../EH3D-COMMON/crates/view" }
 eh3d-archive = { path = "../EH3D-COMMON/crates/archive" }
+eh3d-bungard-formats = { path = "../EH3D-COMMON/crates/formats" }
 eh3d-drillpro = { path = "../EH3D-DRILLPRO" }
 eh3d-routepro = { path = "../EH3D-ROUTEPRO" }
 eframe = { version = "0.37.0", default-features = false, features = ["glow", "default_fonts"], optional = true }

@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **Gerber outlines:** the profile layer of a board (`.gko`, `.gm1`, `.gml` or a `.gbr` that calls itself the profile or the edge) opens as a routing job, in the window, from the command line and from ZIP archives; a layer of copper is said not to be an outline instead of being cut.
 - **A job that does not fit on the table is refused:** Start checks every hole and every routing point against the table and says so, in the language of the window, instead of finding it out on the machine.
 
 ## [0.0.2] - The Windows-style Open window, the board library, the tools with default and typed values, the connection and the settings windows, and buttons that answer to the pointer

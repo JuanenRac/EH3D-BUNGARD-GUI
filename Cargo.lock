@@ -660,6 +660,7 @@ dependencies = [
  "eh3d-bungard-formats",
  "eh3d-drillpro-protocol",
  "eh3d-fleet",
+ "eh3d-levelling",
  "serde_json",
 ]
 
@@ -687,6 +688,7 @@ version = "0.0.6"
 dependencies = [
  "eh3d-bungard-formats",
  "eh3d-drillpro",
+ "eh3d-levelling",
  "eh3d-routepro-protocol",
  "serde_json",
 ]

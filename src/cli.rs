@@ -25,6 +25,8 @@ pub struct Options {
     pub open: Vec<PathBuf>,
     /// A window to open at the start (`--modal about|open|panel|settings`), the panel (`--panel COLUMNS,ROWS`) and the turn of the 3D view (`--yaw DEGREES`): for the pictures.
     pub modal: Option<String>,
+    /// A drop-down list to open at the start (`--combo theme|lang|model|finish|tool`): for the pictures.
+    pub combo: Option<String>,
     /// A fleet written as the server answers it, shown in the window of the machines without a server (`--fleet FILE.json`): for the pictures and to look at the window offline.
     pub fleet_file: Option<PathBuf>,
     pub panel: Option<(u32, u32)>,
@@ -84,6 +86,7 @@ impl Options {
                         .map_err(|_| format!("--wait needs a number, not '{v}'"))?;
                 }
                 "--modal" => o.modal = Some(value("--modal")?),
+                "--combo" => o.combo = Some(value("--combo")?),
                 "--fleet" => o.fleet_file = Some(PathBuf::from(value("--fleet")?)),
                 "--panel" => {
                     let v = value("--panel")?;

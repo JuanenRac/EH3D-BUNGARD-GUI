@@ -27,6 +27,7 @@ use crate::launcher::{self, Choice, Machine, Program, Settings};
 use crate::machines;
 
 mod board;
+mod combo;
 mod controls;
 mod extra;
 mod fleet;
@@ -34,6 +35,7 @@ mod numedit;
 mod opener;
 mod view2d;
 use board::BoardPick;
+use combo::{Combo, ComboId};
 use controls::{apply_visuals, Icon};
 use extra::{Field, Modal, Nav2, Nav3, PanelCfg, PanelMode, Zone};
 use numedit::{EditTarget, NumEdit};
@@ -85,9 +87,7 @@ enum Act {
     BoardAdj(bool, f32),
     ToolAdj(Program, usize, usize, f32),
     ToolsSave,
-    SetTheme(ThemeId),
     Emergency,
-    ToggleSound(eh3d_drillpro::protocol::sound::Cue),
     SoundTest(eh3d_drillpro::protocol::sound::Cue),
     ToggleFollow,
     ToggleMoveBoard,
@@ -98,7 +98,6 @@ enum Act {
     ToggleEmergency,
     /// A tab of the settings window.
     Tab(u8),
-    Model(usize),
     FileUnit(u8),
     DisplayMil(bool),
     /// A value to type: what it is and where its box goes (x, y, width).
@@ -108,8 +107,11 @@ enum Act {
     /// Starts the counts of the holes of every drill again from zero.
     ResetHoles,
     SetSpeed(f32),
-    SetLang(Lang),
     ToggleAsk,
+    /// A drop-down list opens (or closes) and one of its rows is chosen.
+    ComboOpen(ComboId),
+    ComboPick(usize),
+    ComboClose,
     ToggleToolsOnOpen,
     ToggleSkip,
     Adjust(Field, f32),
@@ -265,6 +267,8 @@ pub struct App {
     conn_result: Option<Result<(), String>>,
     conn_rx: Option<Receiver<Result<(), String>>>,
     fleet: fleet::FleetView,
+    /// The drop-down list that is open.
+    combo: Option<Combo>,
 }
 
 impl App {
@@ -376,6 +380,7 @@ impl App {
             conn_result: None,
             conn_rx: None,
             fleet: fleet::FleetView::default(),
+            combo: None,
         };
         let examples = app.base_dir.join("examples");
         let has_jobs = std::fs::read_dir(&examples).is_ok_and(|rd| {
@@ -409,6 +414,20 @@ impl App {
         }
         if let Some(t) = o.tab {
             app.settings_tab = t.min(2);
+        }
+        if let Some(c) = o.combo.as_deref() {
+            use eh3d_drillpro::protocol::sound::Cue;
+            let id = match c {
+                "theme" => Some(ComboId::Theme),
+                "lang" => Some(ComboId::Lang),
+                "model" => Some(ComboId::Model),
+                "finish" => Some(ComboId::Sound(Cue::Finished)),
+                "tool" => Some(ComboId::Sound(Cue::ToolChange)),
+                _ => None,
+            };
+            if let Some(id) = id {
+                app.combo_open(id);
+            }
         }
         if let Some(f) = &o.fleet_file {
             match std::fs::read_to_string(f)
@@ -829,9 +848,7 @@ impl App {
             Act::BoardAdj(width, d) => self.board_adjust(width, d),
             Act::ToolAdj(p, row, c, d) => self.tool_adjust(p, row, c, d),
             Act::ToolsSave => self.tools_save(),
-            Act::SetTheme(id) => self.set_theme(id),
             Act::Emergency => self.emergency(),
-            Act::ToggleSound(c) => self.sound_toggle(c),
             Act::SoundTest(c) => self.sound_test(c),
             Act::ToggleFollow => {
                 self.follow = !self.follow;
@@ -851,7 +868,6 @@ impl App {
                 self.remember_settings();
             }
             Act::Tab(i) => self.settings_tab = i,
-            Act::Model(i) => self.apply_model(i),
             Act::FileUnit(i) => self.set_file_unit(i),
             Act::DisplayMil(v) => {
                 self.settings.display_mil = v;
@@ -868,8 +884,10 @@ impl App {
                 self.settings.sim_speed = v;
                 self.remember_settings();
             }
-            Act::SetLang(l) => self.set_lang(l),
             Act::ToggleAsk => self.toggle_ask(),
+            Act::ComboOpen(id) => self.combo_open(id),
+            Act::ComboPick(i) => self.combo_pick(i),
+            Act::ComboClose => self.combo = None,
             Act::ToggleToolsOnOpen => self.toggle_tools_on_open(),
             Act::ToggleSkip => self.toggle_skip(),
             Act::Adjust(f, d) => self.adjust(f, d),
@@ -939,6 +957,8 @@ struct Cv<'a> {
     t: &'a Theme,
     hits: Vec<(Rect, Act)>,
     zones: Vec<(Rect, Zone)>,
+    /// The boxes of the drop-down lists drawn in this frame, with the place under each one: the list that is open hangs from its box.
+    combos: Vec<(ComboId, f32, f32, f32)>,
     modal_from: usize,
     /// Where the pointer is and whether its button is held down: the buttons answer to both.
     pointer: Option<Pos2>,
@@ -1241,6 +1261,7 @@ impl App {
             t: &t,
             hits: Vec::new(),
             zones: Vec::new(),
+            combos: Vec::new(),
             modal_from: 0,
             pointer: self.pointer,
             down: self.pointer_down,
@@ -1253,6 +1274,8 @@ impl App {
             cv.modal_from = cv.hits.len();
             self.paint_modal(&mut cv, m);
         }
+        // an open drop-down list is over everything, and the rest of the window waits while it is open
+        self.paint_combo(&mut cv);
         if let Some(m) = &self.message {
             cv.text(
                 DESIGN_W / 2.0,
@@ -1265,7 +1288,7 @@ impl App {
         }
         self.hits = std::mem::take(&mut cv.hits);
         self.zones = std::mem::take(&mut cv.zones);
-        self.modal_from = if self.modal.is_some() {
+        self.modal_from = if self.modal.is_some() || self.combo.is_some() {
             cv.modal_from
         } else {
             0
@@ -2518,7 +2541,9 @@ impl eframe::App for App {
         }
         let scroll = ctx.input(|i| i.smooth_scroll_delta.y);
         if scroll != 0.0 {
-            if self.modal == Some(Modal::Open) {
+            if self.combo.is_some() {
+                self.combo_scroll(if scroll > 0.0 { -2 } else { 2 });
+            } else if self.modal == Some(Modal::Open) {
                 self.browse_scroll(if scroll > 0.0 { -2 } else { 2 });
             } else if self.modal == Some(Modal::Board) {
                 self.mat_scroll_by(if scroll > 0.0 { -2 } else { 2 });

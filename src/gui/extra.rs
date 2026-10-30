@@ -259,6 +259,7 @@ impl<'a> Cv<'a> {
             t: self.t,
             hits: Vec::new(),
             zones: Vec::new(),
+            combos: Vec::new(),
             modal_from: 0,
             pointer: self.pointer,
             down: self.down,

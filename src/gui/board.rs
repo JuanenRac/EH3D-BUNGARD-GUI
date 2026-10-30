@@ -933,7 +933,7 @@ impl App {
 
 // ---------------------------------------------------------------------------------------------------------------- the settings
 
-const LANG_NAMES: [(Lang, &str); 8] = [
+pub(super) const LANG_NAMES: [(Lang, &str); 8] = [
     (Lang::En, "English"),
     (Lang::Es, "Español"),
     (Lang::It, "Italiano"),
@@ -1015,40 +1015,36 @@ impl App {
                     12.0,
                     col(t.dim),
                 );
-                for (i, id) in ThemeId::ALL.into_iter().enumerate() {
-                    cv.chip(
-                        x + 30.0 + (i % 3) as f32 * 262.0,
-                        top + 20.0 + (i / 3) as f32 * 46.0,
-                        254.0,
-                        38.0,
-                        self.tr(id.text()),
-                        self.theme.id == id,
-                        Act::SetTheme(id),
-                    );
-                }
-                // the language
-                let ly = top + 20.0 + (ThemeId::ALL.len() as f32 / 3.0).ceil() * 46.0 + 16.0;
-                cv.text(
+                cv.combo(
                     x + 30.0,
-                    ly,
+                    top + 20.0,
+                    380.0,
+                    ComboId::Theme,
+                    self.tr(self.theme.id.text()),
+                    self.combo.is_some_and(|c| c.id == ComboId::Theme),
+                );
+                cv.text(
+                    x + 430.0,
+                    top + 8.0,
                     Align2::LEFT_BOTTOM,
                     &self.tr(Text::Language).to_uppercase(),
                     12.0,
                     col(t.dim),
                 );
-                for (i, (l, n)) in LANG_NAMES.into_iter().enumerate() {
-                    cv.chip(
-                        x + 30.0 + (i % 4) as f32 * 196.0,
-                        ly + 12.0 + (i / 4) as f32 * 46.0,
-                        188.0,
-                        38.0,
-                        n,
-                        self.lang == l,
-                        Act::SetLang(l),
-                    );
-                }
+                let lang_name = LANG_NAMES
+                    .iter()
+                    .find(|(l, _)| *l == self.lang)
+                    .map_or("", |(_, n)| *n);
+                cv.combo(
+                    x + 430.0,
+                    top + 20.0,
+                    380.0,
+                    ComboId::Lang,
+                    lang_name,
+                    self.combo.is_some_and(|c| c.id == ComboId::Lang),
+                );
                 // the units of the lengths on the screen
-                let uy = ly + 124.0;
+                let uy = top + 100.0;
                 cv.text(
                     x + 30.0,
                     uy,
@@ -1108,20 +1104,17 @@ impl App {
                     col(t.dim),
                 );
                 let models = crate::machines::models();
-                for (i, m) in models.iter().enumerate() {
-                    cv.chip(
-                        x + 30.0 + (i % 4) as f32 * 196.0,
-                        top + 20.0 + (i / 4) as f32 * 46.0,
-                        188.0,
-                        38.0,
-                        &m.name(),
-                        self.model() == i,
-                        Act::Model(i),
-                    );
-                }
+                cv.combo(
+                    x + 30.0,
+                    top + 20.0,
+                    380.0,
+                    ComboId::Model,
+                    &models[self.model().min(models.len() - 1)].name(),
+                    self.combo.is_some_and(|c| c.id == ComboId::Model),
+                );
                 let m = models[self.model().min(models.len() - 1)];
                 let pr = m.profile();
-                let ty = top + 20.0 + (models.len().div_ceil(4)) as f32 * 46.0 + 14.0;
+                let ty = top + 20.0 + 38.0 + 22.0;
                 let tc = if m.change == crate::machines::ToolChange::Automatic {
                     self.tr(Text::TcAuto)
                 } else {
@@ -1260,7 +1253,7 @@ impl App {
                     self.settings.tools_on_open,
                     Act::ToggleToolsOnOpen,
                 );
-                // the sounds: each one on or off, with the file of the operator's or the default tone
+                // the sounds: a list of sixty for each event (and the standard tone, a file of the person's, or none)
                 for (i, (cue, label)) in [
                     (Cue::Finished, Text::SoundFinish),
                     (Cue::ToolChange, Text::SoundTool),
@@ -1268,25 +1261,31 @@ impl App {
                 .into_iter()
                 .enumerate()
                 {
-                    let on = match cue {
-                        Cue::Finished => self.conn.sound_finish.is_on(),
-                        Cue::ToolChange => self.conn.sound_tool_change.is_on(),
-                    };
                     let yy = top + 202.0 + i as f32 * 96.0;
-                    cv.checkbox(
+                    cv.text(
                         x + 30.0,
-                        yy,
-                        600.0,
-                        self.tr(label),
-                        on,
-                        Act::ToggleSound(cue),
+                        yy + 12.0,
+                        Align2::LEFT_BOTTOM,
+                        &self.tr(label).to_uppercase(),
+                        12.0,
+                        col(t.dim),
                     );
-                    if on {
+                    let row = self.combo_current(ComboId::Sound(cue));
+                    let items = self.combo_items(ComboId::Sound(cue));
+                    cv.combo(
+                        x + 30.0,
+                        yy + 20.0,
+                        560.0,
+                        ComboId::Sound(cue),
+                        &items[row],
+                        self.combo.is_some_and(|c| c.id == ComboId::Sound(cue)),
+                    );
+                    if self.sound_of(cue).is_on() {
                         cv.chip(
-                            x + 650.0,
-                            yy + 50.0,
+                            x + 610.0,
+                            yy + 20.0,
                             160.0,
-                            36.0,
+                            38.0,
                             self.tr(Text::SoundTest),
                             false,
                             Act::SoundTest(cue),

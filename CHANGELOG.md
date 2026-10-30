@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **Drop-down lists:** the theme, the language, the model of the machine and the sounds are chosen from a list that scrolls instead of rows of buttons; the end of the job and the request for a tool each have 60 sounds from the high ones to the low ones, the standard tone, none or a file of your own, and a sound that is chosen is played.
 - **The first hole is drilled:** the simulation marked the hole the head was going to, one ahead of the one it had drilled, so the first one stayed open until the end; the window now asks the classic engine for the order of the holes and marks the right one.
 - **Pictures on the buttons of the job:** Start, Pause and Stop and the emergency button show a play triangle, two bars, a square and a warning sign instead of words.
 - **The tools window over a file you open:** when a file is opened from the Open window, the recent files or by dropping it, the window of the tools opens over it, as the classic programs show the tools of a file after loading it; the check box "Show the tools window when I open a file" in the settings turns it off (a file named on the command line does not open it).

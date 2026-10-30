@@ -151,23 +151,22 @@ impl App {
         }
     }
 
-    /// Switches a sound on (the default tone) or off.
-    pub(crate) fn sound_toggle(&mut self, cue: Cue) {
-        let s = self.sound_mut(cue);
-        *s = if s.is_on() {
-            SoundSetting::Off
-        } else {
-            SoundSetting::Default
-        };
+    /// The sound chosen in its list: none, the standard tone, a file of the person's or one of the catalogue. A sound of the catalogue is played to hear it.
+    pub(crate) fn sound_choose(&mut self, cue: Cue, setting: SoundSetting) {
+        let to_hear = matches!(setting, SoundSetting::Tone(_) | SoundSetting::Default);
+        *self.sound_mut(cue) = setting;
         self.saved = false;
         self.apply_conn();
+        if to_hear {
+            self.sound_test(cue);
+        }
     }
 
     /// The path typed for a sound: empty is the default tone.
     pub(crate) fn sound_set_path(&mut self, cue: Cue, text: &str) {
         let t = text.trim();
         let s = self.sound_mut(cue);
-        if s.is_on() {
+        if matches!(s, SoundSetting::Default | SoundSetting::File(_)) {
             *s = if t.is_empty() {
                 SoundSetting::Default
             } else {
@@ -196,7 +195,8 @@ impl App {
                 Cue::Finished => self.conn.sound_finish.clone(),
                 Cue::ToolChange => self.conn.sound_tool_change.clone(),
             };
-            if !s.is_on() {
+            // the box of the path is there only while the sound is a file of the person's
+            if !matches!(s, SoundSetting::File(_)) {
                 continue;
             }
             let mut text = match &s {
@@ -206,7 +206,7 @@ impl App {
             let before = text.clone();
             let pos = Pos2::new(
                 self.ui_origin.x + (x + 60.0) * u,
-                self.ui_origin.y + (y + 206.0 + i as f32 * 96.0) * u,
+                self.ui_origin.y + (y + 202.0 + 50.0 + i as f32 * 96.0) * u,
             );
             egui::Area::new(egui::Id::unique(("sound-path", i)))
                 .fixed_pos(pos)
@@ -747,12 +747,12 @@ EOF
         use eh3d_drillpro::protocol::sound::{Cue, SoundSetting};
         let mut a = app();
         assert_eq!(a.conn.sound_finish, SoundSetting::Off);
-        a.sound_toggle(Cue::Finished);
+        a.sound_choose(Cue::Finished, SoundSetting::Default);
         assert_eq!(a.conn.sound_finish, SoundSetting::Default);
         // typing a path while it is off does nothing; while it is on it becomes the file
         a.sound_set_path(Cue::ToolChange, "sounds/x.wav");
         assert_eq!(a.conn.sound_tool_change, SoundSetting::Off);
-        a.sound_toggle(Cue::ToolChange);
+        a.sound_choose(Cue::ToolChange, SoundSetting::Default);
         a.sound_set_path(Cue::ToolChange, " sounds/x.wav ");
         assert_eq!(
             a.conn.sound_tool_change,
@@ -827,5 +827,62 @@ EOF
         // an index that is not in the list changes nothing
         a.fleet_use(9);
         assert_eq!(a.conn.server_machine, "m2");
+    }
+
+    #[test]
+    fn a_drop_down_list_opens_scrolls_and_chooses() {
+        use super::super::combo::{ComboId, ROWS};
+        use eh3d_drillpro::protocol::sound::{Cue, SoundSetting, TONES};
+        let mut a = app();
+        // the list of a sound has sixty sounds of the catalogue besides none, the standard tone and a file of the person's
+        let items = a.combo_items(ComboId::Sound(Cue::Finished));
+        assert_eq!(items.len(), TONES + 3);
+        assert!(items.len() >= 50);
+        assert!(
+            items[3].starts_with("01 ") && items[3].contains("C7"),
+            "{}",
+            items[3]
+        );
+        assert!(items[TONES + 2].contains("C3"), "{}", items[TONES + 2]);
+        let tools = a.combo_items(ComboId::Sound(Cue::ToolChange));
+        assert_ne!(items[5], tools[5]);
+        // it opens with the chosen row in view, scrolls inside its limits and a second click on the box closes it
+        a.combo_open(ComboId::Sound(Cue::Finished));
+        assert_eq!(a.combo.unwrap().scroll, 0);
+        a.combo_scroll(1000);
+        assert_eq!(a.combo.unwrap().scroll, items.len() - ROWS);
+        a.combo_scroll(-5000);
+        assert_eq!(a.combo.unwrap().scroll, 0);
+        a.combo_open(ComboId::Sound(Cue::Finished));
+        assert!(a.combo.is_none());
+        // a row is chosen: the list closes, the sound is the one of the catalogue and the choice is in the connection
+        a.combo_open(ComboId::Sound(Cue::ToolChange));
+        a.combo_pick(3 + 17);
+        assert!(a.combo.is_none());
+        assert_eq!(a.conn.sound_tool_change, SoundSetting::Tone(17));
+        assert_eq!(a.combo_current(ComboId::Sound(Cue::ToolChange)), 20);
+        // the two events keep their own sound
+        assert_eq!(a.conn.sound_finish, SoundSetting::Off);
+        a.combo_open(ComboId::Sound(Cue::Finished));
+        a.combo_pick(1);
+        assert_eq!(a.conn.sound_finish, SoundSetting::Default);
+        a.combo_open(ComboId::Sound(Cue::Finished));
+        a.combo_pick(0);
+        assert_eq!(a.conn.sound_finish, SoundSetting::Off);
+        // the theme, the language and the model are chosen from their lists too
+        a.combo_open(ComboId::Theme);
+        a.combo_pick(2);
+        assert_eq!(a.combo_current(ComboId::Theme), 2);
+        a.combo_open(ComboId::Lang);
+        a.combo_pick(1);
+        assert_eq!(a.combo_current(ComboId::Lang), 1);
+        let models = crate::machines::models().len();
+        a.combo_open(ComboId::Model);
+        a.combo_pick(models - 1);
+        assert_eq!(a.model(), models - 1);
+        // a row that is not in the list does nothing
+        a.combo_open(ComboId::Model);
+        a.combo_pick(999);
+        assert_eq!(a.model(), models - 1);
     }
 }

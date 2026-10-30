@@ -42,13 +42,34 @@ fn split_address(a: &str) -> Option<(String, u16)> {
 }
 
 impl App {
-    /// The link to the node, when it is reached directly and has an address.
+    /// The link to the node: directly with its own address and token, or through the server of the connection window (its address, its token and the id of the
+    /// machine; the server holds the token of the node). `None` when the node is off or the data for the way chosen are missing.
     pub(crate) fn head_link(&self) -> Option<Link> {
-        if self.conn.head_node != HeadNode::Direct {
-            return None;
+        match self.conn.head_node {
+            HeadNode::Off => None,
+            HeadNode::Direct => {
+                let (host, port) = split_address(&self.conn.head_address)?;
+                Some(Link::new(&host, port, &self.conn.head_token))
+            }
+            HeadNode::Server => {
+                let machine = self.conn.server_machine.trim();
+                if machine.is_empty() {
+                    return None;
+                }
+                // 18200 is the port of the EH3D server
+                let (host, port) = match split_address(&self.conn.server_address) {
+                    Some((h, p)) if self.conn.server_address.contains(':') => (h, p),
+                    Some((h, _)) => (h, 18200),
+                    None => return None,
+                };
+                Some(Link::via_server(
+                    &host,
+                    port,
+                    &self.conn.server_token,
+                    machine,
+                ))
+            }
         }
-        let (host, port) = split_address(&self.conn.head_address)?;
-        Some(Link::new(&host, port, &self.conn.head_token))
     }
 
     /// Asks the node for its status now.
@@ -255,7 +276,8 @@ impl App {
         );
         let link = self.head_link();
         let note = match (self.conn.head_node, &link) {
-            (HeadNode::Server, _) => Some((self.tr(Text::HeadServerNote), col(t.dim))),
+            (HeadNode::Server, None) => Some((self.tr(Text::HeadNoServer), col(t.dim))),
+            (HeadNode::Server, Some(_)) => Some((self.tr(Text::HeadServerNote), col(t.dim))),
             (HeadNode::Direct, None) => Some((self.tr(Text::HeadNoLink), col(t.dim))),
             _ => None,
         };
@@ -306,7 +328,20 @@ impl App {
                 };
                 let temp = s.temp_c.map_or("-".to_string(), |c| format!("{c:.1} C"));
                 let lines = [
-                    (format!("{}  {}", s.node, s.version), col(t.accent)),
+                    (
+                        if s.camera_model.is_empty() {
+                            format!("{}  {}", s.node, s.version)
+                        } else {
+                            format!(
+                                "{}  {}  ({}: {})",
+                                s.node,
+                                s.version,
+                                self.tr(Text::HeadCameraModel),
+                                s.camera_model
+                            )
+                        },
+                        col(t.accent),
+                    ),
                     (
                         format!("{}: {:.0} rpm", self.tr(Text::HeadSpeed), s.rpm),
                         col(t.text),
@@ -503,9 +538,21 @@ mod tests {
                 "POST /api/measure HTTP/1.0".to_string()
             ]
         );
-        // through the server nothing is asked of the node yet
+        // through the server it needs the server of the connection window and the id of the machine; the paths are the ones of the machine on the server
         a.act(Act::HeadMode(HeadNode::Server));
-        assert!(a.head_link().is_none());
+        assert!(a.head_link().is_none(), "no server yet");
+        a.conn.server_address = "10.0.0.2".into();
+        assert!(a.head_link().is_none(), "no machine yet");
+        a.conn.server_machine = "bench-1".into();
+        a.conn.server_token = "login".into();
+        let via = a.head_link().expect("the server and the machine are set");
+        assert_eq!((via.port, via.machine.as_str()), (18200, "bench-1"));
+        assert_eq!(
+            via.path("/api/status"),
+            "/api/v1/machines/bench-1/head/status"
+        );
+        a.conn.server_address = "10.0.0.2:8443".into();
+        assert_eq!(a.head_link().unwrap().port, 8443);
         // the choice is kept in the machine file the other programs read
         a.act(Act::HeadMode(HeadNode::Direct));
         assert!(crate::link::pairs(&a.conn)

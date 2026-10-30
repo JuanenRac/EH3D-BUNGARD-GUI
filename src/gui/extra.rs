@@ -44,6 +44,8 @@ pub(crate) enum Modal {
     Resume,
     /// The catalogue of drills and mills.
     Catalogue,
+    /// The node of the drill head: its link, its camera and what it reads.
+    Head,
 }
 
 /// A text box of the Connection window.
@@ -707,6 +709,7 @@ impl App {
             Modal::Fleet => self.paint_fleet_modal(cv),
             Modal::Resume => self.paint_resume(cv),
             Modal::Catalogue => self.paint_catalogue(cv),
+            Modal::Head => self.paint_head(cv),
             Modal::About => {
                 let (x, y) = self.modal_card(cv, self.tr(Text::About), 420.0);
                 cv.text(
@@ -972,6 +975,15 @@ impl App {
                     &format!("{}: {}", self.tr(Text::Connection), self.conn.describe()),
                     15.0,
                     col(t.dim),
+                );
+                cv.chip(
+                    x + 530.0,
+                    y + 134.0,
+                    180.0,
+                    34.0,
+                    self.tr(Text::HeadOpen),
+                    false,
+                    Act::Show(Modal::Head),
                 );
                 match &self.conn_result {
                     Some(Ok(())) => {

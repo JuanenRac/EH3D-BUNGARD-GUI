@@ -32,6 +32,7 @@ mod combo;
 mod controls;
 mod extra;
 mod fleet;
+mod head;
 mod levelling;
 mod numedit;
 mod opener;
@@ -111,6 +112,10 @@ enum Act {
     ResetHoles,
     SetSpeed(f32),
     ToggleAsk,
+    /// The node of the drill head: how it is reached, its camera and a measure of the table.
+    HeadMode(eh3d_drillpro::protocol::connection::HeadNode),
+    HeadCamera,
+    HeadMeasure,
     /// The list of the catalogue goes up or down.
     CatScroll(i32),
     /// The probe measures the table, or stops; the map of the table is cleared.
@@ -291,6 +296,8 @@ pub struct App {
     resume_skip: usize,
     /// The calibration of the table.
     level: levelling::LevelState,
+    /// The node of the drill head: what it said last, its camera.
+    head: head::HeadState,
     /// The catalogue of bits: the kind that is shown (0 is all of them) and the first row.
     cat_kind: usize,
     cat_scroll: usize,
@@ -419,6 +426,7 @@ impl App {
             resume: None,
             resume_skip: 0,
             level: levelling::LevelState::new(jobs::DEFAULT_TABLE),
+            head: head::HeadState::default(),
             cat_kind: 0,
             cat_scroll: 0,
         };
@@ -505,6 +513,7 @@ impl App {
             Some("board") => app.show_modal(Modal::Board),
             Some("tools") => app.show_modal(Modal::Tools),
             Some("catalogue") => app.show_modal(Modal::Catalogue),
+            Some("head") => app.show_modal(Modal::Head),
             _ => {}
         }
         app.refit_table();
@@ -979,6 +988,16 @@ impl App {
                 self.remember_settings();
             }
             Act::ToggleAsk => self.toggle_ask(),
+            Act::HeadMode(m) => {
+                self.conn.head_node = m;
+                self.head.status = None;
+                self.saved = false;
+            }
+            Act::HeadCamera => {
+                self.conn.head_camera = !self.conn.head_camera;
+                self.saved = false;
+            }
+            Act::HeadMeasure => self.head_measure(),
             Act::CatScroll(d) => self.cat_scroll_by(d),
             Act::LevelToggle => self.level_toggle(),
             Act::LevelApply => self.level.apply = !self.level.apply,
@@ -2583,6 +2602,10 @@ impl eframe::App for App {
         }
         if self.close {
             ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+        }
+        self.head_tick(&ctx);
+        if self.modal == Some(Modal::Head) {
+            self.head_fields(&ctx);
         }
         if self.modal == Some(Modal::Connection) {
             self.connection_fields(&ctx);

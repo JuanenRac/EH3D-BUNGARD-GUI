@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The node of the drill head:** a window (from the Connection window) sets how EH3D-NODE-BUNGARD-AUX is reached (not used, directly or through the server), its address and token and whether its camera is shown; it shows the picture of the camera, the speed and the temperature of the spindle, the protect output and a measure of the table under the head. Through the server it says the relay does not exist yet.
 - **The jobs follow the table:** a check box of the calibration tab makes the drilling and the routing correct their Z with the map of the table (only a complete map, only when asked for).
 - **Catalogue of bits:** a window (from the Tools window) lists 115 drills, end mills, down-cut and up-cut routers, diamond-cut routers, V-bits, ball noses, spot drills and countersinks, all with the 1/8 inch (3.175 mm) shank of the chuck of a Bungard machine, by kind, with the turns, the feeds and the depth of a pass to start from; a V-bit tells how wide its groove is at a depth.
 - **A sample board with tracks:** the sample board has the isolation of four tracks, cut with a V-bit (tool 3 of the routing table).

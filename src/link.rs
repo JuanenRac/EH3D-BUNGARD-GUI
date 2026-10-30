@@ -1,27 +1,11 @@
 //! The connection of the machine as the classic programs keep it, in one small file (`machine.cfg`): what the Connection window writes
 //! into it, without touching any other line (the tuning of the machine stays as it is).
 
-use eh3d_drillpro::protocol::connection::{ConnectionConfig, Kind};
+use eh3d_drillpro::protocol::connection::ConnectionConfig;
 
 /// The keys the Connection window owns, with the value each has for this connection.
 pub fn pairs(c: &ConnectionConfig) -> Vec<(&'static str, String)> {
-    let mut v = vec![
-        ("connection", c.kind.name().to_string()),
-        ("rs232_port", c.rs232_port.clone()),
-        ("usb_port", c.usb_port.clone()),
-        ("sound_finish", c.sound_finish.to_text()),
-        ("sound_tool_change", c.sound_tool_change.to_text()),
-    ];
-    if matches!(c.kind, Kind::Node) || !c.node_address.is_empty() {
-        v.push(("node_address", c.node_address.clone()));
-        v.push(("node_token", c.node_token.clone()));
-    }
-    if matches!(c.kind, Kind::Server) || !c.server_address.is_empty() {
-        v.push(("server_address", c.server_address.clone()));
-        v.push(("server_token", c.server_token.clone()));
-        v.push(("server_machine", c.server_machine.clone()));
-    }
-    v
+    c.machine_file_pairs()
 }
 
 /// The text of the file with the keys of `pairs` set: a line that has the key is rewritten, the others are left as they are, and a key
@@ -55,7 +39,7 @@ pub fn update(old: &str, pairs: &[(&str, String)]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use eh3d_drillpro::protocol::connection::parse;
+    use eh3d_drillpro::protocol::connection::{parse, Kind};
 
     #[test]
     fn the_keys_are_set_and_the_rest_is_kept() {

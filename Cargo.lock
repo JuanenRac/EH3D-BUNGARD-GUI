@@ -624,7 +624,7 @@ version = "0.0.1"
 
 [[package]]
 name = "eh3d-bungard-gui"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "eframe",
  "eh3d-archive",
@@ -640,7 +640,7 @@ dependencies = [
 
 [[package]]
 name = "eh3d-common"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "chrono",
  "semver",
@@ -654,7 +654,7 @@ dependencies = [
 
 [[package]]
 name = "eh3d-drillpro"
-version = "0.0.5"
+version = "0.0.6"
 dependencies = [
  "eh3d-archive",
  "eh3d-bungard-formats",
@@ -683,7 +683,7 @@ version = "0.0.1"
 
 [[package]]
 name = "eh3d-routepro"
-version = "0.0.5"
+version = "0.0.6"
 dependencies = [
  "eh3d-bungard-formats",
  "eh3d-drillpro",

@@ -12,14 +12,14 @@
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
-  <img src="https://img.shields.io/badge/Tests-61-0f6cbd.svg" alt="Tests">
-  <img src="https://img.shields.io/badge/Version-0.0.3-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Tests-67-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Version-0.0.4-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
 ---
 
-**Comprobación de honestidad - lo que se ejecuta hoy:** un programa en Rust con una ventana y 61 pruebas que se ejecutan en un ordenador. El lanzador ofrece la interfaz moderna o los programas clásicos de taladrado y fresado para una máquina con cambio de herramienta manual (MTC) o automático (ATC). El visor abre ficheros de taladrado, ficheros de trazado HP-GL y archivos ZIP de trabajos (desde un explorador de carpetas, arrastrando y soltando o desde la línea de órdenes), dibuja la vista en planta con cada agujero por diámetro de broca y las trayectorias de fresado encima, muestra la máquina en 3D con la mesa del tamaño elegido en la configuración, paneliza la placa y sigue el trabajo mientras corre. El trabajo se ejecuta en el **simulador** de los motores de EH3D-DRILLPRO y EH3D-ROUTEPRO; el mismo fichero de máquina que ellos leen decide cómo se llega a una máquina real (el RS-232 del ordenador, un adaptador USB-RS232, o el EH3D-NODE-BUNGARD directamente o a través de EH3D-SERVER), y **ninguna de esas vías se ha probado desde esta ventana**. Las ventanas de conexión, ajustes y herramientas cambian los valores que ofrecen, aún no se pueden editar los ficheros enteros de máquina y herramientas, y la vista 3D no muestra la altura de las trayectorias.
+**Comprobación de honestidad - lo que se ejecuta hoy:** un programa en Rust con una ventana y 67 pruebas que se ejecutan en un ordenador. El lanzador ofrece la interfaz moderna o los programas clásicos de taladrado y fresado para una máquina con cambio de herramienta manual (MTC) o automático (ATC). El visor abre ficheros de taladrado, ficheros de trazado HP-GL y archivos ZIP de trabajos (desde un explorador de carpetas, arrastrando y soltando o desde la línea de órdenes), dibuja la vista en planta con cada agujero por diámetro de broca y las trayectorias de fresado encima, muestra la máquina en 3D con la mesa del tamaño elegido en la configuración, paneliza la placa y sigue el trabajo mientras corre. El trabajo se ejecuta en el **simulador** de los motores de EH3D-DRILLPRO y EH3D-ROUTEPRO; el mismo fichero de máquina que ellos leen decide cómo se llega a una máquina real (el RS-232 del ordenador, un adaptador USB-RS232, o el EH3D-NODE-BUNGARD directamente o a través de EH3D-SERVER), y **ninguna de esas vías se ha probado desde esta ventana**. Las ventanas de conexión, ajustes y herramientas cambian los valores que ofrecen, aún no se pueden editar los ficheros enteros de máquina y herramientas, y la vista 3D no muestra la altura de las trayectorias.
 
 ---
 
@@ -29,9 +29,9 @@
 
 | | |
 |---|---|
-| Versión | `0.0.3` |
+| Versión | `0.0.4` |
 | Madurez | Andamiaje |
-| Pruebas | 61 |
+| Pruebas | 67 |
 | Pila tecnológica | Rust |
 | En hardware real | No. Se ha ejecutado solo en el simulador y en un ordenador; no se ha manejado ninguna máquina desde esta ventana |
 
@@ -50,7 +50,7 @@ Cada línea es una parte de este repositorio y la luz dice hasta dónde llega ho
 | Ficheros y panelización | 🟡 | Los ficheros de taladrado, HP-GL y los archivos ZIP se abren desde un explorador, arrastrando y soltando o desde la línea de órdenes; la placa se repite en tres modos. Probado con los pequeños ficheros de muestra de este repositorio. |
 | Ajustes | 🟠 | El ancho y el fondo útiles de la mesa se cambian y se guardan en los ficheros de la máquina; el resto de los ficheros de máquina y herramientas se sigue editando con los programas clásicos. |
 | Control de la máquina | 🔴 | El trabajo pasa por los motores de EH3D-DRILLPRO y EH3D-ROUTEPRO, así que en principio están todas sus conexiones; solo ha corrido en el simulador. La ventana de Conexión elige el enlace (el RS-232 del ordenador, un adaptador USB-RS232, el nodo EH3D o el servidor EH3D), lo prueba y lo guarda en el fichero de la máquina, y Pausa detiene el trabajo entre dos movimientos. |
-| Pruebas | 🟡 | Pasan 61 pruebas en un ordenador (`cargo test --features gui`): el lanzador, los ajustes, la lectura de los ficheros a la escena, los perfiles de máquina, el panel y la línea de órdenes. Ninguna toca una máquina. |
+| Pruebas | 🟡 | Pasan 67 pruebas en un ordenador (`cargo test --features gui`): el lanzador, los ajustes, la lectura de los ficheros a la escena, los perfiles de máquina, el panel y la línea de órdenes. Ninguna toca una máquina. |
 | Paquetes ya compilados | 🟠 | Un flujo de trabajo compila el programa para Windows (64 y 32 bits), Linux y macOS con los ficheros de muestra; todavía no se ha publicado ninguna versión. |
 
 ## 🎯 Resumen
@@ -63,6 +63,9 @@ Cada línea es una parte de este repositorio y la luz dice hasta dónde llega ho
 * El **trabajo**: se ejecuta con los motores de los programas clásicos y su fichero de máquina (`demo` simulador, `rs232`, `usb`, `node` o `server`), muestra el progreso mientras corre y plantea al operador las preguntas de la máquina (el husillo, el cambio de herramienta).
 * La **placa y las herramientas**: una biblioteca de materiales base de muchos fabricantes (Bungard, Fortex, CIF, FR-4 genérico, CEM y FR-2, Isola, Panasonic, Shengyi, ITEQ, Ventec, Nelco, Arlon, Rogers, Taconic, Bergquist, DuPont) que se elige por material, grosor, cobre, caras de cobre y tamaño, y se recuerda; las herramientas del trabajo se listan como taladro o fresado con su avance y su velocidad, la que trabaja se ilumina, y cada valor tiene valores por defecto (según el diámetro de la broca y el material de la placa) o se puede pulsar y escribir.
 * Los **ajustes**: el tema, el idioma, el tamaño útil de la mesa, la velocidad de la simulación (un trabajo tarda lo que tardaría la máquina, de x0,5 a x50), si el trabajo pregunta en los cambios de herramienta y al arrancar el husillo, y si esta ventana se abre directamente la próxima vez. Los botones se iluminan bajo el puntero y se hunden al pulsarlos.
+* **Muescas en el exterior del panel:** en la ventana de Panelización el exterior se puede rutear con muescas que sujetan las placas hasta romperlas: cuántas por lado, de qué ancho y dónde (repartidas, cerca de los extremos o juntas en el centro); la vista del plano muestra los trazos cortados. El fabricante, el grosor y el tamaño de la placa también se eligen en listas desplegables.
+* **Calibración de la mesa:** una pestaña de la ventana de Ajustes mide la altura de la mesa en una malla de puntos (7 por 5 por defecto), dibuja el mapa (azul abajo, rojo arriba) con la diferencia y la inclinación en mm por metro, y lo guarda con la máquina. Mientras no se conecte el nodo palpador, el palpador es simulado y la corrección de los trabajos aún no se aplica.
+* **El trabajo sigue tras un fallo:** mientras un trabajo corre, lo que necesita para seguir (el fichero, el panel, los agujeros hechos) se guarda en tiempo real; si se cae la ventana, el equipo o el enlace, al volver a arrancar pregunta si seguir por donde iba o cancelarlo. La ventana se abre maximizada y los botones del trabajo son brillantes (verde para iniciar, azul para pausar, rojo para parar).
 
 ## 🧩 Papel en EH3D
 
@@ -127,6 +130,18 @@ Cómo encajan las partes de este repositorio: quién lo usa, qué contiene y de 
 <p align="center"><em>La lista de sonidos del final del trabajo: sesenta sonidos de los agudos a los graves, el tono estándar, ninguno o un fichero propio.</em></p>
 
 <p align="center">
+  <img src="images/screenshots/panel.png" alt="panel" width="100%">
+</p>
+
+<p align="center"><em>La ventana de Panelización: las copias de la placa y las muescas del exterior, elegidas con listas desplegables y contadores.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/calibration.png" alt="calibration" width="100%">
+</p>
+
+<p align="center"><em>La calibración de la mesa: el mapa de alturas medido en una malla de puntos, con la diferencia y la inclinación.</em></p>
+
+<p align="center">
   <img src="images/screenshots/paper-theme.png" alt="light theme" width="100%">
 </p>
 
@@ -181,7 +196,7 @@ Ejecútalo con `run.bat` (Windows) o `./run.sh` (Linux y macOS); ambos compilan 
 
 ## 🧪 Pruebas
 
-La suite tiene 61 pruebas (`cargo test --features gui`). Comprueban el lanzador y lo que recuerda, los ajustes, cómo un fichero de taladrado o HP-GL se convierte en la escena, los perfiles de máquina, el panel y la línea de órdenes. Los motores que usa (protocolo, movimiento, puerta de seguridad) se prueban en EH3D-DRILLPRO y EH3D-ROUTEPRO. La CI también ejecuta `cargo fmt --check` y `cargo clippy` con los avisos como errores, y `python -I tools/ci_validate.py` comprueba el manifiesto, las versiones, el registro de cambios y los ocho README.
+La suite tiene 67 pruebas (`cargo test --features gui`). Comprueban el lanzador y lo que recuerda, los ajustes, cómo un fichero de taladrado o HP-GL se convierte en la escena, los perfiles de máquina, el panel y la línea de órdenes. Los motores que usa (protocolo, movimiento, puerta de seguridad) se prueban en EH3D-DRILLPRO y EH3D-ROUTEPRO. La CI también ejecuta `cargo fmt --check` y `cargo clippy` con los avisos como errores, y `python -I tools/ci_validate.py` comprueba el manifiesto, las versiones, el registro de cambios y los ocho README.
 
 ## 🏗️ Compilación y publicación
 

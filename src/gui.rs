@@ -110,6 +110,7 @@ enum Act {
     SetSpeed(f32),
     SetLang(Lang),
     ToggleAsk,
+    ToggleToolsOnOpen,
     ToggleSkip,
     Adjust(Field, f32),
     PanelMode(PanelMode),
@@ -835,6 +836,7 @@ impl App {
             }
             Act::SetLang(l) => self.set_lang(l),
             Act::ToggleAsk => self.toggle_ask(),
+            Act::ToggleToolsOnOpen => self.toggle_tools_on_open(),
             Act::ToggleSkip => self.toggle_skip(),
             Act::Adjust(f, d) => self.adjust(f, d),
             Act::PanelMode(m) => {
@@ -860,7 +862,7 @@ impl App {
                 if let Some(p) = self.settings.recent.get(i).map(PathBuf::from) {
                     self.modal = None;
                     self.browser = None;
-                    self.open_path(&p);
+                    self.open_path_asking(&p);
                 }
             }
             Act::BrowseUp => self.browse_up(),
@@ -2418,7 +2420,7 @@ impl eframe::App for App {
         for p in dropped {
             self.screen = Screen::Viewer;
             self.modal = None;
-            self.open_path(&p);
+            self.open_path_asking(&p);
         }
         self.tick();
         let shot_file = self

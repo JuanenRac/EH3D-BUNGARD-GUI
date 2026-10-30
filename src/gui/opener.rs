@@ -364,7 +364,7 @@ impl App {
             self.go(Some(path));
         } else {
             self.modal = None;
-            self.open_path(&path);
+            self.open_path_asking(&path);
         }
     }
 
@@ -410,7 +410,7 @@ impl App {
             self.go(Some(path));
         } else if path.is_file() {
             self.modal = None;
-            self.open_path(&path);
+            self.open_path_asking(&path);
         } else {
             self.message = Some(format!("{typed}: {}", self.tr(Text::NoFile)));
         }
@@ -850,7 +850,8 @@ mod tests {
         assert_eq!(a.browser.as_ref().unwrap().name_text, "05_small_board.ncd");
         assert!(a.modal.is_some());
         a.browse(i);
-        assert!(a.modal.is_none());
+        // the Open window is gone and the window of the tools is over the file
+        assert_eq!(a.modal, Some(Modal::Tools));
         assert!(!a.drill.scene.holes.is_empty());
     }
 
@@ -861,7 +862,7 @@ mod tests {
         a.show_modal(Modal::Open);
         a.browser.as_mut().unwrap().name_text = "05_board_outline.plt".into();
         a.browse_open();
-        assert!(a.modal.is_none());
+        assert_eq!(a.modal, Some(Modal::Tools));
         assert!(!a.route.scene.paths.is_empty());
         a.show_modal(Modal::Open);
         a.browse_up();

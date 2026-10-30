@@ -958,6 +958,11 @@ impl App {
         self.remember_settings();
     }
 
+    pub(crate) fn toggle_tools_on_open(&mut self) {
+        self.settings.tools_on_open = !self.settings.tools_on_open;
+        self.remember_settings();
+    }
+
     pub(crate) fn toggle_ask(&mut self) {
         self.settings.ask_operator = !self.settings.ask_operator;
         self.remember_settings();
@@ -1247,6 +1252,14 @@ impl App {
                     self.settings.emergency,
                     Act::ToggleEmergency,
                 );
+                cv.checkbox(
+                    x + 30.0,
+                    top + 154.0,
+                    780.0,
+                    self.tr(Text::SetToolsOnOpen),
+                    self.settings.tools_on_open,
+                    Act::ToggleToolsOnOpen,
+                );
                 // the sounds: each one on or off, with the file of the operator's or the default tone
                 for (i, (cue, label)) in [
                     (Cue::Finished, Text::SoundFinish),
@@ -1259,7 +1272,7 @@ impl App {
                         Cue::Finished => self.conn.sound_finish.is_on(),
                         Cue::ToolChange => self.conn.sound_tool_change.is_on(),
                     };
-                    let yy = top + 154.0 + i as f32 * 96.0;
+                    let yy = top + 202.0 + i as f32 * 96.0;
                     cv.checkbox(
                         x + 30.0,
                         yy,
@@ -1282,7 +1295,7 @@ impl App {
                 }
                 cv.text(
                     x + 30.0,
-                    top + 372.0,
+                    top + 420.0,
                     Align2::LEFT_BOTTOM,
                     &format!("{}: {}", self.tr(Text::BoardTitle), self.board.describe()),
                     15.0,
@@ -1290,7 +1303,7 @@ impl App {
                 );
                 cv.text(
                     x + 30.0,
-                    top + 398.0,
+                    top + 446.0,
                     Align2::LEFT_BOTTOM,
                     &format!(
                         "{} - {}",

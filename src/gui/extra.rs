@@ -302,6 +302,16 @@ impl App {
         self.apply_panel();
     }
 
+    /// A file the person chose (not one named on the command line): it is opened and, when it holds work and the setting says so, the window of the tools
+    /// opens over it, as the classic programs show the tools of a file after loading it.
+    pub(crate) fn open_path_asking(&mut self, path: &Path) {
+        self.open_path(path);
+        let holds_work = !self.drill.scene.holes.is_empty() || !self.route.scene.paths.is_empty();
+        if self.settings.tools_on_open && holds_work && self.message.is_none() {
+            self.show_modal(Modal::Tools);
+        }
+    }
+
     pub(crate) fn show_modal(&mut self, m: Modal) {
         self.saved = false;
         if m == Modal::Open {
@@ -1018,5 +1028,46 @@ mod tests {
     fn long_texts_are_wrapped() {
         assert_eq!(wrap("one two three", 7), vec!["one two", "three"]);
         assert!(wrap("这是一个很长的中文句子需要换行显示", 10).len() > 1);
+    }
+
+    #[test]
+    fn the_tools_window_opens_over_a_file_the_person_chose_and_not_over_one_of_the_command_line() {
+        let mut a = app();
+        // the command line and the tests open files without asking
+        a.modal = None;
+        a.open_path(
+            &Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("testdata")
+                .join("05_small_board.ncd"),
+        );
+        assert_eq!(a.modal, None);
+        // a file the person chose: the window of the tools opens over it
+        a.open_path_asking(
+            &Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("testdata")
+                .join("05_small_board.ncd"),
+        );
+        assert_eq!(a.modal, Some(Modal::Tools));
+        // not when the setting is off, and not for a file that cannot be read
+        a.modal = None;
+        a.settings.tools_on_open = false;
+        a.open_path_asking(
+            &Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("testdata")
+                .join("05_small_board.ncd"),
+        );
+        assert_eq!(a.modal, None);
+        a.settings.tools_on_open = true;
+        a.open_path_asking(
+            &Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("testdata")
+                .join("DRILLPRO.DCF"),
+        );
+        assert_eq!(a.modal, None);
+        // the check box of the settings turns it off and on, and it is remembered
+        a.toggle_tools_on_open();
+        assert!(!a.settings.tools_on_open);
+        a.toggle_tools_on_open();
+        assert!(a.settings.tools_on_open);
     }
 }

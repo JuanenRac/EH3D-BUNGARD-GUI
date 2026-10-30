@@ -103,6 +103,8 @@ pub struct Settings {
     pub board: crate::boards::Board,
     /// The job stops at the questions of the machine (the tool change, the spindle start).
     pub ask_operator: bool,
+    /// The window of the tools opens when the person opens a file, as the classic programs show theirs after loading one.
+    pub tools_on_open: bool,
     /// How many times faster than the machine the simulation of a job runs (1 is the speed of the machine).
     pub sim_speed: f32,
     /// The model of the machine (`CCD MTC`, `CCD/2 ATC`...).
@@ -129,6 +131,7 @@ impl Default for Settings {
             theme: ThemeId::Forge,
             board: crate::boards::Board::standard(),
             ask_operator: true,
+            tools_on_open: true,
             sim_speed: 1.0,
             model: "CCD MTC".to_string(),
             emergency: true,
@@ -195,6 +198,9 @@ impl Settings {
                 "ask_operator" => {
                     s.ask_operator = !matches!(v.trim(), "no" | "off" | "false" | "0")
                 }
+                "tools_on_open" => {
+                    s.tools_on_open = !matches!(v.trim(), "no" | "off" | "false" | "0")
+                }
                 "board" => s.board = crate::boards::from_text(v).unwrap_or(s.board),
                 _ => {}
             }
@@ -204,12 +210,13 @@ impl Settings {
 
     pub fn to_text(&self) -> String {
         format!(
-            "choice = {}\nlang = {}\ntheme = {}\nboard = {}\nask_operator = {}\nsim_speed = {}\nmodel = {}\nemergency = {}\nestop_pos = {},{}\ndisplay_units = {}\nholes_drilled = {}\nrecent = {}\n",
+            "choice = {}\nlang = {}\ntheme = {}\nboard = {}\nask_operator = {}\ntools_on_open = {}\nsim_speed = {}\nmodel = {}\nemergency = {}\nestop_pos = {},{}\ndisplay_units = {}\nholes_drilled = {}\nrecent = {}\n",
             self.choice.map_or("ask", |c| c.key()),
             self.lang.code(),
             self.theme.key(),
             crate::boards::to_text(&self.board),
             if self.ask_operator { "yes" } else { "no" },
+            if self.tools_on_open { "yes" } else { "no" },
             self.sim_speed,
             self.model,
             if self.emergency { "yes" } else { "no" },
@@ -334,6 +341,7 @@ mod tests {
             theme: ThemeId::WindowsClassic,
             board: crate::boards::Board::standard().with_material(3),
             ask_operator: false,
+            tools_on_open: false,
             sim_speed: 5.0,
             model: "CCD/2 ATC".to_string(),
             emergency: false,

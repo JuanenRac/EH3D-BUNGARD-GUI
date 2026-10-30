@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The tools window over a file you open:** when a file is opened from the Open window, the recent files or by dropping it, the window of the tools opens over it, as the classic programs show the tools of a file after loading it; the check box "Show the tools window when I open a file" in the settings turns it off (a file named on the command line does not open it).
 - **Machines and stations window:** with the server connection, a new window lists every machine of the server grouped by station, what each one is doing, its job with the progress bar and the jobs ready, refreshes itself every few seconds without stopping the window, and chooses the machine the jobs are sent to; `--fleet FILE.json` shows a saved answer, `--modal fleet` opens it at the start.
 - **The views follow the machine model:** choosing a model in the settings draws the 3D machine of that very model (not the one the table is most like) and starts the 2D and 3D views again for the new table.
 - **Eleven themes:** Midnight, Paper (a light one), Forest, Retro terminal, Ocean and High contrast join the five themes; the settings window lists them all, each named in the language of the window, and the click on the theme in the title takes the next one.

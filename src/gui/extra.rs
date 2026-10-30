@@ -294,6 +294,8 @@ impl App {
         if let Some(d) = path.parent() {
             self.last_dir = d.to_path_buf();
         }
+        self.settings.remember_recent(&path.to_string_lossy());
+        self.remember_settings();
         self.refit_table();
         self.apply_panel();
     }

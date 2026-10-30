@@ -505,6 +505,34 @@ EOF
     }
 
     #[test]
+    fn the_files_opened_are_the_recent_ones_and_open_again_from_the_list() {
+        let mut a = app();
+        let ncd = a.settings.recent.first().cloned().unwrap();
+        assert!(ncd.ends_with("05_small_board.ncd"));
+        let plt = Path::new(&ncd).with_file_name("05_board_outline.plt");
+        a.open_path(&plt);
+        assert!(a.settings.recent[0].ends_with("05_board_outline.plt"));
+        assert!(a.settings.recent[1].ends_with("05_small_board.ncd"));
+        // opened again, it comes to the head and is not listed twice
+        a.open_path(Path::new(&ncd));
+        assert!(a.settings.recent[0].ends_with("05_small_board.ncd"));
+        let listed = |name: &str| {
+            a.settings
+                .recent
+                .iter()
+                .filter(|p| p.ends_with(name))
+                .count()
+        };
+        assert_eq!(
+            (listed("05_small_board.ncd"), listed("05_board_outline.plt")),
+            (1, 1)
+        );
+        // a click on the second one opens it
+        a.act(Act::OpenRecent(1));
+        assert!(a.settings.recent[0].ends_with("05_board_outline.plt"));
+    }
+
+    #[test]
     fn a_job_that_does_not_fit_on_the_table_is_refused_before_it_starts() {
         let mut a = app();
         a.auto_ok = true;

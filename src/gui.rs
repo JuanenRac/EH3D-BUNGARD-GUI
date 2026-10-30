@@ -119,6 +119,8 @@ enum Act {
     BrowseSort(usize),
     BrowseFilter,
     BrowsePlace(usize),
+    /// Opens one of the recent files.
+    OpenRecent(usize),
     BrowseUp,
     MatScroll(i32),
     BrowseBack,
@@ -834,6 +836,13 @@ impl App {
             Act::BrowseSort(c) => self.browse_sort(c),
             Act::BrowseFilter => self.browse_filter(),
             Act::BrowsePlace(i) => self.browse_place(i),
+            Act::OpenRecent(i) => {
+                if let Some(p) = self.settings.recent.get(i).map(PathBuf::from) {
+                    self.modal = None;
+                    self.browser = None;
+                    self.open_path(&p);
+                }
+            }
             Act::BrowseUp => self.browse_up(),
             Act::MatScroll(d) => self.mat_scroll_by(d),
             Act::BrowseBack => self.browse_back(),

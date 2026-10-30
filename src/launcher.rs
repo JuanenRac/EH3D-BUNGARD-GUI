@@ -114,7 +114,12 @@ pub struct Settings {
     pub display_mil: bool,
     /// How many holes each drill (by its tool number) has drilled in all the jobs, has drilled in all the jobs of this window, kept between runs.
     pub holes_drilled: std::collections::BTreeMap<u8, u64>,
+    /// The files opened last, the newest first (at most [`RECENT_MAX`]).
+    pub recent: Vec<String>,
 }
+
+/// How many recent files are kept.
+pub const RECENT_MAX: usize = 6;
 
 impl Default for Settings {
     fn default() -> Self {
@@ -130,6 +135,7 @@ impl Default for Settings {
             estop_pos: (1020.0, 770.0),
             display_mil: false,
             holes_drilled: std::collections::BTreeMap::new(),
+            recent: Vec::new(),
         }
     }
 }
@@ -168,6 +174,15 @@ impl Settings {
                     }
                 }
                 "display_units" => s.display_mil = v.trim().eq_ignore_ascii_case("mil"),
+                "recent" => {
+                    s.recent = v
+                        .split('|')
+                        .map(str::trim)
+                        .filter(|p| !p.is_empty())
+                        .take(RECENT_MAX)
+                        .map(str::to_string)
+                        .collect()
+                }
                 "holes_drilled" => {
                     s.holes_drilled = v
                         .split(',')
@@ -189,7 +204,7 @@ impl Settings {
 
     pub fn to_text(&self) -> String {
         format!(
-            "choice = {}\nlang = {}\ntheme = {}\nboard = {}\nask_operator = {}\nsim_speed = {}\nmodel = {}\nemergency = {}\nestop_pos = {},{}\ndisplay_units = {}\nholes_drilled = {}\n",
+            "choice = {}\nlang = {}\ntheme = {}\nboard = {}\nask_operator = {}\nsim_speed = {}\nmodel = {}\nemergency = {}\nestop_pos = {},{}\ndisplay_units = {}\nholes_drilled = {}\nrecent = {}\n",
             self.choice.map_or("ask", |c| c.key()),
             self.lang.code(),
             self.theme.key(),
@@ -205,8 +220,16 @@ impl Settings {
                 .iter()
                 .map(|(t, n)| format!("{t}:{n}"))
                 .collect::<Vec<_>>()
-                .join(",")
+                .join(","),
+            self.recent.join("|")
         )
+    }
+
+    /// Puts a file at the head of the recent ones (it is not listed twice).
+    pub fn remember_recent(&mut self, path: &str) {
+        self.recent.retain(|p| p != path);
+        self.recent.insert(0, path.to_string());
+        self.recent.truncate(RECENT_MAX);
     }
 
     pub fn load(path: &Path) -> Settings {
@@ -317,12 +340,27 @@ mod tests {
             estop_pos: (300.0, 400.5),
             display_mil: true,
             holes_drilled: [(1u8, 9172u64), (3, 40)].into_iter().collect(),
+            recent: vec!["C:/jobs/a.ncd".to_string(), "C:/jobs/b.zip".to_string()],
         };
         s.save(&path).unwrap();
         assert_eq!(Settings::load(&path), s);
         let ask = Settings::default();
         assert!(ask.to_text().contains("choice = ask"));
         assert_eq!(Settings::parse(&ask.to_text()), ask);
+    }
+
+    #[test]
+    fn only_the_last_files_are_remembered_and_none_twice() {
+        let mut s = Settings::default();
+        for i in 0..10 {
+            s.remember_recent(&format!("C:/jobs/{i}.ncd"));
+        }
+        assert_eq!(s.recent.len(), RECENT_MAX);
+        assert_eq!(s.recent[0], "C:/jobs/9.ncd");
+        s.remember_recent("C:/jobs/7.ncd");
+        assert_eq!(s.recent[0], "C:/jobs/7.ncd");
+        assert_eq!(s.recent.iter().filter(|p| p.ends_with("/7.ncd")).count(), 1);
+        assert_eq!(Settings::parse(&s.to_text()).recent, s.recent);
     }
 
     #[test]

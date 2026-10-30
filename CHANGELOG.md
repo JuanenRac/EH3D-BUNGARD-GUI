@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **Recent files:** the Open window lists the last files opened (up to six, kept between runs) under the places, and a click opens one again.
 - **DXF drawings:** the drawing of a board in a DXF file opens as a routing job, from the window, the command line and ZIP archives, with its lines, arcs, circles and polylines joined into paths.
 - **The holes of each drill are counted:** the tools window shows, for every drill, the holes drilled in all the jobs (kept between runs, as the plan of the machine's own programs keeps its tool usage) and a button that starts the counts again; a job that ends or is stopped adds the holes it did.
 - **Circles and arcs of plotter files:** a plotter file with `CI`, `AA`, `AR`, `SC` and `IP` is drawn and run as it is meant, cut into chords by the chord angle of the routing configuration.

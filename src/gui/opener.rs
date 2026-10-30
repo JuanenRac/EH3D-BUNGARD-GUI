@@ -542,6 +542,48 @@ impl App {
             );
             cv.hits.push((r, Act::BrowsePlace(i)));
         }
+        // the files opened last
+        let recent: Vec<(usize, &String)> = self
+            .settings
+            .recent
+            .iter()
+            .enumerate()
+            .filter(|(_, p)| Path::new(p.as_str()).exists())
+            .collect();
+        if !recent.is_empty() {
+            let top = y + 144.0 + b.places.len().min(12) as f32 * 38.0 + 22.0;
+            cv.text(
+                x + 30.0,
+                top + 12.0,
+                Align2::LEFT_BOTTOM,
+                &self.tr(Text::Recent).to_uppercase(),
+                12.0,
+                col(t.dim),
+            );
+            let room = (((y + h - 110.0) - (top + 24.0)) / 38.0).floor().max(0.0) as usize;
+            for (row, (i, p)) in recent.iter().take(room).enumerate() {
+                let ry = top + 24.0 + row as f32 * 38.0;
+                let r = cv.rect(x + 30.0, ry, 200.0, 32.0);
+                cv.p.rect_filled(r, 6.0 * cv.u, col(t.panel_raised));
+                let name = Path::new(p.as_str())
+                    .file_name()
+                    .map_or_else(|| (*p).clone(), |n| n.to_string_lossy().to_string());
+                let shown: String = if name.chars().count() > 22 {
+                    format!("{}...", name.chars().take(20).collect::<String>())
+                } else {
+                    name
+                };
+                cv.text(
+                    x + 44.0,
+                    ry + 23.0,
+                    Align2::LEFT_BOTTOM,
+                    &shown,
+                    15.0,
+                    col(t.text),
+                );
+                cv.hits.push((r, Act::OpenRecent(*i)));
+            }
+        }
         // the headings
         let cols = [
             (250.0, 480.0, Text::ColName),

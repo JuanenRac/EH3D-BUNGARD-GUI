@@ -76,6 +76,44 @@ O EH3D-BUNGARD-GUI é a interface moderna das máquinas Bungard na família EH3D
 
 Como as partes deste repositório se encaixam: quem o usa, o que contém e de que depende. A imagem é desenhada a partir de `docs/architecture.json` e verificada com o código.
 
+## 🖼️ Capturas de ecrã
+
+<p align="center">
+  <img src="images/screenshots/viewer.png" alt="viewer" width="100%">
+</p>
+
+<p align="center"><em>O visualizador: o trabalho na mesa em 2D, a máquina em 3D e os comandos do trabalho.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/job-running.png" alt="job running" width="100%">
+</p>
+
+<p align="center"><em>Um trabalho em curso: os furos e trajetos feitos, a posição da ferramenta, Pausa e Stop.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/neon-theme.png" alt="Neon Arcade theme" width="100%">
+</p>
+
+<p align="center"><em>O tema Neon Arcade com a placa em painel.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/tools.png" alt="tools" width="100%">
+</p>
+
+<p align="center"><em>As ferramentas: avanços, velocidades e profundidades, os furos de cada broca na placa e os feitos no total.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/machine-settings.png" alt="settings" width="100%">
+</p>
+
+<p align="center"><em>As definições: cada modelo Bungard, a mesa e as unidades dos ficheiros.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/board.png" alt="board" width="100%">
+</p>
+
+<p align="center"><em>A placa: um material da biblioteca, a sua espessura, o seu cobre e o seu tamanho.</em></p>
+
 ## ✨ Funcionalidades
 
 * Temas: Forge (o predefinido), Neon Arcade, Glass Pro, o cinzento clássico do Windows e um que segue as cores do Windows.
@@ -146,7 +184,7 @@ EH3D-BUNGARD-GUI/
 ├── testdata/                                    uma placa pequena: ficheiros de furação e contorno e os ficheiros de exemplo de máquina e ferramentas
 ├── docs/                                        as fontes das duas imagens
 ├── tools/                                       verificação de CI, verificação do README e ferramentas das imagens
-├── images/                                      faixa e as duas imagens
+├── images/                                      faixa, as duas imagens e as capturas de ecrã
 ├── .github/                                     fluxos de CI e de publicação, modelos de issues e pull requests
 ├── build.sh build.bat                           compilam a janela
 ├── run.sh run.bat                               arrancam a janela, com os ficheiros de teste se não houver argumentos

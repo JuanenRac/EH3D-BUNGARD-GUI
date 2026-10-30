@@ -76,6 +76,44 @@ EH3D-BUNGARD-GUI ist die moderne Oberfläche der Bungard-Maschinen in der EH3D-F
 
 Wie die Teile dieses Repositorys zusammenpassen: wer es nutzt, was es enthält und wovon es abhängt. Das Bild wird aus `docs/architecture.json` gezeichnet und gegen den Code geprüft.
 
+## 🖼️ Screenshots
+
+<p align="center">
+  <img src="images/screenshots/viewer.png" alt="viewer" width="100%">
+</p>
+
+<p align="center"><em>Der Betrachter: der Auftrag auf dem Tisch in 2D, die Maschine in 3D und die Bedienelemente des Auftrags.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/job-running.png" alt="job running" width="100%">
+</p>
+
+<p align="center"><em>Ein laufender Auftrag: die fertigen Löcher und Bahnen, die Position des Werkzeugs, Pause und Stopp.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/neon-theme.png" alt="Neon Arcade theme" width="100%">
+</p>
+
+<p align="center"><em>Das Thema Neon Arcade mit der Platine im Nutzen.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/tools.png" alt="tools" width="100%">
+</p>
+
+<p align="center"><em>Die Werkzeuge: Vorschübe, Drehzahlen und Tiefen, die Löcher jedes Bohrers auf der Platine und die insgesamt gebohrten.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/machine-settings.png" alt="settings" width="100%">
+</p>
+
+<p align="center"><em>Die Einstellungen: jedes Bungard-Modell, der Tisch und die Einheiten der Dateien.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/board.png" alt="board" width="100%">
+</p>
+
+<p align="center"><em>Die Platine: ein Material aus der Bibliothek, ihre Dicke, ihr Kupfer und ihre Größe.</em></p>
+
 ## ✨ Funktionen
 
 * Designs: Forge (Standard), Neon Arcade, Glass Pro, das klassische Windows-Grau und eines, das den Farben von Windows folgt.
@@ -146,7 +184,7 @@ EH3D-BUNGARD-GUI/
 ├── testdata/                                    eine kleine Platine: Bohr- und Umrissdateien sowie Beispiel-Maschinen- und -Werkzeugdateien
 ├── docs/                                        die Quellen der beiden Bilder
 ├── tools/                                       CI-Prüfung, README-Prüfung und die Werkzeuge für die Bilder
-├── images/                                      Banner und die beiden Bilder
+├── images/                                      Banner, die beiden Bilder und die Screenshots
 ├── .github/                                     CI- und Release-Workflows, Vorlagen für Issues und Pull Requests
 ├── build.sh build.bat                           bauen das Fenster
 ├── run.sh run.bat                               starten das Fenster, ohne Argumente mit den Testdateien

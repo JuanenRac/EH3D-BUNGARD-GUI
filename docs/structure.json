@@ -266,14 +266,14 @@
         {
           "name": "images/",
           "desc": {
-            "en": "banner and the two pictures",
-            "es": "banner y las dos imágenes",
-            "de": "Banner und die beiden Bilder",
-            "fr": "bannière et les deux images",
-            "it": "banner e le due immagini",
-            "ja": "バナーと 2 つの図",
-            "zh": "横幅图和两张图片",
-            "pt": "faixa e as duas imagens"
+            "en": "banner, the two pictures and the screenshots",
+            "es": "banner, las dos imágenes y las capturas de pantalla",
+            "de": "Banner, die beiden Bilder und die Screenshots",
+            "fr": "bannière, les deux images et les captures d'écran",
+            "it": "banner, le due immagini e le schermate",
+            "ja": "バナー、2 つの図、スクリーンショット",
+            "zh": "横幅图、两张图片和屏幕截图",
+            "pt": "faixa, as duas imagens e as capturas de ecrã"
           }
         },
         {

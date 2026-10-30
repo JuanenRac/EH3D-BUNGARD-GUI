@@ -76,6 +76,44 @@ EH3D-BUNGARD-GUI 是 EH3D 家族中 Bungard 机器的现代界面。它按路径
 
 本仓库各部分如何协作：谁在使用它、它包含什么、它依赖什么。图片由 `docs/architecture.json` 绘制，并与代码核对。
 
+## 🖼️ 屏幕截图
+
+<p align="center">
+  <img src="images/screenshots/viewer.png" alt="viewer" width="100%">
+</p>
+
+<p align="center"><em>查看器：工作台上的 2D 作业、3D 机器以及作业控制。</em></p>
+
+<p align="center">
+  <img src="images/screenshots/job-running.png" alt="job running" width="100%">
+</p>
+
+<p align="center"><em>运行中的作业：已完成的孔和路径、刀具位置，以及暂停和停止。</em></p>
+
+<p align="center">
+  <img src="images/screenshots/neon-theme.png" alt="Neon Arcade theme" width="100%">
+</p>
+
+<p align="center"><em>带拼板的 Neon Arcade 主题。</em></p>
+
+<p align="center">
+  <img src="images/screenshots/tools.png" alt="tools" width="100%">
+</p>
+
+<p align="center"><em>刀具：进给、转速和深度，电路板上每个钻头的孔数以及累计钻孔数。</em></p>
+
+<p align="center">
+  <img src="images/screenshots/machine-settings.png" alt="settings" width="100%">
+</p>
+
+<p align="center"><em>设置：每种 Bungard 型号、工作台和文件的单位。</em></p>
+
+<p align="center">
+  <img src="images/screenshots/board.png" alt="board" width="100%">
+</p>
+
+<p align="center"><em>电路板：库中的材料、厚度、铜箔和尺寸。</em></p>
+
 ## ✨ 功能
 
 * 主题：Forge（默认）、Neon Arcade、Glass Pro、经典 Windows 灰色，以及跟随 Windows 颜色的主题。
@@ -146,7 +184,7 @@ EH3D-BUNGARD-GUI/
 ├── testdata/                                    一块小电路板：钻孔和轮廓文件，以及示例机器和刀具文件
 ├── docs/                                        两张图片的来源
 ├── tools/                                       CI 检查、README 检查和图片工具
-├── images/                                      横幅图和两张图片
+├── images/                                      横幅图、两张图片和屏幕截图
 ├── .github/                                     CI 与发布工作流，Issue 和拉取请求模板
 ├── build.sh build.bat                           构建窗口
 ├── run.sh run.bat                               启动窗口，无参数时使用测试文件

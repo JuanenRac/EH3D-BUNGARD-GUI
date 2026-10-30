@@ -76,6 +76,44 @@ EH3D-BUNGARD-GUI は、EH3D ファミリーにおける Bungard マシン用の�
 
 このリポジトリの各部分の関係：誰が使い、何を持ち、何に依存するか。図は `docs/architecture.json` から描かれ、コードと照合されます。
 
+## 🖼️ スクリーンショット
+
+<p align="center">
+  <img src="images/screenshots/viewer.png" alt="viewer" width="100%">
+</p>
+
+<p align="center"><em>ビューア：テーブル上の 2D のジョブ、3D のマシン、ジョブの操作部。</em></p>
+
+<p align="center">
+  <img src="images/screenshots/job-running.png" alt="job running" width="100%">
+</p>
+
+<p align="center"><em>実行中のジョブ：完了した穴と経路、ツールの位置、一時停止と停止。</em></p>
+
+<p align="center">
+  <img src="images/screenshots/neon-theme.png" alt="Neon Arcade theme" width="100%">
+</p>
+
+<p align="center"><em>基板を面付けした Neon Arcade テーマ。</em></p>
+
+<p align="center">
+  <img src="images/screenshots/tools.png" alt="tools" width="100%">
+</p>
+
+<p align="center"><em>ツール：送り、回転数、深さ、基板上の各ドリルの穴数と累計の穴あけ数。</em></p>
+
+<p align="center">
+  <img src="images/screenshots/machine-settings.png" alt="settings" width="100%">
+</p>
+
+<p align="center"><em>設定：Bungard の各モデル、テーブル、ファイルの単位。</em></p>
+
+<p align="center">
+  <img src="images/screenshots/board.png" alt="board" width="100%">
+</p>
+
+<p align="center"><em>基板：ライブラリの材料、厚さ、銅箔、サイズ。</em></p>
+
 ## ✨ 機能
 
 * テーマ：Forge（既定）、Neon Arcade、Glass Pro、従来の Windows グレー、Windows の色に従うもの。
@@ -146,7 +184,7 @@ EH3D-BUNGARD-GUI/
 ├── testdata/                                    小さな基板：ドリルと外形のファイル、サンプルのマシン・ツールファイル
 ├── docs/                                        2 つの図の元データ
 ├── tools/                                       CI チェック、README チェック、図の生成ツール
-├── images/                                      バナーと 2 つの図
+├── images/                                      バナー、2 つの図、スクリーンショット
 ├── .github/                                     CI とリリースのワークフロー、Issue と PR のテンプレート
 ├── build.sh build.bat                           ウィンドウをビルド
 ├── run.sh run.bat                               ウィンドウを起動（引数なしならテストファイルで）

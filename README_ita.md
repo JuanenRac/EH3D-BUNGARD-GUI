@@ -76,6 +76,44 @@ EH3D-BUNGARD-GUI è l'interfaccia moderna delle macchine Bungard nella famiglia 
 
 Come si incastrano le parti di questo repository: chi lo usa, che cosa contiene e da che cosa dipende. L'immagine è disegnata da `docs/architecture.json` e verificata rispetto al codice.
 
+## 🖼️ Schermate
+
+<p align="center">
+  <img src="images/screenshots/viewer.png" alt="viewer" width="100%">
+</p>
+
+<p align="center"><em>Il visualizzatore: il lavoro sul piano in 2D, la macchina in 3D e i comandi del lavoro.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/job-running.png" alt="job running" width="100%">
+</p>
+
+<p align="center"><em>Un lavoro in corso: i fori e i percorsi fatti, la posizione dell'utensile, Pausa e Stop.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/neon-theme.png" alt="Neon Arcade theme" width="100%">
+</p>
+
+<p align="center"><em>Il tema Neon Arcade con la scheda in pannello.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/tools.png" alt="tools" width="100%">
+</p>
+
+<p align="center"><em>Gli utensili: avanzamenti, velocità e profondità, i fori di ogni punta sulla scheda e quelli eseguiti in totale.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/machine-settings.png" alt="settings" width="100%">
+</p>
+
+<p align="center"><em>Le impostazioni: ogni modello Bungard, il piano e le unità dei file.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/board.png" alt="board" width="100%">
+</p>
+
+<p align="center"><em>La scheda: un materiale della libreria, il suo spessore, il suo rame e le sue dimensioni.</em></p>
+
 ## ✨ Funzionalità
 
 * Temi: Forge (predefinito), Neon Arcade, Glass Pro, il grigio classico di Windows e uno che segue i colori di Windows.
@@ -146,7 +184,7 @@ EH3D-BUNGARD-GUI/
 ├── testdata/                                    una piccola scheda: file di foratura e contorno, e file di esempio di macchina e utensili
 ├── docs/                                        le fonti delle due immagini
 ├── tools/                                       controllo CI, controllo del README e strumenti delle immagini
-├── images/                                      banner e le due immagini
+├── images/                                      banner, le due immagini e le schermate
 ├── .github/                                     workflow di CI e di rilascio, modelli per issue e pull request
 ├── build.sh build.bat                           compilano la finestra
 ├── run.sh run.bat                               avviano la finestra, con i file di prova se non ci sono argomenti

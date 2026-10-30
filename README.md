@@ -76,6 +76,44 @@ EH3D-BUNGARD-GUI is the modern interface of the Bungard machines in the EH3D fam
 
 How the parts of this repository fit together: who uses it, what it holds and what it depends on. The picture is drawn from `docs/architecture.json` and checked against the code.
 
+## 🖼️ Screenshots
+
+<p align="center">
+  <img src="images/screenshots/viewer.png" alt="viewer" width="100%">
+</p>
+
+<p align="center"><em>The viewer: the job on the table in 2D, the machine in 3D and the controls of the job.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/job-running.png" alt="job running" width="100%">
+</p>
+
+<p align="center"><em>A job running: the holes and paths that are done, the position of the tool, and Pause and Stop.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/neon-theme.png" alt="Neon Arcade theme" width="100%">
+</p>
+
+<p align="center"><em>The Neon Arcade theme with the board panelized.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/tools.png" alt="tools" width="100%">
+</p>
+
+<p align="center"><em>The tools: feeds, speeds and depths, the holes of each drill on the board and the holes drilled in all.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/machine-settings.png" alt="settings" width="100%">
+</p>
+
+<p align="center"><em>The settings: every Bungard model, the table and the units of the files.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/board.png" alt="board" width="100%">
+</p>
+
+<p align="center"><em>The board: a material from the library, its thickness, its copper and its size.</em></p>
+
 ## ✨ Features
 
 * Themes: Forge (the default), Neon Arcade, Glass Pro, the classic Windows grey and one that follows the colours of Windows.
@@ -146,7 +184,7 @@ EH3D-BUNGARD-GUI/
 ├── testdata/                                    a small board: drilling and outline files, and the sample machine and tool files
 ├── docs/                                        the sources of the two pictures
 ├── tools/                                       CI check, README check and the picture tools
-├── images/                                      banner and the two pictures
+├── images/                                      banner, the two pictures and the screenshots
 ├── .github/                                     CI and release workflows, issue and pull-request templates
 ├── build.sh build.bat                           build the window
 ├── run.sh run.bat                               start the window, with the test files when no arguments are given

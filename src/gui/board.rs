@@ -1010,26 +1010,19 @@ impl App {
                     12.0,
                     col(t.dim),
                 );
-                let names = [
-                    (ThemeId::Forge, Text::ThemeForge),
-                    (ThemeId::Neon, Text::ThemeNeon),
-                    (ThemeId::Glass, Text::ThemeGlass),
-                    (ThemeId::WindowsClassic, Text::ThemeWindowsClassic),
-                    (ThemeId::System, Text::ThemeSystem),
-                ];
-                for (i, (id, n)) in names.into_iter().enumerate() {
+                for (i, id) in ThemeId::ALL.into_iter().enumerate() {
                     cv.chip(
-                        x + 30.0 + (i % 2) as f32 * 390.0,
-                        top + 20.0 + (i / 2) as f32 * 46.0,
-                        380.0,
+                        x + 30.0 + (i % 3) as f32 * 262.0,
+                        top + 20.0 + (i / 3) as f32 * 46.0,
+                        254.0,
                         38.0,
-                        self.tr(n),
+                        self.tr(id.text()),
                         self.theme.id == id,
                         Act::SetTheme(id),
                     );
                 }
                 // the language
-                let ly = top + 168.0;
+                let ly = top + 20.0 + (ThemeId::ALL.len() as f32 / 3.0).ceil() * 46.0 + 16.0;
                 cv.text(
                     x + 30.0,
                     ly,

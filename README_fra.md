@@ -114,6 +114,18 @@ Comment les parties de ce dépôt s'articulent : qui l'utilise, ce qu'il contien
 
 <p align="center"><em>La carte : un matériau de la bibliothèque, son épaisseur, son cuivre et sa taille.</em></p>
 
+<p align="center">
+  <img src="images/screenshots/themes.png" alt="themes" width="100%">
+</p>
+
+<p align="center"><em>Onze thèmes dans la fenêtre des réglages, chacun nommé dans la langue de la fenêtre.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/paper-theme.png" alt="light theme" width="100%">
+</p>
+
+<p align="center"><em>Le thème Papier, un thème clair.</em></p>
+
 ## ✨ Fonctionnalités
 
 * Thèmes : Forge (par défaut), Neon Arcade, Glass Pro, le gris classique de Windows et un qui suit les couleurs de Windows.

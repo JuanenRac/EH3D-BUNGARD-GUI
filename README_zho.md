@@ -114,6 +114,18 @@ EH3D-BUNGARD-GUI 是 EH3D 家族中 Bungard 机器的现代界面。它按路径
 
 <p align="center"><em>电路板：库中的材料、厚度、铜箔和尺寸。</em></p>
 
+<p align="center">
+  <img src="images/screenshots/themes.png" alt="themes" width="100%">
+</p>
+
+<p align="center"><em>设置窗口中的十一种主题，每种都以窗口语言命名。</em></p>
+
+<p align="center">
+  <img src="images/screenshots/paper-theme.png" alt="light theme" width="100%">
+</p>
+
+<p align="center"><em>纸张主题，一种浅色主题。</em></p>
+
 ## ✨ 功能
 
 * 主题：Forge（默认）、Neon Arcade、Glass Pro、经典 Windows 灰色，以及跟随 Windows 颜色的主题。

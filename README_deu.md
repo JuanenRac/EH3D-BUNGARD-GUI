@@ -114,6 +114,18 @@ Wie die Teile dieses Repositorys zusammenpassen: wer es nutzt, was es enthält u
 
 <p align="center"><em>Die Platine: ein Material aus der Bibliothek, ihre Dicke, ihr Kupfer und ihre Größe.</em></p>
 
+<p align="center">
+  <img src="images/screenshots/themes.png" alt="themes" width="100%">
+</p>
+
+<p align="center"><em>Elf Themen im Einstellungsfenster, jedes mit seinem Namen in der Sprache des Fensters.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/paper-theme.png" alt="light theme" width="100%">
+</p>
+
+<p align="center"><em>Das Thema Papier, ein helles.</em></p>
+
 ## ✨ Funktionen
 
 * Designs: Forge (Standard), Neon Arcade, Glass Pro, das klassische Windows-Grau und eines, das den Farben von Windows folgt.

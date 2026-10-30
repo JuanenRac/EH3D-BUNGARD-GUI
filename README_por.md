@@ -114,6 +114,18 @@ Como as partes deste repositório se encaixam: quem o usa, o que contém e de qu
 
 <p align="center"><em>A placa: um material da biblioteca, a sua espessura, o seu cobre e o seu tamanho.</em></p>
 
+<p align="center">
+  <img src="images/screenshots/themes.png" alt="themes" width="100%">
+</p>
+
+<p align="center"><em>Onze temas na janela de definições, cada um com o nome no idioma da janela.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/paper-theme.png" alt="light theme" width="100%">
+</p>
+
+<p align="center"><em>O tema Papel, um claro.</em></p>
+
 ## ✨ Funcionalidades
 
 * Temas: Forge (o predefinido), Neon Arcade, Glass Pro, o cinzento clássico do Windows e um que segue as cores do Windows.

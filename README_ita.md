@@ -114,6 +114,18 @@ Come si incastrano le parti di questo repository: chi lo usa, che cosa contiene 
 
 <p align="center"><em>La scheda: un materiale della libreria, il suo spessore, il suo rame e le sue dimensioni.</em></p>
 
+<p align="center">
+  <img src="images/screenshots/themes.png" alt="themes" width="100%">
+</p>
+
+<p align="center"><em>Undici temi nella finestra delle impostazioni, ognuno con il nome nella lingua della finestra.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/paper-theme.png" alt="light theme" width="100%">
+</p>
+
+<p align="center"><em>Il tema Carta, uno chiaro.</em></p>
+
 ## ✨ Funzionalità
 
 * Temi: Forge (predefinito), Neon Arcade, Glass Pro, il grigio classico di Windows e uno che segue i colori di Windows.

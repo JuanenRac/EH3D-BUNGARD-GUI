@@ -1241,13 +1241,7 @@ impl App {
             col(t.accent),
         );
         // theme and language: a click takes the next one
-        let name = match t.id {
-            ThemeId::Forge => Text::ThemeForge,
-            ThemeId::Neon => Text::ThemeNeon,
-            ThemeId::Glass => Text::ThemeGlass,
-            ThemeId::WindowsClassic => Text::ThemeWindowsClassic,
-            ThemeId::System => Text::ThemeSystem,
-        };
+        let name = t.id.text();
         let theme_label = format!("{}: {}", self.tr(Text::ThemeLabel), self.tr(name));
         let r = cv.text(
             DESIGN_W - 28.0,

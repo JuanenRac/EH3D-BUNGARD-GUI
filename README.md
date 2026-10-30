@@ -114,6 +114,18 @@ How the parts of this repository fit together: who uses it, what it holds and wh
 
 <p align="center"><em>The board: a material from the library, its thickness, its copper and its size.</em></p>
 
+<p align="center">
+  <img src="images/screenshots/themes.png" alt="themes" width="100%">
+</p>
+
+<p align="center"><em>Eleven themes in the settings window, each one named in the language of the window.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/paper-theme.png" alt="light theme" width="100%">
+</p>
+
+<p align="center"><em>The Paper theme, a light one.</em></p>
+
 ## ✨ Features
 
 * Themes: Forge (the default), Neon Arcade, Glass Pro, the classic Windows grey and one that follows the colours of Windows.

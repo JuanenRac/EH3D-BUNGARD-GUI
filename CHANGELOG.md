@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **Eleven themes:** Midnight, Paper (a light one), Forest, Retro terminal, Ocean and High contrast join the five themes; the settings window lists them all, each named in the language of the window, and the click on the theme in the title takes the next one.
 ## [0.0.3] - Gerber and DXF outlines as routing jobs, plotter arcs and circles, recent files, the count of holes of each drill and screenshots
 
 - **Screenshots in the README:** six pictures of the window (the viewer, a job running, a second theme, the tools, the settings and the board) in all the eight languages of the README.

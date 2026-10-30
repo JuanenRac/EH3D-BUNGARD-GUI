@@ -114,6 +114,18 @@ EH3D-BUNGARD-GUI は、EH3D ファミリーにおける Bungard マシン用の�
 
 <p align="center"><em>基板：ライブラリの材料、厚さ、銅箔、サイズ。</em></p>
 
+<p align="center">
+  <img src="images/screenshots/themes.png" alt="themes" width="100%">
+</p>
+
+<p align="center"><em>設定ウィンドウの 11 のテーマ。名前はウィンドウの言語で表示されます。</em></p>
+
+<p align="center">
+  <img src="images/screenshots/paper-theme.png" alt="light theme" width="100%">
+</p>
+
+<p align="center"><em>ペーパーテーマ（明るいテーマ）。</em></p>
+
 ## ✨ 機能
 
 * テーマ：Forge（既定）、Neon Arcade、Glass Pro、従来の Windows グレー、Windows の色に従うもの。

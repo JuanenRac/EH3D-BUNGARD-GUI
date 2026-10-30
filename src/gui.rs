@@ -1959,14 +1959,15 @@ impl App {
         );
         // the buttons of the job: Start goes out when the job runs and comes back with Pause or Stop; Pause and Stop work only while it runs
         let (can_start, can_pause, can_stop) = self.job_buttons();
+        // bright colours that mean the same in every theme: green to go, blue to hold (brighter while it holds), red to stop
         let (pause_c, start_c, stop_c) = (
             if self.paused {
-                col(t.accent)
+                Color32::from_rgb(90, 200, 255)
             } else {
-                col(t.accent2)
+                Color32::from_rgb(40, 150, 255)
             },
-            col(t.ok),
-            col(t.danger),
+            Color32::from_rgb(40, 230, 90),
+            Color32::from_rgb(255, 40, 40),
         );
         if can_pause {
             cv.icon_button(

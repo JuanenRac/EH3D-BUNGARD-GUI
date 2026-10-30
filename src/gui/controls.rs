@@ -628,6 +628,63 @@ EOF
     }
 
     #[test]
+    fn a_job_left_in_the_middle_is_offered_again_and_goes_on_from_where_it_was() {
+        let mut a = app();
+        let file = std::env::temp_dir().join(format!("eh3d-bg-resume-{}.cfg", std::process::id()));
+        a.recovery_path = Some(file.clone());
+        a.auto_ok = true;
+        a.fixed_dt = Some(2.0);
+        let holes = a.drill.scene.holes.len();
+        assert!(holes > 4);
+        a.act(Act::Start);
+        // the file is there as soon as the job starts and follows the holes that are drilled
+        assert!(file.exists());
+        let mut done = 0;
+        for _ in 0..20_000 {
+            a.tick();
+            done = a.drill.scene.holes.iter().filter(|h| h.done).count();
+            if done >= 3 || a.running.is_none() {
+                break;
+            }
+        }
+        assert!(a.running.is_some() && done >= 3, "{done} holes");
+        let saved = crate::recovery::Recovery::load(&file).expect("the file of the job");
+        assert_eq!((saved.program.as_str(), saved.total), ("drill", holes));
+        assert_eq!(saved.drilled.len(), done);
+        // the window goes down: a new one finds the job and asks
+        let mut b = app();
+        b.recovery_path = Some(file.clone());
+        b.offer_resume();
+        assert_eq!(b.modal, Some(Modal::Resume));
+        b.auto_ok = true;
+        b.fixed_dt = Some(2.0);
+        b.act(Act::ResumeContinue);
+        assert!(b.running.is_some() && b.modal.is_none());
+        // the holes that were drilled are marked and the job does only the rest
+        assert_eq!(
+            b.drill.scene.holes.iter().filter(|h| h.done).count(),
+            saved.done
+        );
+        for _ in 0..20_000 {
+            if b.running.is_none() {
+                break;
+            }
+            b.tick();
+        }
+        assert!(b.running.is_none());
+        assert!(b.drill.scene.holes.iter().all(|h| h.done));
+        // a job that ended leaves nothing to go on from
+        assert!(!file.exists());
+        // and a job that is left can be cancelled
+        let mut c = app();
+        saved.save(&file);
+        c.recovery_path = Some(file.clone());
+        c.offer_resume();
+        c.act(Act::ResumeCancel);
+        assert!(c.modal.is_none() && !file.exists());
+    }
+
+    #[test]
     fn the_files_opened_are_the_recent_ones_and_open_again_from_the_list() {
         let mut a = app();
         let ncd = a.settings.recent.first().cloned().unwrap();

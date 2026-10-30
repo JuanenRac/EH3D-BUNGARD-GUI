@@ -11,6 +11,7 @@ pub mod jobs;
 pub mod launcher;
 pub mod link;
 pub mod machines;
+pub mod recovery;
 
 #[cfg(feature = "gui")]
 pub mod gui;

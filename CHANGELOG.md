@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The job goes on after a crash:** while a job runs, what it needs to go on (the file, the panel, the holes drilled) is saved in real time; if the window, the computer or the link goes down, the next start asks whether to go on from where it was or to cancel it. A job that ends or is stopped on purpose leaves nothing behind.
+- **Brighter job buttons:** green to start, blue to pause, red to stop; the window opens maximized.
 - **Panelization with tabs:** the outside of the panel can be routed with tabs; the person chooses how many on each side, how wide and where (spread, near the ends or together in the middle), and the plan view shows the cut paths.
 - **More drop-down lists:** the maker, the thickness and the size of the board are chosen from lists instead of rows of buttons, and so is the place of the tabs.
 - **Drop-down lists:** the theme, the language, the model of the machine and the sounds are chosen from a list that scrolls instead of rows of buttons; the end of the job and the request for a tool each have 60 sounds from the high ones to the low ones, the standard tone, none or a file of your own, and a sound that is chosen is played.

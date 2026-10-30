@@ -33,6 +33,7 @@ mod extra;
 mod fleet;
 mod numedit;
 mod opener;
+mod resume;
 mod view2d;
 use board::BoardPick;
 use combo::{Combo, ComboId};
@@ -108,6 +109,9 @@ enum Act {
     ResetHoles,
     SetSpeed(f32),
     ToggleAsk,
+    /// The job that was left in the middle goes on, or is left.
+    ResumeContinue,
+    ResumeCancel,
     /// The outside of the panel is routed with tabs, or through.
     ToggleTabs,
     /// A drop-down list opens (or closes) and one of its rows is chosen.
@@ -271,6 +275,12 @@ pub struct App {
     fleet: fleet::FleetView,
     /// The drop-down list that is open.
     combo: Option<Combo>,
+    /// The file of the job that is running, so that a job that is left in the middle can go on; the job that is offered; how many holes (or paths) it had done.
+    recovery_path: Option<PathBuf>,
+    recovery_at: Option<Instant>,
+    recovery_done: usize,
+    resume: Option<crate::recovery::Recovery>,
+    resume_skip: usize,
 }
 
 impl App {
@@ -383,6 +393,11 @@ impl App {
             conn_rx: None,
             fleet: fleet::FleetView::default(),
             combo: None,
+            recovery_path: App::recovery_file(),
+            recovery_at: None,
+            recovery_done: usize::MAX,
+            resume: None,
+            resume_skip: 0,
         };
         let examples = app.base_dir.join("examples");
         let has_jobs = std::fs::read_dir(&examples).is_ok_and(|rd| {
@@ -462,6 +477,15 @@ impl App {
             _ => {}
         }
         app.refit_table();
+        let nothing_asked = o.shot.is_none()
+            && o.drill.is_none()
+            && o.route.is_none()
+            && o.zip.is_none()
+            && o.open.is_empty()
+            && o.modal.is_none();
+        if nothing_asked {
+            app.offer_resume();
+        }
         app
     }
 
@@ -659,6 +683,11 @@ impl App {
     }
 
     fn start_job(&mut self) {
+        self.start_job_from(0);
+    }
+
+    /// Starts the job leaving out the first `skip` holes (or paths) of it, which are already done.
+    fn start_job_from(&mut self, skip: usize) {
         let ask_operator = self.settings.ask_operator;
         let panel = self.panel_applied.map(|(columns, rows, pitch_mm)| Panel {
             columns,
@@ -682,18 +711,25 @@ impl App {
             side.engine.set_job_options(JobOptions {
                 ask_operator,
                 panel,
+                skip,
                 ..Default::default()
             });
             side.engine.start();
             side.last_done = 0;
-            for h in &mut side.scene.holes {
-                h.done = false;
-            }
-            for pth in &mut side.scene.paths {
-                pth.reached = 0;
+            if skip == 0 {
+                for h in &mut side.scene.holes {
+                    h.done = false;
+                }
+                for pth in &mut side.scene.paths {
+                    pth.reached = 0;
+                }
             }
             self.running = Some(p);
             self.paused = false;
+            self.resume_skip = skip;
+            self.recovery_done = usize::MAX;
+            self.recovery_at = None;
+            self.save_recovery();
         }
     }
 
@@ -711,6 +747,7 @@ impl App {
 
     fn stop_job(&mut self) {
         self.paused = false;
+        self.clear_recovery();
         if self.running == Some(Program::Drill) {
             self.count_holes();
         }
@@ -744,6 +781,7 @@ impl App {
         }
         let auto_ok = self.auto_ok;
         let dt = real * self.settings.sim_speed as f64;
+        let skip = self.resume_skip;
         let side = self.side_mut(p);
         if side.engine.question().is_some() {
             if auto_ok {
@@ -788,9 +826,16 @@ impl App {
                 side.last_done += 1;
             }
         } else {
-            let total: usize = side.scene.paths.iter().map(|q| q.points.len()).sum();
+            // a job that went on leaves out the paths that were done: the rest share the percent
+            let total: usize = side
+                .scene
+                .paths
+                .iter()
+                .skip(skip)
+                .map(|q| q.points.len())
+                .sum();
             let mut left = total * percent as usize / 100;
-            for q in &mut side.scene.paths {
+            for q in side.scene.paths.iter_mut().skip(skip) {
                 q.reached = left.min(q.points.len());
                 left = left.saturating_sub(q.points.len());
             }
@@ -806,9 +851,12 @@ impl App {
                 }
             }
             self.running = None;
+            self.clear_recovery();
             if p == Program::Drill {
                 self.count_holes();
             }
+        } else {
+            self.save_recovery();
         }
     }
 
@@ -897,6 +945,8 @@ impl App {
                 self.remember_settings();
             }
             Act::ToggleAsk => self.toggle_ask(),
+            Act::ResumeContinue => self.resume_job(),
+            Act::ResumeCancel => self.resume_cancel(),
             Act::ToggleTabs => {
                 self.panel.tabs_on = !self.panel.tabs_on;
                 self.saved = false;

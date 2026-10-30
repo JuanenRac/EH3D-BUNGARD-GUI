@@ -38,6 +38,8 @@ pub(crate) enum Modal {
     Tools,
     /// The machines and stations of the server, followed at once.
     Fleet,
+    /// A job that was left in the middle: go on or leave it.
+    Resume,
 }
 
 /// A text box of the Connection window.
@@ -685,6 +687,7 @@ impl App {
             Modal::Board => self.paint_board_modal(cv),
             Modal::Tools => self.paint_tools_modal(cv),
             Modal::Fleet => self.paint_fleet_modal(cv),
+            Modal::Resume => self.paint_resume(cv),
             Modal::About => {
                 let (x, y) = self.modal_card(cv, self.tr(Text::About), 420.0);
                 cv.text(

@@ -665,6 +665,9 @@ EOF
     #[test]
     fn the_fleet_window_asks_the_server_and_chooses_the_machine_of_the_jobs() {
         let mut a = app();
+        // the machine file of the test is its own: choosing a machine writes it, and it must never be the file of the user
+        a.conn_path =
+            std::env::temp_dir().join(format!("eh3d-bg-fleet-{}.cfg", std::process::id()));
         // the window says why there is nothing to show when the connection is not the server
         a.conn.kind = LinkKind::Demo;
         a.show_modal(Modal::Fleet);

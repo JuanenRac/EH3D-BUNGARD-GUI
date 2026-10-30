@@ -516,17 +516,15 @@ EOF
         // opened again, it comes to the head and is not listed twice
         a.open_path(Path::new(&ncd));
         assert!(a.settings.recent[0].ends_with("05_small_board.ncd"));
-        let listed = |name: &str| {
+        // the list is the user's and the tests share it: only these two files are counted, by their whole path
+        let listed = |full: &str| {
             a.settings
                 .recent
                 .iter()
-                .filter(|p| p.ends_with(name))
+                .filter(|p| p.as_str() == full)
                 .count()
         };
-        assert_eq!(
-            (listed("05_small_board.ncd"), listed("05_board_outline.plt")),
-            (1, 1)
-        );
+        assert_eq!((listed(&ncd), listed(&plt.to_string_lossy())), (1, 1));
         // a click on the second one opens it
         a.act(Act::OpenRecent(1));
         assert!(a.settings.recent[0].ends_with("05_board_outline.plt"));

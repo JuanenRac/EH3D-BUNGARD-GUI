@@ -153,7 +153,10 @@ impl App {
 
     /// The sound chosen in its list: none, the standard tone, a file of the person's or one of the catalogue. A sound of the catalogue is played to hear it.
     pub(crate) fn sound_choose(&mut self, cue: Cue, setting: SoundSetting) {
-        let to_hear = matches!(setting, SoundSetting::Tone(_) | SoundSetting::Default);
+        let to_hear = matches!(
+            setting,
+            SoundSetting::Tone(_) | SoundSetting::Default | SoundSetting::Voice { .. }
+        );
         *self.sound_mut(cue) = setting;
         self.saved = false;
         self.apply_conn();
@@ -950,22 +953,63 @@ EOF
     }
 
     #[test]
+    fn a_spoken_voice_is_in_the_list_and_is_chosen_for_each_event() {
+        use super::super::combo::ComboId;
+        use eh3d_drillpro::protocol::sound::{Cue, SoundSetting};
+        let mut a = app();
+        // the voices of the folder of the repository are found from the build folder
+        let voices = a.voices();
+        assert!(voices.len() >= 10, "{voices:?}");
+        assert!(voices.contains(&("es", true)) && voices.contains(&("de", false)));
+        let items = a.combo_items(ComboId::Sound(Cue::Finished));
+        assert!(
+            items[3].contains(" - ") && items[3].contains('('),
+            "{}",
+            items[3]
+        );
+        // the voice that is chosen is kept in the machine file as `voice:LANG:f|m`
+        a.combo_open(ComboId::Sound(Cue::ToolChange));
+        a.combo_pick(3);
+        let (lang, female) = voices[0];
+        assert_eq!(
+            a.conn.sound_tool_change,
+            SoundSetting::Voice {
+                lang: lang.to_string(),
+                female
+            }
+        );
+        assert_eq!(a.combo_current(ComboId::Sound(Cue::ToolChange)), 3);
+        assert!(a.conn.sound_tool_change.to_text().starts_with("voice:"));
+        // the other event has its own voice
+        a.combo_open(ComboId::Sound(Cue::Finished));
+        a.combo_pick(4);
+        assert_ne!(a.conn.sound_finish, a.conn.sound_tool_change);
+        assert_eq!(a.combo_current(ComboId::Sound(Cue::Finished)), 4);
+    }
+
+    #[test]
     fn a_drop_down_list_opens_scrolls_and_chooses() {
         use super::super::combo::{ComboId, ROWS};
         use eh3d_drillpro::protocol::sound::{Cue, SoundSetting, TONES};
         let mut a = app();
         // the list of a sound has sixty sounds of the catalogue besides none, the standard tone and a file of the person's
         let items = a.combo_items(ComboId::Sound(Cue::Finished));
-        assert_eq!(items.len(), TONES + 3);
+        // the spoken voices that are recorded come after the three fixed rows and before the sounds
+        let v = a.voices().len();
+        assert_eq!(items.len(), TONES + 3 + v);
         assert!(items.len() >= 50);
         assert!(
-            items[3].starts_with("01 ") && items[3].contains("C7"),
+            items[3 + v].starts_with("01 ") && items[3 + v].contains("C7"),
             "{}",
-            items[3]
+            items[3 + v]
         );
-        assert!(items[TONES + 2].contains("C3"), "{}", items[TONES + 2]);
+        assert!(
+            items[TONES + 2 + v].contains("C3"),
+            "{}",
+            items[TONES + 2 + v]
+        );
         let tools = a.combo_items(ComboId::Sound(Cue::ToolChange));
-        assert_ne!(items[5], tools[5]);
+        assert_ne!(items[5 + v], tools[5 + v]);
         // it opens with the chosen row in view, scrolls inside its limits and a second click on the box closes it
         a.combo_open(ComboId::Sound(Cue::Finished));
         assert_eq!(a.combo.unwrap().scroll, 0);
@@ -977,10 +1021,10 @@ EOF
         assert!(a.combo.is_none());
         // a row is chosen: the list closes, the sound is the one of the catalogue and the choice is in the connection
         a.combo_open(ComboId::Sound(Cue::ToolChange));
-        a.combo_pick(3 + 17);
+        a.combo_pick(3 + v + 17);
         assert!(a.combo.is_none());
         assert_eq!(a.conn.sound_tool_change, SoundSetting::Tone(17));
-        assert_eq!(a.combo_current(ComboId::Sound(Cue::ToolChange)), 20);
+        assert_eq!(a.combo_current(ComboId::Sound(Cue::ToolChange)), 20 + v);
         // the two events keep their own sound
         assert_eq!(a.conn.sound_finish, SoundSetting::Off);
         a.combo_open(ComboId::Sound(Cue::Finished));

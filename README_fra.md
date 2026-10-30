@@ -66,6 +66,7 @@ Chaque ligne est une partie de ce dépôt et le feu dit où elle en est aujourd'
 * **Ponts pour l'extérieur du panneau :** dans la fenêtre Panélisation l'extérieur peut être détouré avec des ponts qui retiennent les cartes jusqu'à leur séparation : combien par côté, quelle largeur et où (répartis, près des extrémités ou ensemble au milieu) ; la vue du plan montre les trajets coupés. Le fabricant, l'épaisseur et la taille de la carte se choisissent aussi dans des listes déroulantes.
 * **Étalonnage de la table :** un onglet de la fenêtre Réglages mesure la hauteur de la table sur une grille de points (7 par 5 par défaut), dessine la carte (bleu en bas, rouge en haut) avec l'écart et l'inclinaison en mm par mètre, et la garde avec la machine. Tant que le nœud palpeur n'est pas connecté, le palpeur est simulé et la correction des travaux n'est pas encore appliquée.
 * **Le travail reprend après une panne :** pendant qu'un travail tourne, ce qu'il faut pour continuer (le fichier, le panneau, les trous percés) est enregistré en temps réel ; si la fenêtre, l'ordinateur ou la liaison tombe, le démarrage suivant demande s'il faut reprendre où il en était ou l'annuler. La fenêtre s'ouvre agrandie et les boutons du travail sont vifs (vert pour démarrer, bleu pour la pause, rouge pour arrêter).
+* **Avis parlés :** en plus des tonalités, la fin du travail et la demande d'outil peuvent être dites par une voix, dans la langue et le genre choisis dans la même liste de sons (`sound_finish = voice:es:f`). Les voix du dossier `voices/` sont synthétiques (Piper) et libres de diffusion, avec une phrase lente et formelle ; il n'y a pas de voix japonaise, ni de voix féminine chinoise ou portugaise, ni d'enregistrement réel d'une personne : mettez vos propres fichiers WAV dans les mêmes dossiers et ils les remplacent. Voir `voices/README.txt`.
 
 ## 🧩 Rôle dans EH3D
 
@@ -231,6 +232,7 @@ EH3D-BUNGARD-GUI/
 ├── docs/                                        les sources des deux images
 ├── tools/                                       contrôle CI, contrôle du README et outils des images
 ├── images/                                      bannière, les deux images et les captures d'écran
+├── voices/                                      avis parlés
 ├── .github/                                     workflows de CI et de publication, modèles d'issues et de pull requests
 ├── build.sh build.bat                           compilent la fenêtre
 ├── run.sh run.bat                               démarrent la fenêtre, avec les fichiers de test sans argument

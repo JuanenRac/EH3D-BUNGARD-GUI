@@ -66,6 +66,7 @@ Jede Zeile ist ein Teil dieses Repositorys, und die Ampel sagt, wie weit er heut
 * **Haltestege für die Außenkontur des Panels:** im Fenster Panelisierung kann die Außenkontur mit Haltestegen gefräst werden, die die Platinen bis zum Herausbrechen halten: wie viele pro Seite, wie breit und wo (gleichmäßig, nahe den Enden oder gemeinsam in der Mitte); die Planansicht zeigt die geschnittenen Pfade. Auch Hersteller, Dicke und Größe der Platine werden aus Auswahllisten gewählt.
 * **Tischkalibrierung:** ein Reiter des Einstellungsfensters misst die Höhe des Tisches in einem Punktraster (standardmäßig 7 mal 5), zeichnet die Karte (blau tief, rot hoch) mit Spanne und Neigung in mm pro Meter und speichert sie bei der Maschine. Solange der Tasterknoten nicht verbunden ist, wird der Taster simuliert, und die Korrektur der Aufträge wird noch nicht angewendet.
 * **Der Auftrag geht nach einem Absturz weiter:** während ein Auftrag läuft, wird in Echtzeit gespeichert, was er zum Weitermachen braucht (die Datei, das Panel, die gebohrten Löcher); fallen Fenster, Rechner oder Verbindung aus, fragt der nächste Start, ob er dort weitermachen oder abbrechen soll. Das Fenster öffnet sich maximiert, und die Auftragsknöpfe sind hell (grün zum Starten, blau für Pause, rot zum Stoppen).
+* **Gesprochene Hinweise:** neben den Tönen können das Auftragsende und die Werkzeuganforderung von einer Stimme gesagt werden, in der Sprache und dem Geschlecht aus derselben Tonliste (`sound_finish = voice:es:f`). Die Stimmen im Ordner `voices/` sind synthetisch (Piper) und frei weitergebbar, mit einem langsamen, förmlichen Satz; es gibt keine japanische Stimme, keine weibliche chinesische oder portugiesische Stimme und keine echte Aufnahme einer Person: lege eigene WAV-Dateien in dieselben Ordner, sie ersetzen diese. Siehe `voices/README.txt`.
 
 ## 🧩 Rolle in EH3D
 
@@ -231,6 +232,7 @@ EH3D-BUNGARD-GUI/
 ├── docs/                                        die Quellen der beiden Bilder
 ├── tools/                                       CI-Prüfung, README-Prüfung und die Werkzeuge für die Bilder
 ├── images/                                      Banner, die beiden Bilder und die Screenshots
+├── voices/                                      gesprochene Hinweise
 ├── .github/                                     CI- und Release-Workflows, Vorlagen für Issues und Pull Requests
 ├── build.sh build.bat                           bauen das Fenster
 ├── run.sh run.bat                               starten das Fenster, ohne Argumente mit den Testdateien

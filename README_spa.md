@@ -66,6 +66,7 @@ Cada línea es una parte de este repositorio y la luz dice hasta dónde llega ho
 * **Muescas en el exterior del panel:** en la ventana de Panelización el exterior se puede rutear con muescas que sujetan las placas hasta romperlas: cuántas por lado, de qué ancho y dónde (repartidas, cerca de los extremos o juntas en el centro); la vista del plano muestra los trazos cortados. El fabricante, el grosor y el tamaño de la placa también se eligen en listas desplegables.
 * **Calibración de la mesa:** una pestaña de la ventana de Ajustes mide la altura de la mesa en una malla de puntos (7 por 5 por defecto), dibuja el mapa (azul abajo, rojo arriba) con la diferencia y la inclinación en mm por metro, y lo guarda con la máquina. Mientras no se conecte el nodo palpador, el palpador es simulado y la corrección de los trabajos aún no se aplica.
 * **El trabajo sigue tras un fallo:** mientras un trabajo corre, lo que necesita para seguir (el fichero, el panel, los agujeros hechos) se guarda en tiempo real; si se cae la ventana, el equipo o el enlace, al volver a arrancar pregunta si seguir por donde iba o cancelarlo. La ventana se abre maximizada y los botones del trabajo son brillantes (verde para iniciar, azul para pausar, rojo para parar).
+* **Avisos hablados:** además de los tonos, el fin del trabajo y la petición de herramienta pueden decirse con una voz, en el idioma y el género elegidos en la misma lista de sonidos (`sound_finish = voice:es:f`). Las voces de la carpeta `voices/` son sintéticas (Piper) y de uso libre, con una frase lenta y formal; no hay voz japonesa, ni voz femenina china o portuguesa, ni grabación real de una persona: pon tus propios ficheros WAV en las mismas carpetas y los sustituyen. Mira `voices/README.txt`.
 
 ## 🧩 Papel en EH3D
 
@@ -231,6 +232,7 @@ EH3D-BUNGARD-GUI/
 ├── docs/                                        las fuentes de las dos imágenes
 ├── tools/                                       comprobación de CI, comprobación del README y herramientas de las imágenes
 ├── images/                                      banner, las dos imágenes y las capturas de pantalla
+├── voices/                                      avisos hablados
 ├── .github/                                     flujos de CI y de publicación, plantillas de issues y pull requests
 ├── build.sh build.bat                           compilan la ventana
 ├── run.sh run.bat                               arrancan la ventana, con los ficheros de prueba si no se dan argumentos

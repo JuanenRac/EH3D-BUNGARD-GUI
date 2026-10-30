@@ -66,6 +66,7 @@ Cada linha é uma parte deste repositório e a luz diz até onde chega hoje. É 
 * **Pontes no exterior do painel:** na janela Painelização o exterior pode ser cortado com pontes que seguram as placas até serem partidas: quantas por lado, de que largura e onde (repartidas, perto das extremidades ou juntas ao centro); a vista do plano mostra os percursos cortados. O fabricante, a espessura e o tamanho da placa também se escolhem em listas pendentes.
 * **Calibração da mesa:** um separador da janela Definições mede a altura da mesa numa grelha de pontos (7 por 5 por omissão), desenha o mapa (azul em baixo, vermelho em cima) com a diferença e a inclinação em mm por metro, e guarda-o com a máquina. Enquanto o nó apalpador não estiver ligado, o apalpador é simulado e a correção dos trabalhos ainda não é aplicada.
 * **O trabalho continua depois de uma falha:** enquanto um trabalho corre, o que precisa para continuar (o ficheiro, o painel, os furos feitos) é guardado em tempo real; se a janela, o computador ou a ligação falhar, o arranque seguinte pergunta se continua por onde ia ou se o cancela. A janela abre maximizada e os botões do trabalho são brilhantes (verde para iniciar, azul para pausar, vermelho para parar).
+* **Avisos falados:** além dos tons, o fim do trabalho e o pedido de ferramenta podem ser ditos por uma voz, no idioma e no género escolhidos na mesma lista de sons (`sound_finish = voice:es:f`). As vozes da pasta `voices/` são sintéticas (Piper) e de uso livre, com uma frase lenta e formal; não há voz japonesa, nem voz feminina chinesa ou portuguesa, nem gravação real de uma pessoa: ponha os seus próprios ficheiros WAV nas mesmas pastas e eles substituem-nas. Veja `voices/README.txt`.
 
 ## 🧩 Papel no EH3D
 
@@ -231,6 +232,7 @@ EH3D-BUNGARD-GUI/
 ├── docs/                                        as fontes das duas imagens
 ├── tools/                                       verificação de CI, verificação do README e ferramentas das imagens
 ├── images/                                      faixa, as duas imagens e as capturas de ecrã
+├── voices/                                      avisos falados
 ├── .github/                                     fluxos de CI e de publicação, modelos de issues e pull requests
 ├── build.sh build.bat                           compilam a janela
 ├── run.sh run.bat                               arrancam a janela, com os ficheiros de teste se não houver argumentos

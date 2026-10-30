@@ -62,6 +62,7 @@ jobs:
           cp LICENSE README.md CHANGELOG.md "$name/"
           # the test files and the sample machine and tool files, as examples
           cp -r testdata "$name/examples"
+          cp -r voices "$name/voices"
           mkdir -p dist
           if [ "${{ matrix.archive }}" = "zip" ]; then
             7z a -tzip "dist/${name}.zip" "$name" >/dev/null

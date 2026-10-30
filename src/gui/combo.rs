@@ -34,10 +34,31 @@ pub(crate) struct Combo {
 /// How many rows the open list shows at once, and how high each one is.
 pub(crate) const ROWS: usize = 8;
 const ROW_H: f32 = 36.0;
-/// What comes before the sounds of the catalogue in the list of a sound: no sound, the standard tone and a file of the person's.
+/// What comes first in the list of a sound: no sound, the standard tone and a file of the person's; then the spoken voices that are recorded, then the sounds of the catalogue.
 const SOUND_FIXED: usize = 3;
 
 impl App {
+    /// The spoken voices that are recorded in the folder of the voices: (language, female).
+    pub(crate) fn voices(&self) -> Vec<(&'static str, bool)> {
+        sound::voices_dir()
+            .map(|d| sound::available_voices(&d))
+            .unwrap_or_default()
+    }
+
+    /// The name of a voice in the list: `Voice - Español (mujer)`.
+    fn voice_label(&self, lang: &str, female: bool) -> String {
+        let name = LANG_NAMES
+            .iter()
+            .find(|(l, _)| l.code() == lang)
+            .map_or(lang, |(_, n)| *n);
+        let who = if female {
+            Text::SndFemale
+        } else {
+            Text::SndMale
+        };
+        format!("{} - {} ({})", self.tr(Text::SndVoice), name, self.tr(who))
+    }
+
     /// The rows of a list.
     pub(crate) fn combo_items(&self, id: ComboId) -> Vec<String> {
         match id {
@@ -88,6 +109,11 @@ impl App {
                     self.tr(Text::SndDefault).to_string(),
                     self.tr(Text::SndFile).to_string(),
                 ];
+                v.extend(
+                    self.voices()
+                        .into_iter()
+                        .map(|(l, f)| self.voice_label(l, f)),
+                );
                 v.extend((0..sound::TONES).map(|k| self.tone_label(cue, k)));
                 v
             }
@@ -161,7 +187,12 @@ impl App {
                 SoundSetting::Off => 0,
                 SoundSetting::Default => 1,
                 SoundSetting::File(_) => 2,
-                SoundSetting::Tone(k) => SOUND_FIXED + *k as usize,
+                SoundSetting::Voice { lang, female } => self
+                    .voices()
+                    .iter()
+                    .position(|(l, f)| *l == lang && f == female)
+                    .map_or(0, |i| SOUND_FIXED + i),
+                SoundSetting::Tone(k) => SOUND_FIXED + self.voices().len() + *k as usize,
             },
         }
     }
@@ -221,7 +252,16 @@ impl App {
                     0 => SoundSetting::Off,
                     1 => SoundSetting::Default,
                     2 => SoundSetting::File(PathBuf::new()),
-                    k => SoundSetting::Tone((k - SOUND_FIXED) as u8),
+                    k => {
+                        let voices = self.voices();
+                        match k.checked_sub(SOUND_FIXED).filter(|i| *i < voices.len()) {
+                            Some(i) => SoundSetting::Voice {
+                                lang: voices[i].0.to_string(),
+                                female: voices[i].1,
+                            },
+                            None => SoundSetting::Tone((k - SOUND_FIXED - voices.len()) as u8),
+                        }
+                    }
                 };
                 self.sound_choose(cue, setting);
             }

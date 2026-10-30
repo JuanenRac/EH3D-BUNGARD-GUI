@@ -290,6 +290,19 @@
           }
         },
         {
+          "desc": {
+            "en": "spoken notices",
+            "es": "avisos hablados",
+            "it": "avvisi parlati",
+            "de": "gesprochene Hinweise",
+            "fr": "avis parlés",
+            "pt": "avisos falados",
+            "zh": "语音提示",
+            "ja": "音声通知"
+          },
+          "name": "voices/"
+        },
+        {
           "name": ".github/",
           "desc": {
             "en": "CI and release workflows, issue and pull-request templates",
@@ -319,7 +332,7 @@
         {
           "name": "run.sh  run.bat",
           "desc": {
-            "en": "start the window, with the test files when no arguments are given",
+            "en": "start the window with the test files",
             "es": "arrancan la ventana, con los ficheros de prueba si no se dan argumentos",
             "de": "starten das Fenster, ohne Argumente mit den Testdateien",
             "fr": "démarrent la fenêtre, avec les fichiers de test sans argument",

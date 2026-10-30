@@ -66,6 +66,7 @@ Each line is one part of this repository and the light says how far it is today.
 * **Tabs for the outside of a panel:** in the Panelization window the outside can be routed with tabs that hold the boards until they are broken out: how many on each side, how wide, and where (spread evenly, near the ends or together in the middle); the plan view shows the cut paths. The maker, the thickness and the size of the board are chosen from drop-down lists too.
 * **The table is calibrated:** a tab of the Settings window measures the height of the table in a grid of points (7 by 5 by default), draws the map (blue low, red high) with the spread and the tilt in mm per metre, and keeps it with the machine. Until the probe node is connected the probe is simulated, and the correction of the jobs is not applied yet.
 * **The job goes on after a crash:** while a job runs, what it needs to go on (the file, the panel, the holes drilled) is saved in real time; if the window, the computer or the link goes down, the next start asks whether to go on from where it was or to cancel it. The window opens maximized and the job buttons are bright (green to start, blue to pause, red to stop).
+* **Spoken notices:** besides the tones, the end of the job and the request for a tool can be said by a voice, in the language and the gender chosen from the same list of sounds (`sound_finish = voice:es:f`). The voices in the folder `voices/` are synthetic (Piper) and free to give away, with a slow and formal sentence; there is no Japanese voice, no female Chinese or Portuguese voice and no real recording of a person: put your own WAV files in the same folders and they replace them. See `voices/README.txt`.
 
 ## 🧩 Role in EH3D
 
@@ -231,9 +232,10 @@ EH3D-BUNGARD-GUI/
 ├── docs/                                        the sources of the two pictures
 ├── tools/                                       CI check, README check and the picture tools
 ├── images/                                      banner, the two pictures and the screenshots
+├── voices/                                      spoken notices
 ├── .github/                                     CI and release workflows, issue and pull-request templates
 ├── build.sh build.bat                           build the window
-├── run.sh run.bat                               start the window, with the test files when no arguments are given
+├── run.sh run.bat                               start the window with the test files
 ├── eh3d.project.json bump_manifest_version.py   manifest and version utility
 ├── Cargo.toml Cargo.lock                        the Rust package and its locked dependencies
 ├── CHANGELOG.md                                 what changed in each version

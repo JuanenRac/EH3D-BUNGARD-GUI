@@ -66,6 +66,7 @@ Ogni riga è una parte di questo repository e il semaforo dice a che punto è og
 * **Ponticelli per l'esterno del pannello:** nella finestra Pannellizzazione l'esterno si può fresare con ponticelli che tengono le schede finché non si staccano: quanti per lato, di che larghezza e dove (distribuiti, vicino alle estremità o insieme al centro); la vista del piano mostra i percorsi tagliati. Anche il produttore, lo spessore e la dimensione della scheda si scelgono da menu a tendina.
 * **Calibrazione del tavolo:** una scheda della finestra Impostazioni misura l'altezza del tavolo in una griglia di punti (7 per 5 di default), disegna la mappa (blu in basso, rosso in alto) con la differenza e l'inclinazione in mm al metro, e la conserva con la macchina. Finché il nodo sonda non è collegato la sonda è simulata e la correzione dei lavori non è ancora applicata.
 * **Il lavoro continua dopo un guasto:** mentre un lavoro è in corso, ciò che serve per continuare (il file, il pannello, i fori fatti) viene salvato in tempo reale; se cadono la finestra, il computer o il collegamento, al riavvio chiede se continuare da dove era o annullarlo. La finestra si apre massimizzata e i pulsanti del lavoro sono luminosi (verde per avviare, blu per la pausa, rosso per fermare).
+* **Avvisi parlati:** oltre ai toni, la fine del lavoro e la richiesta di utensile possono essere dette da una voce, nella lingua e nel genere scelti dalla stessa lista di suoni (`sound_finish = voice:es:f`). Le voci della cartella `voices/` sono sintetiche (Piper) e libere da distribuire, con una frase lenta e formale; non c'è voce giapponese, né voce femminile cinese o portoghese, né registrazione reale di una persona: metti i tuoi file WAV nelle stesse cartelle e li sostituiscono. Vedi `voices/README.txt`.
 
 ## 🧩 Ruolo in EH3D
 
@@ -231,6 +232,7 @@ EH3D-BUNGARD-GUI/
 ├── docs/                                        le fonti delle due immagini
 ├── tools/                                       controllo CI, controllo del README e strumenti delle immagini
 ├── images/                                      banner, le due immagini e le schermate
+├── voices/                                      avvisi parlati
 ├── .github/                                     workflow di CI e di rilascio, modelli per issue e pull request
 ├── build.sh build.bat                           compilano la finestra
 ├── run.sh run.bat                               avviano la finestra, con i file di prova se non ci sono argomenti

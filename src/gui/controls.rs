@@ -302,14 +302,7 @@ impl App {
             (cap * 0.28) * cv.u,
             alpha(Color32::WHITE, if down { 20 } else { 60 }),
         );
-        cv.text(
-            ex,
-            ey + 6.0,
-            Align2::CENTER_BOTTOM,
-            "STOP",
-            15.0,
-            Color32::WHITE,
-        );
+        cv.draw_icon(ex, ey + 1.0, 30.0, Icon::Alert, Color32::WHITE);
         cv.zones.push((rect, Zone::Estop));
         cv.hits.push((rect, Act::Emergency));
         if self.estop {
@@ -334,6 +327,136 @@ impl App {
         self.estop = true;
         self.stop_job();
         self.message = Some(self.tr(Text::EmergencyStop).to_string());
+    }
+}
+
+/// The pictures of the buttons that start, pause and stop the job and of the emergency button: drawn with shapes, so they scale with the window and take the
+/// colour of the theme.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub(crate) enum Icon {
+    Play,
+    Pause,
+    Stop,
+    /// A warning triangle with an exclamation mark, for the emergency button.
+    Alert,
+}
+
+impl Cv<'_> {
+    /// The icon centred at (`cx`, `cy`), `size` canvas units high, in colour `c`.
+    pub(crate) fn draw_icon(&self, cx: f32, cy: f32, size: f32, icon: Icon, c: Color32) {
+        let h = size / 2.0;
+        match icon {
+            Icon::Play => {
+                // a triangle pointing right, its centre of weight on the centre of the button
+                self.poly(
+                    &[
+                        (cx - h * 0.62, cy - h),
+                        (cx - h * 0.62, cy + h),
+                        (cx + h * 0.95, cy),
+                    ],
+                    c,
+                    Stroke::NONE,
+                );
+            }
+            Icon::Pause => {
+                for dx in [-0.52_f32, 0.52] {
+                    let x = cx + dx * h;
+                    self.poly(
+                        &[
+                            (x - h * 0.34, cy - h),
+                            (x + h * 0.34, cy - h),
+                            (x + h * 0.34, cy + h),
+                            (x - h * 0.34, cy + h),
+                        ],
+                        c,
+                        Stroke::NONE,
+                    );
+                }
+            }
+            Icon::Stop => {
+                let s = h * 0.92;
+                self.poly(
+                    &[
+                        (cx - s, cy - s),
+                        (cx + s, cy - s),
+                        (cx + s, cy + s),
+                        (cx - s, cy + s),
+                    ],
+                    c,
+                    Stroke::NONE,
+                );
+            }
+            Icon::Alert => {
+                // the triangle, an outline, and the exclamation mark inside it
+                let top = (cx, cy - h * 1.05);
+                let (l, r, b) = (
+                    (cx - h * 1.15, cy + h * 0.85),
+                    (cx + h * 1.15, cy + h * 0.85),
+                    cy + h * 0.85,
+                );
+                self.polyline(&[top, r, l, top], 3.0, c, false);
+                self.poly(
+                    &[
+                        (cx - h * 0.1, cy - h * 0.42),
+                        (cx + h * 0.1, cy - h * 0.42),
+                        (cx + h * 0.07, cy + h * 0.28),
+                        (cx - h * 0.07, cy + h * 0.28),
+                    ],
+                    c,
+                    Stroke::NONE,
+                );
+                let dot = self.pt(cx, b - h * 0.32);
+                self.p.circle_filled(dot, h * 0.1 * self.u, c);
+            }
+        }
+    }
+
+    /// A button with a picture in place of its label (see [`Cv::button`]); the picture sinks with the button when it is pressed.
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn icon_button(
+        &mut self,
+        x: f32,
+        y: f32,
+        w: f32,
+        h: f32,
+        icon: Icon,
+        c: Color32,
+        act: Act,
+    ) {
+        self.button(x, y, w, h, "", c, act);
+        let (_, down) = self.touch(self.rect(x, y, w, h));
+        let ink = if self.t.corner == Corner::Square {
+            Color32::BLACK
+        } else {
+            col(self.t.background.0)
+        };
+        self.draw_icon(
+            x + w / 2.0,
+            y + h / 2.0 + if down { 3.0 } else { 0.0 },
+            34.0,
+            icon,
+            ink,
+        );
+    }
+
+    /// The same button when it does not answer: dim, with the picture dim too.
+    pub(crate) fn icon_button_off(
+        &mut self,
+        x: f32,
+        y: f32,
+        w: f32,
+        h: f32,
+        icon: Icon,
+        c: Color32,
+    ) {
+        self.button_off(x, y, w, h, "", c);
+        self.draw_icon(
+            x + w / 2.0,
+            y + h / 2.0,
+            34.0,
+            icon,
+            alpha(col(self.t.text), 90),
+        );
     }
 }
 

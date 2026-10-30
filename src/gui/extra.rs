@@ -1070,4 +1070,50 @@ mod tests {
         a.toggle_tools_on_open();
         assert!(a.settings.tools_on_open);
     }
+
+    #[test]
+    fn the_hole_that_was_drilled_is_marked_and_not_the_one_the_head_goes_to_next() {
+        let mut a = app();
+        a.auto_ok = true;
+        a.fixed_dt = Some(0.016);
+        a.open_path(&testdata().join("05_small_board.ncd"));
+        a.start_job();
+        let order = a.drill.engine.hole_order();
+        assert!(order.len() > 3);
+        // until the first hole is finished no hole is marked, and when it is, it is the first of the plan and only that one
+        let mut seen = 0;
+        for _ in 0..400_000 {
+            a.tick();
+            let done = a.drill.engine.done();
+            let marked: Vec<usize> = a
+                .drill
+                .scene
+                .holes
+                .iter()
+                .enumerate()
+                .filter(|(_, h)| h.done)
+                .map(|(i, _)| i)
+                .collect();
+            assert_eq!(marked.len(), done.min(order.len()), "done {done}");
+            for (k, &(x, y)) in order.iter().enumerate().take(done) {
+                let h = a
+                    .drill
+                    .scene
+                    .holes
+                    .iter()
+                    .find(|h| (h.x_mm - x).abs() < 1e-6 && (h.y_mm - y).abs() < 1e-6 && h.done);
+                assert!(
+                    h.is_some(),
+                    "the hole {k} of the plan at ({x}, {y}) is not marked at done {done}"
+                );
+            }
+            if done > seen {
+                seen = done;
+            }
+            if seen >= 4 || a.running.is_none() {
+                break;
+            }
+        }
+        assert!(seen >= 4);
+    }
 }

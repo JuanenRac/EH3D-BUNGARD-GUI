@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The first hole is drilled:** the simulation marked the hole the head was going to, one ahead of the one it had drilled, so the first one stayed open until the end; the window now asks the classic engine for the order of the holes and marks the right one.
+- **Pictures on the buttons of the job:** Start, Pause and Stop and the emergency button show a play triangle, two bars, a square and a warning sign instead of words.
 - **The tools window over a file you open:** when a file is opened from the Open window, the recent files or by dropping it, the window of the tools opens over it, as the classic programs show the tools of a file after loading it; the check box "Show the tools window when I open a file" in the settings turns it off (a file named on the command line does not open it).
 - **Machines and stations window:** with the server connection, a new window lists every machine of the server grouped by station, what each one is doing, its job with the progress bar and the jobs ready, refreshes itself every few seconds without stopping the window, and chooses the machine the jobs are sent to; `--fleet FILE.json` shows a saved answer, `--modal fleet` opens it at the start.
 - **The views follow the machine model:** choosing a model in the settings draws the 3D machine of that very model (not the one the table is most like) and starts the 2D and 3D views again for the new table.

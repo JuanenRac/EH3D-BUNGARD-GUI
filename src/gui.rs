@@ -34,7 +34,7 @@ mod numedit;
 mod opener;
 mod view2d;
 use board::BoardPick;
-use controls::apply_visuals;
+use controls::{apply_visuals, Icon};
 use extra::{Field, Modal, Nav2, Nav3, PanelCfg, PanelMode, Zone};
 use numedit::{EditTarget, NumEdit};
 use opener::Browser;
@@ -165,6 +165,28 @@ impl Side {
     }
 }
 
+/// The machine file of the tests: one for each run of them, made (as the simulator, `connection = demo`) when it is not there yet.
+#[cfg(test)]
+fn test_machine_file() -> PathBuf {
+    let p = std::env::temp_dir().join(format!(
+        "eh3d-bungard-gui-test-{}.machine.cfg",
+        std::process::id()
+    ));
+    if !p.exists() {
+        let _ = std::fs::write(
+            &p,
+            "connection = demo
+",
+        );
+    }
+    p
+}
+
+#[cfg(not(test))]
+fn test_machine_file() -> PathBuf {
+    eh3d_drillpro::protocol::connection::default_path()
+}
+
 struct Shot {
     file: PathBuf,
     wait: u32,
@@ -261,7 +283,12 @@ impl App {
         let mut route = eh3d_routepro::app::App::new(dlang, &data("ROUTEPRO.RCF"));
         let mut connection = String::from("demo");
         let mut conn = ConnectionConfig::default();
-        match eh3d_drillpro::protocol::connection::load(o.connection.as_deref()) {
+        // the tests never read or write the machine file of the person: each run of them has its own
+        let conn_file: Option<PathBuf> = o
+            .connection
+            .clone()
+            .or_else(|| cfg!(test).then(test_machine_file));
+        match eh3d_drillpro::protocol::connection::load(conn_file.as_deref()) {
             Ok(c) => {
                 connection = c.describe();
                 conn = c.clone();
@@ -345,10 +372,7 @@ impl App {
             board,
             maker,
             conn,
-            conn_path: o
-                .connection
-                .clone()
-                .unwrap_or_else(eh3d_drillpro::protocol::connection::default_path),
+            conn_path: conn_file.unwrap_or_else(eh3d_drillpro::protocol::connection::default_path),
             conn_result: None,
             conn_rx: None,
             fleet: fleet::FleetView::default(),
@@ -703,8 +727,18 @@ impl App {
         let percent = view.as_ref().map_or(0, |v| v.percent);
         if p == Program::Drill {
             // the hole that was drilled is the one nearest to the head (the engine drills them in its own order)
+            // the engine says in which order it drills: the hole number k is the k-th of its plan (its view shows the next hole, not the one drilled)
+            let order = if side.last_done < done {
+                side.engine.hole_order()
+            } else {
+                Vec::new()
+            };
             while side.last_done < done {
-                let (hx, hy) = head.unwrap_or((0.0, 0.0));
+                let (hx, hy) = order
+                    .get(side.last_done)
+                    .copied()
+                    .or(head)
+                    .unwrap_or((0.0, 0.0));
                 let best = side
                     .scene
                     .holes
@@ -1895,69 +1929,43 @@ impl App {
             col(t.danger),
         );
         if can_pause {
-            cv.button(
+            cv.icon_button(
                 1084.0,
                 hud_y + 28.0,
                 150.0,
                 86.0,
-                self.tr(Text::Pause),
+                Icon::Pause,
                 pause_c,
                 Act::Pause,
             );
         } else {
-            cv.button_off(
-                1084.0,
-                hud_y + 28.0,
-                150.0,
-                86.0,
-                self.tr(Text::Pause),
-                pause_c,
-            );
+            cv.icon_button_off(1084.0, hud_y + 28.0, 150.0, 86.0, Icon::Pause, pause_c);
         }
         if can_start {
-            let label = if self.paused {
-                self.tr(Text::Resume)
-            } else {
-                self.tr(Text::Start)
-            };
-            cv.button(
+            cv.icon_button(
                 1250.0,
                 hud_y + 28.0,
                 150.0,
                 86.0,
-                label,
+                Icon::Play,
                 start_c,
                 Act::Start,
             );
         } else {
-            cv.button_off(
-                1250.0,
-                hud_y + 28.0,
-                150.0,
-                86.0,
-                self.tr(Text::Start),
-                start_c,
-            );
+            cv.icon_button_off(1250.0, hud_y + 28.0, 150.0, 86.0, Icon::Play, start_c);
         }
         if can_stop {
-            cv.button(
+            cv.icon_button(
                 1416.0,
                 hud_y + 28.0,
                 150.0,
                 86.0,
-                self.tr(Text::Stop),
+                Icon::Stop,
                 stop_c,
                 Act::Stop,
             );
         } else {
-            cv.button_off(
-                1416.0,
-                hud_y + 28.0,
-                150.0,
-                86.0,
-                self.tr(Text::Stop),
-                stop_c,
-            );
+            cv.icon_button_off(1416.0, hud_y + 28.0, 150.0, 86.0, Icon::Stop, stop_c);
         }
         self.paint_estop(cv);
         cv.text(

@@ -6,6 +6,7 @@ All notable changes to this project are documented here.
 
 ## [0.0.2] - The Windows-style Open window, the board library, the tools with default and typed values, the connection and the settings windows, and buttons that answer to the pointer
 
+- **The holes of each tool:** the tools window shows, next to the diameter of every drill, how many holes the board has for it.
 - **The buttons answer to the pointer:** they light up with a glow and a stronger edge under it, sink and darken when they are pressed, have a shadow and a shine on their top edge, and the pointer turns into a hand over them.
 - **The simulation goes at the speed of the machine:** a job takes the time it would take with the feed and the speed of each tool; the Settings window chooses how many times faster than the machine it runs (x0.5 to x50).
 - **Every value can be typed:** the numbers with buttons to step them (the table, the panel, the board, the feeds and the speeds of the tools) can be clicked and written with the keyboard (a comma is a decimal point; Enter or a click elsewhere accepts, Esc leaves it as it was).

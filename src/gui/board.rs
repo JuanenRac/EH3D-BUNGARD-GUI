@@ -761,12 +761,21 @@ impl App {
                 let c = col(t.size_color(index));
                 cv.p.circle_filled(cv.pt(x + 44.0, ry + 20.0), 7.0 * cv.u, c);
                 let diameter = if p == Program::Drill {
+                    let count = self
+                        .drill
+                        .scene
+                        .holes
+                        .iter()
+                        .filter(|hh| hh.tool == n)
+                        .count();
                     self.drill
                         .scene
                         .holes
                         .iter()
                         .find(|hh| hh.tool == n)
-                        .map_or(String::new(), |hh| format!("  {:.2} mm", hh.diameter_mm))
+                        .map_or(String::new(), |hh| {
+                            format!("  {:.2} mm  \u{d7}{count}", hh.diameter_mm)
+                        })
                 } else {
                     String::new()
                 };

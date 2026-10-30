@@ -561,8 +561,15 @@ EOF
     #[test]
     fn a_model_sets_the_area_and_the_tool_change_and_the_file_unit_reads_the_files_again() {
         let mut a = app();
+        a.view3d.zoom = 3.0;
+        a.view2d.zoom = 2.0;
         let atc = crate::machines::Model::from_name("CCD/2 ATC").unwrap();
         a.apply_model(atc);
+        // both views start again for the new table
+        assert_eq!(
+            (a.view2d, a.view3d),
+            (Default::default(), Default::default())
+        );
         assert_eq!((a.table.width_mm, a.table.depth_mm), (325.0, 270.0));
         assert!(a.drill.engine.settings().unwrap().auto_change);
         let mtc = crate::machines::Model::from_name("CCD MTC").unwrap();

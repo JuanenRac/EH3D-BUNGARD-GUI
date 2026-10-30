@@ -1,0 +1,19 @@
+{
+  "stations": [
+    {"id": "bench", "machines": ["bench-1", "bench-2", "bench-3"]},
+    {"id": "room", "machines": ["room-1", "room-2"]},
+    {"id": "", "machines": ["spare"]}
+  ],
+  "machines": [
+    {"id": "bench-1", "name": "Bungard CCD 1", "model": "ccd-mtc", "station": "bench", "connection": "node", "state": "busy",
+     "job": {"id": "j1", "name": "power-board.ncd", "kind": "drill", "state": "running", "by": "operator", "items_done": 71, "items_total": 120, "holes_done": 70, "holes_total": 118, "percent": 59, "pause": null}, "ready": 1},
+    {"id": "bench-2", "name": "Bungard CCD 2", "model": "ccd-mtc", "station": "bench", "connection": "node", "state": "waiting",
+     "job": {"id": "j2", "name": "sensor.ncd", "kind": "drill", "state": "waiting_operator", "by": "operator", "items_done": 33, "items_total": 40, "holes_done": 32, "holes_total": 38, "percent": 82, "pause": {"kind": "tool_change", "tool": 3}}, "ready": 0},
+    {"id": "bench-3", "name": "Bungard CCD 3", "model": "ccd-mtc", "station": "bench", "connection": "node", "state": "idle", "job": null, "ready": 2},
+    {"id": "room-1", "name": "Router 1", "model": "ccd-atc", "station": "room", "connection": "node", "state": "busy",
+     "job": {"id": "j3", "name": "frame.plt", "kind": "route", "state": "running", "by": "operator", "items_done": 410, "items_total": 1200, "holes_done": 0, "holes_total": 0, "percent": 34, "pause": null}, "ready": 0},
+    {"id": "room-2", "name": "Router 2", "model": "ccd-atc", "station": "room", "connection": "demo", "state": "idle", "job": null, "ready": 0},
+    {"id": "spare", "name": "Spare machine", "model": "ccd-mtc", "station": "", "connection": "demo", "state": "idle", "job": null, "ready": 0}
+  ],
+  "summary": {"machines": 6, "idle": 3, "busy": 2, "waiting": 1, "stations": 2}
+}

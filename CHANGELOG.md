@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **Machines and stations window:** with the server connection, a new window lists every machine of the server grouped by station, what each one is doing, its job with the progress bar and the jobs ready, refreshes itself every few seconds without stopping the window, and chooses the machine the jobs are sent to; `--fleet FILE.json` shows a saved answer, `--modal fleet` opens it at the start.
+- **The views follow the machine model:** choosing a model in the settings draws the 3D machine of that very model (not the one the table is most like) and starts the 2D and 3D views again for the new table.
 - **Eleven themes:** Midnight, Paper (a light one), Forest, Retro terminal, Ocean and High contrast join the five themes; the settings window lists them all, each named in the language of the window, and the click on the theme in the title takes the next one.
 ## [0.0.3] - Gerber and DXF outlines as routing jobs, plotter arcs and circles, recent files, the count of holes of each drill and screenshots
 

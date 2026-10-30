@@ -126,11 +126,19 @@ Como as partes deste repositório se encaixam: quem o usa, o que contém e de qu
 
 <p align="center"><em>O tema Papel, um claro.</em></p>
 
+<p align="center">
+  <img src="images/screenshots/fleet.png" alt="machines and stations" width="100%">
+</p>
+
+<p align="center"><em>As máquinas e estações do servidor: estado, trabalho e progresso de cada máquina, e a máquina para onde vão os trabalhos.</em></p>
+
 ## ✨ Funcionalidades
 
 * Temas: Forge (o predefinido), Neon Arcade, Glass Pro, o cinzento clássico do Windows e um que segue as cores do Windows.
 * Oito idiomas em toda a janela: inglês, espanhol, francês, italiano, alemão, chinês, japonês e português de Portugal.
 * Perfis de máquina com as medidas publicadas e uma mesa ajustável: a máquina em 3D cresce com a área útil da configuração.
+* Uma janela das máquinas e estações: com a ligação ao servidor mostra todas as máquinas do servidor agrupadas por estação, o que cada uma faz, o seu trabalho com o progresso, os trabalhos prontos, e escolhe a máquina para onde vão os trabalhos da janela; `--fleet FICHEIRO.json` mostra uma resposta guardada sem servidor.
+* Escolher um modelo de máquina nas definições ajusta as duas vistas à sua mesa: a planta 2D, a máquina 3D (estrutura, calhas, pórtico e armazém de ferramentas desse modelo) e o zoom recomeçam com as novas medidas.
 * Trabalhos em arquivos ZIP: mostram-se o primeiro ficheiro de furação e o primeiro de fresagem, e os restantes são listados para carregar com um clique.
 * Panelização em três modos (espaço, passo, tantas quantas caibam) com as cópias desenhadas na mesa.
 * Progresso do trabalho em direto e as perguntas da máquina ao operador.
@@ -187,6 +195,7 @@ EH3D-BUNGARD-GUI/
 ├── src/
 │   ├── gui.rs                                   a janela: lançador, vista em planta, vista 3D, progresso do trabalho
 │   ├── gui/extra.rs                             abrir ficheiros, panelização, definições da mesa, Acerca de, mover as vistas
+│   ├── gui/fleet.rs                             janela das máquinas e estações do servidor
 │   ├── gui/opener.rs  gui/board.rs              janelas Abrir, placa, ferramentas e definições
 │   ├── jobs.rs                                  um ficheiro de furação ou HP-GL convertido na cena que as vistas desenham
 │   ├── boards.rs                                a biblioteca de materiais de base

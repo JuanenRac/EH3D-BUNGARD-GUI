@@ -126,11 +126,19 @@ Come si incastrano le parti di questo repository: chi lo usa, che cosa contiene 
 
 <p align="center"><em>Il tema Carta, uno chiaro.</em></p>
 
+<p align="center">
+  <img src="images/screenshots/fleet.png" alt="machines and stations" width="100%">
+</p>
+
+<p align="center"><em>Le macchine e stazioni del server: stato, lavoro e avanzamento di ogni macchina e la macchina a cui vanno i lavori.</em></p>
+
 ## ✨ Funzionalità
 
 * Temi: Forge (predefinito), Neon Arcade, Glass Pro, il grigio classico di Windows e uno che segue i colori di Windows.
 * Otto lingue in tutta la finestra: inglese, spagnolo, francese, italiano, tedesco, cinese, giapponese e portoghese europeo.
 * Profili di macchina con le misure pubblicate e un piano regolabile: la macchina in 3D cresce con l'area utile della configurazione.
+* Una finestra delle macchine e stazioni: con la connessione al server mostra tutte le macchine del server raggruppate per stazione, cosa fa ciascuna, il suo lavoro con l'avanzamento, i lavori pronti, e sceglie la macchina a cui vanno i lavori della finestra; `--fleet FILE.json` mostra una risposta salvata senza server.
+* Scegliere un modello di macchina nelle impostazioni adatta le due viste al suo piano: la pianta 2D, la macchina 3D (telaio, guide, ponte e magazzino utensili di quel modello) e lo zoom ricominciano con le nuove misure.
 * Lavori in archivi ZIP: si mostrano il primo file di foratura e il primo di fresatura, gli altri sono elencati per caricarli con un clic.
 * Pannellizzazione in tre modi (spazio, passo, quante ne stanno) con le copie disegnate sul piano.
 * Avanzamento del lavoro in diretta e domande della macchina all'operatore.
@@ -187,6 +195,7 @@ EH3D-BUNGARD-GUI/
 ├── src/
 │   ├── gui.rs                                   la finestra: avviatore, vista in pianta, vista 3D, avanzamento del lavoro
 │   ├── gui/extra.rs                             aprire file, pannellizzazione, impostazioni del piano, Informazioni, muovere le viste
+│   ├── gui/fleet.rs                             finestra delle macchine e stazioni del server
 │   ├── gui/opener.rs  gui/board.rs              finestre Apri, piastra, utensili e impostazioni
 │   ├── jobs.rs                                  un file di foratura o HP-GL trasformato nella scena disegnata dalle viste
 │   ├── boards.rs                                la libreria dei materiali di base

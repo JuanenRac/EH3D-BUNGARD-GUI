@@ -126,11 +126,19 @@ Wie die Teile dieses Repositorys zusammenpassen: wer es nutzt, was es enthält u
 
 <p align="center"><em>Das Thema Papier, ein helles.</em></p>
 
+<p align="center">
+  <img src="images/screenshots/fleet.png" alt="machines and stations" width="100%">
+</p>
+
+<p align="center"><em>Die Maschinen und Stationen des Servers: Zustand, Auftrag und Fortschritt jeder Maschine und die Maschine, an die die Aufträge gehen.</em></p>
+
 ## ✨ Funktionen
 
 * Designs: Forge (Standard), Neon Arcade, Glass Pro, das klassische Windows-Grau und eines, das den Farben von Windows folgt.
 * Acht Sprachen im ganzen Fenster: Englisch, Spanisch, Französisch, Italienisch, Deutsch, Chinesisch, Japanisch und europäisches Portugiesisch.
 * Maschinenprofile mit den veröffentlichten Maßen und einem einstellbaren Tisch: die Maschine in 3D wächst mit der nutzbaren Fläche der Konfiguration.
+* Ein Fenster der Maschinen und Stationen: mit der Serververbindung zeigt es alle Maschinen des Servers nach Stationen gruppiert, was jede tut, ihren Auftrag mit Fortschritt, die bereiten Aufträge, und wählt die Maschine, an die die Aufträge des Fensters gehen; `--fleet DATEI.json` zeigt eine gespeicherte Antwort ohne Server.
+* Die Wahl eines Maschinenmodells in den Einstellungen passt beide Ansichten an seinen Tisch an: der 2D-Plan, die 3D-Maschine (Rahmen, Schienen, Portal und Werkzeugmagazin dieses Modells) und der Zoom beginnen mit den neuen Maßen von vorn.
 * Aufträge in ZIP-Archiven: die erste Bohrdatei und die erste Fräsdatei werden gezeigt, die anderen sind aufgelistet und mit einem Klick ladbar.
 * Nutzenbildung in drei Modi (Abstand, Raster, so viele wie passen) mit den gezeichneten Kopien auf dem Tisch.
 * Fortschritt des Auftrags live und die Fragen der Maschine an den Bediener.
@@ -187,6 +195,7 @@ EH3D-BUNGARD-GUI/
 ├── src/
 │   ├── gui.rs                                   das Fenster: Starter, Draufsicht, 3D-Ansicht, Auftragsfortschritt
 │   ├── gui/extra.rs                             Dateien öffnen, Nutzenbildung, Tischeinstellungen, Info, Ansichten bewegen
+│   ├── gui/fleet.rs                             Fenster der Maschinen und Stationen des Servers
 │   ├── gui/opener.rs  gui/board.rs              Fenster Öffnen, Platine, Werkzeuge, Einstellungen
 │   ├── jobs.rs                                  eine Bohr- oder HP-GL-Datei als Szene für die Ansichten
 │   ├── boards.rs                                die Bibliothek der Basismaterialien vieler Hersteller

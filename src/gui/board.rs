@@ -1373,6 +1373,9 @@ impl App {
         self.table = Table::new(w, d);
         self.drill.scene.table = self.table;
         self.route.scene.table = self.table;
+        // both views show the new table from the start: the zoom and the shift of the old machine would not fit it
+        self.view2d = Default::default();
+        self.view3d = Default::default();
         self.saved = false;
         self.apply_panel();
         self.remember_settings();

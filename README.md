@@ -126,11 +126,19 @@ How the parts of this repository fit together: who uses it, what it holds and wh
 
 <p align="center"><em>The Paper theme, a light one.</em></p>
 
+<p align="center">
+  <img src="images/screenshots/fleet.png" alt="machines and stations" width="100%">
+</p>
+
+<p align="center"><em>The machines and stations of the server: state, job and progress of each machine, and the machine the jobs go to.</em></p>
+
 ## ✨ Features
 
 * Themes: Forge (the default), Neon Arcade, Glass Pro, the classic Windows grey and one that follows the colours of Windows.
 * Eight languages in the whole window: English, Spanish, French, Italian, German, Chinese, Japanese and European Portuguese.
 * Machine profiles with the published sizes and an adjustable table: the machine in 3D grows with the usable area of the configuration.
+* A window of the machines and stations: with the server connection it shows every machine of the server grouped by station, what each one is doing, its job with the progress, the jobs ready, and chooses the machine the jobs of the window go to; `--fleet FILE.json` shows a saved answer without a server.
+* Choosing a machine model in the settings fits both views to its table: the 2D plan, the 3D machine (frame, rails, gantry and tool rack of that model) and the zoom start again for the new measures.
 * Jobs in ZIP archives: the first drilling file and the first routing file are shown, the others are listed to be loaded with a click.
 * Panelization in three modes (gap, pitch, as many as fit) with the copies drawn on the table.
 * Live progress of the job and the questions of the machine to the operator.
@@ -187,6 +195,7 @@ EH3D-BUNGARD-GUI/
 ├── src/
 │   ├── gui.rs                                   the window: launcher, plan view, 3D view, job progress
 │   ├── gui/extra.rs                             open files, panelization, table settings, About, moving the views
+│   ├── gui/fleet.rs                             window of the machines and stations of the server
 │   ├── gui/opener.rs  gui/board.rs              Open, board, tools and settings windows
 │   ├── jobs.rs                                  a drilling or HP-GL file turned into the scene the views draw
 │   ├── boards.rs                                the library of base materials of many makers

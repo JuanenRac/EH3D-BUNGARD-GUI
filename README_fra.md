@@ -126,11 +126,19 @@ Comment les parties de ce dépôt s'articulent : qui l'utilise, ce qu'il contien
 
 <p align="center"><em>Le thème Papier, un thème clair.</em></p>
 
+<p align="center">
+  <img src="images/screenshots/fleet.png" alt="machines and stations" width="100%">
+</p>
+
+<p align="center"><em>Les machines et stations du serveur : état, travail et avancement de chaque machine, et la machine à laquelle vont les travaux.</em></p>
+
 ## ✨ Fonctionnalités
 
 * Thèmes : Forge (par défaut), Neon Arcade, Glass Pro, le gris classique de Windows et un qui suit les couleurs de Windows.
 * Huit langues dans toute la fenêtre : anglais, espagnol, français, italien, allemand, chinois, japonais et portugais européen.
 * Profils de machine avec les dimensions publiées et une table réglable : la machine en 3D grandit avec la zone utile de la configuration.
+* Une fenêtre des machines et stations : avec la connexion au serveur elle montre toutes les machines du serveur groupées par station, ce que fait chacune, son travail avec l'avancement, les travaux prêts, et choisit la machine à laquelle vont les travaux de la fenêtre ; `--fleet FICHIER.json` montre une réponse enregistrée sans serveur.
+* Choisir un modèle de machine dans les réglages ajuste les deux vues à sa table : le plan 2D, la machine 3D (châssis, rails, portique et magasin d'outils de ce modèle) et le zoom repartent avec les nouvelles mesures.
 * Travaux dans des archives ZIP : le premier fichier de perçage et le premier de fraisage sont montrés, les autres sont listés pour être chargés d'un clic.
 * Panélisation en trois modes (écart, pas, autant qu'il en tient) avec les copies dessinées sur la table.
 * Avancement du travail en direct et questions de la machine à l'opérateur.
@@ -187,6 +195,7 @@ EH3D-BUNGARD-GUI/
 ├── src/
 │   ├── gui.rs                                   la fenêtre : lanceur, vue en plan, vue 3D, avancement du travail
 │   ├── gui/extra.rs                             ouvrir des fichiers, panélisation, réglages de la table, À propos, déplacer les vues
+│   ├── gui/fleet.rs                             fenêtre des machines et stations du serveur
 │   ├── gui/opener.rs  gui/board.rs              fenêtres Ouvrir, carte, outils et réglages
 │   ├── jobs.rs                                  un fichier de perçage ou HP-GL transformé en scène dessinée par les vues
 │   ├── boards.rs                                la bibliothèque des matériaux de base

@@ -29,6 +29,7 @@ use crate::machines;
 mod board;
 mod controls;
 mod extra;
+mod fleet;
 mod numedit;
 mod opener;
 mod view2d;
@@ -66,6 +67,9 @@ enum Act {
     Choose(Choice),
     Remember,
     NextTheme,
+    /// Chooses the machine of the list that the jobs are sent to.
+    FleetUse(usize),
+    FleetRefresh,
     NextLang,
     Layer(usize),
     Start,
@@ -237,6 +241,7 @@ pub struct App {
     conn_path: PathBuf,
     conn_result: Option<Result<(), String>>,
     conn_rx: Option<Receiver<Result<(), String>>>,
+    fleet: fleet::FleetView,
 }
 
 impl App {
@@ -345,6 +350,7 @@ impl App {
                 .unwrap_or_else(eh3d_drillpro::protocol::connection::default_path),
             conn_result: None,
             conn_rx: None,
+            fleet: fleet::FleetView::default(),
         };
         let examples = app.base_dir.join("examples");
         let has_jobs = std::fs::read_dir(&examples).is_ok_and(|rd| {
@@ -379,11 +385,22 @@ impl App {
         if let Some(t) = o.tab {
             app.settings_tab = t.min(2);
         }
+        if let Some(f) = &o.fleet_file {
+            match std::fs::read_to_string(f)
+                .map_err(|e| e.to_string())
+                .and_then(|s| serde_json::from_str(&s).map_err(|e| e.to_string()))
+                .and_then(|v| eh3d_fleet::Fleet::from_json(&v))
+            {
+                Ok(fl) => app.fleet.fleet = Some(fl),
+                Err(e) => app.fleet.error = Some(format!("{}: {e}", f.display())),
+            }
+        }
         match o.modal.as_deref() {
             Some("about") => app.show_modal(Modal::About),
             Some("open") => app.show_modal(Modal::Open),
             Some("panel") => app.show_modal(Modal::Panel),
             Some("settings") => app.show_modal(Modal::Settings),
+            Some("fleet") => app.show_modal(Modal::Fleet),
             Some("connection") => app.show_modal(Modal::Connection),
             Some("board") => app.show_modal(Modal::Board),
             Some("tools") => app.show_modal(Modal::Tools),
@@ -655,6 +672,7 @@ impl App {
 
     /// Advances the engine and takes from it what the views show.
     fn tick(&mut self) {
+        self.fleet_tick();
         if let Some(r) = self.conn_rx.as_ref().and_then(|rx| rx.try_recv().ok()) {
             self.conn_result = Some(r);
             self.conn_rx = None;
@@ -830,6 +848,8 @@ impl App {
                 self.saved = false;
             }
             Act::ConnTest => self.conn_test(),
+            Act::FleetUse(i) => self.fleet_use(i),
+            Act::FleetRefresh => self.fleet_ask(),
             Act::ConnSave => self.conn_save(),
             Act::Browse(i) => self.browse(i),
             Act::BrowseScroll(d) => self.browse_scroll(d),
@@ -1275,12 +1295,13 @@ impl App {
                 (702.0, Text::PanelTitle, Modal::Panel),
                 (826.0, Text::SettingsTitle, Modal::Settings),
                 (950.0, Text::Connection, Modal::Connection),
+                (1198.0, Text::FleetTitle, Modal::Fleet),
             ];
             for (x, n, m) in items {
                 cv.chip(
                     x,
                     14.0,
-                    118.0,
+                    if m == Modal::Fleet { 220.0 } else { 118.0 },
                     36.0,
                     self.tr(n),
                     self.modal == Some(m),
@@ -2040,7 +2061,11 @@ impl App {
     ) {
         let t = cv.t.clone();
         let (tw, td) = (self.table.width_mm, self.table.depth_mm);
-        let profile = machines::for_table(&self.table);
+        // the machine chosen in the settings; the one the table is most like when the name is not one of the models
+        let profile = match machines::Model::from_name(&self.settings.model) {
+            Some(i) => machines::models()[i].profile(),
+            None => machines::for_table(&self.table),
+        };
         let (wx, wy) = (profile.work_mm.0.max(tw), profile.work_mm.1.max(td));
         let (px_m, py_m) = profile.plate_margins((tw, td));
         // the view holds the whole frame: the plate, the rails, the motor and the rack

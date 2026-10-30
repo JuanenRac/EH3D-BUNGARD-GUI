@@ -33,6 +33,8 @@ pub(crate) enum Modal {
     Connection,
     Board,
     Tools,
+    /// The machines and stations of the server, followed at once.
+    Fleet,
 }
 
 /// A text box of the Connection window.
@@ -626,6 +628,7 @@ impl App {
         match m {
             Modal::Board => self.paint_board_modal(cv),
             Modal::Tools => self.paint_tools_modal(cv),
+            Modal::Fleet => self.paint_fleet_modal(cv),
             Modal::About => {
                 let (x, y) = self.modal_card(cv, self.tr(Text::About), 420.0);
                 cv.text(

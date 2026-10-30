@@ -59,6 +59,19 @@
           }
         },
         {
+          "name": "gui/fleet.rs",
+          "desc": {
+            "en": "window of the machines and stations of the server",
+            "es": "ventana de máquinas y estaciones del servidor",
+            "de": "Fenster der Maschinen und Stationen des Servers",
+            "fr": "fenêtre des machines et stations du serveur",
+            "it": "finestra delle macchine e stazioni del server",
+            "ja": "サーバーのマシンとステーションのウィンドウ",
+            "zh": "服务器机床和工位窗口",
+            "pt": "janela das máquinas e estações do servidor"
+          }
+        },
+        {
           "name": "gui/opener.rs  gui/board.rs",
           "desc": {
             "en": "Open, board, tools and settings windows",

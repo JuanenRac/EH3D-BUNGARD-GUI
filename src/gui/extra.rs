@@ -2,6 +2,7 @@
 //! table, the About window and moving around the 2D and 3D views.
 
 use super::*;
+use eh3d_drillpro::job::{TabPlacement, Tabs};
 
 /// The two views that can be moved around.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -21,6 +22,8 @@ pub(crate) enum Field {
     SpacingY,
     TableW,
     TableD,
+    TabCount,
+    TabWidth,
 }
 
 /// A window on top of the viewer.
@@ -66,6 +69,22 @@ pub(crate) struct PanelCfg {
     pub rows: u32,
     pub spacing: (f64, f64),
     pub mode: PanelMode,
+    /// The outside of the panel is routed with tabs, how many on each side, how wide, and where.
+    pub tabs_on: bool,
+    pub tab_count: u32,
+    pub tab_width: f64,
+    pub tab_place: TabPlacement,
+}
+
+impl PanelCfg {
+    /// The tabs of the panel, when they are asked for.
+    pub(crate) fn tabs(&self) -> Option<Tabs> {
+        self.tabs_on.then_some(Tabs {
+            per_side: self.tab_count,
+            width_mm: self.tab_width,
+            placement: self.tab_place,
+        })
+    }
 }
 
 impl Default for PanelCfg {
@@ -75,6 +94,10 @@ impl Default for PanelCfg {
             rows: 1,
             spacing: (5.0, 5.0),
             mode: PanelMode::Gap,
+            tabs_on: false,
+            tab_count: 2,
+            tab_width: 3.0,
+            tab_place: TabPlacement::Even,
         }
     }
 }
@@ -370,6 +393,21 @@ impl App {
             side.scene.table = table;
             side.last_done = 0;
         }
+        // the outside of the panel, routed with tabs: the paths are cut into the pieces between them
+        if let (true, Some(tabs)) = (many, self.panel.tabs()) {
+            let cut: Vec<eh3d_view::scene::Path> = self
+                .route
+                .scene
+                .paths
+                .iter()
+                .flat_map(|p| {
+                    eh3d_drillpro::job::cut_tabs(&p.points, &tabs)
+                        .into_iter()
+                        .map(|points| eh3d_view::scene::Path { points, ..p.clone() })
+                })
+                .collect();
+            self.route.scene.paths = cut;
+        }
     }
 
     pub(crate) fn adjust(&mut self, f: Field, d: f32) {
@@ -387,6 +425,12 @@ impl App {
             }
             Field::SpacingY => {
                 self.panel.spacing.1 = (self.panel.spacing.1 + dl).clamp(0.0, 5000.0)
+            }
+            Field::TabCount => {
+                self.panel.tab_count = (self.panel.tab_count as f64 + d).clamp(1.0, 20.0) as u32
+            }
+            Field::TabWidth => {
+                self.panel.tab_width = (self.panel.tab_width + dl).clamp(0.5, 50.0)
             }
             Field::TableW | Field::TableD => {
                 let (w, h) = (self.table.width_mm, self.table.depth_mm);
@@ -704,7 +748,7 @@ impl App {
             }
             Modal::Open => self.paint_open_modal(cv),
             Modal::Panel => {
-                let (x, y) = self.modal_card(cv, self.tr(Text::PanelTitle), 660.0);
+                let (x, y) = self.modal_card(cv, self.tr(Text::PanelTitle), 750.0);
                 let (c, r, pitch) = self.panel_plan();
                 let (x0, y0, x1, y1) = self.board().unwrap_or((0.0, 0.0, 0.0, 0.0));
                 let size = (x1 - x0, y1 - y0);
@@ -803,9 +847,56 @@ impl App {
                         col(t.danger),
                     );
                 }
+                // the outside of the panel: routed through, or with tabs that hold the boards
+                cv.chip(
+                    x + 30.0,
+                    y + 506.0,
+                    330.0,
+                    44.0,
+                    self.tr(Text::TabsOn),
+                    self.panel.tabs_on,
+                    Act::ToggleTabs,
+                );
+                if self.panel.tabs_on {
+                    cv.text(
+                        x + 380.0,
+                        y + 514.0,
+                        Align2::LEFT_BOTTOM,
+                        &self.tr(Text::TabPlace).to_uppercase(),
+                        12.0,
+                        col(t.dim),
+                    );
+                    let place = self.combo_items(ComboId::TabPlace);
+                    cv.combo(
+                        x + 380.0,
+                        y + 520.0,
+                        330.0,
+                        ComboId::TabPlace,
+                        &place[self.combo_current(ComboId::TabPlace)],
+                        self.combo.is_some_and(|c| c.id == ComboId::TabPlace),
+                    );
+                    self.stepper(
+                        cv,
+                        y + 566.0,
+                        self.tr(Text::TabsPerSide),
+                        &format!("{}", self.panel.tab_count),
+                        Field::TabCount,
+                        [-5.0, -1.0, 1.0, 5.0],
+                        true,
+                    );
+                    self.stepper(
+                        cv,
+                        y + 626.0,
+                        self.tr(Text::TabWidth),
+                        &format!("{:.1}", self.panel.tab_width),
+                        Field::TabWidth,
+                        [-5.0, -1.0, 1.0, 5.0],
+                        true,
+                    );
+                }
                 cv.chip(
                     x + 540.0,
-                    y + 590.0,
+                    y + 690.0,
                     170.0,
                     44.0,
                     self.tr(Text::Close),
@@ -970,6 +1061,35 @@ mod tests {
         let (c, r, _) = a.panel_plan();
         assert!(c * r >= 1);
         assert_eq!(a.drill.scene.holes.len(), one * (c * r) as usize);
+    }
+
+    #[test]
+    fn the_outside_of_the_panel_is_routed_with_tabs_that_the_person_chooses() {
+        use super::super::combo::ComboId;
+        let mut a = app();
+        a.open_path(&testdata().join("05_board_outline.plt"));
+        a.adjust(Field::Columns, 1.0);
+        let whole = a.route.scene.paths.len();
+        let points: usize = a.route.scene.paths.iter().map(|p| p.points.len()).sum();
+        assert!(whole >= 2);
+        // the tabs are off: the paths stay whole
+        assert!(a.panel.tabs().is_none());
+        a.act(Act::ToggleTabs);
+        assert!(a.panel.tabs().is_some());
+        let with = a.route.scene.paths.len();
+        assert!(with > whole, "{with} > {whole}");
+        // more tabs on each side, more pieces; the places and the width are chosen
+        a.adjust(Field::TabCount, 2.0);
+        assert!(a.route.scene.paths.len() > with);
+        a.adjust(Field::TabWidth, 2.0);
+        assert_eq!(a.panel.tab_width, 5.0);
+        a.combo_open(ComboId::TabPlace);
+        a.combo_pick(2);
+        assert_eq!(a.panel.tabs().map(|t| t.placement), Some(eh3d_drillpro::job::TabPlacement::Middle));
+        // and off again: as it was
+        a.act(Act::ToggleTabs);
+        assert_eq!(a.route.scene.paths.len(), whole);
+        assert_eq!(a.route.scene.paths.iter().map(|p| p.points.len()).sum::<usize>(), points);
     }
 
     #[test]

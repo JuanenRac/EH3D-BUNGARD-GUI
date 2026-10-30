@@ -2,8 +2,9 @@
 //! window shows one box with the value that is chosen and, when it is clicked, a list of a few rows that scrolls with the wheel; a click on a row chooses it and
 //! a click anywhere else closes the list. This replaces rows and rows of buttons, one for each value.
 
-use super::board::LANG_NAMES;
+use super::board::{BoardPick, LANG_NAMES};
 use super::*;
+use eh3d_drillpro::job::TabPlacement;
 use eh3d_drillpro::protocol::sound::{self, Cue, SoundSetting};
 
 /// The lists of the window.
@@ -13,6 +14,12 @@ pub(crate) enum ComboId {
     Lang,
     Model,
     Sound(Cue),
+    /// Where the tabs of the panel go.
+    TabPlace,
+    /// The board: the maker of the material, its thickness and its size.
+    Maker,
+    Thickness,
+    BoardSize,
 }
 
 /// A list that is open, and the first row it shows.
@@ -38,6 +45,29 @@ impl App {
                 .collect(),
             ComboId::Lang => LANG_NAMES.into_iter().map(|(_, n)| n.to_string()).collect(),
             ComboId::Model => crate::machines::models().iter().map(|m| m.name()).collect(),
+            ComboId::Maker => crate::boards::makers().iter().map(|m| m.to_string()).collect(),
+            ComboId::Thickness => self
+                .board
+                .material()
+                .thickness_mm
+                .iter()
+                .map(|v| format!("{v} mm"))
+                .collect(),
+            ComboId::BoardSize => {
+                let mut v = vec![self.tr(Text::LblFromFiles).to_string()];
+                v.extend(
+                    self.board
+                        .material()
+                        .formats_mm
+                        .iter()
+                        .map(|(w, d)| format!("{w:.0} x {d:.0} mm")),
+                );
+                v
+            }
+            ComboId::TabPlace => [Text::TabEven, Text::TabEnds, Text::TabMiddle]
+                .into_iter()
+                .map(|t| self.tr(t).to_string())
+                .collect(),
             ComboId::Sound(cue) => {
                 let mut v = vec![
                     self.tr(Text::SndOff).to_string(),
@@ -91,6 +121,27 @@ impl App {
                 .position(|(l, _)| *l == self.lang)
                 .unwrap_or(0),
             ComboId::Model => self.model(),
+            ComboId::Maker => self.maker,
+            ComboId::Thickness => self
+                .board
+                .material()
+                .thickness_mm
+                .iter()
+                .position(|v| (self.board.thickness_mm - v).abs() < 1e-9)
+                .unwrap_or(0),
+            ComboId::BoardSize => self.board.size_mm.map_or(0, |s| {
+                self.board
+                    .material()
+                    .formats_mm
+                    .iter()
+                    .position(|f| *f == s)
+                    .map_or(0, |i| i + 1)
+            }),
+            ComboId::TabPlace => match self.panel.tab_place {
+                TabPlacement::Even => 0,
+                TabPlacement::Ends => 1,
+                TabPlacement::Middle => 2,
+            },
             ComboId::Sound(cue) => match self.sound_of(cue) {
                 SoundSetting::Off => 0,
                 SoundSetting::Default => 1,
@@ -137,6 +188,14 @@ impl App {
             ComboId::Theme => self.set_theme(ThemeId::ALL[row]),
             ComboId::Lang => self.set_lang(LANG_NAMES[row].0),
             ComboId::Model => self.apply_model(row),
+            ComboId::Maker => self.board_pick(BoardPick::Maker(row)),
+            ComboId::Thickness => self.board_pick(BoardPick::Thickness(row)),
+            ComboId::BoardSize => self.board_pick(BoardPick::Size(row.checked_sub(1))),
+            ComboId::TabPlace => {
+                self.panel.tab_place = [TabPlacement::Even, TabPlacement::Ends, TabPlacement::Middle][row];
+                self.saved = false;
+                self.apply_panel();
+            }
             ComboId::Sound(cue) => {
                 let setting = match row {
                     0 => SoundSetting::Off,

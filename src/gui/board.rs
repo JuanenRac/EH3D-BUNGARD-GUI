@@ -443,21 +443,25 @@ impl App {
         let m = b.material();
         // the makers
         let makers = boards::makers();
-        for (i, mk) in makers.iter().enumerate() {
-            let (col_i, row_i) = (i % 4, i / 4);
-            cv.chip(
-                x + 30.0 + col_i as f32 * 152.0,
-                y + 70.0 + row_i as f32 * 46.0,
-                144.0,
-                38.0,
-                mk,
-                *mk == makers[self.maker.min(makers.len() - 1)],
-                Act::Board(BoardPick::Maker(i)),
-            );
-        }
+        cv.text(
+            x + 30.0,
+            y + 74.0,
+            Align2::LEFT_BOTTOM,
+            &self.tr(Text::LblMaker).to_uppercase(),
+            12.0,
+            col(t.dim),
+        );
+        cv.combo(
+            x + 30.0,
+            y + 82.0,
+            556.0,
+            ComboId::Maker,
+            makers[self.maker.min(makers.len() - 1)],
+            self.combo.is_some_and(|c| c.id == ComboId::Maker),
+        );
         // the materials of the maker
         let maker = makers[self.maker.min(makers.len() - 1)];
-        let mut ly = y + 70.0 + (makers.len().div_ceil(4)) as f32 * 46.0 + 12.0;
+        let mut ly = y + 82.0 + 38.0 + 14.0;
         let of_maker: Vec<(usize, &crate::boards::Material)> = MATERIALS
             .iter()
             .enumerate()
@@ -563,18 +567,16 @@ impl App {
             col(t.dim),
         );
         ry += 20.0;
-        for (i, v) in m.thickness_mm.iter().enumerate() {
-            cv.chip(
-                rx + (i % 7) as f32 * 92.0,
-                ry + (i / 7) as f32 * 42.0,
-                84.0,
-                34.0,
-                &format!("{v}"),
-                (b.thickness_mm - v).abs() < 1e-9,
-                Act::Board(BoardPick::Thickness(i)),
-            );
-        }
-        ry += (m.thickness_mm.len().div_ceil(7)) as f32 * 42.0 + 10.0;
+        let thick = self.combo_items(ComboId::Thickness);
+        cv.combo(
+            rx,
+            ry,
+            280.0,
+            ComboId::Thickness,
+            &thick[self.combo_current(ComboId::Thickness).min(thick.len() - 1)],
+            self.combo.is_some_and(|c| c.id == ComboId::Thickness),
+        );
+        ry += 38.0 + 14.0;
         cv.text(
             rx,
             ry + 14.0,
@@ -629,27 +631,16 @@ impl App {
             col(t.dim),
         );
         ry += 20.0;
-        cv.chip(
+        let sizes = self.combo_items(ComboId::BoardSize);
+        cv.combo(
             rx,
             ry,
-            150.0,
-            34.0,
-            self.tr(Text::LblFromFiles),
-            b.size_mm.is_none(),
-            Act::Board(BoardPick::Size(None)),
+            280.0,
+            ComboId::BoardSize,
+            &sizes[self.combo_current(ComboId::BoardSize).min(sizes.len() - 1)],
+            self.combo.is_some_and(|c| c.id == ComboId::BoardSize),
         );
-        for (i, (fw, fd)) in m.formats_mm.iter().enumerate().take(6) {
-            cv.chip(
-                rx + 160.0 + (i % 4) as f32 * 118.0,
-                ry + (i / 4) as f32 * 42.0,
-                110.0,
-                34.0,
-                &format!("{fw:.0}x{fd:.0}"),
-                b.size_mm == Some((*fw, *fd)),
-                Act::Board(BoardPick::Size(Some(i))),
-            );
-        }
-        ry += 92.0;
+        ry += 38.0 + 14.0;
         let (sw, sd) = b
             .size_mm
             .or_else(|| self.board_rect().map(|(a, bb, c, e)| (c - a, e - bb)))

@@ -108,6 +108,8 @@ enum Act {
     ResetHoles,
     SetSpeed(f32),
     ToggleAsk,
+    /// The outside of the panel is routed with tabs, or through.
+    ToggleTabs,
     /// A drop-down list opens (or closes) and one of its rows is chosen.
     ComboOpen(ComboId),
     ComboPick(usize),
@@ -409,6 +411,11 @@ impl App {
             app.panel.rows = r.max(1);
             app.apply_panel();
         }
+        if let Some(n) = o.tabs {
+            app.panel.tabs_on = true;
+            app.panel.tab_count = n.clamp(1, 20);
+            app.apply_panel();
+        }
         if let Some(y) = o.yaw {
             app.view3d.yaw = y.clamp(-40.0, 40.0);
         }
@@ -423,6 +430,10 @@ impl App {
                 "model" => Some(ComboId::Model),
                 "finish" => Some(ComboId::Sound(Cue::Finished)),
                 "tool" => Some(ComboId::Sound(Cue::ToolChange)),
+                "maker" => Some(ComboId::Maker),
+                "thickness" => Some(ComboId::Thickness),
+                "size" => Some(ComboId::BoardSize),
+                "tabs" => Some(ComboId::TabPlace),
                 _ => None,
             };
             if let Some(id) = id {
@@ -653,6 +664,7 @@ impl App {
             columns,
             rows,
             pitch_mm,
+            tabs: self.panel.tabs(),
         });
         // a job that does not fit on the table is refused before it starts, not found out on the machine
         let outside = match self.active() {
@@ -885,6 +897,11 @@ impl App {
                 self.remember_settings();
             }
             Act::ToggleAsk => self.toggle_ask(),
+            Act::ToggleTabs => {
+                self.panel.tabs_on = !self.panel.tabs_on;
+                self.saved = false;
+                self.apply_panel();
+            }
             Act::ComboOpen(id) => self.combo_open(id),
             Act::ComboPick(i) => self.combo_pick(i),
             Act::ComboClose => self.combo = None,

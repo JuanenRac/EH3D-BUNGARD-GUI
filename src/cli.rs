@@ -30,6 +30,8 @@ pub struct Options {
     /// A fleet written as the server answers it, shown in the window of the machines without a server (`--fleet FILE.json`): for the pictures and to look at the window offline.
     pub fleet_file: Option<PathBuf>,
     pub panel: Option<(u32, u32)>,
+    /// Tabs on each side of the panel when the outside is routed (`--tabs COUNT`): for the pictures.
+    pub tabs: Option<u32>,
     pub yaw: Option<f32>,
     /// The tab of the settings window to show (`--tab 0|1|2`).
     pub tab: Option<u8>,
@@ -95,6 +97,10 @@ impl Options {
                         c.parse().map_err(|_| "--panel needs numbers")?,
                         r.parse().map_err(|_| "--panel needs numbers")?,
                     ));
+                }
+                "--tabs" => {
+                    let v = value("--tabs")?;
+                    o.tabs = Some(v.parse().map_err(|_| "--tabs needs a number")?);
                 }
                 "--yaw" => {
                     let v = value("--yaw")?;

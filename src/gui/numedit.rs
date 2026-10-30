@@ -36,6 +36,8 @@ impl App {
                 Field::SpacingY => self.len_to_display(self.panel.spacing.1),
                 Field::TableW => self.len_to_display(self.table.width_mm),
                 Field::TableD => self.len_to_display(self.table.depth_mm),
+                Field::TabCount => self.panel.tab_count as f64,
+                Field::TabWidth => self.len_to_display(self.panel.tab_width),
             },
             EditTarget::ToolCell(p, row, c) => self
                 .used_tools(p)

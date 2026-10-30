@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **Panelization with tabs:** the outside of the panel can be routed with tabs; the person chooses how many on each side, how wide and where (spread, near the ends or together in the middle), and the plan view shows the cut paths.
+- **More drop-down lists:** the maker, the thickness and the size of the board are chosen from lists instead of rows of buttons, and so is the place of the tabs.
 - **Drop-down lists:** the theme, the language, the model of the machine and the sounds are chosen from a list that scrolls instead of rows of buttons; the end of the job and the request for a tool each have 60 sounds from the high ones to the low ones, the standard tone, none or a file of your own, and a sound that is chosen is played.
 - **The first hole is drilled:** the simulation marked the hole the head was going to, one ahead of the one it had drilled, so the first one stayed open until the end; the window now asks the classic engine for the order of the holes and marks the right one.
 - **Pictures on the buttons of the job:** Start, Pause and Stop and the emergency button show a play triangle, two bars, a square and a warning sign instead of words.

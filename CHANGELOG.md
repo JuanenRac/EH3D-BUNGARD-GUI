@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.0.3] - Gerber and DXF outlines as routing jobs, plotter arcs and circles, recent files, the count of holes of each drill and screenshots
+
 - **Screenshots in the README:** six pictures of the window (the viewer, a job running, a second theme, the tools, the settings and the board) in all the eight languages of the README.
 - **Recent files:** the Open window lists the last files opened (up to six, kept between runs) under the places, and a click opens one again.
 - **DXF drawings:** the drawing of a board in a DXF file opens as a routing job, from the window, the command line and ZIP archives, with its lines, arcs, circles and polylines joined into paths.

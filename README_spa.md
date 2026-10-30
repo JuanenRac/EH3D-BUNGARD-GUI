@@ -12,14 +12,14 @@
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
-  <img src="https://img.shields.io/badge/Tests-67-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-73-0f6cbd.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.0.4-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
 ---
 
-**Comprobación de honestidad - lo que se ejecuta hoy:** un programa en Rust con una ventana y 67 pruebas que se ejecutan en un ordenador. El lanzador ofrece la interfaz moderna o los programas clásicos de taladrado y fresado para una máquina con cambio de herramienta manual (MTC) o automático (ATC). El visor abre ficheros de taladrado, ficheros de trazado HP-GL y archivos ZIP de trabajos (desde un explorador de carpetas, arrastrando y soltando o desde la línea de órdenes), dibuja la vista en planta con cada agujero por diámetro de broca y las trayectorias de fresado encima, muestra la máquina en 3D con la mesa del tamaño elegido en la configuración, paneliza la placa y sigue el trabajo mientras corre. El trabajo se ejecuta en el **simulador** de los motores de EH3D-DRILLPRO y EH3D-ROUTEPRO; el mismo fichero de máquina que ellos leen decide cómo se llega a una máquina real (el RS-232 del ordenador, un adaptador USB-RS232, o el EH3D-NODE-BUNGARD directamente o a través de EH3D-SERVER), y **ninguna de esas vías se ha probado desde esta ventana**. Las ventanas de conexión, ajustes y herramientas cambian los valores que ofrecen, aún no se pueden editar los ficheros enteros de máquina y herramientas, y la vista 3D no muestra la altura de las trayectorias.
+**Comprobación de honestidad - lo que se ejecuta hoy:** un programa en Rust con una ventana y 73 pruebas que se ejecutan en un ordenador. El lanzador ofrece la interfaz moderna o los programas clásicos de taladrado y fresado para una máquina con cambio de herramienta manual (MTC) o automático (ATC). El visor abre ficheros de taladrado, ficheros de trazado HP-GL y archivos ZIP de trabajos (desde un explorador de carpetas, arrastrando y soltando o desde la línea de órdenes), dibuja la vista en planta con cada agujero por diámetro de broca y las trayectorias de fresado encima, muestra la máquina en 3D con la mesa del tamaño elegido en la configuración, paneliza la placa y sigue el trabajo mientras corre. El trabajo se ejecuta en el **simulador** de los motores de EH3D-DRILLPRO y EH3D-ROUTEPRO; el mismo fichero de máquina que ellos leen decide cómo se llega a una máquina real (el RS-232 del ordenador, un adaptador USB-RS232, o el EH3D-NODE-BUNGARD directamente o a través de EH3D-SERVER), y **ninguna de esas vías se ha probado desde esta ventana**. Las ventanas de conexión, ajustes y herramientas cambian los valores que ofrecen, aún no se pueden editar los ficheros enteros de máquina y herramientas, y la vista 3D no muestra la altura de las trayectorias.
 
 ---
 
@@ -31,7 +31,7 @@
 |---|---|
 | Versión | `0.0.4` |
 | Madurez | Andamiaje |
-| Pruebas | 67 |
+| Pruebas | 73 |
 | Pila tecnológica | Rust |
 | En hardware real | No. Se ha ejecutado solo en el simulador y en un ordenador; no se ha manejado ninguna máquina desde esta ventana |
 
@@ -50,7 +50,7 @@ Cada línea es una parte de este repositorio y la luz dice hasta dónde llega ho
 | Ficheros y panelización | 🟡 | Los ficheros de taladrado, HP-GL y los archivos ZIP se abren desde un explorador, arrastrando y soltando o desde la línea de órdenes; la placa se repite en tres modos. Probado con los pequeños ficheros de muestra de este repositorio. |
 | Ajustes | 🟠 | El ancho y el fondo útiles de la mesa se cambian y se guardan en los ficheros de la máquina; el resto de los ficheros de máquina y herramientas se sigue editando con los programas clásicos. |
 | Control de la máquina | 🔴 | El trabajo pasa por los motores de EH3D-DRILLPRO y EH3D-ROUTEPRO, así que en principio están todas sus conexiones; solo ha corrido en el simulador. La ventana de Conexión elige el enlace (el RS-232 del ordenador, un adaptador USB-RS232, el nodo EH3D o el servidor EH3D), lo prueba y lo guarda en el fichero de la máquina, y Pausa detiene el trabajo entre dos movimientos. |
-| Pruebas | 🟡 | Pasan 67 pruebas en un ordenador (`cargo test --features gui`): el lanzador, los ajustes, la lectura de los ficheros a la escena, los perfiles de máquina, el panel y la línea de órdenes. Ninguna toca una máquina. |
+| Pruebas | 🟡 | Pasan 73 pruebas en un ordenador (`cargo test --features gui`): el lanzador, los ajustes, la lectura de los ficheros a la escena, los perfiles de máquina, el panel y la línea de órdenes. Ninguna toca una máquina. |
 | Paquetes ya compilados | 🟠 | Un flujo de trabajo compila el programa para Windows (64 y 32 bits), Linux y macOS con los ficheros de muestra; todavía no se ha publicado ninguna versión. |
 
 ## 🎯 Resumen
@@ -67,6 +67,8 @@ Cada línea es una parte de este repositorio y la luz dice hasta dónde llega ho
 * **Calibración de la mesa:** una pestaña de la ventana de Ajustes mide la altura de la mesa en una malla de puntos (7 por 5 por defecto), dibuja el mapa (azul abajo, rojo arriba) con la diferencia y la inclinación en mm por metro, y lo guarda con la máquina. Mientras no se conecte el nodo palpador, el palpador es simulado y la corrección de los trabajos aún no se aplica.
 * **El trabajo sigue tras un fallo:** mientras un trabajo corre, lo que necesita para seguir (el fichero, el panel, los agujeros hechos) se guarda en tiempo real; si se cae la ventana, el equipo o el enlace, al volver a arrancar pregunta si seguir por donde iba o cancelarlo. La ventana se abre maximizada y los botones del trabajo son brillantes (verde para iniciar, azul para pausar, rojo para parar).
 * **Avisos hablados:** además de los tonos, el fin del trabajo y la petición de herramienta pueden decirse con una voz, en el idioma y el género elegidos en la misma lista de sonidos (`sound_finish = voice:es:f`). Las voces de la carpeta `voices/` son sintéticas (Piper) y de uso libre, con una frase lenta y formal; no hay voz japonesa, ni voz femenina china o portuguesa, ni grabación real de una persona: pon tus propios ficheros WAV en las mismas carpetas y los sustituyen. Mira `voices/README.txt`.
+* **Un catálogo de herramientas:** una ventana (desde la de Herramientas) lista 115 brocas, fresas rectas, fresas de corte descendente y ascendente, fresas de diamante, fresas en V, de punta esférica, de centrar y avellanadores, todas con el mango de 1/8 de pulgada (3,175 mm) del portabrocas de una máquina Bungard, por tipo, con las vueltas, los avances y la profundidad de una pasada para empezar; una fresa en V dice qué ancho tiene su ranura a una profundidad. La placa de ejemplo trae el aislamiento de cuatro pistas, cortado con una fresa en V (herramienta 3 de la tabla de fresado).
+* **Los trabajos siguen la mesa, y el nodo del cabezal de taladro:** una casilla de la pestaña de calibración hace que el taladrado y el fresado corrijan su Z con el mapa de la mesa (solo un mapa completo, solo cuando se pide); una ventana (desde la de Conexión) fija cómo se llega a EH3D-NODE-BUNGARD-AUX (sin usar, directo o por el servidor), su dirección y token y si se muestra su cámara, y enseña la imagen de la cámara, la velocidad y la temperatura del husillo, la salida de protección y una medida de la mesa bajo el cabezal. Por el servidor dice que el relevo aún no existe, y el palpador de la calibración sigue simulado.
 
 ## 🧩 Papel en EH3D
 
@@ -197,7 +199,7 @@ Ejecútalo con `run.bat` (Windows) o `./run.sh` (Linux y macOS); ambos compilan 
 
 ## 🧪 Pruebas
 
-La suite tiene 67 pruebas (`cargo test --features gui`). Comprueban el lanzador y lo que recuerda, los ajustes, cómo un fichero de taladrado o HP-GL se convierte en la escena, los perfiles de máquina, el panel y la línea de órdenes. Los motores que usa (protocolo, movimiento, puerta de seguridad) se prueban en EH3D-DRILLPRO y EH3D-ROUTEPRO. La CI también ejecuta `cargo fmt --check` y `cargo clippy` con los avisos como errores, y `python -I tools/ci_validate.py` comprueba el manifiesto, las versiones, el registro de cambios y los ocho README.
+La suite tiene 73 pruebas (`cargo test --features gui`). Comprueban el lanzador y lo que recuerda, los ajustes, cómo un fichero de taladrado o HP-GL se convierte en la escena, los perfiles de máquina, el panel y la línea de órdenes. Los motores que usa (protocolo, movimiento, puerta de seguridad) se prueban en EH3D-DRILLPRO y EH3D-ROUTEPRO. La CI también ejecuta `cargo fmt --check` y `cargo clippy` con los avisos como errores, y `python -I tools/ci_validate.py` comprueba el manifiesto, las versiones, el registro de cambios y los ocho README.
 
 ## 🏗️ Compilación y publicación
 

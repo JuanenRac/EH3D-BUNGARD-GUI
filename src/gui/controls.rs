@@ -642,4 +642,64 @@ EOF
             text.contains("sound_finish = default") && text.contains("sound_tool_change = default")
         );
     }
+
+    /// A server that answers one request with the fleet and goes away.
+    fn fleet_server(body: &'static str) -> String {
+        use std::io::{Read, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap().to_string();
+        std::thread::spawn(move || {
+            if let Ok((mut s, _)) = listener.accept() {
+                let mut buf = [0u8; 2048];
+                let _ = s.read(&mut buf);
+                let reply = format!(
+                    "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\n\r\n{body}",
+                    body.len()
+                );
+                let _ = s.write_all(reply.as_bytes());
+            }
+        });
+        address
+    }
+
+    #[test]
+    fn the_fleet_window_asks_the_server_and_chooses_the_machine_of_the_jobs() {
+        let mut a = app();
+        // the window says why there is nothing to show when the connection is not the server
+        a.conn.kind = LinkKind::Demo;
+        a.show_modal(Modal::Fleet);
+        a.fleet_tick();
+        assert!(a.fleet.fleet.is_none() && a.fleet.rx.is_none());
+
+        a.conn.kind = LinkKind::Server;
+        a.conn.server_address = fleet_server(
+            r#"{"stations":[{"id":"bench","machines":["m1","m2"]}],"machines":[
+            {"id":"m1","name":"M1","station":"bench","connection":"demo","state":"busy","job":{"id":"j","name":"board","kind":"drill","items_done":1,"items_total":4,"percent":25},"ready":0},
+            {"id":"m2","name":"M2","station":"bench","connection":"demo","state":"idle","job":null,"ready":2}]}"#,
+        );
+        a.fleet_tick();
+        assert!(a.fleet.rx.is_some());
+        // the answer comes from another thread
+        for _ in 0..200 {
+            a.fleet_tick();
+            if a.fleet.fleet.is_some() {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+        let fleet = a
+            .fleet
+            .fleet
+            .as_ref()
+            .unwrap_or_else(|| panic!("the fleet was read: {:?}", a.fleet.error));
+        assert_eq!(fleet.machines.len(), 2);
+        assert!(a.fleet.error.is_none());
+
+        // the second machine becomes the one the jobs go to
+        a.fleet_use(1);
+        assert_eq!(a.conn.server_machine, "m2");
+        // an index that is not in the list changes nothing
+        a.fleet_use(9);
+        assert_eq!(a.conn.server_machine, "m2");
+    }
 }

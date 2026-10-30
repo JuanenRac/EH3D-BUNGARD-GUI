@@ -101,6 +101,8 @@ enum Act {
     Edit(EditTarget, f32, f32, f32),
     ToolDefault(Program, usize),
     ToolsDefaults,
+    /// Starts the counts of the holes of every drill again from zero.
+    ResetHoles,
     SetSpeed(f32),
     SetLang(Lang),
     ToggleAsk,
@@ -612,8 +614,23 @@ impl App {
         }
     }
 
+    /// Adds the holes of the drilling job that are done to the counts of their drills, which the settings keep.
+    fn count_holes(&mut self) {
+        let mut any = false;
+        for h in self.drill.scene.holes.iter().filter(|h| h.done) {
+            *self.settings.holes_drilled.entry(h.tool).or_insert(0) += 1;
+            any = true;
+        }
+        if any {
+            self.remember_settings();
+        }
+    }
+
     fn stop_job(&mut self) {
         self.paused = false;
+        if self.running == Some(Program::Drill) {
+            self.count_holes();
+        }
         if let Some(p) = self.running.take() {
             self.side_mut(p).engine.stop();
         }
@@ -695,6 +712,9 @@ impl App {
                 }
             }
             self.running = None;
+            if p == Program::Drill {
+                self.count_holes();
+            }
         }
     }
 
@@ -777,6 +797,10 @@ impl App {
             Act::Edit(t, x, y, w) => self.start_edit(t, x, y, w),
             Act::ToolDefault(p, row) => self.tool_default(p, row),
             Act::ToolsDefaults => self.tools_defaults(),
+            Act::ResetHoles => {
+                self.settings.holes_drilled.clear();
+                self.remember_settings();
+            }
             Act::SetSpeed(v) => {
                 self.settings.sim_speed = v;
                 self.remember_settings();

@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The holes of each drill are counted:** the tools window shows, for every drill, the holes drilled in all the jobs (kept between runs, as the plan of the machine's own programs keeps its tool usage) and a button that starts the counts again; a job that ends or is stopped adds the holes it did.
 - **Circles and arcs of plotter files:** a plotter file with `CI`, `AA`, `AR`, `SC` and `IP` is drawn and run as it is meant, cut into chords by the chord angle of the routing configuration.
 - **Gerber outlines:** the profile layer of a board (`.gko`, `.gm1`, `.gml` or a `.gbr` that calls itself the profile or the edge) opens as a routing job, in the window, from the command line and from ZIP archives; a layer of copper is said not to be an outline instead of being cut.
 - **A job that does not fit on the table is refused:** Start checks every hole and every routing point against the table and says so, in the language of the window, instead of finding it out on the machine.

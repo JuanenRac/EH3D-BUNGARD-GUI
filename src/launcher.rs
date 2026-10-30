@@ -112,6 +112,8 @@ pub struct Settings {
     pub estop_pos: (f32, f32),
     /// Lengths are shown in mils (0.001 inch) instead of millimetres.
     pub display_mil: bool,
+    /// How many holes each drill (by its tool number) has drilled in all the jobs, has drilled in all the jobs of this window, kept between runs.
+    pub holes_drilled: std::collections::BTreeMap<u8, u64>,
 }
 
 impl Default for Settings {
@@ -127,6 +129,7 @@ impl Default for Settings {
             emergency: true,
             estop_pos: (1020.0, 770.0),
             display_mil: false,
+            holes_drilled: std::collections::BTreeMap::new(),
         }
     }
 }
@@ -165,6 +168,15 @@ impl Settings {
                     }
                 }
                 "display_units" => s.display_mil = v.trim().eq_ignore_ascii_case("mil"),
+                "holes_drilled" => {
+                    s.holes_drilled = v
+                        .split(',')
+                        .filter_map(|p| {
+                            let (t, n) = p.split_once(':')?;
+                            Some((t.trim().parse::<u8>().ok()?, n.trim().parse::<u64>().ok()?))
+                        })
+                        .collect()
+                }
                 "ask_operator" => {
                     s.ask_operator = !matches!(v.trim(), "no" | "off" | "false" | "0")
                 }
@@ -177,7 +189,7 @@ impl Settings {
 
     pub fn to_text(&self) -> String {
         format!(
-            "choice = {}\nlang = {}\ntheme = {}\nboard = {}\nask_operator = {}\nsim_speed = {}\nmodel = {}\nemergency = {}\nestop_pos = {},{}\ndisplay_units = {}\n",
+            "choice = {}\nlang = {}\ntheme = {}\nboard = {}\nask_operator = {}\nsim_speed = {}\nmodel = {}\nemergency = {}\nestop_pos = {},{}\ndisplay_units = {}\nholes_drilled = {}\n",
             self.choice.map_or("ask", |c| c.key()),
             self.lang.code(),
             self.theme.key(),
@@ -188,7 +200,12 @@ impl Settings {
             if self.emergency { "yes" } else { "no" },
             self.estop_pos.0,
             self.estop_pos.1,
-            if self.display_mil { "mil" } else { "mm" }
+            if self.display_mil { "mil" } else { "mm" },
+            self.holes_drilled
+                .iter()
+                .map(|(t, n)| format!("{t}:{n}"))
+                .collect::<Vec<_>>()
+                .join(",")
         )
     }
 
@@ -299,6 +316,7 @@ mod tests {
             emergency: false,
             estop_pos: (300.0, 400.5),
             display_mil: true,
+            holes_drilled: [(1u8, 9172u64), (3, 40)].into_iter().collect(),
         };
         s.save(&path).unwrap();
         assert_eq!(Settings::load(&path), s);

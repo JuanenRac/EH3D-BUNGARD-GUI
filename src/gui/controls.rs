@@ -444,6 +444,33 @@ mod tests {
     }
 
     #[test]
+    fn the_holes_of_each_drill_are_counted_across_jobs_and_can_be_started_again() {
+        let mut a = app();
+        a.auto_ok = true;
+        // a long step of time, not a faster simulation: the settings are saved and the other tests read them
+        a.fixed_dt = Some(60.0);
+        let holes = a.drill.scene.holes.len() as u64;
+        assert!(holes > 0);
+        for _ in 0..2 {
+            a.act(Act::Start);
+            for _ in 0..20_000 {
+                if a.running.is_none() {
+                    break;
+                }
+                a.tick();
+            }
+            assert!(a.running.is_none(), "the job did not end");
+        }
+        let total: u64 = a.settings.holes_drilled.values().sum();
+        assert_eq!(total, 2 * holes);
+        // what is counted stays after a restart: the settings file has it
+        let back = crate::launcher::Settings::parse(&a.settings.to_text());
+        assert_eq!(back.holes_drilled, a.settings.holes_drilled);
+        a.act(Act::ResetHoles);
+        assert!(a.settings.holes_drilled.is_empty());
+    }
+
+    #[test]
     fn a_job_that_does_not_fit_on_the_table_is_refused_before_it_starts() {
         let mut a = app();
         a.auto_ok = true;

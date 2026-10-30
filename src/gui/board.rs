@@ -755,6 +755,16 @@ impl App {
                     col(t.dim),
                 );
             }
+            if p == Program::Drill {
+                cv.text(
+                    x + 1250.0,
+                    ry + 16.0,
+                    Align2::RIGHT_BOTTOM,
+                    self.tr(Text::HolesDrilled),
+                    12.0,
+                    col(t.dim),
+                );
+            }
             ry += 24.0;
             for (ri, r) in rows.iter().enumerate() {
                 let n = r.name.unwrap_or(0);
@@ -829,6 +839,17 @@ impl App {
                         Act::Edit(EditTarget::ToolCell(p, ri, ci), bx + 47.0, ry + 2.0, 96.0),
                     ));
                 }
+                if p == Program::Drill {
+                    let total = self.settings.holes_drilled.get(&n).copied().unwrap_or(0);
+                    cv.text(
+                        x + 1250.0,
+                        ry + 28.0,
+                        Align2::RIGHT_BOTTOM,
+                        &total.to_string(),
+                        19.0,
+                        col(t.dim),
+                    );
+                }
                 cv.chip(
                     x + 1290.0,
                     ry,
@@ -870,6 +891,15 @@ impl App {
             self.tr(Text::TypeValueHint),
             14.0,
             col(t.dim),
+        );
+        cv.chip(
+            x + w - 860.0,
+            y + h - 60.0,
+            220.0,
+            42.0,
+            self.tr(Text::ResetCounts),
+            false,
+            Act::ResetHoles,
         );
         cv.chip(
             x + w - 620.0,

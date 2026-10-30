@@ -298,7 +298,14 @@ pub struct App {
 
 impl App {
     pub fn new(o: &Options) -> App {
-        let settings_path = launcher::settings_path();
+        // the tests each have their own settings, so what one counts or remembers is not read by another
+        let settings_path = if cfg!(test) {
+            static N: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+            let n = N.fetch_add(1, Ordering::SeqCst);
+            std::env::temp_dir().join(format!("eh3d-bg-settings-{}-{n}.cfg", std::process::id()))
+        } else {
+            launcher::settings_path()
+        };
         let settings = Settings::load(&settings_path);
         let lang = o.lang.unwrap_or(settings.lang);
         let theme_id = o.theme.unwrap_or(settings.theme);

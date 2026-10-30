@@ -6,12 +6,18 @@ All notable changes to this project are documented here.
 
 ## [0.0.2] - The Windows-style Open window, the board library, the tools with default and typed values, the connection and the settings windows, and buttons that answer to the pointer
 
+- **The settings in tabs, with the machine models:** the General and Job tabs, every Bungard MTC and ATC model with its table, its tool changer and its limits, and the units of the steps and the coordinates (mm or mil), all with a real effect on the job.
+- **An emergency button:** it can be shown or hidden, dragged to where it is wanted, and it stops the job at once.
+- **Start and pause follow the job:** Start goes out when the job runs, only Pause and Stop answer, and Start comes back with either of them; the simulation goes on while another program is in front.
+- **The 2D view follows the work:** a button centres on each drill or router, the drilling and the routing files turn together, the board can be moved on the table, and the view can be enlarged over the 3D one.
+- **Living check boxes and text boxes:** they change with a soft animation under the pointer and when they are clicked.
+- **Sounds:** a sound when the job ends and another at a tool change, each one chosen, tried and switched on or off in the settings.
+- **A bigger library of boards:** more than a hundred base materials of many makers, with a list that scrolls.
 - **The holes of each tool:** the tools window shows, next to the diameter of every drill, how many holes the board has for it.
 - **The buttons answer to the pointer:** they light up with a glow and a stronger edge under it, sink and darken when they are pressed, have a shadow and a shine on their top edge, and the pointer turns into a hand over them.
 - **The simulation goes at the speed of the machine:** a job takes the time it would take with the feed and the speed of each tool; the Settings window chooses how many times faster than the machine it runs (x0.5 to x50).
 - **Every value can be typed:** the numbers with buttons to step them (the table, the panel, the board, the feeds and the speeds of the tools) can be clicked and written with the keyboard (a comma is a decimal point; Enter or a click elsewhere accepts, Esc leaves it as it was).
 - **Default values and the operator's:** the tools have default values chosen from the diameter of the drill and the material of the board (per tool or all at once), and any value can be typed over them.
-
 - **A lighter debug build:** the `dev` profile keeps the file and line of a panic (`debug = "line-tables-only"`) but not the full debug symbols, so the `target` folder of a test run is about a tenth of its size.
 - **Open files:** an Open window with a folder browser (and the drives), files dropped on the window, Ctrl+O, and files given on the command line; a drilling file, a routing file or a ZIP archive is opened as what its extension says.
 - **Move around the views:** the plan view is dragged and zoomed with the wheel, the 3D view is turned with a drag, zoomed with the wheel and moved with Shift or the right button; a button (or a double click) puts the view back.

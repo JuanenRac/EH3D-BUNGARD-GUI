@@ -619,6 +619,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "eh3d-bungard-formats"
+version = "0.0.1"
+
+[[package]]
 name = "eh3d-bungard-gui"
 version = "0.0.2"
 dependencies = [
@@ -649,6 +653,7 @@ name = "eh3d-drillpro"
 version = "0.0.4"
 dependencies = [
  "eh3d-archive",
+ "eh3d-bungard-formats",
  "eh3d-drillpro-protocol",
  "serde_json",
 ]
@@ -664,6 +669,7 @@ dependencies = [
 name = "eh3d-routepro"
 version = "0.0.4"
 dependencies = [
+ "eh3d-bungard-formats",
  "eh3d-drillpro",
  "eh3d-routepro-protocol",
  "serde_json",

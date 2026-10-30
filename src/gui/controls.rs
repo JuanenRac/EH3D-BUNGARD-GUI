@@ -412,6 +412,24 @@ mod tests {
     }
 
     #[test]
+    fn a_job_that_does_not_fit_on_the_table_is_refused_before_it_starts() {
+        let mut a = app();
+        a.auto_ok = true;
+        a.drill.scene.holes[0].x_mm = -50.0;
+        a.act(Act::Start);
+        assert!(a.running.is_none(), "a job outside the table was started");
+        assert_eq!(
+            a.message.as_deref(),
+            Some(a.tr(Text::JobOutsideTable)),
+            "the operator was not told"
+        );
+        a.drill.scene.holes[0].x_mm = 10.0;
+        a.message = None;
+        a.act(Act::Start);
+        assert!(a.running.is_some());
+    }
+
+    #[test]
     fn the_emergency_button_is_dragged_and_stays_inside_the_window() {
         let mut a = app();
         let (x, y) = a.settings.estop_pos;

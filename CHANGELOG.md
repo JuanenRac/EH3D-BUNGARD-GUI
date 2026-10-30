@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **A job that does not fit on the table is refused:** Start checks every hole and every routing point against the table and says so, in the language of the window, instead of finding it out on the machine.
+
 ## [0.0.2] - The Windows-style Open window, the board library, the tools with default and typed values, the connection and the settings windows, and buttons that answer to the pointer
 
 - **The settings in tabs, with the machine models:** the General and Job tabs, every Bungard MTC and ATC model with its table, its tool changer and its limits, and the units of the steps and the coordinates (mm or mil), all with a real effect on the job.

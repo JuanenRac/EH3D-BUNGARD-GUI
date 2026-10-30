@@ -528,6 +528,18 @@ impl App {
             rows,
             pitch_mm,
         });
+        // a job that does not fit on the table is refused before it starts, not found out on the machine
+        let outside = match self.active() {
+            Some((_, side)) => {
+                let (holes, paths) = side.scene.outside_table();
+                !holes.is_empty() || !paths.is_empty()
+            }
+            None => false,
+        };
+        if outside {
+            self.message = Some(self.tr(Text::JobOutsideTable).to_string());
+            return;
+        }
         if let Some((p, side)) = self.active() {
             side.engine.set_job_options(JobOptions {
                 ask_operator,

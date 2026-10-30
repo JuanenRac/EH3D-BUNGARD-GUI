@@ -440,16 +440,23 @@ impl App {
             })
     }
 
-    /// The outline of a board in Gerber, written as a plotter file in the work folder so that the routing engine can take it as it takes
-    /// any other. A Gerber file that is not an outline (a layer of copper) is said, not loaded.
-    fn gerber_as_plot(&mut self, path: &Path) -> Option<PathBuf> {
+    /// The outline of a board in Gerber, or the drawing of it in DXF, written as a plotter file in the work folder so that the routing
+    /// engine can take it as it takes any other. A Gerber file that is not an outline (a layer of copper) is said, not loaded.
+    fn drawing_as_plot(&mut self, path: &Path) -> Option<PathBuf> {
         let name = path.file_name()?.to_string_lossy().to_string();
         let text = jobs::read_latin1(path).ok()?;
-        if !eh3d_bungard_formats::gerber::looks_like_outline(&name, &text) {
+        let segments = self.route_segments();
+        let is_dxf = name.to_ascii_lowercase().ends_with(".dxf");
+        if !is_dxf && !eh3d_bungard_formats::gerber::looks_like_outline(&name, &text) {
             self.message = Some(format!("{name}: {}", self.tr(Text::NotAnOutline)));
             return None;
         }
-        match eh3d_bungard_formats::gerber::outline(&text, self.route_segments()) {
+        let plot = if is_dxf {
+            eh3d_bungard_formats::dxf::outline(&text, segments)
+        } else {
+            eh3d_bungard_formats::gerber::outline(&text, segments)
+        };
+        match plot {
             Ok(plot) => {
                 let _ = std::fs::create_dir_all(&self.archive_dir);
                 let out = self
@@ -466,15 +473,16 @@ impl App {
     }
 
     fn load_route(&mut self, path: &Path) {
-        let is_gerber = path
+        let is_drawing = path
             .extension()
             .map(|e| e.to_string_lossy().to_ascii_lowercase())
             .is_some_and(|e| {
-                eh3d_bungard_formats::gerber::OUTLINE_EXTENSIONS.contains(&e.as_str())
+                e == eh3d_bungard_formats::dxf::EXTENSION
+                    || eh3d_bungard_formats::gerber::OUTLINE_EXTENSIONS.contains(&e.as_str())
             });
         let converted;
-        let path = if is_gerber {
-            match self.gerber_as_plot(path) {
+        let path = if is_drawing {
+            match self.drawing_as_plot(path) {
                 Some(p) => {
                     converted = p;
                     converted.as_path()

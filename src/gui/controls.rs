@@ -426,6 +426,40 @@ mod tests {
         a.message = None;
         a.open_path(&dir.join("copper.gtl"));
         assert!(a.message.is_some());
+        // the drawing of a board in DXF opens the same way
+        let dxf = "0
+SECTION
+2
+ENTITIES
+0
+LINE
+10
+0
+20
+0
+11
+40
+21
+0
+0
+LINE
+10
+40
+20
+0
+11
+40
+21
+20
+0
+ENDSEC
+0
+EOF
+";
+        std::fs::write(dir.join("board.dxf"), dxf).unwrap();
+        a.open_path(&dir.join("board.dxf"));
+        let (x0, y0, x1, y1) = a.route.scene.bounds().unwrap();
+        assert!(((x1 - x0) - 40.0).abs() < 0.01 && ((y1 - y0) - 20.0).abs() < 0.01);
         let _ = std::fs::remove_dir_all(&dir);
     }
 

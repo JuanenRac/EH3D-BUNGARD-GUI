@@ -403,7 +403,10 @@ impl App {
                 .flat_map(|p| {
                     eh3d_drillpro::job::cut_tabs(&p.points, &tabs)
                         .into_iter()
-                        .map(|points| eh3d_view::scene::Path { points, ..p.clone() })
+                        .map(|points| eh3d_view::scene::Path {
+                            points,
+                            ..p.clone()
+                        })
                 })
                 .collect();
             self.route.scene.paths = cut;
@@ -429,9 +432,7 @@ impl App {
             Field::TabCount => {
                 self.panel.tab_count = (self.panel.tab_count as f64 + d).clamp(1.0, 20.0) as u32
             }
-            Field::TabWidth => {
-                self.panel.tab_width = (self.panel.tab_width + dl).clamp(0.5, 50.0)
-            }
+            Field::TabWidth => self.panel.tab_width = (self.panel.tab_width + dl).clamp(0.5, 50.0),
             Field::TableW | Field::TableD => {
                 let (w, h) = (self.table.width_mm, self.table.depth_mm);
                 let new = if f == Field::TableW {
@@ -1085,11 +1086,22 @@ mod tests {
         assert_eq!(a.panel.tab_width, 5.0);
         a.combo_open(ComboId::TabPlace);
         a.combo_pick(2);
-        assert_eq!(a.panel.tabs().map(|t| t.placement), Some(eh3d_drillpro::job::TabPlacement::Middle));
+        assert_eq!(
+            a.panel.tabs().map(|t| t.placement),
+            Some(eh3d_drillpro::job::TabPlacement::Middle)
+        );
         // and off again: as it was
         a.act(Act::ToggleTabs);
         assert_eq!(a.route.scene.paths.len(), whole);
-        assert_eq!(a.route.scene.paths.iter().map(|p| p.points.len()).sum::<usize>(), points);
+        assert_eq!(
+            a.route
+                .scene
+                .paths
+                .iter()
+                .map(|p| p.points.len())
+                .sum::<usize>(),
+            points
+        );
     }
 
     #[test]

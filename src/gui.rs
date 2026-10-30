@@ -2608,6 +2608,7 @@ pub fn run(o: &Options) -> eframe::Result {
             .with_min_inner_size([900.0, 560.0])
             .with_resizable(true)
             .with_maximize_button(true)
+            .with_maximized(o.shot.is_none())
             .with_title("EH3D-BUNGARD-GUI"),
         ..Default::default()
     };

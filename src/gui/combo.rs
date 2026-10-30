@@ -45,7 +45,10 @@ impl App {
                 .collect(),
             ComboId::Lang => LANG_NAMES.into_iter().map(|(_, n)| n.to_string()).collect(),
             ComboId::Model => crate::machines::models().iter().map(|m| m.name()).collect(),
-            ComboId::Maker => crate::boards::makers().iter().map(|m| m.to_string()).collect(),
+            ComboId::Maker => crate::boards::makers()
+                .iter()
+                .map(|m| m.to_string())
+                .collect(),
             ComboId::Thickness => self
                 .board
                 .material()
@@ -192,7 +195,8 @@ impl App {
             ComboId::Thickness => self.board_pick(BoardPick::Thickness(row)),
             ComboId::BoardSize => self.board_pick(BoardPick::Size(row.checked_sub(1))),
             ComboId::TabPlace => {
-                self.panel.tab_place = [TabPlacement::Even, TabPlacement::Ends, TabPlacement::Middle][row];
+                self.panel.tab_place =
+                    [TabPlacement::Even, TabPlacement::Ends, TabPlacement::Middle][row];
                 self.saved = false;
                 self.apply_panel();
             }

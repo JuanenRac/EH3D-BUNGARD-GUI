@@ -119,7 +119,7 @@ impl App {
         if let Some(p) = &self.route_path {
             if let Some(pl) = jobs::read_latin1(p)
                 .ok()
-                .map(|t| eh3d_routepro::hpgl::parse(&t))
+                .map(|t| eh3d_routepro::hpgl::parse_with(&t, self.route_segments()))
             {
                 pts.extend(pl.paths.iter().flat_map(|q| {
                     q.points.iter().map(|&(x, y)| {
@@ -163,9 +163,12 @@ impl App {
                 .and_then(|t| eh3d_drillpro::ncd::parse(&t).ok())
                 .map(|f| rotated_drill_text(&f, &rot, unit))
         } else {
-            jobs::read_latin1(path)
-                .ok()
-                .map(|t| rotated_plot_text(&eh3d_routepro::hpgl::parse(&t), &rot))
+            jobs::read_latin1(path).ok().map(|t| {
+                rotated_plot_text(
+                    &eh3d_routepro::hpgl::parse_with(&t, self.route_segments()),
+                    &rot,
+                )
+            })
         };
         match text {
             Some(t) if std::fs::write(&out, &t).is_ok() => out,

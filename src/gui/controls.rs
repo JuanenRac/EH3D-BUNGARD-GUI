@@ -430,6 +430,20 @@ mod tests {
     }
 
     #[test]
+    fn a_circle_of_a_plotter_file_is_cut_by_the_chord_angle_of_the_configuration() {
+        let mut a = app();
+        let dir = std::env::temp_dir().join(format!("bungard-circle-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("ring.plt"), "IN;SP1;PU2000,2000;CI400;").unwrap();
+        a.open_path(&dir.join("ring.plt"));
+        let segments = a.route_segments() as usize;
+        assert!(segments >= 6);
+        assert_eq!(a.route.scene.paths.len(), 1);
+        assert_eq!(a.route.scene.paths[0].points.len(), segments + 1);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
     fn a_job_that_does_not_fit_on_the_table_is_refused_before_it_starts() {
         let mut a = app();
         a.auto_ok = true;

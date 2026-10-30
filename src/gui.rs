@@ -428,6 +428,16 @@ impl App {
         self.drill.last_done = 0;
     }
 
+    /// The chords of a whole circle of a plotter file: the chord angle of the routing configuration says it.
+    pub(crate) fn route_segments(&self) -> u32 {
+        self.route
+            .engine
+            .settings()
+            .map_or(eh3d_routepro::hpgl::SEGMENTS_PER_CIRCLE, |s| {
+                eh3d_routepro::hpgl::segments_for_chord(s.chord_angle)
+            })
+    }
+
     /// The outline of a board in Gerber, written as a plotter file in the work folder so that the routing engine can take it as it takes
     /// any other. A Gerber file that is not an outline (a layer of copper) is said, not loaded.
     fn gerber_as_plot(&mut self, path: &Path) -> Option<PathBuf> {
@@ -437,7 +447,7 @@ impl App {
             self.message = Some(format!("{name}: {}", self.tr(Text::NotAnOutline)));
             return None;
         }
-        match eh3d_bungard_formats::gerber::outline_default(&text) {
+        match eh3d_bungard_formats::gerber::outline(&text, self.route_segments()) {
             Ok(plot) => {
                 let _ = std::fs::create_dir_all(&self.archive_dir);
                 let out = self
@@ -478,7 +488,7 @@ impl App {
         self.route.engine.load(path);
         let plot = jobs::read_latin1(path)
             .ok()
-            .map(|t| eh3d_routepro::hpgl::parse(&t));
+            .map(|t| eh3d_routepro::hpgl::parse_with(&t, self.route_segments()));
         let offset = self
             .route
             .engine

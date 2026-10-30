@@ -902,6 +902,15 @@ impl App {
             Act::ToolsDefaults,
         );
         cv.chip(
+            x + 30.0,
+            y + h - 60.0,
+            300.0,
+            42.0,
+            self.tr(Text::CatOpen),
+            false,
+            Act::Show(Modal::Catalogue),
+        );
+        cv.chip(
             x + w - 400.0,
             y + h - 60.0,
             170.0,

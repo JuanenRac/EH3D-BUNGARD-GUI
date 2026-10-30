@@ -20,6 +20,8 @@ pub(crate) enum ComboId {
     Maker,
     Thickness,
     BoardSize,
+    /// The kind of bit the catalogue shows.
+    CatKind,
 }
 
 /// A list that is open, and the first row it shows.
@@ -64,6 +66,15 @@ impl App {
                         .formats_mm
                         .iter()
                         .map(|(w, d)| format!("{w:.0} x {d:.0} mm")),
+                );
+                v
+            }
+            ComboId::CatKind => {
+                let mut v = vec![self.tr(Text::CatAll).to_string()];
+                v.extend(
+                    super::catalogue::KINDS
+                        .iter()
+                        .map(|k| self.tr(k.1).to_string()),
                 );
                 v
             }
@@ -125,6 +136,7 @@ impl App {
                 .unwrap_or(0),
             ComboId::Model => self.model(),
             ComboId::Maker => self.maker,
+            ComboId::CatKind => self.cat_kind,
             ComboId::Thickness => self
                 .board
                 .material()
@@ -192,6 +204,10 @@ impl App {
             ComboId::Lang => self.set_lang(LANG_NAMES[row].0),
             ComboId::Model => self.apply_model(row),
             ComboId::Maker => self.board_pick(BoardPick::Maker(row)),
+            ComboId::CatKind => {
+                self.cat_kind = row;
+                self.cat_scroll = 0;
+            }
             ComboId::Thickness => self.board_pick(BoardPick::Thickness(row)),
             ComboId::BoardSize => self.board_pick(BoardPick::Size(row.checked_sub(1))),
             ComboId::TabPlace => {

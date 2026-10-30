@@ -19,7 +19,7 @@ Change the numbers, never the number of lines. Too fast a feed breaks cutters; t
 Delimiter between the numbers: one or more spaces.
 01 1.8 02 0800 0300 60000
 02 1.8 02 0800 0300 60000
-03 1.8 02 0600 0300 60000
+03 0.1 01 0400 0150 40000
 04 1.0 01 0500 0200 60000
 05 1.0 01 0500 0200 60000
 06 0.5 01 0500 0200 60000

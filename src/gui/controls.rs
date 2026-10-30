@@ -717,6 +717,37 @@ EOF
     }
 
     #[test]
+    fn a_map_that_is_complete_corrects_the_jobs_only_when_the_person_asks() {
+        let mut a = app();
+        a.fixed_dt = Some(60.0);
+        a.auto_ok = true;
+        a.level_reset(4, 3);
+        assert!(a.level_for_jobs().is_none());
+        a.act(Act::LevelToggle);
+        for _ in 0..30 {
+            a.tick();
+        }
+        assert!(a.level.map.is_complete());
+        // measured, but not asked for
+        assert!(a.level_for_jobs().is_none());
+        a.act(Act::LevelApply);
+        assert!(a.level_for_jobs().is_some());
+        // a job on the corrected table goes to its end like any other
+        a.act(Act::Start);
+        for _ in 0..20_000 {
+            if a.running.is_none() {
+                break;
+            }
+            a.tick();
+        }
+        assert!(a.running.is_none());
+        assert!(a.drill.scene.holes.iter().all(|h| h.done));
+        // a map that is not complete is never used
+        a.level_clear();
+        assert!(a.level_for_jobs().is_none());
+    }
+
+    #[test]
     fn the_files_opened_are_the_recent_ones_and_open_again_from_the_list() {
         let mut a = app();
         let ncd = a.settings.recent.first().cloned().unwrap();

@@ -5,6 +5,7 @@
 //! directly or through the EH3D server) works here too.
 
 pub mod boards;
+pub mod catalogue;
 pub mod cli;
 pub mod defaults;
 pub mod jobs;

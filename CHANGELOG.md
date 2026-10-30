@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The jobs follow the table:** a check box of the calibration tab makes the drilling and the routing correct their Z with the map of the table (only a complete map, only when asked for).
+- **Catalogue of bits:** a window (from the Tools window) lists 115 drills, end mills, down-cut and up-cut routers, diamond-cut routers, V-bits, ball noses, spot drills and countersinks, all with the 1/8 inch (3.175 mm) shank of the chuck of a Bungard machine, by kind, with the turns, the feeds and the depth of a pass to start from; a V-bit tells how wide its groove is at a depth.
+- **A sample board with tracks:** the sample board has the isolation of four tracks, cut with a V-bit (tool 3 of the routing table).
 ## [0.0.4] - Drop-down lists, sixty sounds for each event, brighter job buttons, tabs for panels, table calibration and jobs that go on after a crash
 
 - **Calibration of the table:** a new tab of the Settings window measures the height of the table in a grid of points (7 by 5 by default, up to 15 by 15), draws the map (blue low, red high) with the spread and the tilt in mm per metre, and keeps it with the machine; until a probe node is connected the probe is simulated.

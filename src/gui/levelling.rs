@@ -14,6 +14,8 @@ pub(crate) struct LevelState {
     pub rows: usize,
     pub map: HeightMap,
     pub measuring: bool,
+    /// The Z of the jobs follows the map (only when the person asks for it, and only a map that is complete).
+    pub apply: bool,
     pub at: Option<Instant>,
     /// Where the map is kept (nowhere in the tests).
     pub path: Option<PathBuf>,
@@ -39,6 +41,7 @@ impl LevelState {
             rows: map.grid.rows,
             map,
             measuring: false,
+            apply: false,
             at: None,
             path,
         }
@@ -79,6 +82,11 @@ impl App {
 
     pub(crate) fn level_clear(&mut self) {
         self.level_reset(self.level.cols, self.level.rows);
+    }
+
+    /// The map that the jobs follow: the one measured, when the person asked for it and it is complete.
+    pub(crate) fn level_for_jobs(&self) -> Option<eh3d_levelling::HeightMap> {
+        (self.level.apply && self.level.map.is_complete()).then(|| self.level.map.clone())
     }
 
     fn level_save(&self) {
@@ -164,6 +172,14 @@ impl App {
             self.tr(Text::LevClear),
             false,
             Act::LevelClear,
+        );
+        cv.checkbox(
+            x + 510.0,
+            top + 146.0,
+            300.0,
+            self.tr(Text::LevApply),
+            self.level.apply,
+            Act::LevelApply,
         );
         // the map: one cell for each point
         let (mx, my, mw, mh) = (x + 30.0, top + 204.0, 780.0, 300.0);

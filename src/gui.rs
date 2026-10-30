@@ -27,6 +27,7 @@ use crate::launcher::{self, Choice, Machine, Program, Settings};
 use crate::machines;
 
 mod board;
+mod catalogue;
 mod combo;
 mod controls;
 mod extra;
@@ -110,8 +111,11 @@ enum Act {
     ResetHoles,
     SetSpeed(f32),
     ToggleAsk,
+    /// The list of the catalogue goes up or down.
+    CatScroll(i32),
     /// The probe measures the table, or stops; the map of the table is cleared.
     LevelToggle,
+    LevelApply,
     LevelClear,
     /// The job that was left in the middle goes on, or is left.
     ResumeContinue,
@@ -287,6 +291,9 @@ pub struct App {
     resume_skip: usize,
     /// The calibration of the table.
     level: levelling::LevelState,
+    /// The catalogue of bits: the kind that is shown (0 is all of them) and the first row.
+    cat_kind: usize,
+    cat_scroll: usize,
 }
 
 impl App {
@@ -405,6 +412,8 @@ impl App {
             resume: None,
             resume_skip: 0,
             level: levelling::LevelState::new(jobs::DEFAULT_TABLE),
+            cat_kind: 0,
+            cat_scroll: 0,
         };
         let examples = app.base_dir.join("examples");
         let has_jobs = std::fs::read_dir(&examples).is_ok_and(|rd| {
@@ -488,6 +497,7 @@ impl App {
             Some("connection") => app.show_modal(Modal::Connection),
             Some("board") => app.show_modal(Modal::Board),
             Some("tools") => app.show_modal(Modal::Tools),
+            Some("catalogue") => app.show_modal(Modal::Catalogue),
             _ => {}
         }
         app.refit_table();
@@ -703,6 +713,7 @@ impl App {
     /// Starts the job leaving out the first `skip` holes (or paths) of it, which are already done.
     fn start_job_from(&mut self, skip: usize) {
         let ask_operator = self.settings.ask_operator;
+        let levelled = self.level_for_jobs();
         let panel = self.panel_applied.map(|(columns, rows, pitch_mm)| Panel {
             columns,
             rows,
@@ -726,6 +737,7 @@ impl App {
                 ask_operator,
                 panel,
                 skip,
+                table: levelled,
                 ..Default::default()
             });
             side.engine.start();
@@ -960,7 +972,9 @@ impl App {
                 self.remember_settings();
             }
             Act::ToggleAsk => self.toggle_ask(),
+            Act::CatScroll(d) => self.cat_scroll_by(d),
             Act::LevelToggle => self.level_toggle(),
+            Act::LevelApply => self.level.apply = !self.level.apply,
             Act::LevelClear => self.level_clear(),
             Act::ResumeContinue => self.resume_job(),
             Act::ResumeCancel => self.resume_cancel(),
@@ -2628,6 +2642,8 @@ impl eframe::App for App {
         if scroll != 0.0 {
             if self.combo.is_some() {
                 self.combo_scroll(if scroll > 0.0 { -2 } else { 2 });
+            } else if self.modal == Some(Modal::Catalogue) {
+                self.cat_scroll_by(if scroll > 0.0 { -3 } else { 3 });
             } else if self.modal == Some(Modal::Open) {
                 self.browse_scroll(if scroll > 0.0 { -2 } else { 2 });
             } else if self.modal == Some(Modal::Board) {

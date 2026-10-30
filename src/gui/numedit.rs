@@ -37,6 +37,8 @@ impl App {
                 Field::TableW => self.len_to_display(self.table.width_mm),
                 Field::TableD => self.len_to_display(self.table.depth_mm),
                 Field::TabCount => self.panel.tab_count as f64,
+                Field::LevCols => self.level.cols as f64,
+                Field::LevRows => self.level.rows as f64,
                 Field::TabWidth => self.len_to_display(self.panel.tab_width),
             },
             EditTarget::ToolCell(p, row, c) => self

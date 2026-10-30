@@ -631,6 +631,7 @@ dependencies = [
  "eh3d-bungard-formats",
  "eh3d-drillpro",
  "eh3d-fleet",
+ "eh3d-levelling",
  "eh3d-routepro",
  "eh3d-view",
  "png 0.17.16",
@@ -675,6 +676,10 @@ version = "0.0.1"
 dependencies = [
  "serde_json",
 ]
+
+[[package]]
+name = "eh3d-levelling"
+version = "0.0.1"
 
 [[package]]
 name = "eh3d-routepro"

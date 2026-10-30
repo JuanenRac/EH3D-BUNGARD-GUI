@@ -32,6 +32,8 @@ pub struct Options {
     pub panel: Option<(u32, u32)>,
     /// Tabs on each side of the panel when the outside is routed (`--tabs COUNT`): for the pictures.
     pub tabs: Option<u32>,
+    /// The table is measured at the start with the simulated probe (`--measure`): for the pictures.
+    pub measure: bool,
     pub yaw: Option<f32>,
     /// The tab of the settings window to show (`--tab 0|1|2`).
     pub tab: Option<u8>,
@@ -98,6 +100,7 @@ impl Options {
                         r.parse().map_err(|_| "--panel needs numbers")?,
                     ));
                 }
+                "--measure" => o.measure = true,
                 "--tabs" => {
                     let v = value("--tabs")?;
                     o.tabs = Some(v.parse().map_err(|_| "--tabs needs a number")?);

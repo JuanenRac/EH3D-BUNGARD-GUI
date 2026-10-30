@@ -31,6 +31,7 @@ mod combo;
 mod controls;
 mod extra;
 mod fleet;
+mod levelling;
 mod numedit;
 mod opener;
 mod resume;
@@ -109,6 +110,9 @@ enum Act {
     ResetHoles,
     SetSpeed(f32),
     ToggleAsk,
+    /// The probe measures the table, or stops; the map of the table is cleared.
+    LevelToggle,
+    LevelClear,
     /// The job that was left in the middle goes on, or is left.
     ResumeContinue,
     ResumeCancel,
@@ -281,6 +285,8 @@ pub struct App {
     recovery_done: usize,
     resume: Option<crate::recovery::Recovery>,
     resume_skip: usize,
+    /// The calibration of the table.
+    level: levelling::LevelState,
 }
 
 impl App {
@@ -398,6 +404,7 @@ impl App {
             recovery_done: usize::MAX,
             resume: None,
             resume_skip: 0,
+            level: levelling::LevelState::new(jobs::DEFAULT_TABLE),
         };
         let examples = app.base_dir.join("examples");
         let has_jobs = std::fs::read_dir(&examples).is_ok_and(|rd| {
@@ -426,6 +433,13 @@ impl App {
             app.panel.rows = r.max(1);
             app.apply_panel();
         }
+        if o.measure {
+            app.level_reset(9, 6);
+            app.level.measuring = true;
+            while app.level.measuring {
+                app.level_tick(Instant::now(), true);
+            }
+        }
         if let Some(n) = o.tabs {
             app.panel.tabs_on = true;
             app.panel.tab_count = n.clamp(1, 20);
@@ -435,7 +449,7 @@ impl App {
             app.view3d.yaw = y.clamp(-40.0, 40.0);
         }
         if let Some(t) = o.tab {
-            app.settings_tab = t.min(2);
+            app.settings_tab = t.min(3);
         }
         if let Some(c) = o.combo.as_deref() {
             use eh3d_drillpro::protocol::sound::Cue;
@@ -771,6 +785,7 @@ impl App {
             self.conn_rx = None;
         }
         let now = Instant::now();
+        self.level_tick(now, self.fixed_dt.is_some());
         let real = self
             .fixed_dt
             .unwrap_or_else(|| now.duration_since(self.last_tick).as_secs_f64().min(3600.0));
@@ -945,6 +960,8 @@ impl App {
                 self.remember_settings();
             }
             Act::ToggleAsk => self.toggle_ask(),
+            Act::LevelToggle => self.level_toggle(),
+            Act::LevelClear => self.level_clear(),
             Act::ResumeContinue => self.resume_job(),
             Act::ResumeCancel => self.resume_cancel(),
             Act::ToggleTabs => {

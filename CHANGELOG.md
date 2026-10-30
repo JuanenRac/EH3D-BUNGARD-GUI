@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **Calibration of the table:** a new tab of the Settings window measures the height of the table in a grid of points (7 by 5 by default, up to 15 by 15), draws the map (blue low, red high) with the spread and the tilt in mm per metre, and keeps it with the machine; until a probe node is connected the probe is simulated.
 - **The job goes on after a crash:** while a job runs, what it needs to go on (the file, the panel, the holes drilled) is saved in real time; if the window, the computer or the link goes down, the next start asks whether to go on from where it was or to cancel it. A job that ends or is stopped on purpose leaves nothing behind.
 - **Brighter job buttons:** green to start, blue to pause, red to stop; the window opens maximized.
 - **Panelization with tabs:** the outside of the panel can be routed with tabs; the person chooses how many on each side, how wide and where (spread, near the ends or together in the middle), and the plan view shows the cut paths.

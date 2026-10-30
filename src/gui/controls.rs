@@ -685,6 +685,38 @@ EOF
     }
 
     #[test]
+    fn the_probe_measures_the_table_point_by_point_and_the_map_says_how_it_is_tilted() {
+        let mut a = app();
+        a.fixed_dt = Some(1.0);
+        a.level_reset(5, 4);
+        assert_eq!(a.level.map.measured(), 0);
+        a.act(Act::LevelToggle);
+        assert!(a.level.measuring);
+        a.tick();
+        a.tick();
+        assert_eq!(a.level.map.measured(), 2);
+        // it can be stopped and goes on from the point it was at
+        a.act(Act::LevelToggle);
+        a.tick();
+        assert_eq!(a.level.map.measured(), 2);
+        a.act(Act::LevelToggle);
+        for _ in 0..40 {
+            a.tick();
+        }
+        assert!(a.level.map.is_complete() && !a.level.measuring);
+        let (tx, ty) = a.level.map.tilt_mm_per_m().unwrap();
+        assert!(tx > 0.0 && ty > 0.0);
+        // more points: a new empty map; the map can be cleared
+        a.adjust(Field::LevCols, 2.0);
+        assert_eq!(
+            (a.level.cols, a.level.map.grid.cols, a.level.map.measured()),
+            (7, 7, 0)
+        );
+        a.act(Act::LevelClear);
+        assert_eq!(a.level.map.measured(), 0);
+    }
+
+    #[test]
     fn the_files_opened_are_the_recent_ones_and_open_again_from_the_list() {
         let mut a = app();
         let ncd = a.settings.recent.first().cloned().unwrap();

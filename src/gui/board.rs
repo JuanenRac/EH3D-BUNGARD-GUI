@@ -980,14 +980,19 @@ impl App {
         cv.card(x, y, w, h, true, None);
         cv.title(x + 30.0, y + 44.0, self.tr(Text::SettingsTitle));
         // the tabs
-        for (i, n) in [Text::TabGeneral, Text::LayerMachine, Text::TabJob]
-            .into_iter()
-            .enumerate()
+        for (i, n) in [
+            Text::TabGeneral,
+            Text::LayerMachine,
+            Text::TabJob,
+            Text::LevTab,
+        ]
+        .into_iter()
+        .enumerate()
         {
             cv.chip(
-                x + 30.0 + i as f32 * 210.0,
+                x + 30.0 + i as f32 * 200.0,
                 y + 62.0,
-                200.0,
+                192.0,
                 40.0,
                 self.tr(n),
                 self.settings_tab as usize == i,
@@ -1211,6 +1216,7 @@ impl App {
                     col(t.dim),
                 );
             }
+            3 => self.paint_levelling(cv, x, top),
             _ => {
                 cv.checkbox(
                     x + 30.0,

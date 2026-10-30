@@ -24,6 +24,8 @@ pub(crate) enum Field {
     TableD,
     TabCount,
     TabWidth,
+    LevCols,
+    LevRows,
 }
 
 /// A window on top of the viewer.
@@ -430,6 +432,20 @@ impl App {
             }
             Field::SpacingY => {
                 self.panel.spacing.1 = (self.panel.spacing.1 + dl).clamp(0.0, 5000.0)
+            }
+            Field::LevCols => {
+                self.level_reset(
+                    (self.level.cols as f64 + d).max(2.0) as usize,
+                    self.level.rows,
+                );
+                return;
+            }
+            Field::LevRows => {
+                self.level_reset(
+                    self.level.cols,
+                    (self.level.rows as f64 + d).max(2.0) as usize,
+                );
+                return;
             }
             Field::TabCount => {
                 self.panel.tab_count = (self.panel.tab_count as f64 + d).clamp(1.0, 20.0) as u32

@@ -153,18 +153,11 @@ impl App {
         }
     }
 
-    /// The sound chosen in its list: none, the standard tone, a file of the person's or one of the catalogue. A sound of the catalogue is played to hear it.
+    /// The sound chosen in its list: none, the standard tone, a file of the person's or one of the catalogue. Choosing never plays it: it is heard with the Test button.
     pub(crate) fn sound_choose(&mut self, cue: Cue, setting: SoundSetting) {
-        let to_hear = matches!(
-            setting,
-            SoundSetting::Tone(_) | SoundSetting::Default | SoundSetting::Voice { .. }
-        );
         *self.sound_mut(cue) = setting;
         self.saved = false;
         self.apply_conn();
-        if to_hear {
-            self.sound_test(cue);
-        }
     }
 
     /// The path typed for a sound: empty is the default tone.
@@ -516,6 +509,68 @@ mod tests {
     }
 
     #[test]
+    fn a_bit_of_the_catalogue_goes_to_the_tool_with_the_numbers_the_spindle_can_give() {
+        use crate::spindle::{Fit, SpindleId};
+        let mut a = app();
+        a.settings.spindle = SpindleId::Vfd;
+        let bits = a.cat_bits();
+        let (i, b) = bits
+            .iter()
+            .enumerate()
+            .find(|(_, b)| {
+                b.kind.is_drill()
+                    && matches!(a.settings.current_spindle().fit(b), Fit::Adjusted { .. })
+            })
+            .expect("a drill that the VFD spindle takes with other numbers");
+        let Fit::Adjusted { bit, .. } = a.settings.current_spindle().fit(b) else {
+            unreachable!()
+        };
+        a.act(Act::ToolFromCat(Program::Drill, 0));
+        assert_eq!(a.modal, Some(Modal::Catalogue));
+        a.act(Act::CatSelect(i));
+        a.act(Act::CatUse);
+        assert_eq!(a.modal, Some(Modal::Tools));
+        let row = &a.used_tools(Program::Drill)[0];
+        let rpm: u32 = row.cells[2].trim().parse().unwrap();
+        assert_eq!(rpm, bit.rpm);
+        assert!(rpm <= 24_000);
+        // a router does not go to a drill tool, and the catalogue forgets the target when opened alone
+        a.act(Act::Show(Modal::Catalogue));
+        assert!(a.cat_target.is_none());
+    }
+
+    #[test]
+    fn a_bit_that_the_spindle_cannot_work_with_does_not_go_to_the_tool() {
+        use crate::spindle::{Fit, SpindleId};
+        let mut a = app();
+        a.settings.spindle = SpindleId::Original;
+        let bits = a.cat_bits();
+        let Some((i, _)) = bits.iter().enumerate().find(|(_, b)| {
+            matches!(a.settings.current_spindle().fit(b), Fit::Incompatible(_)) && b.kind.is_drill()
+        }) else {
+            return;
+        };
+        let before = a.used_tools(Program::Drill)[0].cells.clone();
+        a.act(Act::ToolFromCat(Program::Drill, 0));
+        a.act(Act::CatSelect(i));
+        a.act(Act::CatUse);
+        assert_eq!(a.modal, Some(Modal::Catalogue));
+        assert_eq!(a.used_tools(Program::Drill)[0].cells, before);
+    }
+
+    #[test]
+    fn the_spindle_of_the_machine_is_chosen_and_kept() {
+        use crate::spindle::SpindleId;
+        let mut a = app();
+        a.act(Act::SetSpindle(SpindleId::Vfd));
+        assert_eq!(a.settings.current_spindle().max_rpm, 24_000);
+        a.act(Act::CatSpindle(1));
+        assert_eq!(a.settings.spindle, SpindleId::Original);
+        a.act(Act::CatSpindle(-1));
+        assert_eq!(a.settings.spindle, SpindleId::Vfd);
+    }
+
+    #[test]
     fn the_machine_of_the_3d_view_does_not_follow_the_board_and_starts_before_it_works() {
         use super::super::machine3d::Phase;
         let mut a = app();
@@ -523,7 +578,7 @@ mod tests {
         assert_eq!(a.m3d.phase(), Phase::Parked);
         // moving the design in the plan view never moves the machine, with a board or without it
         a.shift_design(25.0, 17.0);
-        a.shift_design(-40.0, 3.5);
+        a.shift_design(-10.0, -5.0);
         assert_eq!(a.head3d().unwrap(), rest);
         // the job: the machine powers up, goes home and travels to the first point while the work waits
         a.auto_ok = true;

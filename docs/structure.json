@@ -202,6 +202,19 @@
             "pt": "a raiz da biblioteca e o executável bungard-gui"
           },
           "tree_name": "lib.rs bin/"
+        },
+        {
+          "name": "spindle.rs",
+          "desc": {
+            "en": "the two spindles, their limits and whether a bit fits each",
+            "es": "los dos husillos, sus límites y si una herramienta les sirve",
+            "it": "i due mandrini, i loro limiti e se un utensile va bene",
+            "de": "die zwei Spindeln, ihre Grenzen und ob ein Werkzeug passt",
+            "fr": "les deux broches, leurs limites et si un outil convient",
+            "pt": "os dois fusos, os seus limites e se uma ferramenta serve",
+            "zh": "两种主轴、它们的限制，以及刀具是否适用",
+            "ja": "2 つの主軸・その限界・工具が使えるか"
+          }
         }
       ]
     },

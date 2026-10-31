@@ -359,6 +359,9 @@ impl App {
         if m == Modal::Open {
             self.browser = Some(self.new_browser());
         }
+        if m == Modal::Catalogue {
+            self.cat_target = None;
+        }
         self.modal = Some(m);
     }
 

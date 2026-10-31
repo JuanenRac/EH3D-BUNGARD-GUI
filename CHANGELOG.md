@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.0.8] - Two spindles, the catalogue into the tools and the machine of the 3D view
+
+- **Two spindles, chosen in the settings (Machine tab):** the original one (60000 rpm) and the one with its variable-frequency drive (24000 rpm). Each has its limits (slowest and fastest turns, power, the fastest XY and Z feed the machine holds with it, the thickest bit), kept in the settings file with a line of their own so that they can be tuned.
+- **Take a bit of the catalogue into a tool:** every tool of the window of tools has a Catalogue button; the bit picked there gives its turns, feeds and passes to that tool (the plunge feed and turns for a drill; passes, XY and Z feeds and turns for a router). The catalogue and the window of tools show the spindle in use.
+- **Warnings by spindle:** where the spindle cannot give what a bit asks for, the catalogue says so and suggests the values that it can use: the same bite for each turn when it turns slower, and slower XY or Z when the machine cannot hold the maker's feed. A bit that is thicker than the spindle takes, or that asks for far more turns than it has, is marked as not compatible and cannot be taken into a tool. 11 tests.
+- **The list of boards shows 16 materials at once** (it showed 9), so a maker with twenty references needs a single scroll.
+- **Choosing a sound or a voice no longer plays it:** it is heard only with the Test button.
 - **The machine of the 3D view is a machine:** it has a place of its own (home) and a start like the real one. At rest the head waits at home, and moving the board or the design in the plan view, with a board or without it, never moves the machine (it used to follow the first hole). When a job starts the machine powers up, goes home, travels to the first point of the work and only then does the job begin, with the head following it, for drilling and for routing; when the job ends or is stopped the head goes home again. The speed of the simulation scales all of it. 11 tests.
 - **Arrows on the bars of the lists:** the scroll bar of every list (the drop-down lists, the tools, the catalogue, the browser of files) has an arrow at each end that moves the list one row.
 - **The Head node button** of the Connection window is in the bottom row, with Test, Save and Close, instead of over the row of the kinds of connection.

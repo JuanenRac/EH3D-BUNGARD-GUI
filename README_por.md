@@ -12,14 +12,14 @@
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
-  <img src="https://img.shields.io/badge/Tests-97-0f6cbd.svg" alt="Tests">
-  <img src="https://img.shields.io/badge/Version-0.0.7-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Tests-108-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Version-0.0.8-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
 ---
 
-**Verificação de honestidade - o que funciona hoje:** um programa em Rust com uma janela e 97 testes que correm num computador. O lançador oferece a interface moderna ou os programas clássicos de furação e fresagem para uma máquina com troca de ferramenta manual (MTC) ou automática (ATC). O visualizador abre ficheiros de furação, ficheiros de traçado HP-GL e arquivos ZIP de trabalhos (a partir de um explorador de pastas, por arrastar e largar ou pela linha de comandos), desenha a vista em planta com cada furo por diâmetro de broca e os trajetos de fresagem por cima, mostra a máquina em 3D com a mesa do tamanho escolhido na configuração, panelizza a placa e acompanha o trabalho enquanto decorre. O trabalho corre no **simulador** dos motores do EH3D-DRILLPRO e do EH3D-ROUTEPRO; o mesmo ficheiro de máquina que eles leem decide como se chega a uma máquina real (o RS-232 do computador, um adaptador USB-RS232, ou o EH3D-NODE-BUNGARD diretamente ou através do EH3D-SERVER), e **nenhuma dessas vias foi experimentada a partir desta janela**. As janelas de ligação, definições e ferramentas alteram os valores que oferecem, os ficheiros inteiros de máquina e ferramentas ainda não se editam, e a vista 3D não mostra a altura dos trajetos.
+**Verificação de honestidade - o que funciona hoje:** um programa em Rust com uma janela e 108 testes que correm num computador. O lançador oferece a interface moderna ou os programas clássicos de furação e fresagem para uma máquina com troca de ferramenta manual (MTC) ou automática (ATC). O visualizador abre ficheiros de furação, ficheiros de traçado HP-GL e arquivos ZIP de trabalhos (a partir de um explorador de pastas, por arrastar e largar ou pela linha de comandos), desenha a vista em planta com cada furo por diâmetro de broca e os trajetos de fresagem por cima, mostra a máquina em 3D com a mesa do tamanho escolhido na configuração, panelizza a placa e acompanha o trabalho enquanto decorre. O trabalho corre no **simulador** dos motores do EH3D-DRILLPRO e do EH3D-ROUTEPRO; o mesmo ficheiro de máquina que eles leem decide como se chega a uma máquina real (o RS-232 do computador, um adaptador USB-RS232, ou o EH3D-NODE-BUNGARD diretamente ou através do EH3D-SERVER), e **nenhuma dessas vias foi experimentada a partir desta janela**. As janelas de ligação, definições e ferramentas alteram os valores que oferecem, os ficheiros inteiros de máquina e ferramentas ainda não se editam, e a vista 3D não mostra a altura dos trajetos.
 
 ---
 
@@ -29,9 +29,9 @@
 
 | | |
 |---|---|
-| Versão | `0.0.7` |
+| Versão | `0.0.8` |
 | Maturidade | Estrutura inicial |
-| Testes | 97 |
+| Testes | 108 |
 | Tecnologias | Rust |
 | Em hardware real | Não. Só correu no simulador e num computador; nenhuma máquina foi comandada a partir desta janela |
 
@@ -50,7 +50,7 @@ Cada linha é uma parte deste repositório e a luz diz até onde chega hoje. É 
 | Ficheiros e panelização | 🟡 | Os ficheiros de furação, HP-GL e os arquivos ZIP abrem-se a partir de um explorador, por arrastar e largar ou pela linha de comandos; a placa repete-se em três modos. Experimentado com os pequenos ficheiros de exemplo deste repositório. |
 | Definições | 🟠 | A largura e a profundidade úteis da mesa alteram-se e guardam-se nos ficheiros da máquina; o resto dos ficheiros de máquina e ferramentas continua a ser editado com os programas clássicos. |
 | Controlo da máquina | 🔴 | O trabalho passa pelos motores do EH3D-DRILLPRO e do EH3D-ROUTEPRO, por isso em princípio estão lá todas as suas ligações; só correu no simulador. A janela de Ligação escolhe a ligação (o RS-232 do computador, um adaptador USB-RS232, o nó EH3D ou o servidor EH3D), experimenta-a e guarda-a no ficheiro da máquina, e Pausa retém o trabalho entre dois movimentos. |
-| Testes | 🟡 | Passam 97 testes num computador (`cargo test --features gui`): o lançador, as definições, a leitura dos ficheiros para a cena, os perfis de máquina, o painel e a linha de comandos. Nenhum toca numa máquina. |
+| Testes | 🟡 | Passam 108 testes num computador (`cargo test --features gui`): o lançador, as definições, a leitura dos ficheiros para a cena, os perfis de máquina, o painel e a linha de comandos. Nenhum toca numa máquina. |
 | Pacotes já compilados | 🟠 | Um fluxo de trabalho compila o programa para Windows (64 e 32 bits), Linux e macOS com os ficheiros de exemplo; ainda não foi publicada nenhuma versão. |
 
 ## 🎯 Visão geral
@@ -194,6 +194,7 @@ Como as partes deste repositório se encaixam: quem o usa, o que contém e de qu
 * Listas pendentes onde uma escolha tem muitos valores: o tema, o idioma, o modelo da máquina e o som de cada evento escolhem-se numa lista que desliza, em vez de filas de botões. O fim do trabalho e o pedido de ferramenta têm cada um a sua lista de 60 sons, dos agudos aos graves (carrilhões, notas a subir e a descer, fanfarras, apitos, alarmes, pancadas, sirenes), o tom padrão, nenhum ou um ficheiro próprio; ao escolher um, ele toca.
 * **Luz e verificação de qualidade com a câmara da cabeça:** a janela do nó liga e desliga o anel de LEDs, e a janela Verificação de qualidade olha para a placa depois do trabalho: julga os furos do trabalho (existem, redondos, do tamanho certo, no sítio), os canais fresados (tão largos como a ferramenta, regulares, sem estreitamentos) e a própria foto, marca cada furo na imagem, mostra um veredicto grande como um cartaz (APROVADO, REPROVADO ou não avaliável) e faz o anel dizer o mesmo a cores. Os perfis (padrão, passo fino, protótipo), as tolerâncias, a escala e a sua calibração com um furo conhecido guardam-se num ficheiro e entregam-se ao servidor. O resultado também pode ser dito em voz alta: mais dois sons nas definições, para uma verificação correta e outra que não o é, cada um desligado, um apito, um som do catálogo, um ficheiro teu ou uma voz que diz que a verificação visual da placa está correta ou não está correta, como os outros sons.
 * **Uma máquina em 3D que se comporta como a real:** em repouso a cabeça espera em home, e mover a placa na vista em planta nunca a move. Ao começar um trabalho a máquina arranca, faz home, viaja até ao primeiro ponto do trabalho e só então o trabalho começa, com a cabeça a segui-lo, em furação e em fresagem; no fim volta a home. As barras das listas têm as suas setas para cima e para baixo.
+* **Dois fusos e um catálogo que os conhece:** a máquina leva o fuso original (60000 rpm) ou o que tem variador de frequência (24000 rpm), escolhido nas definições, cada um com os seus limites (rotação, avanços XY e Z, ferramenta mais grossa) guardados no ficheiro de definições. Na janela das ferramentas cada ferramenta tem um botão Catálogo: escolhe-se uma broca ou fresa e as suas velocidades, avanços e passagens passam para a ferramenta. Se o fuso não os puder dar, a janela diz: sugere os valores que pode usar (a mesma mordida por volta, XY ou Z mais lentos) ou marca a ferramenta como incompatível e não deixa tomá-la. As listas de placas mostram 16 materiais de cada vez.
 
 ## 🔌 Interfaces
 
@@ -219,7 +220,7 @@ Execute-o com `run.bat` (Windows) ou `./run.sh` (Linux e macOS); ambos compilam 
 
 ## 🧪 Testes
 
-A bateria tem 97 testes (`cargo test --features gui`). Verificam o lançador e o que memoriza, as definições, como um ficheiro de furação ou HP-GL se torna a cena, os perfis de máquina, o painel e a linha de comandos. Os motores que usa (protocolo, movimento, porta de segurança) são testados no EH3D-DRILLPRO e no EH3D-ROUTEPRO. A CI também executa `cargo fmt --check` e `cargo clippy` com os avisos como erros, e `python -I tools/ci_validate.py` verifica o manifesto, as versões, o registo de alterações e os oito README.
+A bateria tem 108 testes (`cargo test --features gui`). Verificam o lançador e o que memoriza, as definições, como um ficheiro de furação ou HP-GL se torna a cena, os perfis de máquina, o painel e a linha de comandos. Os motores que usa (protocolo, movimento, porta de segurança) são testados no EH3D-DRILLPRO e no EH3D-ROUTEPRO. A CI também executa `cargo fmt --check` e `cargo clippy` com os avisos como erros, e `python -I tools/ci_validate.py` verifica o manifesto, as versões, o registo de alterações e os oito README.
 
 ## 🏗️ Compilação e publicação
 
@@ -251,7 +252,8 @@ EH3D-BUNGARD-GUI/
 │   ├── launcher.rs                              as opções do lançador, os programas clássicos e o que fica memorizado
 │   ├── link.rs                                  a ligação do ficheiro da máquina: que chaves escreve
 │   ├── cli.rs                                   a linha de comandos
-│   └── lib.rs bin/                              a raiz da biblioteca e o executável bungard-gui
+│   ├── lib.rs bin/                              a raiz da biblioteca e o executável bungard-gui
+│   └── spindle.rs                               os dois fusos, os seus limites e se uma ferramenta serve
 ├── testdata/                                    uma placa pequena: ficheiros de furação e contorno e os ficheiros de exemplo de máquina e ferramentas
 ├── docs/                                        as fontes das duas imagens
 ├── tools/                                       verificação de CI, verificação do README e ferramentas das imagens

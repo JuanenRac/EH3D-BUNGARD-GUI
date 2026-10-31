@@ -135,7 +135,13 @@ enum Act {
     InspSave,
     InspTune(crate::inspection::Param, i32),
     CatSelect(usize),
+    /// The spindle of the catalogue: the next one (1) or the one before (-1).
     CatSpindle(i32),
+    /// The spindle the machine carries, chosen in the settings.
+    SetSpindle(crate::spindle::SpindleId),
+    /// The catalogue opens to take a bit for this tool of the window of tools; the values of the bit go to the tool.
+    ToolFromCat(Program, usize),
+    CatUse,
     /// The probe measures the table, or stops; the map of the table is cleared.
     LevelToggle,
     LevelApply,
@@ -330,6 +336,8 @@ pub struct App {
     cat_kind: usize,
     cat_scroll: usize,
     cat_sel: Option<usize>,
+    /// The tool of the window of tools that the catalogue is picking a bit for.
+    cat_target: Option<(Program, usize)>,
     /// The clock of the animations, and when the screen and the window that are on show began to show (in seconds of that clock).
     anim0: Instant,
     anim_screen: (Option<Screen>, f32),
@@ -475,6 +483,7 @@ impl App {
             cat_kind: 0,
             cat_scroll: 0,
             cat_sel: None,
+            cat_target: None,
             anim0: Instant::now(),
             anim_screen: (None, 0.0),
             anim_modal: (None, 0.0),
@@ -1119,6 +1128,13 @@ impl App {
             | Act::InspTune(..) => self.insp_act(a),
             Act::CatSelect(i) => self.cat_sel = Some(i),
             Act::CatSpindle(d) => self.cat_spindle_by(d),
+            Act::SetSpindle(s) => self.set_spindle(s),
+            Act::ToolFromCat(p, row) => {
+                self.show_modal(Modal::Catalogue);
+                self.cat_target = Some((p, row));
+                self.cat_sel = None;
+            }
+            Act::CatUse => self.cat_use(),
             Act::LevelToggle => self.level_toggle(),
             Act::LevelApply => self.level.apply = !self.level.apply,
             Act::LevelClear => self.level_clear(),

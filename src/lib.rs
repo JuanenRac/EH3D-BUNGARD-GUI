@@ -14,6 +14,7 @@ pub mod launcher;
 pub mod link;
 pub mod machines;
 pub mod recovery;
+pub mod spindle;
 
 #[cfg(feature = "gui")]
 pub mod gui;

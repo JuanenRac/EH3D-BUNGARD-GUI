@@ -7,7 +7,7 @@ use crate::boards::{self, Sides, MATERIALS};
 use eh3d_drillpro::protocol::sound::Cue;
 
 /// The materials of a maker that the Board window shows at once.
-pub(super) const MAT_ROWS: usize = 9;
+pub(super) const MAT_ROWS: usize = 16;
 use eh3d_drillpro::classic::engine::{Kind as EngineKind, ToolRow};
 
 /// A choice in the window of the board.
@@ -757,7 +757,7 @@ impl App {
 
     pub(super) fn paint_tools_modal(&self, cv: &mut Cv) {
         let t = cv.t.clone();
-        let (x, y, w, h) = (110.0, 90.0, 1380.0, 720.0);
+        let (x, y, w, h) = (50.0, 90.0, 1500.0, 720.0);
         cv.p.rect_filled(
             Rect::from_min_size(Pos2::ZERO, Vec2::new(10_000.0, 10_000.0)),
             0.0,
@@ -765,6 +765,18 @@ impl App {
         );
         cv.card(x, y, w, h, true, None);
         cv.title(x + 30.0, y + 44.0, self.tr(Text::Tools));
+        cv.text(
+            x + 260.0,
+            y + 44.0,
+            Align2::LEFT_BOTTOM,
+            &format!(
+                "{}: {}",
+                self.tr(Text::CatSpindleLbl),
+                self.spindle_name(self.settings.spindle)
+            ),
+            15.0,
+            col(t.dim),
+        );
         let mut ry = y + 70.0;
         let mut index = 0;
         for p in [Program::Drill, Program::Route] {
@@ -900,6 +912,15 @@ impl App {
                     self.tr(Text::LblDefault),
                     false,
                     Act::ToolDefault(p, ri),
+                );
+                cv.chip(
+                    x + 1372.0,
+                    ry,
+                    100.0,
+                    38.0,
+                    self.tr(Text::ToolFromCat),
+                    false,
+                    Act::ToolFromCat(p, ri),
                 );
                 ry += 46.0;
                 index += 1;
@@ -1275,6 +1296,57 @@ impl App {
                     15.0,
                     col(t.dim),
                 );
+                // the spindle the machine carries
+                cv.text(
+                    x + 30.0,
+                    fy + 116.0,
+                    Align2::LEFT_BOTTOM,
+                    &self.tr(Text::SpindleLbl).to_uppercase(),
+                    12.0,
+                    col(t.dim),
+                );
+                for (i, s) in crate::spindle::SpindleId::ALL.into_iter().enumerate() {
+                    cv.chip(
+                        x + 30.0 + i as f32 * 396.0,
+                        fy + 128.0,
+                        388.0,
+                        38.0,
+                        self.spindle_name(s),
+                        self.settings.spindle == s,
+                        Act::SetSpindle(s),
+                    );
+                }
+                let sp = self.settings.current_spindle();
+                cv.text(
+                    x + 30.0,
+                    fy + 190.0,
+                    Align2::LEFT_BOTTOM,
+                    &format!(
+                        "{}-{} rpm | {} W | XY {} | Z {} mm/min | {:.1} mm",
+                        sp.min_rpm,
+                        sp.max_rpm,
+                        sp.power_w,
+                        sp.max_xy_mm_min,
+                        sp.max_z_mm_min,
+                        sp.max_bit_mm
+                    ),
+                    14.0,
+                    col(t.text),
+                );
+                for (i, l) in wrap(self.tr(Text::SpindleNote), 90)
+                    .iter()
+                    .take(3)
+                    .enumerate()
+                {
+                    cv.text(
+                        x + 30.0,
+                        fy + 214.0 + i as f32 * 18.0,
+                        Align2::LEFT_BOTTOM,
+                        l,
+                        13.0,
+                        col(t.dim),
+                    );
+                }
             }
             3 => self.paint_levelling(cv, x, top),
             _ => {

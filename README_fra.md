@@ -12,14 +12,14 @@
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
-  <img src="https://img.shields.io/badge/Tests-97-0f6cbd.svg" alt="Tests">
-  <img src="https://img.shields.io/badge/Version-0.0.7-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Tests-108-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Version-0.0.8-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
 ---
 
-**Vérification d'honnêteté - ce qui tourne aujourd'hui :** un programme Rust avec une fenêtre et 97 tests qui s'exécutent sur un ordinateur. Le lanceur propose l'interface moderne ou les programmes classiques de perçage et de fraisage pour une machine avec changement d'outil manuel (MTC) ou automatique (ATC). Le visualiseur ouvre des fichiers de perçage, des fichiers de tracé HP-GL et des archives ZIP de travaux (depuis un navigateur de dossiers, par glisser-déposer ou depuis la ligne de commande), dessine la vue en plan avec chaque trou par diamètre de foret et les trajets de fraisage par-dessus, montre la machine en 3D avec la table de la taille choisie dans la configuration, panélise la carte et suit le travail pendant qu'il tourne. Le travail s'exécute dans le **simulateur** des moteurs de EH3D-DRILLPRO et EH3D-ROUTEPRO ; le même fichier de machine qu'ils lisent décide comment on atteint une vraie machine (le RS-232 de l'ordinateur, un adaptateur USB-RS232, ou le EH3D-NODE-BUNGARD directement ou via EH3D-SERVER), et **aucune de ces voies n'a été essayée depuis cette fenêtre**. Les fenêtres de connexion, de réglages et d'outils changent les valeurs qu'elles offrent, les fichiers entiers de machine et d'outils ne sont pas encore modifiables, et la vue 3D ne montre pas la hauteur des trajets.
+**Vérification d'honnêteté - ce qui tourne aujourd'hui :** un programme Rust avec une fenêtre et 108 tests qui s'exécutent sur un ordinateur. Le lanceur propose l'interface moderne ou les programmes classiques de perçage et de fraisage pour une machine avec changement d'outil manuel (MTC) ou automatique (ATC). Le visualiseur ouvre des fichiers de perçage, des fichiers de tracé HP-GL et des archives ZIP de travaux (depuis un navigateur de dossiers, par glisser-déposer ou depuis la ligne de commande), dessine la vue en plan avec chaque trou par diamètre de foret et les trajets de fraisage par-dessus, montre la machine en 3D avec la table de la taille choisie dans la configuration, panélise la carte et suit le travail pendant qu'il tourne. Le travail s'exécute dans le **simulateur** des moteurs de EH3D-DRILLPRO et EH3D-ROUTEPRO ; le même fichier de machine qu'ils lisent décide comment on atteint une vraie machine (le RS-232 de l'ordinateur, un adaptateur USB-RS232, ou le EH3D-NODE-BUNGARD directement ou via EH3D-SERVER), et **aucune de ces voies n'a été essayée depuis cette fenêtre**. Les fenêtres de connexion, de réglages et d'outils changent les valeurs qu'elles offrent, les fichiers entiers de machine et d'outils ne sont pas encore modifiables, et la vue 3D ne montre pas la hauteur des trajets.
 
 ---
 
@@ -29,9 +29,9 @@
 
 | | |
 |---|---|
-| Version | `0.0.7` |
+| Version | `0.0.8` |
 | Maturité | Échafaudage |
-| Tests | 97 |
+| Tests | 108 |
 | Pile technique | Rust |
 | Sur du matériel réel | Non. Il n'a tourné que sur le simulateur et sur un ordinateur ; aucune machine n'a été pilotée depuis cette fenêtre |
 
@@ -50,7 +50,7 @@ Chaque ligne est une partie de ce dépôt et le feu dit où elle en est aujourd'
 | Fichiers et panélisation | 🟡 | Les fichiers de perçage, HP-GL et les archives ZIP s'ouvrent depuis un navigateur, par glisser-déposer ou depuis la ligne de commande ; la carte est répétée en trois modes. Essayé avec les petits fichiers d'exemple de ce dépôt. |
 | Réglages | 🟠 | La largeur et la profondeur utiles de la table se changent et s'enregistrent dans les fichiers de la machine ; le reste des fichiers de machine et d'outils s'édite encore avec les programmes classiques. |
 | Pilotage de la machine | 🔴 | Le travail passe par les moteurs de EH3D-DRILLPRO et EH3D-ROUTEPRO, donc en principe toutes leurs connexions sont là ; il n'a tourné que sur le simulateur. La fenêtre de Connexion choisit la liaison (le RS-232 de l'ordinateur, un adaptateur USB-RS232, le nœud EH3D ou le serveur EH3D), la teste et l'enregistre dans le fichier de la machine, et Pause retient le travail entre deux mouvements. |
-| Tests | 🟡 | 97 tests passent sur un ordinateur (`cargo test --features gui`) : le lanceur, les réglages, la lecture des fichiers vers la scène, les profils de machine, le panneau et la ligne de commande. Aucun ne touche une machine. |
+| Tests | 🟡 | 108 tests passent sur un ordinateur (`cargo test --features gui`) : le lanceur, les réglages, la lecture des fichiers vers la scène, les profils de machine, le panneau et la ligne de commande. Aucun ne touche une machine. |
 | Paquets prêts à l'emploi | 🟠 | Un workflow compile le programme pour Windows (64 et 32 bits), Linux et macOS avec les fichiers d'exemple ; aucune version n'a encore été publiée. |
 
 ## 🎯 Présentation
@@ -194,6 +194,7 @@ Comment les parties de ce dépôt s'articulent : qui l'utilise, ce qu'il contien
 * Listes déroulantes là où un choix a beaucoup de valeurs : le thème, la langue, le modèle de la machine et le son de chaque événement se choisissent dans une liste qui défile, au lieu de rangées de boutons. La fin du travail et la demande d'outil ont chacune leur liste de 60 sons, des aigus aux graves (carillons, notes montantes et descendantes, fanfares, bips, alarmes, coups, sirènes), la tonalité standard, aucun ou un fichier à soi ; le choix est joué.
 * **Lumière et contrôle qualité avec la caméra de la tête :** la fenêtre du nœud allume et éteint l'anneau de LED, et la fenêtre Contrôle qualité regarde la carte après le travail : elle juge les trous du travail (présents, ronds, à la bonne taille, à leur place), les canaux fraisés (aussi larges que l'outil, réguliers, sans pincement) et la photo elle-même, marque chaque trou sur l'image, affiche un verdict grand comme un panneau (VALIDE, NON VALIDE ou non évaluable) et fait dire la même chose à l'anneau en couleur. Les profils (standard, pas fin, prototype), les tolérances, l'échelle et son étalonnage sur un trou connu sont gardés dans un fichier et donnés au serveur. Le résultat peut aussi être dit à voix haute : deux sons de plus dans les réglages, pour un contrôle correct et un qui ne l'est pas, chacun éteint, un bip, un son du catalogue, un fichier à vous ou une voix qui dit que le contrôle visuel de la carte est correct ou n'est pas correct, comme les autres sons.
 * **Une machine en 3D qui se comporte comme la vraie :** au repos la tête attend en home, et déplacer la carte dans la vue en plan ne la déplace jamais. Au début d'un travail la machine démarre, fait son home, se rend au premier point du travail et ce n'est qu'alors que le travail commence, la tête le suivant, en perçage comme en fraisage ; à la fin elle retourne en home. Les barres des listes ont leurs flèches haut et bas.
+* **Deux broches et un catalogue qui les connaît :** la machine porte la broche d'origine (60000 tr/min) ou celle avec variateur de fréquence (24000 tr/min), choisie dans les réglages, chacune avec ses limites (vitesse, avances XY et Z, outil le plus gros) gardées dans le fichier de réglages. Dans la fenêtre des outils chaque outil a un bouton Catalogue : on choisit un foret ou une fraise et ses vitesses, avances et passes vont à l'outil. Si la broche ne peut pas les donner, la fenêtre le dit : elle propose les valeurs utilisables (la même prise par tour, XY ou Z plus lents) ou marque l'outil comme incompatible et ne le laisse pas prendre. Les listes de cartes montrent 16 matériaux à la fois.
 
 ## 🔌 Interfaces
 
@@ -219,7 +220,7 @@ Lancez-le avec `run.bat` (Windows) ou `./run.sh` (Linux et macOS) ; les deux com
 
 ## 🧪 Tests
 
-La suite compte 97 tests (`cargo test --features gui`). Ils vérifient le lanceur et ce qu'il mémorise, les réglages, comment un fichier de perçage ou HP-GL devient la scène, les profils de machine, le panneau et la ligne de commande. Les moteurs qu'il utilise (protocole, mouvement, porte de sécurité) sont testés dans EH3D-DRILLPRO et EH3D-ROUTEPRO. La CI exécute aussi `cargo fmt --check` et `cargo clippy` avec les avertissements en erreurs, et `python -I tools/ci_validate.py` vérifie le manifeste, les versions, le journal des modifications et les huit README.
+La suite compte 108 tests (`cargo test --features gui`). Ils vérifient le lanceur et ce qu'il mémorise, les réglages, comment un fichier de perçage ou HP-GL devient la scène, les profils de machine, le panneau et la ligne de commande. Les moteurs qu'il utilise (protocole, mouvement, porte de sécurité) sont testés dans EH3D-DRILLPRO et EH3D-ROUTEPRO. La CI exécute aussi `cargo fmt --check` et `cargo clippy` avec les avertissements en erreurs, et `python -I tools/ci_validate.py` vérifie le manifeste, les versions, le journal des modifications et les huit README.
 
 ## 🏗️ Compilation et publication
 
@@ -251,7 +252,8 @@ EH3D-BUNGARD-GUI/
 │   ├── launcher.rs                              les choix du lanceur, les programmes classiques et ce qui est mémorisé
 │   ├── link.rs                                  la liaison du fichier de la machine : les clés écrites
 │   ├── cli.rs                                   la ligne de commande
-│   └── lib.rs bin/                              la racine de la bibliothèque et l'exécutable bungard-gui
+│   ├── lib.rs bin/                              la racine de la bibliothèque et l'exécutable bungard-gui
+│   └── spindle.rs                               les deux broches, leurs limites et si un outil convient
 ├── testdata/                                    une petite carte : fichiers de perçage et de contour, et fichiers d'exemple de machine et d'outils
 ├── docs/                                        les sources des deux images
 ├── tools/                                       contrôle CI, contrôle du README et outils des images

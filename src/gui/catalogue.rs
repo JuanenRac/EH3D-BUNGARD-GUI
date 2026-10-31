@@ -4,6 +4,7 @@
 use super::extra::wrap;
 use super::*;
 use crate::catalogue as data;
+use crate::spindle::{Fit, SpindleId, Why};
 use data::Kind;
 
 /// The kinds the list can be limited to, with the words that name them.
@@ -27,8 +28,6 @@ const SHOWN: usize = 12;
 const ROW_H: f32 = 40.0;
 /// The width of the list, and where the drawing of the bit begins.
 const LIST_W: f32 = 930.0;
-const SPINDLE_STEP: i32 = 2_000;
-
 impl App {
     /// The bits that the kind chosen shows.
     pub(crate) fn cat_bits(&self) -> Vec<data::Bit> {
@@ -45,12 +44,72 @@ impl App {
         self.cat_scroll = (self.cat_scroll as i64 + delta as i64).clamp(0, max as i64) as usize;
     }
 
-    /// The top speed of the spindle that the catalogue works for moves by a step; 0 would mean "as the maker says".
+    /// The spindle the numbers of the catalogue are worked out for: the next one or the one before.
     pub(crate) fn cat_spindle_by(&mut self, steps: i32) {
-        let now = self.settings.spindle_rpm as i64;
-        self.settings.spindle_rpm =
-            (now + steps as i64 * SPINDLE_STEP as i64).clamp(4_000, 200_000) as u32;
+        let all = SpindleId::ALL;
+        let now = self.settings.spindle as i32;
+        let next = (now + steps).rem_euclid(all.len() as i32) as usize;
+        self.set_spindle(all[next]);
+    }
+
+    pub(crate) fn set_spindle(&mut self, s: SpindleId) {
+        self.settings.spindle = s;
         self.remember_settings();
+    }
+
+    pub(crate) fn spindle_name(&self, s: SpindleId) -> &'static str {
+        self.tr(match s {
+            SpindleId::Original => Text::SpindleOriginal,
+            SpindleId::Vfd => Text::SpindleVfd,
+        })
+    }
+
+    /// Takes the bit that is selected into the tool the catalogue was opened for: the turns and the feeds that the spindle of the machine can give.
+    pub(crate) fn cat_use(&mut self) {
+        let Some((p, row)) = self.cat_target else {
+            return;
+        };
+        let bits = self.cat_bits();
+        let Some(b) = self.cat_sel.and_then(|i| bits.get(i)).copied() else {
+            return;
+        };
+        if b.kind.is_drill() != (p == Program::Drill) {
+            return;
+        }
+        let mine = match self.settings.current_spindle().fit(&b) {
+            Fit::Fits => b,
+            Fit::Adjusted { bit, .. } => bit,
+            Fit::Incompatible(_) => return,
+        };
+        let cell = |this: &Self, c: usize| -> Option<f64> {
+            this.used_tools(p)
+                .get(row)
+                .and_then(|r| r.cells.get(c))
+                .and_then(|s| s.trim().parse::<f64>().ok())
+        };
+        match p {
+            Program::Drill => {
+                let feed = if mine.plunge_mm_min > 0 {
+                    mine.plunge_mm_min
+                } else {
+                    mine.feed_mm_min
+                };
+                self.tool_set(p, row, 1, feed as f64);
+                self.tool_set(p, row, 2, mine.rpm as f64);
+            }
+            Program::Route => {
+                let depth = cell(self, 0).unwrap_or(self.board.thickness_mm);
+                if mine.pass_mm > 0.0 {
+                    let passes = (depth / mine.pass_mm).ceil().max(1.0);
+                    self.tool_set(p, row, 1, passes);
+                }
+                self.tool_set(p, row, 2, mine.feed_mm_min as f64);
+                self.tool_set(p, row, 3, mine.plunge_mm_min as f64);
+                self.tool_set(p, row, 4, mine.rpm as f64);
+            }
+        }
+        self.cat_target = None;
+        self.show_modal(Modal::Tools);
     }
 
     fn kind_name(&self, k: Kind) -> &'static str {
@@ -117,30 +176,34 @@ impl App {
             16.0,
             col(t.dim),
         );
-        // the top speed of the spindle the numbers are worked out for
+        // the spindle the numbers are worked out for
         cv.text(
             x + 700.0,
             y + 136.0,
             Align2::LEFT_BOTTOM,
-            &format!("max {} rpm", self.settings.spindle_rpm),
+            &format!(
+                "{}: {}",
+                self.tr(Text::CatSpindleLbl),
+                self.spindle_name(self.settings.spindle)
+            ),
             16.0,
             col(t.text),
         );
         cv.chip(
-            x + 860.0,
+            x + w - 150.0,
             y + 108.0,
-            40.0,
+            56.0,
             38.0,
-            "-",
+            "<",
             false,
             Act::CatSpindle(-1),
         );
         cv.chip(
-            x + 906.0,
+            x + w - 86.0,
             y + 108.0,
-            40.0,
+            56.0,
             38.0,
-            "+",
+            ">",
             false,
             Act::CatSpindle(1),
         );
@@ -329,7 +392,12 @@ impl App {
         }
         let top = y + 32.0;
         paint_bit(cv, b, x, top, w, 300.0, self);
-        let mine = b.for_spindle(self.settings.spindle_rpm);
+        let spindle = self.settings.current_spindle();
+        let fit = spindle.fit(b);
+        let mine = match fit {
+            Fit::Adjusted { bit, .. } => bit,
+            _ => *b,
+        };
         let mut ly = top + 330.0;
         let mut line = |cv: &mut Cv, s: String, c: Color32| {
             cv.text(x, ly, Align2::LEFT_BOTTOM, &s, 15.0, c);
@@ -365,12 +433,67 @@ impl App {
             ),
             col(t.ok),
         );
-        if mine.rpm != b.rpm {
+        if mine.rpm != b.rpm
+            || mine.feed_mm_min != b.feed_mm_min
+            || mine.plunge_mm_min != b.plunge_mm_min
+        {
             line(
                 cv,
                 format!("({} rpm: {} / {})", b.rpm, b.feed_mm_min, b.plunge_mm_min),
                 col(t.dim),
             );
+        }
+        // whether this spindle can work with the bit, and what it needs to
+        let notice: Vec<(Text, Color32)> = match fit {
+            Fit::Fits => vec![(Text::FitOk, col(t.ok))],
+            Fit::Adjusted {
+                lower_rpm,
+                xy_slower,
+                z_slower,
+                ..
+            } => {
+                let mut v = vec![(Text::FitSlower, col(t.warn))];
+                if lower_rpm {
+                    v.push((Text::FitLowerRpm, col(t.warn)));
+                }
+                if xy_slower {
+                    v.push((Text::FitSlowXy, col(t.warn)));
+                }
+                if z_slower {
+                    v.push((Text::FitSlowZ, col(t.warn)));
+                }
+                v
+            }
+            Fit::Incompatible(Why::TooThick) => vec![(Text::FitNoThick, col(t.danger))],
+            Fit::Incompatible(Why::TooSlow) => vec![(Text::FitNoSlow, col(t.danger))],
+        };
+        for (text, c) in notice {
+            for l in wrap(self.tr(text), 52) {
+                cv.text(x, ly, Align2::LEFT_BOTTOM, &l, 14.0, c);
+                ly += 19.0;
+            }
+        }
+        // taking the bit into the tool the catalogue was opened for
+        if let Some((p, row)) = self.cat_target {
+            let tool = self
+                .used_tools(p)
+                .get(row)
+                .and_then(|r| r.name)
+                .unwrap_or(0);
+            let can =
+                b.kind.is_drill() == (p == Program::Drill) && !matches!(fit, Fit::Incompatible(_));
+            if can {
+                cv.chip(
+                    x,
+                    ly + 6.0,
+                    w.min(420.0),
+                    42.0,
+                    &format!("{} T{tool:02}", self.tr(Text::CatUseFor)),
+                    true,
+                    Act::CatUse,
+                );
+                ly += 56.0;
+            }
         }
         ly += 4.0;
         for l in wrap(self.kind_note(b.kind), 52) {

@@ -2,7 +2,7 @@
   "repo": "EH3D-BUNGARD-GUI",
   "ecosystem": "eh3d",
   "tagline": "The modern window for the Bungard CCD machines: launcher, 2D and 3D view of the job, drilling and routing together.",
-  "description": "EH3D-BUNGARD-GUI is a window with a launcher and a viewer. It opens drilling files, HP-GL files and ZIP archives of jobs, draws the plan view and the 3D view of the machine from the published sizes of the Bungard machines, panelizes the board and runs the job through the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO. The scene, the themes and the texts in eight languages come from EH3D-COMMON. It has run on the simulator only; no machine has been driven from this window.",
+  "description": "EH3D-BUNGARD-GUI is a window with a launcher and a viewer. It opens drilling files, HP-GL files and ZIP archives of jobs, draws the plan view and the 3D view of the machine from the published sizes of the Bungard machines, panelizes the board and runs the job through the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO. The scene, the themes and the texts in 37 languages come from EH3D-COMMON. It has run on the simulator only; no machine has been driven from this window.",
   "columns": [
     "WHO USES IT",
     "THIS REPOSITORY",
@@ -54,7 +54,7 @@
       "lines": [
         "2D and 3D views, open files,",
         "panelization, settings, About,",
-        "themes, eight languages"
+        "themes, 37 languages"
       ],
       "code": [
         "src/gui.rs",

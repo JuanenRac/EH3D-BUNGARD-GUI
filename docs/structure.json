@@ -7,14 +7,14 @@
   "ecosystem": "eh3d",
   "svg": "en",
   "tagline": {
-    "en": "The modern window for the Bungard CCD machines: launcher, 2D and 3D view of the job, in eight languages.",
-    "es": "La ventana moderna para las máquinas Bungard CCD: lanzador, vista 2D y 3D del trabajo, en ocho idiomas.",
-    "de": "Das moderne Fenster für die Bungard-CCD-Maschinen: Starter, 2D- und 3D-Ansicht des Auftrags, in acht Sprachen.",
-    "fr": "La fenêtre moderne pour les machines Bungard CCD : lanceur, vue 2D et 3D du travail, en huit langues.",
-    "it": "La finestra moderna per le macchine Bungard CCD: avviatore, vista 2D e 3D del lavoro, in otto lingue.",
-    "ja": "Bungard CCD マシン向けの新しいウィンドウ：ランチャー、作業の 2D / 3D 表示、8 言語対応。",
-    "zh": "面向 Bungard CCD 机器的现代窗口：启动器、作业的 2D 和 3D 视图，支持八种语言。",
-    "pt": "A janela moderna para as máquinas Bungard CCD: lançador, vista 2D e 3D do trabalho, em oito idiomas."
+    "en": "The modern window for the Bungard CCD machines: launcher, 2D and 3D view of the job, in 37 languages.",
+    "es": "La ventana moderna para las máquinas Bungard CCD: lanzador, vista 2D y 3D del trabajo, en 37 idiomas.",
+    "de": "Das moderne Fenster für die Bungard-CCD-Maschinen: Starter, 2D- und 3D-Ansicht des Auftrags, in 37 Sprachen.",
+    "fr": "La fenêtre moderne pour les machines Bungard CCD : lanceur, vue 2D et 3D du travail, en 37 langues.",
+    "it": "La finestra moderna per le macchine Bungard CCD: avviatore, vista 2D e 3D del lavoro, in 37 lingue.",
+    "ja": "Bungard CCD マシン向けの新しいウィンドウ：ランチャー、作業の 2D / 3D 表示、37 言語対応。",
+    "zh": "面向 Bungard CCD 机器的现代窗口：启动器、作业的 2D 和 3D 视图，支持37 种语言。",
+    "pt": "A janela moderna para as máquinas Bungard CCD: lançador, vista 2D e 3D do trabalho, em 37 línguas."
   },
   "cards": [
     {

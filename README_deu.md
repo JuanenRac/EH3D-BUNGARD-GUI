@@ -6,14 +6,14 @@
 
 <p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | <a href="README_ita.md">🇮🇹 Italiano</a> | 🇩🇪 <b>Deutsch</b> | <a href="README_zho.md">🇨🇳 中文</a> | <a href="README_jpn.md">🇯🇵 日本語</a> | <a href="README_por.md">🇵🇹 Português</a></p>
 
-### Das moderne Fenster für die Bungard-CCD-Maschinen: ein Starter, eine 2D- und eine 3D-Ansicht des Auftrags, Bohren und Fräsen zusammen, in acht Sprachen
+### Das moderne Fenster für die Bungard-CCD-Maschinen: ein Starter, eine 2D- und eine 3D-Ansicht des Auftrags, Bohren und Fräsen zusammen, in 37 Sprachen
 
 <p align="center">
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
   <img src="https://img.shields.io/badge/Tests-117-0f6cbd.svg" alt="Tests">
-  <img src="https://img.shields.io/badge/Version-0.0.9-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-0.1.0-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
@@ -29,7 +29,7 @@
 
 | | |
 |---|---|
-| Version | `0.0.9` |
+| Version | `0.1.0` |
 | Reifegrad | Gerüst |
 | Tests | 117 |
 | Technologie-Stack | Rust |
@@ -45,7 +45,7 @@ Jede Zeile ist ein Teil dieses Repositorys, und die Ampel sagt, wie weit er heut
 
 | Bereich | Stand | Was das hier bedeutet |
 |---|---|---|
-| Fenster und Starter | 🟡 | Ein Rust-Fenster mit Starter (die moderne Oberfläche oder die klassischen Programme), fünf Designs und acht Sprachen; es läuft auf einem Rechner und wurde mit Bildern des simulierten Auftrags angesehen. |
+| Fenster und Starter | 🟡 | Ein Rust-Fenster mit Starter (die moderne Oberfläche oder die klassischen Programme), fünf Designs und 37 Sprachen; es läuft auf einem Rechner und wurde mit Bildern des simulierten Auftrags angesehen. |
 | Ansichten | 🟡 | Die Draufsicht (Löcher nach Bohrergröße, Fräsbahnen) und die 3D-Ansicht der Maschine mit Schienen, gelochtem Tisch, fahrendem Portal und Werkzeugablage, angepasst an die Tischgröße; beide lassen sich ziehen und zoomen. Die 3D-Ansicht zeigt noch keine Höhe der Bahnen. |
 | Dateien und Nutzenbildung | 🟡 | Bohrdateien, HP-GL-Dateien und ZIP-Archive werden aus einem Browser, per Drag and Drop oder von der Befehlszeile geöffnet; die Platine wird in drei Modi vervielfacht. Mit den kleinen Beispieldateien dieses Repositorys ausprobiert. |
 | Einstellungen | 🟠 | Nutzbare Breite und Tiefe des Tisches werden geändert und in den Maschinendateien gespeichert; der Rest der Maschinen- und Werkzeugdateien wird weiter mit den klassischen Programmen bearbeitet. |
@@ -74,7 +74,7 @@ Jede Zeile ist ein Teil dieses Repositorys, und die Ampel sagt, wie weit er heut
 
 ## 🧩 Rolle in EH3D
 
-EH3D-BUNGARD-GUI ist die moderne Oberfläche der Bungard-Maschinen in der EH3D-Familie. Sie hängt per Pfad von den Nachbarordnern EH3D-COMMON (die Szene, die Designs und die Texte in acht Sprachen von `eh3d-view` sowie der ZIP-Leser von `eh3d-archive`), EH3D-DRILLPRO und EH3D-ROUTEPRO (ihre Engines und ihre klassischen Programme) ab: sie müssen neben diesem liegen.
+EH3D-BUNGARD-GUI ist die moderne Oberfläche der Bungard-Maschinen in der EH3D-Familie. Sie hängt per Pfad von den Nachbarordnern EH3D-COMMON (die Szene, die Designs und die Texte in 37 Sprachen von `eh3d-view` sowie der ZIP-Leser von `eh3d-archive`), EH3D-DRILLPRO und EH3D-ROUTEPRO (ihre Engines und ihre klassischen Programme) ab: sie müssen neben diesem liegen.
 
 ## 🏛️ Architektur
 
@@ -177,7 +177,7 @@ Wie die Teile dieses Repositorys zusammenpassen: wer es nutzt, was es enthält u
 ## ✨ Funktionen
 
 * Designs: Forge (Standard), Neon Arcade, Glass Pro, das klassische Windows-Grau und eines, das den Farben von Windows folgt.
-* Acht Sprachen im ganzen Fenster: Englisch, Spanisch, Französisch, Italienisch, Deutsch, Chinesisch, Japanisch und europäisches Portugiesisch.
+* 37 Sprachen im ganzen Fenster: Englisch, Spanisch, Französisch, Italienisch, Deutsch, Chinesisch, Japanisch und europäisches Portugiesisch.
 * Maschinenprofile mit den veröffentlichten Maßen und einem einstellbaren Tisch: die Maschine in 3D wächst mit der nutzbaren Fläche der Konfiguration.
 * Ein Fenster der Maschinen und Stationen: mit der Serververbindung zeigt es alle Maschinen des Servers nach Stationen gruppiert, was jede tut, ihren Auftrag mit Fortschritt, die bereiten Aufträge, und wählt die Maschine, an die die Aufträge des Fensters gehen; `--fleet DATEI.json` zeigt eine gespeicherte Antwort ohne Server.
 * Die Wahl eines Maschinenmodells in den Einstellungen passt beide Ansichten an seinen Tisch an: der 2D-Plan, die 3D-Maschine (Rahmen, Schienen, Portal und Werkzeugmagazin dieses Modells) und der Zoom beginnen mit den neuen Maßen von vorn.
@@ -197,6 +197,7 @@ Wie die Teile dieses Repositorys zusammenpassen: wer es nutzt, was es enthält u
 * **Zwei Spindeln und ein Katalog, der sie kennt:** Die Maschine trägt die Originalspindel (60000 U/min) oder die mit Frequenzumrichter (24000 U/min), in den Einstellungen gewählt, jede mit eigenen Grenzen (Drehzahl, XY- und Z-Vorschub, dickstes Werkzeug), die in der Einstellungsdatei liegen. Im Werkzeugfenster hat jedes Werkzeug eine Schaltfläche Katalog: Bohrer oder Fräser wählen, und Drehzahlen, Vorschübe und Zustellungen gehen ins Werkzeug. Kann die Spindel sie nicht liefern, sagt das Fenster es: Es schlägt die brauchbaren Werte vor (gleicher Vorschub pro Umdrehung, langsamerer XY oder Z) oder markiert das Werkzeug als nicht kompatibel und lässt es nicht übernehmen. Die Listen der Platinen zeigen 16 Materialien gleichzeitig.
 * **Bohren, Fräsen oder beides, Werkzeug für Werkzeug:** Das Bohren und das Fräsen des Auftrags werden im linken Bereich und im Werkzeugfenster ein- oder ausgeschaltet (beide an: erst Bohren, dann Fräsen, nacheinander, ohne dass die Maschine dazwischen nach Home fährt), und der Punkt jedes Werkzeugs schaltet es ab, damit der Auftrag es auslässt.
 * **Mehrere Dateien gleichzeitig und professionelle Beispiele:** Das Fenster Öffnen wählt zwei oder mehr Dateien mit Strg+Klick oder Umschalt+Klick (Bohren und Fräsen zusammen; mehrere gleicher Art bilden einen Auftrag, die Werkzeuge nach Durchmesser nummeriert). Der Ordner `examples` des Pakets enthält vier Entwürfe echter Komplexität, jeweils mit Bohr- und Frässdatei: eine 32-Bit-Mikrocontrollerplatine (Stiftleisten, USB-Aussparung, Via-Ring des LQFP), ein vierkanaliges analoges Frontend (DIP-Verstärker, BNC und Schraubklemmen, Guardringe, ein Isolationsschlitz), ein 2,4-GHz-Verstärker mit Filter (Kanten-SMA, Via-Zäune, Schirmgehäuse-Vernähung, Isolationsfräsen entlang der 50-Ohm-Leitung) und ein 5-V-3-A-Netzteil (TO-220, Elkos, thermische Vias).
+* **37 Sprachen:** das ganze Fenster spricht Englisch, Spanisch, Italienisch, Deutsch, Französisch, Portugiesisch, Chinesisch, Japanisch, Bulgarisch, Kroatisch, Tschechisch, Dänisch, Niederländisch, Estnisch, Finnisch, Griechisch, Ungarisch, Irisch, Lettisch, Litauisch, Maltesisch, Polnisch, Rumänisch, Slowakisch, Slowenisch, Schwedisch, Norwegisch, Isländisch, Ukrainisch, Russisch, Serbisch, Albanisch, Katalanisch, Galicisch, Baskisch, brasilianisches Portugiesisch und kanadisches Französisch. Die Wörter der 29 Sprachen nach den ersten acht stammen vom Modell und warten auf die Durchsicht durch Muttersprachler; ein fehlender Text wird auf Englisch gezeigt. Die Knoten der Maschine (die Firmware-Panels und der Bildschirm) behalten vorerst die ersten acht.
 
 ## 🔌 Schnittstellen
 
@@ -299,7 +300,7 @@ README und Texte gibt es auf Englisch, Spanisch, Französisch, Italienisch, Deut
 
 * [EH3D-DRILLPRO](https://github.com/JuanenRac/EH3D-DRILLPRO): das Bohrprogramm; dieses Fenster nutzt seine Engine und sein klassisches Programm
 * [EH3D-ROUTEPRO](https://github.com/JuanenRac/EH3D-ROUTEPRO): das Fräsprogramm; dieses Fenster nutzt seine Engine und sein klassisches Programm
-* [EH3D-COMMON](https://github.com/JuanenRac/EH3D-COMMON): die Ansicht (Szene, Designs, Texte in acht Sprachen) und der ZIP-Leser, die dieses Fenster nutzt
+* [EH3D-COMMON](https://github.com/JuanenRac/EH3D-COMMON): die Ansicht (Szene, Designs, Texte in 37 Sprachen) und der ZIP-Leser, die dieses Fenster nutzt
 * [EH3D-NODE-BUNGARD](https://github.com/JuanenRac/EH3D-NODE-BUNGARD): ein ESP32-S3-Knoten im Gehäuse der Maschine, der die Schritte über seine eigene serielle Schnittstelle ausgibt
 * [EH3D-SERVER](https://github.com/JuanenRac/EH3D-SERVER): das Zentrum der EH3D-Familie: er kann den Auftrag über seinen Knoten auf der Maschine ausführen
 

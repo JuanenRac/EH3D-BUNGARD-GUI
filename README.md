@@ -6,14 +6,14 @@
 
 <p align="center">🇺🇸 <b>English</b> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | <a href="README_ita.md">🇮🇹 Italiano</a> | <a href="README_deu.md">🇩🇪 Deutsch</a> | <a href="README_zho.md">🇨🇳 中文</a> | <a href="README_jpn.md">🇯🇵 日本語</a> | <a href="README_por.md">🇵🇹 Português</a></p>
 
-### The modern window for the Bungard CCD machines: a launcher, a 2D and a 3D view of the job, drilling and routing together, in eight languages
+### The modern window for the Bungard CCD machines: a launcher, a 2D and a 3D view of the job, drilling and routing together, in 37 languages
 
 <p align="center">
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
   <img src="https://img.shields.io/badge/Tests-117-0f6cbd.svg" alt="Tests">
-  <img src="https://img.shields.io/badge/Version-0.0.9-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-0.1.0-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
@@ -29,7 +29,7 @@
 
 | | |
 |---|---|
-| Version | `0.0.9` |
+| Version | `0.1.0` |
 | Maturity | Scaffolding |
 | Tests | 117 |
 | Stack | Rust |
@@ -45,7 +45,7 @@ Each line is one part of this repository and the light says how far it is today.
 
 | Area | State | What it means here |
 |---|---|---|
-| Window and launcher | 🟡 | A Rust window with a launcher (the modern interface or the classic programs), five themes and eight languages; it runs on a computer and has been looked at with pictures of the simulated job. |
+| Window and launcher | 🟡 | A Rust window with a launcher (the modern interface or the classic programs), five themes and 37 languages; it runs on a computer and has been looked at with pictures of the simulated job. |
 | Views | 🟡 | The plan view (holes by drill size, routing paths) and the 3D view of the machine with rails, perforated table, moving gantry and tool rack, fitted to the table size; both are dragged and zoomed. The 3D view shows no height of the tool paths yet. |
 | Files and panelization | 🟡 | Drilling files, HP-GL files and ZIP archives are opened from a browser, by drag and drop or from the command line; the board is repeated in three modes. Tried with the small sample files of this repository. |
 | Settings | 🟠 | The usable width and depth of the table are changed and saved to the machine files; the rest of the machine and tool files is still edited with the classic programs. |
@@ -74,7 +74,7 @@ Each line is one part of this repository and the light says how far it is today.
 
 ## 🧩 Role in EH3D
 
-EH3D-BUNGARD-GUI is the modern interface of the Bungard machines in the EH3D family. It depends by path on the sibling folders EH3D-COMMON (the scene, the themes and the texts in eight languages of `eh3d-view`, and the ZIP reader of `eh3d-archive`), EH3D-DRILLPRO and EH3D-ROUTEPRO (their engines and their classic programs): they must sit next to this one.
+EH3D-BUNGARD-GUI is the modern interface of the Bungard machines in the EH3D family. It depends by path on the sibling folders EH3D-COMMON (the scene, the themes and the texts in 37 languages of `eh3d-view`, and the ZIP reader of `eh3d-archive`), EH3D-DRILLPRO and EH3D-ROUTEPRO (their engines and their classic programs): they must sit next to this one.
 
 ## 🏛️ Architecture
 
@@ -177,7 +177,7 @@ How the parts of this repository fit together: who uses it, what it holds and wh
 ## ✨ Features
 
 * Themes: Forge (the default), Neon Arcade, Glass Pro, the classic Windows grey and one that follows the colours of Windows.
-* Eight languages in the whole window: English, Spanish, French, Italian, German, Chinese, Japanese and European Portuguese.
+* 37 languages in the whole window: English, Spanish, French, Italian, German, Chinese, Japanese and European Portuguese.
 * Machine profiles with the published sizes and an adjustable table: the machine in 3D grows with the usable area of the configuration.
 * A window of the machines and stations: with the server connection it shows every machine of the server grouped by station, what each one is doing, its job with the progress, the jobs ready, and chooses the machine the jobs of the window go to; `--fleet FILE.json` shows a saved answer without a server.
 * Choosing a machine model in the settings fits both views to its table: the 2D plan, the 3D machine (frame, rails, gantry and tool rack of that model) and the zoom start again for the new measures.
@@ -197,6 +197,7 @@ How the parts of this repository fit together: who uses it, what it holds and wh
 * **Two spindles and a catalogue that knows them:** the machine carries the original spindle (60000 rpm) or the one with its variable-frequency drive (24000 rpm), chosen in the settings, each with its own limits (turns, XY and Z feeds, thickest bit) that are kept in the settings file. In the tools window each tool has a Catalogue button: pick a bit and its speeds, feeds and passes go to the tool. If the spindle cannot give them the window says so: the values it can use are suggested (the same bite for each turn, slower XY or Z), or the bit is marked as not compatible and cannot be taken. The lists of boards show 16 materials at once.
 * **Drilling, routing or both, tool by tool:** the drilling and the routing of the job are switched on or off in the left panel and in the tools window (both on: the drilling and then the routing, one after the other, without the machine going home in between), and the dot of each tool switches that tool off so the job leaves it out.
 * **Several files at once, and professional examples:** the Open window chooses two or more files with Ctrl+click or Shift+click (drilling and routing together; several of the same kind make one job, with the tools numbered by their diameter). The `examples` folder of the package has four designs of real complexity, each with its drilling and routing files: a 32-bit microcontroller board (headers, USB notch, LQFP via ring), a four-channel analog front end (DIP amplifiers, BNC and screw terminals, guard rings, an isolation slot), a 2.4 GHz amplifier and filter (edge-launch SMA, via fences, shield-can stitching, isolation milling along the 50 ohm line) and a 5 V 3 A power supply (TO-220, electrolytics, thermal vias).
+* **37 languages:** the whole window speaks English, Spanish, Italian, German, French, Portuguese, Chinese, Japanese, Bulgarian, Croatian, Czech, Danish, Dutch, Estonian, Finnish, Greek, Hungarian, Irish, Latvian, Lithuanian, Maltese, Polish, Romanian, Slovak, Slovenian, Swedish, Norwegian, Icelandic, Ukrainian, Russian, Serbian, Albanian, Catalan, Galician, Basque, Brazilian Portuguese and Canadian French. The words of the 29 languages beyond the first eight are translated by the model and wait for a review by native speakers; a text that a language does not have is shown in English. The nodes of the machine (the firmware panels and the screen) keep the first eight for now.
 
 ## 🔌 Interfaces
 
@@ -299,7 +300,7 @@ README and texts exist in English, Spanish, French, Italian, German, Chinese, Ja
 
 * [EH3D-DRILLPRO](https://github.com/JuanenRac/EH3D-DRILLPRO): the drilling program; its engine and its classic program are used by this window
 * [EH3D-ROUTEPRO](https://github.com/JuanenRac/EH3D-ROUTEPRO): the routing program; its engine and its classic program are used by this window
-* [EH3D-COMMON](https://github.com/JuanenRac/EH3D-COMMON): the view (scene, themes, texts in eight languages) and the ZIP reader that this window uses
+* [EH3D-COMMON](https://github.com/JuanenRac/EH3D-COMMON): the view (scene, themes, texts in 37 languages) and the ZIP reader that this window uses
 * [EH3D-NODE-BUNGARD](https://github.com/JuanenRac/EH3D-NODE-BUNGARD): an ESP32-S3 node that sits in the machine's box and sends the steps out of its own serial port
 * [EH3D-SERVER](https://github.com/JuanenRac/EH3D-SERVER): the center of the EH3D family: it can run the job on the machine through its node
 

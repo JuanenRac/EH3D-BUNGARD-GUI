@@ -6,14 +6,14 @@
 
 <p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | 🇮🇹 <b>Italiano</b> | <a href="README_deu.md">🇩🇪 Deutsch</a> | <a href="README_zho.md">🇨🇳 中文</a> | <a href="README_jpn.md">🇯🇵 日本語</a> | <a href="README_por.md">🇵🇹 Português</a></p>
 
-### La finestra moderna per le macchine Bungard CCD: un avviatore, una vista 2D e una 3D del lavoro, foratura e fresatura insieme, in otto lingue
+### La finestra moderna per le macchine Bungard CCD: un avviatore, una vista 2D e una 3D del lavoro, foratura e fresatura insieme, in 37 lingue
 
 <p align="center">
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
   <img src="https://img.shields.io/badge/Tests-117-0f6cbd.svg" alt="Tests">
-  <img src="https://img.shields.io/badge/Version-0.0.9-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-0.1.0-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
@@ -29,7 +29,7 @@
 
 | | |
 |---|---|
-| Versione | `0.0.9` |
+| Versione | `0.1.0` |
 | Maturità | Impalcatura |
 | Test | 117 |
 | Stack tecnologico | Rust |
@@ -45,7 +45,7 @@ Ogni riga è una parte di questo repository e il semaforo dice a che punto è og
 
 | Area | Stato | Cosa significa qui |
 |---|---|---|
-| Finestra e avviatore | 🟡 | Una finestra Rust con un avviatore (l'interfaccia moderna o i programmi classici), cinque temi e otto lingue; gira su un computer ed è stata guardata con immagini del lavoro simulato. |
+| Finestra e avviatore | 🟡 | Una finestra Rust con un avviatore (l'interfaccia moderna o i programmi classici), cinque temi e 37 lingue; gira su un computer ed è stata guardata con immagini del lavoro simulato. |
 | Viste | 🟡 | La vista in pianta (fori per diametro, percorsi di fresatura) e la vista 3D della macchina con guide, piano forato, portale mobile e magazzino utensili, adattata alla misura del piano; entrambe si trascinano e si ingrandiscono. La vista 3D non mostra ancora l'altezza dei percorsi. |
 | File e pannellizzazione | 🟡 | I file di foratura, HP-GL e gli archivi ZIP si aprono da un browser, con trascinamento o dalla riga di comando; la scheda si ripete in tre modi. Provato con i piccoli file di esempio di questo repository. |
 | Impostazioni | 🟠 | Larghezza e profondità utili del piano si cambiano e si salvano nei file della macchina; il resto dei file di macchina e utensili si modifica ancora con i programmi classici. |
@@ -74,7 +74,7 @@ Ogni riga è una parte di questo repository e il semaforo dice a che punto è og
 
 ## 🧩 Ruolo in EH3D
 
-EH3D-BUNGARD-GUI è l'interfaccia moderna delle macchine Bungard nella famiglia EH3D. Dipende per percorso dalle cartelle sorelle EH3D-COMMON (la scena, i temi e i testi in otto lingue di `eh3d-view`, e il lettore ZIP di `eh3d-archive`), EH3D-DRILLPRO e EH3D-ROUTEPRO (i loro motori e i loro programmi classici): devono stare accanto a questa.
+EH3D-BUNGARD-GUI è l'interfaccia moderna delle macchine Bungard nella famiglia EH3D. Dipende per percorso dalle cartelle sorelle EH3D-COMMON (la scena, i temi e i testi in 37 lingue di `eh3d-view`, e il lettore ZIP di `eh3d-archive`), EH3D-DRILLPRO e EH3D-ROUTEPRO (i loro motori e i loro programmi classici): devono stare accanto a questa.
 
 ## 🏛️ Architettura
 
@@ -177,7 +177,7 @@ Come si incastrano le parti di questo repository: chi lo usa, che cosa contiene 
 ## ✨ Funzionalità
 
 * Temi: Forge (predefinito), Neon Arcade, Glass Pro, il grigio classico di Windows e uno che segue i colori di Windows.
-* Otto lingue in tutta la finestra: inglese, spagnolo, francese, italiano, tedesco, cinese, giapponese e portoghese europeo.
+* 37 lingue in tutta la finestra: inglese, spagnolo, francese, italiano, tedesco, cinese, giapponese e portoghese europeo.
 * Profili di macchina con le misure pubblicate e un piano regolabile: la macchina in 3D cresce con l'area utile della configurazione.
 * Una finestra delle macchine e stazioni: con la connessione al server mostra tutte le macchine del server raggruppate per stazione, cosa fa ciascuna, il suo lavoro con l'avanzamento, i lavori pronti, e sceglie la macchina a cui vanno i lavori della finestra; `--fleet FILE.json` mostra una risposta salvata senza server.
 * Scegliere un modello di macchina nelle impostazioni adatta le due viste al suo piano: la pianta 2D, la macchina 3D (telaio, guide, ponte e magazzino utensili di quel modello) e lo zoom ricominciano con le nuove misure.
@@ -197,6 +197,7 @@ Come si incastrano le parti di questo repository: chi lo usa, che cosa contiene 
 * **Due mandrini e un catalogo che li conosce:** la macchina porta il mandrino originale (60000 giri/min) oppure quello con inverter (24000 giri/min), scelto nelle impostazioni, ciascuno con i propri limiti (giri, avanzamenti XY e Z, utensile più grosso) salvati nel file delle impostazioni. Nella finestra degli utensili ogni utensile ha un pulsante Catalogo: si sceglie una punta o fresa e le sue velocità, avanzamenti e passate passano all'utensile. Se il mandrino non può darli, la finestra lo dice: suggerisce i valori utilizzabili (lo stesso passo per giro, XY o Z più lenti) oppure segna l'utensile come non compatibile e non lo lascia prendere. Le liste delle schede mostrano 16 materiali alla volta.
 * **Foratura, fresatura o entrambe, utensile per utensile:** la foratura e la fresatura del lavoro si attivano o disattivano nel pannello sinistro e nella finestra degli utensili (con entrambe: prima la foratura e poi la fresatura, una dopo l'altra, senza che la macchina torni in home nel mezzo), e il punto di ogni utensile lo disattiva perché il lavoro lo lasci fuori.
 * **Più file insieme ed esempi professionali:** la finestra Apri sceglie due o più file con Ctrl+clic o Maiusc+clic (foratura e fresatura insieme; più file dello stesso tipo formano un solo lavoro, con gli utensili numerati per diametro). La cartella `examples` del pacchetto contiene quattro progetti di vera complessità, ciascuno con il file di foratura e di fresatura: una scheda con microcontrollore a 32 bit (strip, intaglio USB, anello di via dell'LQFP), un front-end analogico a quattro canali (amplificatori DIP, BNC e morsetti, anelli di guardia, una fessura di isolamento), un amplificatore e filtro a 2,4 GHz (SMA a bordo, recinti di via, cucitura dello schermo, fresatura di isolamento lungo la linea da 50 ohm) e un alimentatore 5 V 3 A (TO-220, elettrolitici, via termiche).
+* **37 lingue:** tutta la finestra parla inglese, spagnolo, italiano, tedesco, francese, portoghese, cinese, giapponese, bulgaro, croato, ceco, danese, olandese, estone, finlandese, greco, ungherese, irlandese, lettone, lituano, maltese, polacco, rumeno, slovacco, sloveno, svedese, norvegese, islandese, ucraino, russo, serbo, albanese, catalano, galiziano, basco, portoghese del Brasile e francese del Canada. Le parole dei 29 lingue oltre le prime otto sono tradotte dal modello e attendono la revisione di madrelingua; un testo che manca a una lingua appare in inglese. I nodi della macchina (i pannelli del firmware e lo schermo) per ora restano con le prime otto.
 
 ## 🔌 Interfacce
 
@@ -299,7 +300,7 @@ Il README e i testi esistono in inglese, spagnolo, francese, italiano, tedesco, 
 
 * [EH3D-DRILLPRO](https://github.com/JuanenRac/EH3D-DRILLPRO): il programma di foratura; questa finestra usa il suo motore e il suo programma classico
 * [EH3D-ROUTEPRO](https://github.com/JuanenRac/EH3D-ROUTEPRO): il programma di fresatura; questa finestra usa il suo motore e il suo programma classico
-* [EH3D-COMMON](https://github.com/JuanenRac/EH3D-COMMON): la vista (scena, temi, testi in otto lingue) e il lettore ZIP che questa finestra usa
+* [EH3D-COMMON](https://github.com/JuanenRac/EH3D-COMMON): la vista (scena, temi, testi in 37 lingue) e il lettore ZIP che questa finestra usa
 * [EH3D-NODE-BUNGARD](https://github.com/JuanenRac/EH3D-NODE-BUNGARD): un nodo ESP32-S3 che sta nella scatola della macchina e invia i passi dalla propria porta seriale
 * [EH3D-SERVER](https://github.com/JuanenRac/EH3D-SERVER): il centro della famiglia EH3D: può eseguire il lavoro sulla macchina tramite il suo nodo
 

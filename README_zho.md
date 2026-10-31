@@ -6,14 +6,14 @@
 
 <p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | <a href="README_ita.md">🇮🇹 Italiano</a> | <a href="README_deu.md">🇩🇪 Deutsch</a> | 🇨🇳 <b>中文</b> | <a href="README_jpn.md">🇯🇵 日本語</a> | <a href="README_por.md">🇵🇹 Português</a></p>
 
-### 面向 Bungard CCD 机器的现代窗口：启动器、作业的 2D 与 3D 视图、钻孔和铣削合二为一，支持八种语言
+### 面向 Bungard CCD 机器的现代窗口：启动器、作业的 2D 与 3D 视图、钻孔和铣削合二为一，支持37 种语言
 
 <p align="center">
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
   <img src="https://img.shields.io/badge/Tests-117-0f6cbd.svg" alt="Tests">
-  <img src="https://img.shields.io/badge/Version-0.0.9-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-0.1.0-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
@@ -29,7 +29,7 @@
 
 | | |
 |---|---|
-| 版本 | `0.0.9` |
+| 版本 | `0.1.0` |
 | 成熟度 | 脚手架 |
 | 测试 | 117 |
 | 技术栈 | Rust |
@@ -45,7 +45,7 @@
 
 | 领域 | 状态 | 在这里的含义 |
 |---|---|---|
-| 窗口与启动器 | 🟡 | 带启动器（现代界面或经典程序）、五种主题和八种语言的 Rust 窗口；可在电脑上运行，并用模拟作业的图片查看过。 |
+| 窗口与启动器 | 🟡 | 带启动器（现代界面或经典程序）、五种主题和37 种语言的 Rust 窗口；可在电脑上运行，并用模拟作业的图片查看过。 |
 | 视图 | 🟡 | 平面视图（按钻头尺寸显示孔、铣削路径）和机器的 3D 视图（导轨、带孔工作台、移动龙门架、刀架），随工作台尺寸调整；两者都可拖动和缩放。3D 视图尚不显示路径的高度。 |
 | 文件与拼板 | 🟡 | 钻孔文件、HP-GL 文件和 ZIP 压缩包可从浏览器、拖放或命令行打开；电路板可按三种模式重复。已用本仓库的小型示例文件试过。 |
 | 设置 | 🟠 | 可更改工作台的可用宽度和深度并保存到机器文件；机器和刀具文件的其余部分仍用经典程序编辑。 |
@@ -74,7 +74,7 @@
 
 ## 🧩 在 EH3D 中的角色
 
-EH3D-BUNGARD-GUI 是 EH3D 家族中 Bungard 机器的现代界面。它按路径依赖相邻的文件夹 EH3D-COMMON（`eh3d-view` 的场景、主题和八种语言的文本，以及 `eh3d-archive` 的 ZIP 读取器）、EH3D-DRILLPRO 和 EH3D-ROUTEPRO（它们的引擎和经典程序）：这些文件夹必须与本文件夹并列。
+EH3D-BUNGARD-GUI 是 EH3D 家族中 Bungard 机器的现代界面。它按路径依赖相邻的文件夹 EH3D-COMMON（`eh3d-view` 的场景、主题和37 种语言的文本，以及 `eh3d-archive` 的 ZIP 读取器）、EH3D-DRILLPRO 和 EH3D-ROUTEPRO（它们的引擎和经典程序）：这些文件夹必须与本文件夹并列。
 
 ## 🏛️ 架构
 
@@ -177,7 +177,7 @@ EH3D-BUNGARD-GUI 是 EH3D 家族中 Bungard 机器的现代界面。它按路径
 ## ✨ 功能
 
 * 主题：Forge（默认）、Neon Arcade、Glass Pro、经典 Windows 灰色，以及跟随 Windows 颜色的主题。
-* 整个窗口支持八种语言：英语、西班牙语、法语、意大利语、德语、中文、日语和欧洲葡萄牙语。
+* 整个窗口支持37 种语言：英语、西班牙语、法语、意大利语、德语、中文、日语和欧洲葡萄牙语。
 * 带公布尺寸的机器配置和可调工作台：3D 中的机器随配置的可用区域变大。
 * 机床和工位窗口：连接服务器时，按工位分组显示服务器的所有机床、每台的状态、作业及进度、就绪作业，并选择本窗口作业发往的机床；`--fleet FILE.json` 无需服务器即可显示已保存的回答。
 * 在设置中选择机床型号后，两个视图都会适应其工作台：2D 平面图、3D 机床（该型号的机架、导轨、龙门和刀库）和缩放都按新尺寸重新开始。
@@ -197,6 +197,7 @@ EH3D-BUNGARD-GUI 是 EH3D 家族中 Bungard 机器的现代界面。它按路径
 * **两种主轴和了解它们的目录：** 机床配备原装主轴（60000 转/分）或带变频器的主轴（24000 转/分），在设置中选择，各自的限制（转速、XY 与 Z 进给、最粗刀具）保存在设置文件中。在刀具窗口中，每把刀都有“目录”按钮：选择钻头或铣刀，其转速、进给和分层深度会写入该刀具。若主轴无法达到，窗口会提示：给出可用的建议值（每转切削量不变、XY 或 Z 更慢），或将刀具标为不兼容并禁止采用。电路板列表一次显示 16 种材料。
 * **钻孔、铣削或两者，逐把刀具选择：** 在左侧面板和刀具窗口中可开关作业的钻孔和铣削（两者都开：先钻孔后铣削，依次进行，中间机床不回原点），点击每把刀具的圆点可将其关闭，作业会跳过它。
 * **一次打开多个文件与专业示例：** “打开”窗口可用 Ctrl+点击或 Shift+点击选择两个或更多文件（钻孔和铣削一起；同类的多个文件合成一个作业，刀具按直径编号）。软件包的 `examples` 文件夹提供四个真实复杂度的设计，各带钻孔和铣削文件：32 位微控制器板（排针、USB 缺口、LQFP 过孔环）、四通道模拟前端（DIP 放大器、BNC 与接线端子、保护环、隔离槽）、2.4 GHz 放大器与滤波器（边缘 SMA、过孔围栏、屏蔽罩缝合、沿 50 欧姆线的隔离铣削）以及 5 V 3 A 电源（TO-220、电解电容、散热过孔）。
+* **37 种语言：** 整个窗口支持英语、西班牙语、意大利语、德语、法语、葡萄牙语、中文、日语、保加利亚语、克罗地亚语、捷克语、丹麦语、荷兰语、爱沙尼亚语、芬兰语、希腊语、匈牙利语、爱尔兰语、拉脱维亚语、立陶宛语、马耳他语、波兰语、罗马尼亚语、斯洛伐克语、斯洛文尼亚语、瑞典语、挪威语、冰岛语、乌克兰语、俄语、塞尔维亚语、阿尔巴尼亚语、加泰罗尼亚语、加利西亚语、巴斯克语、巴西葡萄牙语和加拿大法语。 前八种之外的 29 种语言由模型翻译，等待母语者审校；某种语言缺少的文本以英文显示。 机床的节点（固件面板和屏幕）目前仍只支持前八种。
 
 ## 🔌 接口
 
@@ -299,7 +300,7 @@ README 和文本提供英语、西班牙语、法语、意大利语、德语、�
 
 * [EH3D-DRILLPRO](https://github.com/JuanenRac/EH3D-DRILLPRO)：钻孔程序；本窗口使用它的引擎和经典程序
 * [EH3D-ROUTEPRO](https://github.com/JuanenRac/EH3D-ROUTEPRO)：铣削程序；本窗口使用它的引擎和经典程序
-* [EH3D-COMMON](https://github.com/JuanenRac/EH3D-COMMON)：本窗口使用的视图（场景、主题、八种语言的文本）和 ZIP 读取器
+* [EH3D-COMMON](https://github.com/JuanenRac/EH3D-COMMON)：本窗口使用的视图（场景、主题、37 种语言的文本）和 ZIP 读取器
 * [EH3D-NODE-BUNGARD](https://github.com/JuanenRac/EH3D-NODE-BUNGARD)：装在机器机箱内、通过自己的串口发出步进信号的 ESP32-S3 节点
 * [EH3D-SERVER](https://github.com/JuanenRac/EH3D-SERVER)：EH3D 家族的中心：可通过其节点在机器上运行作业
 

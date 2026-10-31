@@ -4,6 +4,10 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.1.0] - 37 languages, several files at once, professional examples and a job that does the drilling and the routing
+
+- **37 languages in the whole window:** Bulgarian, Croatian, Czech, Danish, Dutch, Estonian, Finnish, Greek, Hungarian, Irish, Latvian, Lithuanian, Maltese, Polish, Romanian, Slovak, Slovenian, Swedish, Norwegian, Icelandic, Ukrainian, Russian, Serbian, Albanian, Catalan, Galician, Basque, Brazilian Portuguese and Canadian French join the first eight; the list of languages scrolls and the text of every button and switch is drawn smaller, and cut with an ellipsis if it still does not fit, where a language needs more room. The new languages are translations by the model that wait for a review by native speakers; the nodes of the machine keep the first eight for now.
+
 - **Turning the work keeps it where it is:** the work turns on its own middle, wherever it was moved to (before, it turned on the corner of the file it started from), and a turned work that would leave the table is brought back inside it; a board that stayed where it was (moving the design alone) turns on its own middle too. 1 test.
 
 - **Several files at once:** the Open window chooses two or more files with Ctrl+click or Shift+click and opens them together, drilling and routing at the same time. Several files of the same kind are joined into one job (the holes of all of them, or the paths of all of them); their tools are numbered by diameter so that two files that number theirs differently do not clash. The files chosen, not the joined one, are the recent ones. 3 tests.

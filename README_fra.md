@@ -6,14 +6,14 @@
 
 <p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | 🇫🇷 <b>Français</b> | <a href="README_ita.md">🇮🇹 Italiano</a> | <a href="README_deu.md">🇩🇪 Deutsch</a> | <a href="README_zho.md">🇨🇳 中文</a> | <a href="README_jpn.md">🇯🇵 日本語</a> | <a href="README_por.md">🇵🇹 Português</a></p>
 
-### La fenêtre moderne pour les machines Bungard CCD : un lanceur, une vue 2D et une vue 3D du travail, perçage et fraisage ensemble, en huit langues
+### La fenêtre moderne pour les machines Bungard CCD : un lanceur, une vue 2D et une vue 3D du travail, perçage et fraisage ensemble, en 37 langues
 
 <p align="center">
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
   <img src="https://img.shields.io/badge/Tests-117-0f6cbd.svg" alt="Tests">
-  <img src="https://img.shields.io/badge/Version-0.0.9-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-0.1.0-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
@@ -29,7 +29,7 @@
 
 | | |
 |---|---|
-| Version | `0.0.9` |
+| Version | `0.1.0` |
 | Maturité | Échafaudage |
 | Tests | 117 |
 | Pile technique | Rust |
@@ -45,7 +45,7 @@ Chaque ligne est une partie de ce dépôt et le feu dit où elle en est aujourd'
 
 | Domaine | État | Ce que cela veut dire ici |
 |---|---|---|
-| Fenêtre et lanceur | 🟡 | Une fenêtre Rust avec un lanceur (l'interface moderne ou les programmes classiques), cinq thèmes et huit langues ; elle tourne sur un ordinateur et a été regardée avec des images du travail simulé. |
+| Fenêtre et lanceur | 🟡 | Une fenêtre Rust avec un lanceur (l'interface moderne ou les programmes classiques), cinq thèmes et 37 langues ; elle tourne sur un ordinateur et a été regardée avec des images du travail simulé. |
 | Vues | 🟡 | La vue en plan (trous par diamètre, trajets de fraisage) et la vue 3D de la machine avec rails, table perforée, portique mobile et rack d'outils, ajustée à la taille de la table ; toutes deux se déplacent et se zooment. La vue 3D ne montre pas encore la hauteur des trajets. |
 | Fichiers et panélisation | 🟡 | Les fichiers de perçage, HP-GL et les archives ZIP s'ouvrent depuis un navigateur, par glisser-déposer ou depuis la ligne de commande ; la carte est répétée en trois modes. Essayé avec les petits fichiers d'exemple de ce dépôt. |
 | Réglages | 🟠 | La largeur et la profondeur utiles de la table se changent et s'enregistrent dans les fichiers de la machine ; le reste des fichiers de machine et d'outils s'édite encore avec les programmes classiques. |
@@ -74,7 +74,7 @@ Chaque ligne est une partie de ce dépôt et le feu dit où elle en est aujourd'
 
 ## 🧩 Rôle dans EH3D
 
-EH3D-BUNGARD-GUI est l'interface moderne des machines Bungard dans la famille EH3D. Elle dépend par chemin des dossiers voisins EH3D-COMMON (la scène, les thèmes et les textes en huit langues de `eh3d-view`, et le lecteur ZIP de `eh3d-archive`), EH3D-DRILLPRO et EH3D-ROUTEPRO (leurs moteurs et leurs programmes classiques) : ils doivent se trouver à côté de celui-ci.
+EH3D-BUNGARD-GUI est l'interface moderne des machines Bungard dans la famille EH3D. Elle dépend par chemin des dossiers voisins EH3D-COMMON (la scène, les thèmes et les textes en 37 langues de `eh3d-view`, et le lecteur ZIP de `eh3d-archive`), EH3D-DRILLPRO et EH3D-ROUTEPRO (leurs moteurs et leurs programmes classiques) : ils doivent se trouver à côté de celui-ci.
 
 ## 🏛️ Architecture
 
@@ -177,7 +177,7 @@ Comment les parties de ce dépôt s'articulent : qui l'utilise, ce qu'il contien
 ## ✨ Fonctionnalités
 
 * Thèmes : Forge (par défaut), Neon Arcade, Glass Pro, le gris classique de Windows et un qui suit les couleurs de Windows.
-* Huit langues dans toute la fenêtre : anglais, espagnol, français, italien, allemand, chinois, japonais et portugais européen.
+* 37 langues dans toute la fenêtre : anglais, espagnol, français, italien, allemand, chinois, japonais et portugais européen.
 * Profils de machine avec les dimensions publiées et une table réglable : la machine en 3D grandit avec la zone utile de la configuration.
 * Une fenêtre des machines et stations : avec la connexion au serveur elle montre toutes les machines du serveur groupées par station, ce que fait chacune, son travail avec l'avancement, les travaux prêts, et choisit la machine à laquelle vont les travaux de la fenêtre ; `--fleet FICHIER.json` montre une réponse enregistrée sans serveur.
 * Choisir un modèle de machine dans les réglages ajuste les deux vues à sa table : le plan 2D, la machine 3D (châssis, rails, portique et magasin d'outils de ce modèle) et le zoom repartent avec les nouvelles mesures.
@@ -197,6 +197,7 @@ Comment les parties de ce dépôt s'articulent : qui l'utilise, ce qu'il contien
 * **Deux broches et un catalogue qui les connaît :** la machine porte la broche d'origine (60000 tr/min) ou celle avec variateur de fréquence (24000 tr/min), choisie dans les réglages, chacune avec ses limites (vitesse, avances XY et Z, outil le plus gros) gardées dans le fichier de réglages. Dans la fenêtre des outils chaque outil a un bouton Catalogue : on choisit un foret ou une fraise et ses vitesses, avances et passes vont à l'outil. Si la broche ne peut pas les donner, la fenêtre le dit : elle propose les valeurs utilisables (la même prise par tour, XY ou Z plus lents) ou marque l'outil comme incompatible et ne le laisse pas prendre. Les listes de cartes montrent 16 matériaux à la fois.
 * **Perçage, fraisage ou les deux, outil par outil :** le perçage et le fraisage du travail s'activent ou se désactivent dans le panneau de gauche et dans la fenêtre des outils (les deux : d'abord le perçage puis le fraisage, l'un après l'autre, sans que la machine retourne en home entre les deux), et le point de chaque outil le désactive pour que le travail le laisse de côté.
 * **Plusieurs fichiers à la fois et exemples professionnels :** la fenêtre Ouvrir choisit deux fichiers ou plus avec Ctrl+clic ou Maj+clic (perçage et fraisage ensemble ; plusieurs du même type forment un seul travail, avec les outils numérotés par leur diamètre). Le dossier `examples` du paquet contient quatre conceptions d'une vraie complexité, chacune avec son fichier de perçage et de fraisage : une carte à microcontrôleur 32 bits (barrettes, encoche USB, anneau de vias du LQFP), un étage d'entrée analogique à quatre voies (amplificateurs DIP, BNC et borniers, anneaux de garde, une fente d'isolement), un amplificateur et filtre 2,4 GHz (SMA de bord, clôtures de vias, couture du blindage, fraisage d'isolement le long de la ligne 50 ohms) et une alimentation 5 V 3 A (TO-220, électrolytiques, vias thermiques).
+* **37 langues :** toute la fenêtre parle anglais, espagnol, italien, allemand, français, portugais, chinois, japonais, bulgare, croate, tchèque, danois, néerlandais, estonien, finnois, grec, hongrois, irlandais, letton, lituanien, maltais, polonais, roumain, slovaque, slovène, suédois, norvégien, islandais, ukrainien, russe, serbe, albanais, catalan, galicien, basque, portugais du Brésil et français du Canada. Les mots des 29 langues au-delà des huit premières sont traduits par le modèle et attendent la relecture de locuteurs natifs ; un texte qu'une langue n'a pas s'affiche en anglais. Les nœuds de la machine (les panneaux du firmware et l'écran) gardent pour l'instant les huit premières.
 
 ## 🔌 Interfaces
 
@@ -299,7 +300,7 @@ Le README et les textes existent en anglais, espagnol, français, italien, allem
 
 * [EH3D-DRILLPRO](https://github.com/JuanenRac/EH3D-DRILLPRO) : le programme de perçage ; cette fenêtre utilise son moteur et son programme classique
 * [EH3D-ROUTEPRO](https://github.com/JuanenRac/EH3D-ROUTEPRO) : le programme de fraisage ; cette fenêtre utilise son moteur et son programme classique
-* [EH3D-COMMON](https://github.com/JuanenRac/EH3D-COMMON) : la vue (scène, thèmes, textes en huit langues) et le lecteur ZIP qu'utilise cette fenêtre
+* [EH3D-COMMON](https://github.com/JuanenRac/EH3D-COMMON) : la vue (scène, thèmes, textes en 37 langues) et le lecteur ZIP qu'utilise cette fenêtre
 * [EH3D-NODE-BUNGARD](https://github.com/JuanenRac/EH3D-NODE-BUNGARD) : un nœud ESP32-S3 placé dans le boîtier de la machine, qui envoie les pas par son propre port série
 * [EH3D-SERVER](https://github.com/JuanenRac/EH3D-SERVER) : le centre de la famille EH3D : il peut exécuter le travail sur la machine via son nœud
 

@@ -142,6 +142,10 @@ enum Act {
     /// The catalogue opens to take a bit for this tool of the window of tools; the values of the bit go to the tool.
     ToolFromCat(Program, usize),
     CatUse,
+    /// The drilling or the routing of the job is switched on or off.
+    JobPart(Program),
+    /// A tool of the job is switched on or off.
+    ToolOff(Program, u8),
     /// The probe measures the table, or stops; the map of the table is cleared.
     LevelToggle,
     LevelApply,
@@ -338,6 +342,12 @@ pub struct App {
     cat_sel: Option<usize>,
     /// The tool of the window of tools that the catalogue is picking a bit for.
     cat_target: Option<(Program, usize)>,
+    /// Which programs of the job are on (the drilling, the routing) and the tools that are switched off; the programs that are on run one after the other.
+    job_drill: bool,
+    job_route: bool,
+    off_tools: Vec<(Program, u8)>,
+    /// The programs that wait for the one that runs.
+    job_queue: Vec<Program>,
     /// The clock of the animations, and when the screen and the window that are on show began to show (in seconds of that clock).
     anim0: Instant,
     anim_screen: (Option<Screen>, f32),
@@ -484,6 +494,10 @@ impl App {
             cat_scroll: 0,
             cat_sel: None,
             cat_target: None,
+            job_drill: true,
+            job_route: true,
+            off_tools: Vec::new(),
+            job_queue: Vec::new(),
             anim0: Instant::now(),
             anim_screen: (None, 0.0),
             anim_modal: (None, 0.0),
@@ -795,10 +809,98 @@ impl App {
         self.start_job_from(0);
     }
 
-    /// Starts the job leaving out the first `skip` holes (or paths) of it, which are already done.
+    /// The tools of a program that are switched off in the job.
+    pub(crate) fn tools_off(&self, p: Program) -> Vec<u8> {
+        self.off_tools
+            .iter()
+            .filter(|(q, _)| *q == p)
+            .map(|(_, t)| *t)
+            .collect()
+    }
+
+    pub(crate) fn tool_is_on(&self, p: Program, tool: u8) -> bool {
+        !self.off_tools.contains(&(p, tool))
+    }
+
+    /// Whether a program of the job (drilling or routing) is on, and has a file and a tool that is on.
+    pub(crate) fn program_runs(&self, p: Program) -> bool {
+        let (on, loaded) = match p {
+            Program::Drill => (self.job_drill, self.drill.engine.file_loaded()),
+            Program::Route => (self.job_route, self.route.engine.file_loaded()),
+        };
+        on && loaded
+            && match p {
+                Program::Drill => self
+                    .drill
+                    .scene
+                    .holes
+                    .iter()
+                    .any(|h| self.tool_is_on(p, h.tool)),
+                Program::Route => self
+                    .route
+                    .scene
+                    .paths
+                    .iter()
+                    .any(|q| self.tool_is_on(p, q.tool)),
+            }
+    }
+
+    /// The programs a job does, in order: the drilling and then the routing, the ones that are on.
+    fn job_programs(&self) -> Vec<Program> {
+        [Program::Drill, Program::Route]
+            .into_iter()
+            .filter(|p| self.program_runs(*p))
+            .collect()
+    }
+
+    pub(crate) fn toggle_job_part(&mut self, p: Program) {
+        match p {
+            Program::Drill => self.job_drill = !self.job_drill,
+            Program::Route => self.job_route = !self.job_route,
+        }
+    }
+
+    pub(crate) fn toggle_tool(&mut self, p: Program, tool: u8) {
+        if let Some(i) = self.off_tools.iter().position(|x| *x == (p, tool)) {
+            self.off_tools.remove(i);
+        } else {
+            self.off_tools.push((p, tool));
+        }
+    }
+
+    /// Starts the job leaving out the first `skip` holes (or paths) of it, which are already done. Without a skip it does the drilling and the routing that are on, one after the other.
     fn start_job_from(&mut self, skip: usize) {
+        let mut programs = self.job_programs();
+        if skip > 0 {
+            programs = self.active().map(|(p, _)| p).into_iter().collect();
+        }
+        if programs.is_empty() {
+            if self.drill.engine.file_loaded() || self.route.engine.file_loaded() {
+                self.message = Some(self.tr(Text::JobNothingOn).to_string());
+            }
+            return;
+        }
+        // a job that does not fit on the table is refused before it starts, not found out on the machine
+        let outside = programs.iter().any(|p| {
+            let (holes, paths) = match p {
+                Program::Drill => self.drill.scene.outside_table(),
+                Program::Route => self.route.scene.outside_table(),
+            };
+            !holes.is_empty() || !paths.is_empty()
+        });
+        if outside {
+            self.message = Some(self.tr(Text::JobOutsideTable).to_string());
+            return;
+        }
+        self.job_queue = programs[1..].to_vec();
+        self.begin_program(programs[0], skip);
+    }
+
+    /// Starts one program of the job (the rest wait in the queue).
+    fn begin_program(&mut self, program: Program, skip: usize) {
         let ask_operator = self.settings.ask_operator;
         let levelled = self.level_for_jobs();
+        let skip_tools = self.tools_off(program);
         // a single board with tabs is a panel of one: the outside of it is routed with the tabs too
         let panel = match (self.panel_applied, self.panel.tabs()) {
             (Some((columns, rows, pitch_mm)), tabs) => Some(Panel {
@@ -815,23 +917,14 @@ impl App {
             }),
             (None, None) => None,
         };
-        // a job that does not fit on the table is refused before it starts, not found out on the machine
-        let outside = match self.active() {
-            Some((_, side)) => {
-                let (holes, paths) = side.scene.outside_table();
-                !holes.is_empty() || !paths.is_empty()
-            }
-            None => false,
-        };
-        if outside {
-            self.message = Some(self.tr(Text::JobOutsideTable).to_string());
-            return;
-        }
-        if let Some((p, side)) = self.active() {
+        {
+            let p = program;
+            let side = self.side_mut(p);
             side.engine.set_job_options(JobOptions {
                 ask_operator,
                 panel,
                 skip,
+                skip_tools,
                 table: levelled,
                 ..Default::default()
             });
@@ -882,6 +975,7 @@ impl App {
 
     fn stop_job(&mut self) {
         self.paused = false;
+        self.job_queue.clear();
         self.clear_recovery();
         if self.running == Some(Program::Drill) {
             self.count_holes();
@@ -930,6 +1024,7 @@ impl App {
         }
         let auto_ok = self.auto_ok;
         let skip = self.resume_skip;
+        let off = self.tools_off(p);
         let side = self.side_mut(p);
         if side.engine.question().is_some() {
             if auto_ok {
@@ -961,7 +1056,7 @@ impl App {
                     .holes
                     .iter()
                     .enumerate()
-                    .filter(|(_, h)| !h.done)
+                    .filter(|(_, h)| !h.done && !off.contains(&h.tool))
                     .min_by(|a, b| {
                         let da = (a.1.x_mm - hx).hypot(a.1.y_mm - hy);
                         let db = (b.1.x_mm - hx).hypot(b.1.y_mm - hy);
@@ -980,29 +1075,52 @@ impl App {
                 .paths
                 .iter()
                 .skip(skip)
+                .filter(|q| !off.contains(&q.tool))
                 .map(|q| q.points.len())
                 .sum();
             let mut left = total * percent as usize / 100;
-            for q in side.scene.paths.iter_mut().skip(skip) {
+            for q in side
+                .scene
+                .paths
+                .iter_mut()
+                .skip(skip)
+                .filter(|q| !off.contains(&q.tool))
+            {
                 q.reached = left.min(q.points.len());
                 left = left.saturating_sub(q.points.len());
             }
         }
         if !more {
             if p == Program::Drill {
-                for h in &mut side.scene.holes {
+                for h in side
+                    .scene
+                    .holes
+                    .iter_mut()
+                    .filter(|h| !off.contains(&h.tool))
+                {
                     h.done = true;
                 }
             } else {
-                for q in &mut side.scene.paths {
+                for q in side
+                    .scene
+                    .paths
+                    .iter_mut()
+                    .filter(|q| !off.contains(&q.tool))
+                {
                     q.reached = q.points.len();
                 }
             }
             self.running = None;
-            self.m3d.finish();
             self.clear_recovery();
             if p == Program::Drill {
                 self.count_holes();
+            }
+            // the next program of the job (the routing after the drilling) goes on without the machine going home
+            if self.job_queue.is_empty() {
+                self.m3d.finish();
+            } else {
+                let next = self.job_queue.remove(0);
+                self.begin_program(next, 0);
             }
         } else {
             self.save_recovery();
@@ -1135,6 +1253,8 @@ impl App {
                 self.cat_sel = None;
             }
             Act::CatUse => self.cat_use(),
+            Act::JobPart(p) => self.toggle_job_part(p),
+            Act::ToolOff(p, t) => self.toggle_tool(p, t),
             Act::LevelToggle => self.level_toggle(),
             Act::LevelApply => self.level.apply = !self.level.apply,
             Act::LevelClear => self.level_clear(),

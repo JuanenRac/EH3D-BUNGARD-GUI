@@ -4,6 +4,11 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.0.9] - Drilling, routing or both, tool by tool
+
+- **Drilling, routing or both:** the job has the drilling and the routing switched on or off (in the left panel, over the list of tools, and in the tools window), and both on run one after the other (the drilling first) without the machine of the 3D view going home in between; with only one on, only that one runs; with none on, the person is told. Before this only the drilling could be run.
+- **Tools switched off:** the dot of each tool, in the left panel and in the tools window, leaves that tool (its holes or its paths) out of the job; it is shown as a ring and its text goes dim. 3 tests.
+
 ## [0.0.8] - Two spindles, the catalogue into the tools and the machine of the 3D view
 
 - **Two spindles, chosen in the settings (Machine tab):** the original one (60000 rpm) and the one with its variable-frequency drive (24000 rpm). Each has its limits (slowest and fastest turns, power, the fastest XY and Z feed the machine holds with it, the thickest bit), kept in the settings file with a line of their own so that they can be tuned.

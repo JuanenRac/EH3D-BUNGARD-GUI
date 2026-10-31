@@ -747,6 +747,109 @@ EOF
         assert!(a.settings.holes_drilled.is_empty());
     }
 
+    fn app_with_both() -> App {
+        let mut a = app();
+        a.open_path(&Path::new(env!("CARGO_MANIFEST_DIR")).join("testdata/05_board_outline.plt"));
+        a.auto_ok = true;
+        a.fixed_dt = Some(60.0);
+        a
+    }
+
+    fn run_to_the_end(a: &mut App) {
+        for _ in 0..40_000 {
+            if a.running.is_none() && a.job_queue.is_empty() {
+                return;
+            }
+            a.tick();
+        }
+        panic!("the job did not end");
+    }
+
+    #[test]
+    fn the_drilling_and_the_routing_that_are_on_run_one_after_the_other() {
+        let mut a = app_with_both();
+        assert!(a.drill.engine.file_loaded() && a.route.engine.file_loaded());
+        a.act(Act::Start);
+        assert_eq!(a.running, Some(Program::Drill));
+        assert_eq!(a.job_queue, vec![Program::Route]);
+        let mut routed_after_drilling = false;
+        for _ in 0..40_000 {
+            if a.running == Some(Program::Route) {
+                routed_after_drilling = a.drill.scene.holes.iter().all(|h| h.done);
+                break;
+            }
+            a.tick();
+        }
+        assert!(
+            routed_after_drilling,
+            "the routing starts when the drilling is done"
+        );
+        run_to_the_end(&mut a);
+        assert!(a
+            .route
+            .scene
+            .paths
+            .iter()
+            .all(|q| q.reached == q.points.len()));
+    }
+
+    #[test]
+    fn only_the_routing_or_only_the_drilling_can_be_done() {
+        let mut a = app_with_both();
+        a.act(Act::JobPart(Program::Drill));
+        a.act(Act::Start);
+        assert_eq!(a.running, Some(Program::Route));
+        assert!(a.job_queue.is_empty());
+        run_to_the_end(&mut a);
+        assert!(
+            a.drill.scene.holes.iter().all(|h| !h.done),
+            "the drilling was left out"
+        );
+        // the other way round
+        a.act(Act::JobPart(Program::Drill));
+        a.act(Act::JobPart(Program::Route));
+        for q in a.route.scene.paths.iter_mut() {
+            q.reached = 0;
+        }
+        a.act(Act::Start);
+        assert_eq!(a.running, Some(Program::Drill));
+        run_to_the_end(&mut a);
+        assert!(a.route.scene.paths.iter().all(|q| q.reached == 0));
+        // everything off: nothing starts and the person is told
+        a.act(Act::JobPart(Program::Drill));
+        a.act(Act::Start);
+        assert!(a.running.is_none() && a.message.is_some());
+    }
+
+    #[test]
+    fn a_tool_that_is_off_is_left_out_of_the_job() {
+        let mut a = app_with_both();
+        a.settings.holes_drilled.clear();
+        let tools: Vec<u8> = {
+            let mut v: Vec<u8> = a.drill.scene.holes.iter().map(|h| h.tool).collect();
+            v.sort_unstable();
+            v.dedup();
+            v
+        };
+        assert!(tools.len() > 1);
+        a.act(Act::ToolOff(Program::Drill, tools[0]));
+        assert!(!a.tool_is_on(Program::Drill, tools[0]));
+        a.act(Act::JobPart(Program::Route));
+        a.act(Act::Start);
+        run_to_the_end(&mut a);
+        for h in &a.drill.scene.holes {
+            assert_eq!(h.done, h.tool != tools[0], "tool {}", h.tool);
+        }
+        // switched on again
+        a.act(Act::ToolOff(Program::Drill, tools[0]));
+        assert!(a.tool_is_on(Program::Drill, tools[0]));
+        // all the tools of the drilling off: the drilling has nothing to do
+        for t in &tools {
+            a.act(Act::ToolOff(Program::Drill, *t));
+        }
+        assert!(!a.program_runs(Program::Drill));
+    }
+
     #[test]
     fn a_job_left_in_the_middle_is_offered_again_and_goes_on_from_where_it_was() {
         let mut a = app();

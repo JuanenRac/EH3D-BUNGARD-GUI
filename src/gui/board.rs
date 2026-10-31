@@ -42,6 +42,16 @@ pub(super) struct CellSpec {
     pub(super) step: f64,
 }
 
+/// The colour dot of a tool: full when the tool is in the job, a ring when it is switched off.
+fn paint_dot(cv: &mut Cv, x: f32, y: f32, c: Color32, on: bool) {
+    let centre = cv.pt(x, y);
+    if on {
+        cv.p.circle_filled(centre, 7.0 * cv.u, c);
+    } else {
+        cv.p.circle_stroke(centre, 7.0 * cv.u, Stroke::new(1.6 * cv.u, alpha(c, 130)));
+    }
+}
+
 pub(super) fn specs(kind: EngineKind) -> &'static [CellSpec] {
     match kind {
         EngineKind::Drill => &[
@@ -222,7 +232,45 @@ impl App {
             (false, true) => self.tr(Text::Routing).to_string(),
             (false, false) => String::new(),
         };
-        cv.text(38.0, y0, Align2::LEFT_BOTTOM, &kind, 13.0, col(t.accent));
+        let _ = kind;
+        {
+            // the drilling and the routing of the job, each switched on or off; both on: one after the other
+            let mut x = 38.0;
+            for (n, (p, label)) in [
+                (Program::Drill, self.tr(Text::Drilling)),
+                (Program::Route, self.tr(Text::Routing)),
+            ]
+            .into_iter()
+            .filter(|(p, _)| match p {
+                Program::Drill => drills > 0,
+                Program::Route => routes > 0,
+            })
+            .enumerate()
+            {
+                if n > 0 {
+                    let r = cv.text(x, y0, Align2::LEFT_BOTTOM, "+", 13.0, col(t.dim));
+                    x = r.max.x / cv.u + 6.0;
+                }
+                let on = match p {
+                    Program::Drill => self.job_drill,
+                    Program::Route => self.job_route,
+                };
+                let r = cv.text(
+                    x,
+                    y0,
+                    Align2::LEFT_BOTTOM,
+                    &if on {
+                        label.to_string()
+                    } else {
+                        format!("({label})")
+                    },
+                    13.0,
+                    if on { col(t.accent) } else { col(t.dim) },
+                );
+                cv.hits.push((r.expand(4.0), Act::JobPart(p)));
+                x = r.max.x / cv.u + 6.0;
+            }
+        }
         cv.text(
             38.0,
             y0 + 20.0,
@@ -288,7 +336,8 @@ impl App {
                     StrokeKind::Inside,
                 );
             }
-            cv.p.circle_filled(cv.pt(56.0, y + 24.0), 7.0 * cv.u, c);
+            let on = self.tool_is_on(l.prog, l.tool);
+            paint_dot(cv, 56.0, y + 24.0, c, on);
             let tag = if l.prog == Program::Drill { "D" } else { "R" };
             cv.text(
                 72.0,
@@ -296,7 +345,7 @@ impl App {
                 Align2::LEFT_BOTTOM,
                 &format!("{tag}  T{:02}  {}", l.tool, l.main),
                 15.0,
-                col(t.text),
+                if on { col(t.text) } else { col(t.dim) },
             );
             cv.text(
                 72.0,
@@ -320,16 +369,20 @@ impl App {
             }
             y += 52.0;
         }
-        // a click on a tool takes the plan view to its work
+        // a click on a tool takes the plan view to its work; the dot at its side switches it on or off for the job
         for (i, l) in lines.iter().skip(first).take(shown).enumerate() {
             cv.hits.push((
                 cv.rect(
-                    38.0,
+                    80.0,
                     first_y + 52.0 * i as f32,
-                    if total > shown { 232.0 } else { 244.0 },
+                    if total > shown { 190.0 } else { 202.0 },
                     48.0,
                 ),
                 Act::CenterTool(l.prog, l.tool),
+            ));
+            cv.hits.push((
+                cv.rect(38.0, first_y + 52.0 * i as f32, 40.0, 48.0),
+                Act::ToolOff(l.prog, l.tool),
             ));
         }
         cv.scrollbar(
@@ -791,13 +844,16 @@ impl App {
             } else {
                 self.tr(Text::Routing)
             };
-            cv.text(
-                x + 30.0,
-                ry + 16.0,
-                Align2::LEFT_BOTTOM,
+            cv.checkbox(
+                x + 24.0,
+                ry - 10.0,
+                196.0,
                 &heading.to_uppercase(),
-                13.0,
-                col(t.accent),
+                match p {
+                    Program::Drill => self.job_drill,
+                    Program::Route => self.job_route,
+                },
+                Act::JobPart(p),
             );
             for (i, s) in sp.iter().enumerate() {
                 cv.text(
@@ -823,7 +879,10 @@ impl App {
             for (ri, r) in rows.iter().enumerate() {
                 let n = r.name.unwrap_or(0);
                 let c = col(t.size_color(index));
-                cv.p.circle_filled(cv.pt(x + 44.0, ry + 20.0), 7.0 * cv.u, c);
+                let tool_on = self.tool_is_on(p, n);
+                paint_dot(cv, x + 44.0, ry + 20.0, c, tool_on);
+                cv.hits
+                    .push((cv.rect(x + 28.0, ry, 34.0, 38.0), Act::ToolOff(p, n)));
                 let diameter = if p == Program::Drill {
                     let count = self
                         .drill
@@ -849,7 +908,7 @@ impl App {
                     Align2::LEFT_BOTTOM,
                     &format!("T{n:02}{diameter}"),
                     17.0,
-                    col(t.text),
+                    if tool_on { col(t.text) } else { col(t.dim) },
                 );
                 for (ci, s) in sp.iter().enumerate() {
                     let v = r.cells.get(ci).map_or("", |c| c.trim());
@@ -949,9 +1008,13 @@ impl App {
         }
         cv.text(
             x + 30.0,
-            y + h - 30.0,
+            y + h - 74.0,
             Align2::LEFT_BOTTOM,
-            self.tr(Text::TypeValueHint),
+            &format!(
+                "{}  -  {}",
+                self.tr(Text::TypeValueHint),
+                self.tr(Text::ToolOffHint)
+            ),
             14.0,
             col(t.dim),
         );

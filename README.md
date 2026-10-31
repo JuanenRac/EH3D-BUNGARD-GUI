@@ -12,14 +12,14 @@
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
-  <img src="https://img.shields.io/badge/Tests-108-0f6cbd.svg" alt="Tests">
-  <img src="https://img.shields.io/badge/Version-0.0.8-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Tests-111-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Version-0.0.9-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
 ---
 
-**Honesty check - what actually runs today:** a Rust program with a window and 108 tests that run on a computer. The launcher offers the modern interface or the classic drilling and routing programs for a machine with manual (MTC) or automatic (ATC) tool change. The viewer opens drilling files, HP-GL plot files and ZIP archives of jobs (from a folder browser, by drag and drop or from the command line), draws the plan view with every hole by drill size and the routing paths over it, shows the machine in 3D with the table of the size chosen in the configuration, panelizes the board and follows the job as it runs. The job runs on the **simulator** of the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO; the same machine file they read decides how a real machine is reached (the computer's RS-232, a USB-RS232 adapter, or the EH3D-NODE-BUNGARD directly or through EH3D-SERVER), and **none of those has been tried from this window**. The windows of the connection, the settings and the tools change the values they offer, the whole machine and tool files cannot be edited yet, and the 3D view does not show the height of the tool paths.
+**Honesty check - what actually runs today:** a Rust program with a window and 111 tests that run on a computer. The launcher offers the modern interface or the classic drilling and routing programs for a machine with manual (MTC) or automatic (ATC) tool change. The viewer opens drilling files, HP-GL plot files and ZIP archives of jobs (from a folder browser, by drag and drop or from the command line), draws the plan view with every hole by drill size and the routing paths over it, shows the machine in 3D with the table of the size chosen in the configuration, panelizes the board and follows the job as it runs. The job runs on the **simulator** of the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO; the same machine file they read decides how a real machine is reached (the computer's RS-232, a USB-RS232 adapter, or the EH3D-NODE-BUNGARD directly or through EH3D-SERVER), and **none of those has been tried from this window**. The windows of the connection, the settings and the tools change the values they offer, the whole machine and tool files cannot be edited yet, and the 3D view does not show the height of the tool paths.
 
 ---
 
@@ -29,9 +29,9 @@
 
 | | |
 |---|---|
-| Version | `0.0.8` |
+| Version | `0.0.9` |
 | Maturity | Scaffolding |
-| Tests | 108 |
+| Tests | 111 |
 | Stack | Rust |
 | On real hardware | No. It has run on the simulator and on a computer only; no machine has been driven from this window |
 
@@ -50,7 +50,7 @@ Each line is one part of this repository and the light says how far it is today.
 | Files and panelization | 🟡 | Drilling files, HP-GL files and ZIP archives are opened from a browser, by drag and drop or from the command line; the board is repeated in three modes. Tried with the small sample files of this repository. |
 | Settings | 🟠 | The usable width and depth of the table are changed and saved to the machine files; the rest of the machine and tool files is still edited with the classic programs. |
 | Machine control | 🔴 | The job goes through the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO, so every connection they have is there in principle; it has run on the simulator only. The Connection window chooses the link (the computer's RS-232, a USB-RS232 adapter, the EH3D node or the EH3D server), tests it and saves it to the machine file, and Pause holds the job between two moves. |
-| Tests | 🟡 | 108 tests pass on a computer (`cargo test --features gui`): the launcher, the settings, the reading of the files into the scene, the machine profiles, the panel and the command line. None of them touches a machine. |
+| Tests | 🟡 | 111 tests pass on a computer (`cargo test --features gui`): the launcher, the settings, the reading of the files into the scene, the machine profiles, the panel and the command line. None of them touches a machine. |
 | Ready-made packages | 🟠 | A workflow builds the program for Windows (64 and 32 bits), Linux and macOS with the sample files; no release has been published yet. |
 
 ## 🎯 Overview
@@ -195,6 +195,7 @@ How the parts of this repository fit together: who uses it, what it holds and wh
 * **Light and quality check with the camera of the head:** the window of the node turns the ring of LEDs on and off, and the Quality check window looks at the board after the job: it judges the holes of the job (there, round, the right size, in place), the milled channels (as wide as the tool, even, no pinches) and the picture itself, marks every hole on the picture, shows a verdict as big as a sign (OK, NOT OK or cannot judge) and makes the ring say the same in colour. Presets of the profile (standard, fine pitch, prototype), tolerances, the scale and its calibration from a known hole are kept in a file and given to the server. The result can be said aloud: two more sounds in the settings, for a check that is correct and one that is not, each off, a beep, a sound of the catalogue, a file of yours or a voice that says that the visual check of the board is correct or is not correct, like the other sounds.
 * **A machine in 3D that behaves like the real one:** at rest the head waits at home, and moving the board in the plan view never moves it. When a job starts the machine powers up, goes home, travels to the first point of the work and only then does the work begin, with the head following it, for drilling and for routing; at the end it goes home again. The bars of the lists have their arrows up and down.
 * **Two spindles and a catalogue that knows them:** the machine carries the original spindle (60000 rpm) or the one with its variable-frequency drive (24000 rpm), chosen in the settings, each with its own limits (turns, XY and Z feeds, thickest bit) that are kept in the settings file. In the tools window each tool has a Catalogue button: pick a bit and its speeds, feeds and passes go to the tool. If the spindle cannot give them the window says so: the values it can use are suggested (the same bite for each turn, slower XY or Z), or the bit is marked as not compatible and cannot be taken. The lists of boards show 16 materials at once.
+* **Drilling, routing or both, tool by tool:** the drilling and the routing of the job are switched on or off in the left panel and in the tools window (both on: the drilling and then the routing, one after the other, without the machine going home in between), and the dot of each tool switches that tool off so the job leaves it out.
 
 ## 🔌 Interfaces
 
@@ -220,7 +221,7 @@ Run it with `run.bat` (Windows) or `./run.sh` (Linux and macOS); both build the 
 
 ## 🧪 Testing
 
-The suite has 108 tests (`cargo test --features gui`). They check the launcher and what it remembers, the settings, how a drilling or an HP-GL file becomes the scene, the machine profiles, the panel and the command line. The engines it uses (protocol, motion, safety gate) are tested in EH3D-DRILLPRO and EH3D-ROUTEPRO. The CI also runs `cargo fmt --check` and `cargo clippy` with warnings as errors, and `python -I tools/ci_validate.py` checks the manifest, the versions, the changelog and the eight READMEs.
+The suite has 111 tests (`cargo test --features gui`). They check the launcher and what it remembers, the settings, how a drilling or an HP-GL file becomes the scene, the machine profiles, the panel and the command line. The engines it uses (protocol, motion, safety gate) are tested in EH3D-DRILLPRO and EH3D-ROUTEPRO. The CI also runs `cargo fmt --check` and `cargo clippy` with warnings as errors, and `python -I tools/ci_validate.py` checks the manifest, the versions, the changelog and the eight READMEs.
 
 ## 🏗️ Build & Release
 

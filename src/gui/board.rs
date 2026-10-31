@@ -1314,11 +1314,13 @@ impl App {
                 for (i, (cue, label)) in [
                     (Cue::Finished, Text::SoundFinish),
                     (Cue::ToolChange, Text::SoundTool),
+                    (Cue::CheckOk, Text::SoundCheckOk),
+                    (Cue::CheckNotOk, Text::SoundCheckBad),
                 ]
                 .into_iter()
                 .enumerate()
                 {
-                    let yy = top + 202.0 + i as f32 * 96.0;
+                    let yy = top + 202.0 + i as f32 * 84.0;
                     cv.text(
                         x + 30.0,
                         yy + 12.0,
@@ -1351,7 +1353,7 @@ impl App {
                 }
                 cv.text(
                     x + 30.0,
-                    top + 420.0,
+                    top + 560.0,
                     Align2::LEFT_BOTTOM,
                     &format!("{}: {}", self.tr(Text::BoardTitle), self.board.describe()),
                     15.0,
@@ -1359,7 +1361,7 @@ impl App {
                 );
                 cv.text(
                     x + 30.0,
-                    top + 446.0,
+                    top + 584.0,
                     Align2::LEFT_BOTTOM,
                     &format!(
                         "{} - {}",

@@ -138,6 +138,8 @@ impl App {
         if let Some(r) = self.insp.rx.as_ref().and_then(|rx| rx.try_recv().ok()) {
             if let Ok(rep) = &r {
                 self.insp.picture = (rep.width_px, rep.height_px);
+                // the verdict is said as the person set it in the settings (off, a beep, a file, or a voice: "the visual check of the board is correct / not correct")
+                self.insp_say(rep.verdict);
             }
             self.insp.report = Some(r);
             self.insp.rx = None;
@@ -153,6 +155,22 @@ impl App {
             self.insp.light_rx = None;
             self.head.polled = None;
         }
+    }
+
+    /// The sound of a verdict: the one chosen for a check that is correct or not correct; "cannot judge" has none of its own, because it is neither.
+    fn insp_say(&self, verdict: Verdict) {
+        let (setting, cue) = match verdict {
+            Verdict::Ok => (
+                &self.conn.sound_check_ok,
+                eh3d_drillpro::protocol::sound::Cue::CheckOk,
+            ),
+            Verdict::NotOk => (
+                &self.conn.sound_check_bad,
+                eh3d_drillpro::protocol::sound::Cue::CheckNotOk,
+            ),
+            Verdict::Unknown => return,
+        };
+        eh3d_drillpro::protocol::sound::play(setting, cue);
     }
 
     pub(super) fn insp_act(&mut self, a: Act) {
@@ -716,6 +734,33 @@ mod tests {
         // with no drill job there is no hole to choose
         a.act(Act::InspHole(1));
         assert_eq!(a.insp.hole, 0);
+    }
+
+    #[test]
+    fn the_sounds_of_the_visual_check_are_chosen_like_the_other_sounds() {
+        use super::super::combo::ComboId;
+        use eh3d_drillpro::protocol::sound::{Cue, SoundSetting};
+        let mut a = app();
+        // off until the person chooses (a file is chosen here so that nothing is played while testing)
+        assert_eq!(a.conn.sound_check_ok, SoundSetting::Off);
+        assert_eq!(a.conn.sound_check_bad, SoundSetting::Off);
+        a.sound_choose(Cue::CheckOk, SoundSetting::File("ok.wav".into()));
+        a.sound_choose(Cue::CheckNotOk, SoundSetting::File("bad.wav".into()));
+        assert_eq!(a.conn.sound_check_ok, SoundSetting::File("ok.wav".into()));
+        assert_eq!(a.conn.sound_check_bad, SoundSetting::File("bad.wav".into()));
+        // the lists are the same as the ones of the other two sounds, and the machine file keeps both
+        assert_eq!(
+            a.combo_items(ComboId::Sound(Cue::CheckOk)).len(),
+            a.combo_items(ComboId::Sound(Cue::Finished)).len()
+        );
+        assert_eq!(a.combo_current(ComboId::Sound(Cue::CheckNotOk)), 2);
+        let pairs = crate::link::pairs(&a.conn);
+        assert!(pairs
+            .iter()
+            .any(|(k, v)| *k == "sound_check_ok" && v.ends_with("ok.wav")));
+        assert!(pairs
+            .iter()
+            .any(|(k, v)| *k == "sound_check_bad" && v.ends_with("bad.wav")));
     }
 
     #[test]

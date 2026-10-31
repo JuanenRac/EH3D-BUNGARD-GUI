@@ -148,6 +148,8 @@ impl App {
         match cue {
             Cue::Finished => &mut self.conn.sound_finish,
             Cue::ToolChange => &mut self.conn.sound_tool_change,
+            Cue::CheckOk => &mut self.conn.sound_check_ok,
+            Cue::CheckNotOk => &mut self.conn.sound_check_bad,
         }
     }
 
@@ -185,6 +187,8 @@ impl App {
         let s = match cue {
             Cue::Finished => &self.conn.sound_finish,
             Cue::ToolChange => &self.conn.sound_tool_change,
+            Cue::CheckOk => &self.conn.sound_check_ok,
+            Cue::CheckNotOk => &self.conn.sound_check_bad,
         };
         eh3d_drillpro::protocol::sound::play(s, cue);
     }
@@ -193,10 +197,20 @@ impl App {
     pub(super) fn sound_fields(&mut self, ctx: &egui::Context) {
         let u = self.ui_scale;
         let (x, y) = (380.0, 30.0 + 120.0);
-        for (i, cue) in [Cue::Finished, Cue::ToolChange].into_iter().enumerate() {
+        for (i, cue) in [
+            Cue::Finished,
+            Cue::ToolChange,
+            Cue::CheckOk,
+            Cue::CheckNotOk,
+        ]
+        .into_iter()
+        .enumerate()
+        {
             let s = match cue {
                 Cue::Finished => self.conn.sound_finish.clone(),
                 Cue::ToolChange => self.conn.sound_tool_change.clone(),
+                Cue::CheckOk => self.conn.sound_check_ok.clone(),
+                Cue::CheckNotOk => self.conn.sound_check_bad.clone(),
             };
             // the box of the path is there only while the sound is a file of the person's
             if !matches!(s, SoundSetting::File(_)) {
@@ -209,7 +223,7 @@ impl App {
             let before = text.clone();
             let pos = Pos2::new(
                 self.ui_origin.x + (x + 60.0) * u,
-                self.ui_origin.y + (y + 202.0 + 50.0 + i as f32 * 96.0) * u,
+                self.ui_origin.y + (y + 202.0 + 50.0 + i as f32 * 84.0) * u,
             );
             egui::Area::new(egui::Id::unique(("sound-path", i)))
                 .fixed_pos(pos)

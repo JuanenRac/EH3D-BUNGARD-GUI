@@ -2,8 +2,9 @@ Spoken notices of EH3D-BUNGARD-GUI (and of the screen EH3D-NODE-BUNGARD-HMI)
 
 What this folder is
 -------------------
-Each notice has two sentences: one when the job ends and one when the machine asks for a tool.
-They are in the folders LANGUAGE/GENDER/finished.wav and LANGUAGE/GENDER/tool.wav, where LANGUAGE is
+Each notice has four sentences: one when the job ends, one when the machine asks for a tool, and two for the visual check
+of the board with the camera (correct and not correct). They are in the folders LANGUAGE/GENDER/finished.wav,
+LANGUAGE/GENDER/tool.wav, LANGUAGE/GENDER/check_ok.wav and LANGUAGE/GENDER/check_bad.wav, where LANGUAGE is
 en, es, it, de, fr, pt, zh or ja and GENDER is f (female voice) or m (male voice). They are chosen in the list
 of sounds of the settings of the program (or with `sound_finish = voice:es:f` in the machine file).
 
@@ -38,3 +39,6 @@ The sentences
 -------------
 Job ended:  "The job has finished. You may remove the board." (and the same in each language)
 Tool:       "Please change the tool."                          (and the same in each language)
+Visual check, correct:     "The visual check of the board is correct."     (and the same in each language)
+Visual check, not correct: "The visual check of the board is not correct." (and the same in each language)
+A voice that has no recording of the check plays the tone instead, so an older folder of voices still works.

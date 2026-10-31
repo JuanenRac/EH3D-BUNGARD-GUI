@@ -124,7 +124,7 @@ impl App {
     pub(crate) fn tone_label(&self, cue: Cue, k: usize) -> String {
         let (pitch, pattern) = sound::tone_parts(k);
         let words = match cue {
-            Cue::Finished => [
+            Cue::Finished | Cue::CheckOk => [
                 Text::SndChime,
                 Text::SndRise,
                 Text::SndFall,
@@ -132,7 +132,7 @@ impl App {
                 Text::SndTriple,
                 Text::SndBell,
             ],
-            Cue::ToolChange => [
+            Cue::ToolChange | Cue::CheckNotOk => [
                 Text::SndBeep,
                 Text::SndDouble,
                 Text::SndTripleBeep,
@@ -201,6 +201,8 @@ impl App {
         match cue {
             Cue::Finished => &self.conn.sound_finish,
             Cue::ToolChange => &self.conn.sound_tool_change,
+            Cue::CheckOk => &self.conn.sound_check_ok,
+            Cue::CheckNotOk => &self.conn.sound_check_bad,
         }
     }
 

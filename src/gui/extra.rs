@@ -291,6 +291,9 @@ impl<'a> Cv<'a> {
             hits: Vec::new(),
             zones: Vec::new(),
             combos: Vec::new(),
+            bars: Vec::new(),
+            running: self.running,
+            time: self.time,
             modal_from: 0,
             pointer: self.pointer,
             down: self.down,
@@ -303,6 +306,9 @@ impl App {
 
     /// Opens what the extension says it is: a job archive, a drilling file or a routing file.
     pub(crate) fn open_path(&mut self, path: &Path) {
+        // a new file: the board follows its work again
+        self.board_frozen = None;
+        self.move_design = false;
         let name = path
             .file_name()
             .map(|n| n.to_string_lossy().to_string())
@@ -401,20 +407,37 @@ impl App {
             side.scene.table = table;
             side.last_done = 0;
         }
-        // the outside of the panel, routed with tabs: the paths are cut into the pieces between them
-        if let (true, Some(tabs)) = (many, self.panel.tabs()) {
+        // the outside of each board, routed with tabs: that path is cut into the pieces between them (the pockets and slots inside stay whole)
+        if let Some(tabs) = self.panel.tabs() {
+            let outer = {
+                let refs: Vec<&[(f64, f64)]> = self
+                    .route
+                    .scene
+                    .paths
+                    .iter()
+                    .map(|p| p.points.as_slice())
+                    .collect();
+                eh3d_drillpro::job::outer_paths(&refs)
+            };
             let cut: Vec<eh3d_view::scene::Path> = self
                 .route
                 .scene
                 .paths
                 .iter()
-                .flat_map(|p| {
-                    eh3d_drillpro::job::cut_tabs(&p.points, &tabs)
+                .zip(outer)
+                .flat_map(|(p, is_outer)| {
+                    let pieces = if is_outer {
+                        eh3d_drillpro::job::cut_tabs(&p.points, &tabs)
+                    } else {
+                        vec![p.points.clone()]
+                    };
+                    pieces
                         .into_iter()
                         .map(|points| eh3d_view::scene::Path {
                             points,
                             ..p.clone()
                         })
+                        .collect::<Vec<_>>()
                 })
                 .collect();
             self.route.scene.paths = cut;
@@ -600,6 +623,9 @@ impl App {
                 if self.move_board {
                     // the board goes where it is dragged: millimetres, with Y going up
                     self.shift_board(d.0 as f64 / scale, -(d.1 as f64) / scale);
+                } else if self.move_design {
+                    // only the design goes: the board and the table stay
+                    self.shift_design(d.0 as f64 / scale, -(d.1 as f64) / scale);
                 } else {
                     self.view2d.pan.0 += d.0;
                     self.view2d.pan.1 += d.1;

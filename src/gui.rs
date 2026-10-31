@@ -95,6 +95,8 @@ enum Act {
     SoundTest(eh3d_drillpro::protocol::sound::Cue),
     ToggleFollow,
     ToggleMoveBoard,
+    /// A drag in the plan moves only the design (the holes and the paths) over the board and the table, which stay where they are.
+    ToggleMoveDesign,
     ToggleBig,
     Rotate(i8),
     FitPlan(bool),
@@ -116,8 +118,8 @@ enum Act {
     HeadMode(eh3d_drillpro::protocol::connection::HeadNode),
     HeadCamera,
     HeadMeasure,
-    /// The list of the catalogue goes up or down.
-    CatScroll(i32),
+    CatSelect(usize),
+    CatSpindle(i32),
     /// The probe measures the table, or stops; the map of the table is cleared.
     LevelToggle,
     LevelApply,
@@ -265,6 +267,9 @@ pub struct App {
     /// the work is turned by this many quarter turns.
     follow: bool,
     move_board: bool,
+    move_design: bool,
+    /// The board where it was left when the design started to move alone: (x0, y0, x1, y1) in mm. `None`: the board follows the design.
+    board_frozen: Option<(f64, f64, f64, f64)>,
     plan_big: bool,
     rotation: u8,
     plan_scale: std::cell::Cell<f64>,
@@ -301,6 +306,17 @@ pub struct App {
     /// The catalogue of bits: the kind that is shown (0 is all of them) and the first row.
     cat_kind: usize,
     cat_scroll: usize,
+    cat_sel: Option<usize>,
+    /// The clock of the animations, and when the screen and the window that are on show began to show (in seconds of that clock).
+    anim0: Instant,
+    anim_screen: (Option<Screen>, f32),
+    anim_modal: (Option<Modal>, f32),
+    /// Animations are off when a picture is taken: it must be the finished picture.
+    animate: bool,
+    /// The first tool shown in the list of the job when there are more than fit, the scroll bars of this frame and the one that is being dragged.
+    tool_scroll: usize,
+    bars: Vec<BarInfo>,
+    bar_drag: Option<Bar>,
 }
 
 impl App {
@@ -403,6 +419,8 @@ impl App {
             mat_scroll: 0,
             follow: false,
             move_board: false,
+            move_design: false,
+            board_frozen: None,
             plan_big: false,
             rotation: 0,
             plan_scale: std::cell::Cell::new(1.0),
@@ -429,6 +447,14 @@ impl App {
             head: head::HeadState::default(),
             cat_kind: 0,
             cat_scroll: 0,
+            cat_sel: None,
+            anim0: Instant::now(),
+            anim_screen: (None, 0.0),
+            anim_modal: (None, 0.0),
+            animate: o.shot.is_none(),
+            tool_scroll: 0,
+            bars: Vec::new(),
+            bar_drag: None,
         };
         let examples = app.base_dir.join("examples");
         let has_jobs = std::fs::read_dir(&examples).is_ok_and(|rd| {
@@ -730,12 +756,22 @@ impl App {
     fn start_job_from(&mut self, skip: usize) {
         let ask_operator = self.settings.ask_operator;
         let levelled = self.level_for_jobs();
-        let panel = self.panel_applied.map(|(columns, rows, pitch_mm)| Panel {
-            columns,
-            rows,
-            pitch_mm,
-            tabs: self.panel.tabs(),
-        });
+        // a single board with tabs is a panel of one: the outside of it is routed with the tabs too
+        let panel = match (self.panel_applied, self.panel.tabs()) {
+            (Some((columns, rows, pitch_mm)), tabs) => Some(Panel {
+                columns,
+                rows,
+                pitch_mm,
+                tabs,
+            }),
+            (None, Some(tabs)) => Some(Panel {
+                columns: 1,
+                rows: 1,
+                pitch_mm: (0.0, 0.0),
+                tabs: Some(tabs),
+            }),
+            (None, None) => None,
+        };
         // a job that does not fit on the table is refused before it starts, not found out on the machine
         let outside = match self.active() {
             Some((_, side)) => {
@@ -961,7 +997,13 @@ impl App {
                     self.view2d.zoom = self.view2d.zoom.max(3.0);
                 }
             }
-            Act::ToggleMoveBoard => self.move_board = !self.move_board,
+            Act::ToggleMoveBoard => {
+                self.move_board = !self.move_board;
+                if self.move_board {
+                    self.move_design = false;
+                }
+            }
+            Act::ToggleMoveDesign => self.toggle_move_design(),
             Act::ToggleBig => self.plan_big = !self.plan_big,
             Act::Rotate(q) => self.rotate_work(q),
             Act::FitPlan(b) => self.fit_plan(b),
@@ -998,7 +1040,8 @@ impl App {
                 self.saved = false;
             }
             Act::HeadMeasure => self.head_measure(),
-            Act::CatScroll(d) => self.cat_scroll_by(d),
+            Act::CatSelect(i) => self.cat_sel = Some(i),
+            Act::CatSpindle(d) => self.cat_spindle_by(d),
             Act::LevelToggle => self.level_toggle(),
             Act::LevelApply => self.level.apply = !self.level.apply,
             Act::LevelClear => self.level_clear(),
@@ -1071,6 +1114,25 @@ impl App {
     }
 }
 
+/// The lists that have a scroll bar: the bar is drawn next to the list and moves with a click or a drag on it, and the wheel over the list moves it too.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Bar {
+    Combo,
+    Tools,
+    Catalogue,
+    Browse,
+}
+
+/// One bar of this frame: where its track is, the area of the list that the wheel works on, and how many rows there are and are shown.
+#[derive(Debug, Clone, Copy)]
+struct BarInfo {
+    bar: Bar,
+    track: Rect,
+    area: Rect,
+    total: usize,
+    shown: usize,
+}
+
 // ------------------------------------------------------------------------------------------------ drawing
 
 /// A canvas of the design size scaled into the window: every coordinate is in design units.
@@ -1083,13 +1145,61 @@ struct Cv<'a> {
     zones: Vec<(Rect, Zone)>,
     /// The boxes of the drop-down lists drawn in this frame, with the place under each one: the list that is open hangs from its box.
     combos: Vec<(ComboId, f32, f32, f32)>,
+    bars: Vec<BarInfo>,
     modal_from: usize,
     /// Where the pointer is and whether its button is held down: the buttons answer to both.
     pointer: Option<Pos2>,
     down: bool,
+    /// Seconds on the clock of the animations (0 when they are off), and whether a job is running.
+    time: f32,
+    running: bool,
+}
+
+/// A slow ease: fast at first, calm at the end (0 to 1).
+fn ease_out(k: f32) -> f32 {
+    1.0 - (1.0 - k.clamp(0.0, 1.0)).powi(3)
+}
+
+/// A smooth wave between 0 and 1 with this period in seconds.
+fn wave(time: f32, period: f32) -> f32 {
+    0.5 - 0.5 * (std::f32::consts::TAU * time / period).cos()
 }
 
 impl<'a> Cv<'a> {
+    /// A vertical scroll bar next to a list: the track and the thumb, drawn where the list says; `area` is the list itself, for the wheel. Nothing is drawn when the list fits.
+    #[allow(clippy::too_many_arguments)]
+    fn scrollbar(
+        &mut self,
+        bar: Bar,
+        x: f32,
+        y: f32,
+        h: f32,
+        area: (f32, f32, f32, f32),
+        total: usize,
+        shown: usize,
+        first: usize,
+    ) {
+        if total <= shown || shown == 0 || h < 30.0 {
+            return;
+        }
+        let w = 12.0;
+        let track = self.rect(x, y, w, h);
+        self.p
+            .rect_filled(track, 4.0 * self.u, alpha(col(self.t.dim), 50));
+        let thumb_h = (h * shown as f32 / total as f32).clamp(28.0, h);
+        let top = first.min(total - shown) as f32 / (total - shown) as f32 * (h - thumb_h);
+        let thumb = self.rect(x, y + top, w, thumb_h);
+        self.p.rect_filled(thumb, 4.0 * self.u, col(self.t.accent));
+        let (ax, ay, aw, ah) = area;
+        self.bars.push(BarInfo {
+            bar,
+            track,
+            area: self.rect(ax, ay, aw, ah),
+            total,
+            shown,
+        });
+    }
+
     fn pt(&self, x: f32, y: f32) -> Pos2 {
         Pos2::new(self.o.x + x * self.u, self.o.y + y * self.u)
     }
@@ -1378,25 +1488,73 @@ impl App {
             Pos2::new(rect.max.x, o.y + DESIGN_H * u),
         );
         p.rect_filled(strip, 0.0, col(t.background.1));
+        let now = if self.animate {
+            self.anim0.elapsed().as_secs_f32()
+        } else {
+            1.0e6
+        };
+        if self.anim_screen.0 != Some(self.screen) {
+            self.anim_screen = (Some(self.screen), now);
+        }
+        if self.anim_modal.0 != self.modal {
+            self.anim_modal = (self.modal, now);
+        }
+        // the screen fades in as it opens and the window rises a little while it fades in
+        let (screen_k, modal_k) = if self.animate {
+            (
+                ease_out((now - self.anim_screen.1) / 0.35),
+                ease_out((now - self.anim_modal.1) / 0.20),
+            )
+        } else {
+            (1.0, 1.0)
+        };
+        let mut screen_painter = p.clone();
+        screen_painter.set_opacity(screen_k);
+        let time = if self.animate { now } else { 0.0 };
         let mut cv = Cv {
-            p,
+            p: &screen_painter,
             o,
             u,
             t: &t,
             hits: Vec::new(),
             zones: Vec::new(),
             combos: Vec::new(),
+            bars: Vec::new(),
             modal_from: 0,
             pointer: self.pointer,
             down: self.pointer_down,
+            time,
+            running: self.running.is_some(),
         };
         match self.screen {
             Screen::Launcher => self.paint_launcher(&mut cv),
             Screen::Viewer => self.paint_viewer(&mut cv),
         }
         if let Some(m) = self.modal {
-            cv.modal_from = cv.hits.len();
-            self.paint_modal(&mut cv, m);
+            let mut modal_painter = p.clone();
+            modal_painter.set_opacity(modal_k);
+            let mut mcv = Cv {
+                p: &modal_painter,
+                o: Pos2::new(o.x, o.y + (1.0 - modal_k) * 14.0 * u),
+                u,
+                t: &t,
+                hits: std::mem::take(&mut cv.hits),
+                zones: std::mem::take(&mut cv.zones),
+                combos: std::mem::take(&mut cv.combos),
+                bars: std::mem::take(&mut cv.bars),
+                modal_from: 0,
+                pointer: self.pointer,
+                down: self.pointer_down,
+                time,
+                running: cv.running,
+            };
+            mcv.modal_from = mcv.hits.len();
+            self.paint_modal(&mut mcv, m);
+            cv.modal_from = mcv.modal_from;
+            cv.hits = mcv.hits;
+            cv.zones = mcv.zones;
+            cv.combos = mcv.combos;
+            cv.bars = mcv.bars;
         }
         // an open drop-down list is over everything, and the rest of the window waits while it is open
         self.paint_combo(&mut cv);
@@ -1412,6 +1570,7 @@ impl App {
         }
         self.hits = std::mem::take(&mut cv.hits);
         self.zones = std::mem::take(&mut cv.zones);
+        self.bars = std::mem::take(&mut cv.bars);
         self.modal_from = if self.modal.is_some() || self.combo.is_some() {
             cv.modal_from
         } else {
@@ -1661,6 +1820,49 @@ impl App {
         ));
     }
 
+    /// The wheel over a list with a bar: `dir` rows up (-1) or down (1).
+    fn bar_wheel(&mut self, bar: Bar, dir: i32) {
+        match bar {
+            Bar::Combo => self.combo_scroll(2 * dir),
+            Bar::Tools => {
+                let total = self.tool_lines().len();
+                let shown = self
+                    .bars
+                    .iter()
+                    .find(|b| b.bar == Bar::Tools)
+                    .map_or(total, |b| b.shown);
+                self.tool_scroll = (self.tool_scroll as i64 + dir as i64)
+                    .clamp(0, total.saturating_sub(shown) as i64)
+                    as usize;
+            }
+            Bar::Catalogue => self.cat_scroll_by(3 * dir),
+            Bar::Browse => self.browse_scroll(2 * dir),
+        }
+    }
+
+    /// The pointer is at `p` on the track of a bar: the list goes to the row that the place stands for.
+    fn bar_to(&mut self, bar: Bar, p: Pos2) {
+        let Some(info) = self.bars.iter().rev().find(|b| b.bar == bar).copied() else {
+            return;
+        };
+        let max = info.total.saturating_sub(info.shown);
+        let frac = ((p.y - info.track.min.y) / info.track.height().max(1.0)).clamp(0.0, 1.0);
+        let first = (frac * max as f32).round() as usize;
+        match bar {
+            Bar::Combo => {
+                if let Some(c) = self.combo {
+                    self.combo_scroll(first as i32 - c.scroll as i32);
+                }
+            }
+            Bar::Tools => self.tool_scroll = first.min(max),
+            Bar::Catalogue => self.cat_scroll_by(first as i32 - self.cat_scroll as i32),
+            Bar::Browse => {
+                let now = self.browser.as_ref().map_or(0, |b| b.scroll);
+                self.browse_scroll(first as i32 - now as i32);
+            }
+        }
+    }
+
     fn paint_viewer(&self, cv: &mut Cv) {
         let t = cv.t.clone();
         self.top_bar(cv, true);
@@ -1687,7 +1889,18 @@ impl App {
             19.0,
             col(t.text),
         );
-        let mut y = self.paint_job_tools(cv, top + 94.0);
+        // the list of tools takes the room that the layers and the archive leave: with more tools than fit it scrolls, so the layers never leave the card
+        let zip_h = self.archive.as_ref().map_or(0.0, |a| {
+            6.0 + 10.0
+                + a.entries
+                    .iter()
+                    .filter(|e| e.kind != Kind::Other)
+                    .count()
+                    .min(6) as f32
+                    * 22.0
+        });
+        let max_y = top + card_h - 134.0 - zip_h;
+        let mut y = self.paint_job_tools(cv, top + 94.0, max_y);
         if let Some(a) = &self.archive {
             y += 6.0;
             cv.text(38.0, y, Align2::LEFT_BOTTOM, "ZIP", 12.0, col(t.dim));
@@ -1845,10 +2058,29 @@ impl App {
                 );
             }
             if self.layers[1] {
+                let tool_colors = self.route_tool_colors();
                 for path in &self.route.scene.paths {
                     let pts: Vec<(f32, f32)> =
                         path.points.iter().map(|&(x, y)| screen(x, y)).collect();
-                    cv.polyline(&pts, 2.0, col(t.accent2), true);
+                    let line_color = tool_colors
+                        .iter()
+                        .find(|(tool, _)| *tool == path.tool)
+                        .map_or(col(t.accent2), |&(_, i)| col(t.size_color(i)));
+                    if cv.running {
+                        // the dashes of the path to come move along it, slowly
+                        let v: Vec<Pos2> = pts.iter().map(|&(x, y)| cv.pt(x, y)).collect();
+                        if v.len() >= 2 {
+                            cv.p.extend(Shape::dashed_line_with_offset(
+                                &v,
+                                Stroke::new(2.0 * cv.u, line_color),
+                                &[7.0 * cv.u],
+                                &[5.0 * cv.u],
+                                -cv.time * 14.0 * cv.u,
+                            ));
+                        }
+                    } else {
+                        cv.polyline(&pts, 2.0, line_color, true);
+                    }
                     if path.reached > 1 {
                         cv.polyline(&pts[..path.reached.min(pts.len())], 2.4, col(t.ok), false);
                     }
@@ -1876,11 +2108,21 @@ impl App {
             }
             if let Some((hx, hy)) = head {
                 let (px, py) = screen(hx, hy);
+                let breath = if cv.running { wave(cv.time, 1.6) } else { 0.0 };
                 cv.p.circle_stroke(
                     cv.pt(px, py),
-                    13.0 * cv.u,
+                    (13.0 + 1.5 * breath) * cv.u,
                     Stroke::new(2.0 * cv.u, col(t.ok)),
                 );
+                if cv.running {
+                    // a ripple that spreads and fades every second and a half
+                    let ripple = (cv.time / 1.5).fract();
+                    cv.p.circle_stroke(
+                        cv.pt(px, py),
+                        (13.0 + 26.0 * ease_out(ripple)) * cv.u,
+                        Stroke::new(1.4 * cv.u, alpha(col(t.ok), (150.0 * (1.0 - ripple)) as u8)),
+                    );
+                }
                 cv.line((px - 22.0, py), (px + 22.0, py), 1.5, col(t.ok));
                 cv.line((px, py - 22.0), (px, py + 22.0), 1.5, col(t.ok));
             }
@@ -1908,6 +2150,15 @@ impl App {
             self.tr(Text::ResetView),
             false,
             Act::ResetView(Zone::Plan),
+        );
+        cv.chip(
+            cx + cw - 204.0 - 136.0,
+            top + 8.0,
+            126.0,
+            30.0,
+            self.tr(Text::Rotate),
+            false,
+            Act::Rotate(1),
         );
         cv.text(
             cx + cw - 18.0,
@@ -2056,6 +2307,19 @@ impl App {
             8.0 * cv.u,
             col(t.ok),
         );
+        if cv.running && progress > 0.01 {
+            // a soft light that crosses the part that is done, once every two seconds
+            let fill_w = 900.0 * progress as f32;
+            let at = (cv.time / 2.0).fract() * (fill_w + 80.0) - 40.0;
+            let (a, b) = (at.max(0.0), (at + 40.0).min(fill_w));
+            if b > a {
+                cv.p.rect_filled(
+                    cv.rect(44.0 + a, hud_y + 130.0, b - a, 12.0),
+                    6.0 * cv.u,
+                    alpha(Color32::WHITE, 70),
+                );
+            }
+        }
         cv.text(
             960.0,
             hud_y + 142.0,
@@ -2400,13 +2664,18 @@ impl App {
             }
         }
         if self.layers[1] {
+            let tool_colors = self.route_tool_colors();
             for path in &self.route.scene.paths {
                 let pts: Vec<(f32, f32)> = path
                     .points
                     .iter()
                     .map(|&(x, y)| p(x, td - y, top))
                     .collect();
-                cv.polyline(&pts, 1.8, col(t.accent2), true);
+                let line_color = tool_colors
+                    .iter()
+                    .find(|(tool, _)| *tool == path.tool)
+                    .map_or(col(t.accent2), |&(_, i)| col(t.size_color(i)));
+                cv.polyline(&pts, 1.8, line_color, true);
                 if path.reached > 1 {
                     cv.polyline(&pts[..path.reached.min(pts.len())], 2.2, col(t.ok), false);
                 }
@@ -2624,9 +2893,24 @@ impl eframe::App for App {
             let painter = ui.painter_at(rect);
             self.paint(&painter, rect);
             if resp.drag_started() {
-                self.drag_zone = resp.interact_pointer_pos().and_then(|p| self.zone_at(p));
+                let at = resp.interact_pointer_pos();
+                // a drag that starts on the track of a scroll bar moves the bar, not the view
+                self.bar_drag = at.and_then(|p| {
+                    self.bars
+                        .iter()
+                        .rev()
+                        .find(|b| b.track.expand(8.0).contains(p))
+                        .map(|b| b.bar)
+                });
+                if self.bar_drag.is_none() {
+                    self.drag_zone = at.and_then(|p| self.zone_at(p));
+                }
             }
-            if resp.dragged() {
+            if resp.dragged() && self.bar_drag.is_some() {
+                if let (Some(bar), Some(p)) = (self.bar_drag, resp.interact_pointer_pos()) {
+                    self.bar_to(bar, p);
+                }
+            } else if resp.dragged() {
                 if let Some(z) = self.drag_zone {
                     let d = resp.drag_delta() / self.ui_scale.max(0.01);
                     let pan = resp.dragged_by(egui::PointerButton::Secondary)
@@ -2636,6 +2920,7 @@ impl eframe::App for App {
                 }
             }
             if resp.drag_stopped() {
+                self.bar_drag = None;
                 if self.drag_zone == Some(Zone::Estop) {
                     self.remember_settings();
                 }
@@ -2678,11 +2963,29 @@ impl eframe::App for App {
                 self.browse_scroll(if scroll > 0.0 { -2 } else { 2 });
             } else if self.modal == Some(Modal::Board) {
                 self.mat_scroll_by(if scroll > 0.0 { -2 } else { 2 });
+            } else if let Some(bar) = ctx
+                .input(|i| i.pointer.hover_pos())
+                .and_then(|p| self.bars.iter().find(|b| b.area.contains(p)).map(|b| b.bar))
+            {
+                self.bar_wheel(bar, if scroll > 0.0 { -1 } else { 1 });
             } else if let Some(z) = ctx
                 .input(|i| i.pointer.hover_pos())
                 .and_then(|p| self.zone_at(p))
             {
                 self.zoom(z, scroll);
+            }
+        }
+        // a click on the track of a scroll bar puts the list there, and goes no further
+        if let Some(pos) = clicked {
+            if let Some(bar) = self
+                .bars
+                .iter()
+                .rev()
+                .find(|b| b.track.expand(8.0).contains(pos))
+                .map(|b| b.bar)
+            {
+                self.bar_to(bar, pos);
+                clicked = None;
             }
         }
         if let Some(pos) = clicked {
@@ -2699,11 +3002,19 @@ impl eframe::App for App {
                 self.act(a);
             }
         }
-        ctx.request_repaint_after(Duration::from_millis(if self.running.is_some() {
-            16
-        } else {
-            100
-        }));
+        // fast while a job runs or a window or screen is coming in, a calm 15 frames a second otherwise (the slow breathing of the lights)
+        let settling = self.animate
+            && self.anim0.elapsed().as_secs_f32() - self.anim_screen.1.max(self.anim_modal.1)
+                < 0.45;
+        ctx.request_repaint_after(Duration::from_millis(
+            if self.running.is_some() || settling {
+                16
+            } else if self.animate {
+                66
+            } else {
+                100
+            },
+        ));
     }
 }
 

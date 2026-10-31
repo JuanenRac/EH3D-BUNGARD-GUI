@@ -618,6 +618,17 @@ impl App {
             cv.hits
                 .push((cv.rect(x + cx, hy, cw, 30.0), Act::BrowseSort(i)));
         }
+        // the bar at the side of the rows
+        cv.scrollbar(
+            Bar::Browse,
+            x + 1306.0,
+            hy + 36.0,
+            ROWS as f32 * 32.0 - 4.0,
+            (x + 250.0, hy + 36.0, 1062.0, ROWS as f32 * 32.0),
+            b.entries.len(),
+            ROWS,
+            b.scroll,
+        );
         // the rows
         for k in 0..ROWS {
             let i = b.scroll + k;

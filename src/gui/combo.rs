@@ -238,6 +238,7 @@ impl App {
             ComboId::CatKind => {
                 self.cat_kind = row;
                 self.cat_scroll = 0;
+                self.cat_sel = None;
             }
             ComboId::Thickness => self.board_pick(BoardPick::Thickness(row)),
             ComboId::BoardSize => self.board_pick(BoardPick::Size(row.checked_sub(1))),
@@ -314,20 +315,17 @@ impl App {
             );
             cv.hits.push((rect, Act::ComboPick(i)));
         }
-        // the bar at the side shows where the list is
-        if items.len() > shown {
-            let track = cv.rect(ax + w - 12.0, y + 6.0, 5.0, h - 12.0);
-            cv.p.rect_filled(track, 2.0 * cv.u, alpha(col(t.dim), 50));
-            let k = shown as f32 / items.len() as f32;
-            let top = c.scroll as f32 / items.len() as f32;
-            let thumb = cv.rect(
-                ax + w - 12.0,
-                y + 6.0 + top * (h - 12.0),
-                5.0,
-                k * (h - 12.0),
-            );
-            cv.p.rect_filled(thumb, 2.0 * cv.u, col(t.accent));
-        }
+        // the bar at the side shows where the list is, and a click or a drag on it moves the list
+        cv.scrollbar(
+            Bar::Combo,
+            ax + w - 16.0,
+            y + 6.0,
+            h - 12.0,
+            (ax, y, w, h),
+            items.len(),
+            shown,
+            c.scroll,
+        );
     }
 }
 

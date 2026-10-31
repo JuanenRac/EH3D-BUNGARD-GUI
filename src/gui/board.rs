@@ -198,9 +198,18 @@ impl App {
         lines
     }
 
+    /// The colour index of each routing tool, the same as its swatch in the list of tools, so a path in the views is drawn in the colour of the tool that cuts it.
+    pub(super) fn route_tool_colors(&self) -> Vec<(u8, usize)> {
+        self.tool_lines()
+            .into_iter()
+            .filter(|l| l.prog == Program::Route)
+            .map(|l| (l.tool, l.color))
+            .collect()
+    }
+
     /// The top of the left card below the name of the file: the board and then the tools, each marked as drilling or routing and the
     /// one that is working lit. Returns where the next thing goes.
-    pub(super) fn paint_job_tools(&self, cv: &mut Cv, y0: f32) -> f32 {
+    pub(super) fn paint_job_tools(&self, cv: &mut Cv, y0: f32, max_y: f32) -> f32 {
         let t = cv.t.clone();
         let lines = self.tool_lines();
         let (drills, routes) = (
@@ -250,8 +259,14 @@ impl App {
         let working = self
             .running
             .and_then(|p| self.running_view().and_then(|v| v.tool).map(|n| (p, n)));
-        let mut y = y0 + 52.0;
-        for l in lines.iter().take(7) {
+        // the rows that fit between here and the layers; with more tools than that the list scrolls (bar at its side, wheel over it)
+        let first_y = y0 + 52.0;
+        let fit = (((max_y - first_y) / 52.0).floor().max(1.0)) as usize;
+        let total = lines.len();
+        let shown = total.min(fit);
+        let first = self.tool_scroll.min(total.saturating_sub(shown));
+        let mut y = first_y;
+        for l in lines.iter().skip(first).take(shown) {
             let c = col(t.size_color(l.color));
             let lit = working == Some((l.prog, l.tool));
             let r = cv.rect(38.0, y, 244.0, 48.0);
@@ -259,7 +274,8 @@ impl App {
                 r,
                 6.0 * cv.u,
                 if lit {
-                    alpha(c, 70)
+                    // the tool that is working breathes
+                    alpha(c, (55.0 + 40.0 * wave(cv.time, 1.8)) as u8)
                 } else {
                     col(t.panel_raised)
                 },
@@ -305,12 +321,27 @@ impl App {
             y += 52.0;
         }
         // a click on a tool takes the plan view to its work
-        for (i, l) in lines.iter().take(7).enumerate() {
+        for (i, l) in lines.iter().skip(first).take(shown).enumerate() {
             cv.hits.push((
-                cv.rect(38.0, y0 + 52.0 + 52.0 * i as f32, 244.0, 48.0),
+                cv.rect(
+                    38.0,
+                    first_y + 52.0 * i as f32,
+                    if total > shown { 232.0 } else { 244.0 },
+                    48.0,
+                ),
                 Act::CenterTool(l.prog, l.tool),
             ));
         }
+        cv.scrollbar(
+            Bar::Tools,
+            284.0,
+            first_y,
+            shown as f32 * 52.0 - 4.0,
+            (30.0, first_y, 262.0, shown as f32 * 52.0),
+            total,
+            shown,
+            first,
+        );
         y
     }
 
@@ -318,6 +349,15 @@ impl App {
 
     /// The board as it is on the table: its size is the one chosen or the one of the files.
     pub(crate) fn board_rect(&self) -> Option<(f64, f64, f64, f64)> {
+        // the design moved alone over a board that stayed where it was
+        if let Some(r) = self.board_frozen {
+            return Some(r);
+        }
+        self.board_rect_following_design()
+    }
+
+    /// The board as the files and the chosen size make it: it starts three millimetres before the work.
+    pub(crate) fn board_rect_following_design(&self) -> Option<(f64, f64, f64, f64)> {
         let mut all = self.drill.base.clone();
         all.overlay(&self.route.base);
         let (x0, y0, x1, y1) = all.bounds().unwrap_or((0.0, 0.0, 0.0, 0.0));
@@ -360,8 +400,14 @@ impl App {
                     self.board.layers = n;
                 }
             }
-            BoardPick::Size(None) => self.board.size_mm = None,
-            BoardPick::Size(Some(i)) => self.board.size_mm = m.formats_mm.get(i).copied(),
+            BoardPick::Size(None) => {
+                self.board.size_mm = None;
+                self.board_frozen = None;
+            }
+            BoardPick::Size(Some(i)) => {
+                self.board.size_mm = m.formats_mm.get(i).copied();
+                self.board_frozen = None;
+            }
         }
         self.apply_board();
     }
@@ -387,6 +433,11 @@ impl App {
         } else {
             (w, (h + d).clamp(10.0, 2000.0))
         });
+        // a board that stayed where it was keeps its corner and takes the new size
+        if let (Some(r), Some((nw, nh))) = (self.board_frozen.as_mut(), self.board.size_mm) {
+            r.2 = r.0 + nw;
+            r.3 = r.1 + nh;
+        }
         self.apply_board();
     }
 

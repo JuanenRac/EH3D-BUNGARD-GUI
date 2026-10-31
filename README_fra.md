@@ -12,14 +12,14 @@
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
-  <img src="https://img.shields.io/badge/Tests-73-0f6cbd.svg" alt="Tests">
-  <img src="https://img.shields.io/badge/Version-0.0.5-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Tests-75-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Version-0.0.6-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
 ---
 
-**Vérification d'honnêteté - ce qui tourne aujourd'hui :** un programme Rust avec une fenêtre et 73 tests qui s'exécutent sur un ordinateur. Le lanceur propose l'interface moderne ou les programmes classiques de perçage et de fraisage pour une machine avec changement d'outil manuel (MTC) ou automatique (ATC). Le visualiseur ouvre des fichiers de perçage, des fichiers de tracé HP-GL et des archives ZIP de travaux (depuis un navigateur de dossiers, par glisser-déposer ou depuis la ligne de commande), dessine la vue en plan avec chaque trou par diamètre de foret et les trajets de fraisage par-dessus, montre la machine en 3D avec la table de la taille choisie dans la configuration, panélise la carte et suit le travail pendant qu'il tourne. Le travail s'exécute dans le **simulateur** des moteurs de EH3D-DRILLPRO et EH3D-ROUTEPRO ; le même fichier de machine qu'ils lisent décide comment on atteint une vraie machine (le RS-232 de l'ordinateur, un adaptateur USB-RS232, ou le EH3D-NODE-BUNGARD directement ou via EH3D-SERVER), et **aucune de ces voies n'a été essayée depuis cette fenêtre**. Les fenêtres de connexion, de réglages et d'outils changent les valeurs qu'elles offrent, les fichiers entiers de machine et d'outils ne sont pas encore modifiables, et la vue 3D ne montre pas la hauteur des trajets.
+**Vérification d'honnêteté - ce qui tourne aujourd'hui :** un programme Rust avec une fenêtre et 75 tests qui s'exécutent sur un ordinateur. Le lanceur propose l'interface moderne ou les programmes classiques de perçage et de fraisage pour une machine avec changement d'outil manuel (MTC) ou automatique (ATC). Le visualiseur ouvre des fichiers de perçage, des fichiers de tracé HP-GL et des archives ZIP de travaux (depuis un navigateur de dossiers, par glisser-déposer ou depuis la ligne de commande), dessine la vue en plan avec chaque trou par diamètre de foret et les trajets de fraisage par-dessus, montre la machine en 3D avec la table de la taille choisie dans la configuration, panélise la carte et suit le travail pendant qu'il tourne. Le travail s'exécute dans le **simulateur** des moteurs de EH3D-DRILLPRO et EH3D-ROUTEPRO ; le même fichier de machine qu'ils lisent décide comment on atteint une vraie machine (le RS-232 de l'ordinateur, un adaptateur USB-RS232, ou le EH3D-NODE-BUNGARD directement ou via EH3D-SERVER), et **aucune de ces voies n'a été essayée depuis cette fenêtre**. Les fenêtres de connexion, de réglages et d'outils changent les valeurs qu'elles offrent, les fichiers entiers de machine et d'outils ne sont pas encore modifiables, et la vue 3D ne montre pas la hauteur des trajets.
 
 ---
 
@@ -29,9 +29,9 @@
 
 | | |
 |---|---|
-| Version | `0.0.5` |
+| Version | `0.0.6` |
 | Maturité | Échafaudage |
-| Tests | 73 |
+| Tests | 75 |
 | Pile technique | Rust |
 | Sur du matériel réel | Non. Il n'a tourné que sur le simulateur et sur un ordinateur ; aucune machine n'a été pilotée depuis cette fenêtre |
 
@@ -50,7 +50,7 @@ Chaque ligne est une partie de ce dépôt et le feu dit où elle en est aujourd'
 | Fichiers et panélisation | 🟡 | Les fichiers de perçage, HP-GL et les archives ZIP s'ouvrent depuis un navigateur, par glisser-déposer ou depuis la ligne de commande ; la carte est répétée en trois modes. Essayé avec les petits fichiers d'exemple de ce dépôt. |
 | Réglages | 🟠 | La largeur et la profondeur utiles de la table se changent et s'enregistrent dans les fichiers de la machine ; le reste des fichiers de machine et d'outils s'édite encore avec les programmes classiques. |
 | Pilotage de la machine | 🔴 | Le travail passe par les moteurs de EH3D-DRILLPRO et EH3D-ROUTEPRO, donc en principe toutes leurs connexions sont là ; il n'a tourné que sur le simulateur. La fenêtre de Connexion choisit la liaison (le RS-232 de l'ordinateur, un adaptateur USB-RS232, le nœud EH3D ou le serveur EH3D), la teste et l'enregistre dans le fichier de la machine, et Pause retient le travail entre deux mouvements. |
-| Tests | 🟡 | 73 tests passent sur un ordinateur (`cargo test --features gui`) : le lanceur, les réglages, la lecture des fichiers vers la scène, les profils de machine, le panneau et la ligne de commande. Aucun ne touche une machine. |
+| Tests | 🟡 | 75 tests passent sur un ordinateur (`cargo test --features gui`) : le lanceur, les réglages, la lecture des fichiers vers la scène, les profils de machine, le panneau et la ligne de commande. Aucun ne touche une machine. |
 | Paquets prêts à l'emploi | 🟠 | Un workflow compile le programme pour Windows (64 et 32 bits), Linux et macOS avec les fichiers d'exemple ; aucune version n'a encore été publiée. |
 
 ## 🎯 Présentation
@@ -67,8 +67,10 @@ Chaque ligne est une partie de ce dépôt et le feu dit où elle en est aujourd'
 * **Étalonnage de la table :** un onglet de la fenêtre Réglages mesure la hauteur de la table sur une grille de points (7 par 5 par défaut), dessine la carte (bleu en bas, rouge en haut) avec l'écart et l'inclinaison en mm par mètre, et la garde avec la machine. Tant que le nœud palpeur n'est pas connecté, le palpeur est simulé et la correction des travaux n'est pas encore appliquée.
 * **Le travail reprend après une panne :** pendant qu'un travail tourne, ce qu'il faut pour continuer (le fichier, le panneau, les trous percés) est enregistré en temps réel ; si la fenêtre, l'ordinateur ou la liaison tombe, le démarrage suivant demande s'il faut reprendre où il en était ou l'annuler. La fenêtre s'ouvre agrandie et les boutons du travail sont vifs (vert pour démarrer, bleu pour la pause, rouge pour arrêter).
 * **Avis parlés :** en plus des tonalités, la fin du travail et la demande d'outil peuvent être dites par une voix, dans la langue et le genre choisis dans la même liste de sons (`sound_finish = voice:es:f`). Les voix du dossier `voices/` sont synthétiques (Piper) et libres de diffusion, avec une phrase lente et formelle ; il n'y a pas de voix japonaise, ni de voix féminine chinoise ou portugaise, ni d'enregistrement réel d'une personne : mettez vos propres fichiers WAV dans les mêmes dossiers et ils les remplacent. Voir `voices/README.txt`.
-* **Un catalogue d'outils :** une fenêtre (depuis celle des Outils) liste 115 forets, fraises droites, fraises à coupe descendante et montante, fraises à denture diamant, fraises en V, à bout sphérique, à pointer et fraises à chanfreiner, toutes avec la queue de 1/8 de pouce (3,175 mm) du mandrin d'une machine Bungard, par type, avec les tours, les avances et la profondeur d'une passe pour commencer ; une fraise en V dit quelle est la largeur de sa rainure à une profondeur. La carte d'exemple a l'isolation de quatre pistes, taillée avec une fraise en V (outil 3 de la table de fraisage).
+* **Un catalogue d'outils :** une fenêtre (depuis celle des outils) liste plus de 450 outils à queue de 1/8 de pouce (3,175 mm) du mandrin d'une Bungard, en douze types : les forets de la série micro de 0,05 mm jusqu'à 7 mm (petits, de gamme moyenne et grands avec brise-copeaux), forets pour trous oblongs, fraises à denture diamant, à coupe descendante, montante, brise-copeaux et revêtues de diamant, fraises droites, fraises en V, à bout sphérique, forets à pointer et fraises à chanfreiner. Chacun a sa série, la longueur de son arête et les vitesses, les avances et la profondeur de passe du tableau du fabricant pour le FR-4 ; un clic dessine l'outil (avec ses cotes) et dit à quoi il sert, et une broche qui tourne moins que le tableau (24 000 tours par défaut, modifiable dans la fenêtre) reçoit le même outil avec des avances réduites en proportion. Une fraise en V indique la largeur de sa rainure à une profondeur. La carte d'exemple a l'isolation de quatre pistes, taillée avec une fraise en V (outil 3 de la table de fraisage).
 * **Les travaux suivent la table, et le nœud de la tête de perçage :** une case de l'onglet d'étalonnage fait corriger leur Z au perçage et au fraisage avec la carte de la table (seulement une carte complète, seulement sur demande) ; une fenêtre (depuis celle de Connexion) règle comment on atteint EH3D-NODE-BUNGARD-AUX (non utilisé, direct ou par le serveur), son adresse, son jeton et si sa caméra est affichée, et montre l'image de la caméra, la vitesse et la température de la broche, la sortie de protection et une mesure de la table sous la tête. Par le serveur elle interroge le nœud par le serveur, avec l'adresse, le jeton et l'id de machine de la fenêtre de connexion (le serveur garde le jeton du nœud) ; le palpeur de l'étalonnage est encore simulé.
+* **Plus facile à lire et à déplacer :** la liste des outils de la carte du travail défile au lieu de pousser les couches hors de la fenêtre, chaque liste déroulante ouverte a une barre qui fonctionne (glisser, cliquer, molette), un bouton de la vue 2D déplace seulement le dessin sur la carte et la table, chaque outil de fraisage a sa propre couleur dans les vues 2D et 3D (un fichier avec trois fraises montre trois couleurs), et les ponts sont coupés dans le contour d'une carte même avec une seule copie, et seulement dans le contour, jamais dans les poches et pistes intérieures.
+* **Animations discrètes :** les écrans et les fenêtres apparaissent en fondu et, pendant un travail, l'anneau de la tête respire et émet une onde, les tirets des trajets encore à couper avancent le long de ceux-ci, une lumière traverse la barre de progression et l'outil qui travaille respire dans la liste. Au repos, rien ne bouge.
 
 ## 🧩 Rôle dans EH3D
 
@@ -199,7 +201,7 @@ Lancez-le avec `run.bat` (Windows) ou `./run.sh` (Linux et macOS) ; les deux com
 
 ## 🧪 Tests
 
-La suite compte 73 tests (`cargo test --features gui`). Ils vérifient le lanceur et ce qu'il mémorise, les réglages, comment un fichier de perçage ou HP-GL devient la scène, les profils de machine, le panneau et la ligne de commande. Les moteurs qu'il utilise (protocole, mouvement, porte de sécurité) sont testés dans EH3D-DRILLPRO et EH3D-ROUTEPRO. La CI exécute aussi `cargo fmt --check` et `cargo clippy` avec les avertissements en erreurs, et `python -I tools/ci_validate.py` vérifie le manifeste, les versions, le journal des modifications et les huit README.
+La suite compte 75 tests (`cargo test --features gui`). Ils vérifient le lanceur et ce qu'il mémorise, les réglages, comment un fichier de perçage ou HP-GL devient la scène, les profils de machine, le panneau et la ligne de commande. Les moteurs qu'il utilise (protocole, mouvement, porte de sécurité) sont testés dans EH3D-DRILLPRO et EH3D-ROUTEPRO. La CI exécute aussi `cargo fmt --check` et `cargo clippy` avec les avertissements en erreurs, et `python -I tools/ci_validate.py` vérifie le manifeste, les versions, le journal des modifications et les huit README.
 
 ## 🏗️ Compilation et publication
 

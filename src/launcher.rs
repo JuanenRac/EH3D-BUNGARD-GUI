@@ -114,6 +114,8 @@ pub struct Settings {
     pub estop_pos: (f32, f32),
     /// Lengths are shown in mils (0.001 inch) instead of millimetres.
     pub display_mil: bool,
+    /// The top speed of the spindle of the machine, in turns per minute: the catalogue of bits lowers its feeds to what a slower spindle can take.
+    pub spindle_rpm: u32,
     /// How many holes each drill (by its tool number) has drilled in all the jobs, has drilled in all the jobs of this window, kept between runs.
     pub holes_drilled: std::collections::BTreeMap<u8, u64>,
     /// The files opened last, the newest first (at most [`RECENT_MAX`]).
@@ -137,6 +139,7 @@ impl Default for Settings {
             emergency: true,
             estop_pos: (1020.0, 770.0),
             display_mil: false,
+            spindle_rpm: 24_000,
             holes_drilled: std::collections::BTreeMap::new(),
             recent: Vec::new(),
         }
@@ -201,6 +204,14 @@ impl Settings {
                 "tools_on_open" => {
                     s.tools_on_open = !matches!(v.trim(), "no" | "off" | "false" | "0")
                 }
+                "spindle_rpm" => {
+                    s.spindle_rpm = v
+                        .trim()
+                        .parse::<u32>()
+                        .ok()
+                        .filter(|r| (4_000..=200_000).contains(r))
+                        .unwrap_or(s.spindle_rpm)
+                }
                 "board" => s.board = crate::boards::from_text(v).unwrap_or(s.board),
                 _ => {}
             }
@@ -210,7 +221,7 @@ impl Settings {
 
     pub fn to_text(&self) -> String {
         format!(
-            "choice = {}\nlang = {}\ntheme = {}\nboard = {}\nask_operator = {}\ntools_on_open = {}\nsim_speed = {}\nmodel = {}\nemergency = {}\nestop_pos = {},{}\ndisplay_units = {}\nholes_drilled = {}\nrecent = {}\n",
+            "choice = {}\nlang = {}\ntheme = {}\nboard = {}\nask_operator = {}\ntools_on_open = {}\nsim_speed = {}\nmodel = {}\nemergency = {}\nestop_pos = {},{}\ndisplay_units = {}\nspindle_rpm = {}\nholes_drilled = {}\nrecent = {}\n",
             self.choice.map_or("ask", |c| c.key()),
             self.lang.code(),
             self.theme.key(),
@@ -223,6 +234,7 @@ impl Settings {
             self.estop_pos.0,
             self.estop_pos.1,
             if self.display_mil { "mil" } else { "mm" },
+            self.spindle_rpm,
             self.holes_drilled
                 .iter()
                 .map(|(t, n)| format!("{t}:{n}"))
@@ -347,6 +359,7 @@ mod tests {
             emergency: false,
             estop_pos: (300.0, 400.5),
             display_mil: true,
+            spindle_rpm: 18_000,
             holes_drilled: [(1u8, 9172u64), (3, 40)].into_iter().collect(),
             recent: vec!["C:/jobs/a.ncd".to_string(), "C:/jobs/b.zip".to_string()],
         };

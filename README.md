@@ -12,14 +12,14 @@
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
-  <img src="https://img.shields.io/badge/Tests-73-0f6cbd.svg" alt="Tests">
-  <img src="https://img.shields.io/badge/Version-0.0.5-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Tests-75-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Version-0.0.6-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
 ---
 
-**Honesty check - what actually runs today:** a Rust program with a window and 73 tests that run on a computer. The launcher offers the modern interface or the classic drilling and routing programs for a machine with manual (MTC) or automatic (ATC) tool change. The viewer opens drilling files, HP-GL plot files and ZIP archives of jobs (from a folder browser, by drag and drop or from the command line), draws the plan view with every hole by drill size and the routing paths over it, shows the machine in 3D with the table of the size chosen in the configuration, panelizes the board and follows the job as it runs. The job runs on the **simulator** of the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO; the same machine file they read decides how a real machine is reached (the computer's RS-232, a USB-RS232 adapter, or the EH3D-NODE-BUNGARD directly or through EH3D-SERVER), and **none of those has been tried from this window**. The windows of the connection, the settings and the tools change the values they offer, the whole machine and tool files cannot be edited yet, and the 3D view does not show the height of the tool paths.
+**Honesty check - what actually runs today:** a Rust program with a window and 75 tests that run on a computer. The launcher offers the modern interface or the classic drilling and routing programs for a machine with manual (MTC) or automatic (ATC) tool change. The viewer opens drilling files, HP-GL plot files and ZIP archives of jobs (from a folder browser, by drag and drop or from the command line), draws the plan view with every hole by drill size and the routing paths over it, shows the machine in 3D with the table of the size chosen in the configuration, panelizes the board and follows the job as it runs. The job runs on the **simulator** of the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO; the same machine file they read decides how a real machine is reached (the computer's RS-232, a USB-RS232 adapter, or the EH3D-NODE-BUNGARD directly or through EH3D-SERVER), and **none of those has been tried from this window**. The windows of the connection, the settings and the tools change the values they offer, the whole machine and tool files cannot be edited yet, and the 3D view does not show the height of the tool paths.
 
 ---
 
@@ -29,9 +29,9 @@
 
 | | |
 |---|---|
-| Version | `0.0.5` |
+| Version | `0.0.6` |
 | Maturity | Scaffolding |
-| Tests | 73 |
+| Tests | 75 |
 | Stack | Rust |
 | On real hardware | No. It has run on the simulator and on a computer only; no machine has been driven from this window |
 
@@ -50,7 +50,7 @@ Each line is one part of this repository and the light says how far it is today.
 | Files and panelization | 🟡 | Drilling files, HP-GL files and ZIP archives are opened from a browser, by drag and drop or from the command line; the board is repeated in three modes. Tried with the small sample files of this repository. |
 | Settings | 🟠 | The usable width and depth of the table are changed and saved to the machine files; the rest of the machine and tool files is still edited with the classic programs. |
 | Machine control | 🔴 | The job goes through the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO, so every connection they have is there in principle; it has run on the simulator only. The Connection window chooses the link (the computer's RS-232, a USB-RS232 adapter, the EH3D node or the EH3D server), tests it and saves it to the machine file, and Pause holds the job between two moves. |
-| Tests | 🟡 | 73 tests pass on a computer (`cargo test --features gui`): the launcher, the settings, the reading of the files into the scene, the machine profiles, the panel and the command line. None of them touches a machine. |
+| Tests | 🟡 | 75 tests pass on a computer (`cargo test --features gui`): the launcher, the settings, the reading of the files into the scene, the machine profiles, the panel and the command line. None of them touches a machine. |
 | Ready-made packages | 🟠 | A workflow builds the program for Windows (64 and 32 bits), Linux and macOS with the sample files; no release has been published yet. |
 
 ## 🎯 Overview
@@ -67,8 +67,10 @@ Each line is one part of this repository and the light says how far it is today.
 * **The table is calibrated:** a tab of the Settings window measures the height of the table in a grid of points (7 by 5 by default), draws the map (blue low, red high) with the spread and the tilt in mm per metre, and keeps it with the machine. Until the probe node is connected the probe is simulated, and the correction of the jobs is not applied yet.
 * **The job goes on after a crash:** while a job runs, what it needs to go on (the file, the panel, the holes drilled) is saved in real time; if the window, the computer or the link goes down, the next start asks whether to go on from where it was or to cancel it. The window opens maximized and the job buttons are bright (green to start, blue to pause, red to stop).
 * **Spoken notices:** besides the tones, the end of the job and the request for a tool can be said by a voice, in the language and the gender chosen from the same list of sounds (`sound_finish = voice:es:f`). The voices in the folder `voices/` are synthetic (Piper) and free to give away, with a slow and formal sentence; there is no Japanese voice, no female Chinese or Portuguese voice and no real recording of a person: put your own WAV files in the same folders and they replace them. See `voices/README.txt`.
-* **A catalogue of bits:** a window (from the Tools window) lists 115 drills, end mills, down-cut and up-cut routers, diamond-cut routers, V-bits, ball noses, spot drills and countersinks, all with the 1/8 inch (3.175 mm) shank of the chuck of a Bungard machine, by kind, with the turns, the feeds and the depth of a pass to start from; a V-bit tells how wide its groove is at a depth. The sample board has the isolation of four tracks, cut with a V-bit (tool 3 of the routing table).
+* **A catalogue of bits:** a window (from the Tools window) lists more than 450 bits with the 1/8 inch (3.175 mm) shank of the chuck of a Bungard machine, in twelve kinds: the drills from the 0.05 mm micro series to 7 mm (small, medium range and large ones with a chip breaker), slot drills, diamond-cut, down-cut, up-cut, chip-breaker and diamond-coated routers, end mills, V-bits, ball noses, spot drills and countersinks. Each one has its series, the length of its flute and the turns, feeds and depth of a pass of the maker's table for FR-4; a click draws the bit (with its measures) and says what it is for, and a spindle that turns slower than the table (24 000 turns by default, changed in the window) gets the same bit with its feeds lowered in proportion. A V-bit tells how wide its groove is at a depth. The sample board has the isolation of four tracks, cut with a V-bit (tool 3 of the routing table).
 * **The jobs follow the table, and the node of the drill head:** a check box of the calibration tab makes drilling and routing correct their Z with the map of the table (only a complete map, only when asked for); a window (from the Connection window) sets how EH3D-NODE-BUNGARD-AUX is reached (not used, directly or through the server), its address and token and whether its camera is shown, and shows the picture of the camera, the speed and the temperature of the spindle, the protect output and a measure of the table under the head. Through the server it asks the node by the server, with the address, the token and the machine id of the connection window (the server holds the token of the node); the probe of the calibration is still simulated.
+* **Easier to read and to move:** the list of tools of the job card scrolls instead of pushing the layers out of the window, every open drop-down list has a bar that works (drag, click, wheel), a button of the 2D view moves only the design over the board and the table, each routing tool has its own colour in the 2D and 3D views (a file with three mills shows three colours), and the tabs are cut into the outside of a board even when there is a single copy, and only into the outside, never into the pockets and tracks inside.
+* **Quiet animations:** screens and windows fade in as they open, and while a job runs the ring of the head breathes and sends out a ripple, the dashes of the paths still to cut move along them, a light crosses the progress bar and the working tool breathes in the list. At rest nothing moves.
 
 ## 🧩 Role in EH3D
 
@@ -199,7 +201,7 @@ Run it with `run.bat` (Windows) or `./run.sh` (Linux and macOS); both build the 
 
 ## 🧪 Testing
 
-The suite has 73 tests (`cargo test --features gui`). They check the launcher and what it remembers, the settings, how a drilling or an HP-GL file becomes the scene, the machine profiles, the panel and the command line. The engines it uses (protocol, motion, safety gate) are tested in EH3D-DRILLPRO and EH3D-ROUTEPRO. The CI also runs `cargo fmt --check` and `cargo clippy` with warnings as errors, and `python -I tools/ci_validate.py` checks the manifest, the versions, the changelog and the eight READMEs.
+The suite has 75 tests (`cargo test --features gui`). They check the launcher and what it remembers, the settings, how a drilling or an HP-GL file becomes the scene, the machine profiles, the panel and the command line. The engines it uses (protocol, motion, safety gate) are tested in EH3D-DRILLPRO and EH3D-ROUTEPRO. The CI also runs `cargo fmt --check` and `cargo clippy` with warnings as errors, and `python -I tools/ci_validate.py` checks the manifest, the versions, the changelog and the eight READMEs.
 
 ## 🏗️ Build & Release
 

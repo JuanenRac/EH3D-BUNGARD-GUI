@@ -185,6 +185,24 @@ impl App {
 
     /// Moves the board on the table by this much (mm): the offset of the machine changes, and so does what the views show.
     pub(crate) fn shift_board(&mut self, dx: f64, dy: f64) {
+        // the board goes with its design
+        if let Some(r) = self.board_frozen.as_mut() {
+            *r = (r.0 + dx, r.1 + dy, r.2 + dx, r.3 + dy);
+        }
+        self.shift_design(dx, dy);
+    }
+
+    /// Turns on or off the move of the design alone: the board stays where it is while the design is dragged over it and over the table.
+    pub(crate) fn toggle_move_design(&mut self) {
+        self.move_design = !self.move_design;
+        if self.move_design {
+            self.move_board = false;
+            self.board_frozen = self.board_rect_following_design();
+        }
+    }
+
+    /// The design (the holes and the paths) goes `dx` and `dy` millimetres on its own: the board and the table stay.
+    pub(crate) fn shift_design(&mut self, dx: f64, dy: f64) {
         let mut moved = false;
         for side in [&mut self.drill, &mut self.route] {
             if let Some(s) = side.engine.settings_mut() {
@@ -271,13 +289,12 @@ impl App {
 
     /// The tools of the plan view: follow the tool, move the board, turn the work, fit the board or the table, and take the whole window.
     pub(super) fn paint_plan_tools(&self, cv: &mut Cv, x: f32, y: f32, w: f32) {
-        let half = (w - 16.0) / 2.0 - 4.0;
         let col3 = (w - 28.0) / 3.0;
-        let _ = half;
+        // the first row has three things: follow the tool, move the board (with its design) and move the design alone; the turn is in the header of the view
         cv.checkbox(
             x,
             y,
-            col3 + 20.0,
+            col3,
             self.tr(Text::FollowTool),
             self.follow,
             Act::ToggleFollow,
@@ -285,19 +302,18 @@ impl App {
         cv.checkbox(
             x + col3 + 6.0,
             y,
-            col3 + 20.0,
+            col3,
             self.tr(Text::MoveBoard),
             self.move_board,
             Act::ToggleMoveBoard,
         );
-        cv.chip(
-            x + 2.0 * (col3 + 6.0) + 18.0,
-            y + 2.0,
-            col3 - 16.0,
-            32.0,
-            self.tr(Text::Rotate),
-            false,
-            Act::Rotate(1),
+        cv.checkbox(
+            x + 2.0 * (col3 + 6.0),
+            y,
+            col3,
+            self.tr(Text::MoveDesign),
+            self.move_design,
+            Act::ToggleMoveDesign,
         );
         cv.chip(
             x + 4.0,

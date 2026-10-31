@@ -92,14 +92,41 @@ const STD_BUNGARD: &[(f64, f64)] = &[
     (300.0, 210.0),
 ];
 
-const EUROCARD: &[(f64, f64)] = &[(100.0, 160.0), (160.0, 233.4), (233.4, 160.0)];
 const SHEETS: &[(f64, f64)] = &[
     (200.0, 300.0),
     (300.0, 600.0),
     (305.0, 457.0),
     (457.0, 610.0),
 ];
-const RF_PANEL: &[(f64, f64)] = &[(305.0, 457.0), (457.0, 610.0)];
+/// The panels the Rogers data sheets list: 12 x 18, 24 x 18, 24 x 36 and 48 x 36 inches.
+const RF_PANEL: &[(f64, f64)] = &[
+    (304.8, 457.2),
+    (609.6, 457.2),
+    (609.6, 914.4),
+    (1219.2, 914.4),
+];
+/// The panels of the Taconic laminates (RF-35: 12 x 18, 16 x 18 and 18 x 24 inches; TLY-5: 18 x 24).
+const TACONIC_PANEL: &[(f64, f64)] = &[(304.8, 457.2), (406.4, 457.2), (457.2, 609.6)];
+/// The master sheets of the glass-epoxy laminates: 36 x 48, 40 x 48 (the Shengyi data sheets) and 42 x 48 inches; the maker cuts them to the panel the fabricator asks for.
+const MASTER_SHEETS: &[(f64, f64)] = &[(914.4, 1219.2), (1016.0, 1219.2), (1066.8, 1219.2)];
+/// The sizes of the Fortex boards of 1.6 mm (the maker's sheet): 160 x 100, 100 x 220, 203 x 114, 233.4 x 160, 233.4 x 220, 305 x 457 and 510 x 1150 mm.
+const FORTEX_SIZES: &[(f64, f64)] = &[
+    (160.0, 100.0),
+    (100.0, 220.0),
+    (203.0, 114.0),
+    (233.4, 160.0),
+    (233.4, 220.0),
+    (305.0, 457.0),
+    (510.0, 1150.0),
+];
+/// The sizes of the 500 series of MG Chemicals, in inches: 3 x 5, 4 x 6, 6 x 6, 8 x 10 and 12 x 12.
+const MG_SIZES: &[(f64, f64)] = &[
+    (76.2, 127.0),
+    (101.6, 152.4),
+    (152.4, 152.4),
+    (203.2, 254.0),
+    (304.8, 304.8),
+];
 
 const TH_FR4: &[f64] = &[0.1, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0, 2.4, 3.2];
 const TH_THIN: &[f64] = &[0.1, 0.2, 0.4, 0.8, 1.0, 1.6, 2.0];
@@ -153,7 +180,7 @@ pub const MATERIALS: &[Material] = &[
         maker: "Bungard",
         name: "FR4 epoxy, positive photoresist",
         core: Core::Fr4,
-        thickness_mm: &[0.5, 1.0, 1.5],
+        thickness_mm: &[0.2, 0.5, 1.0, 1.5],
         copper_um: &[35.0, 70.0],
         sides: Sides::Either,
         formats_mm: STD_BUNGARD,
@@ -212,19 +239,48 @@ pub const MATERIALS: &[Material] = &[
         note: "Large sheets to be cut",
     },
     // ---- Plain boards of the electronics shops
+    // ---- MG Chemicals: plain boards of the 500 series
     Material {
-        maker: "Fortex",
-        name: "FR4 1.55 mm",
+        maker: "MG Chemicals",
+        name: "FR4 500 series, 1.6 mm",
         core: Core::Fr4,
-        thickness_mm: &[1.55],
-        copper_um: &[35.0],
+        thickness_mm: &[1.6],
+        copper_um: &[17.0, 35.0],
         sides: Sides::Either,
-        formats_mm: EUROCARD,
+        formats_mm: MG_SIZES,
         dk: Some(4.5),
         df: None,
         tg_c: Some(130.0),
         photoresist: false,
-        note: "Single-sided, 100 x 160 mm and 233.4 x 160 mm",
+        note: "1/16 inch; single-sided in 3 x 5, 4 x 6, 6 x 6, 8 x 10 and 12 x 12 inches, double-sided in 3 x 5, 6 x 6 and 12 x 12; copper 1 oz (some listings say 1/2 oz)",
+    },
+    Material {
+        maker: "MG Chemicals",
+        name: "FR4 500 series, 0.8 mm",
+        core: Core::Fr4,
+        thickness_mm: &[0.8],
+        copper_um: &[35.0],
+        sides: Sides::Either,
+        formats_mm: &[(152.4, 228.6)],
+        dk: Some(4.5),
+        df: None,
+        tg_c: Some(130.0),
+        photoresist: false,
+        note: "1/32 inch; single- and double-sided in 6 x 9 inches",
+    },
+    Material {
+        maker: "Fortex",
+        name: "FR4 1.6 mm",
+        core: Core::Fr4,
+        thickness_mm: &[1.6],
+        copper_um: &[35.0],
+        sides: Sides::Either,
+        formats_mm: FORTEX_SIZES,
+        dk: Some(4.5),
+        df: None,
+        tg_c: Some(130.0),
+        photoresist: false,
+        note: "Single-sided (35 / 0 um) or double-sided (35 / 35 um), in the seven sizes of the maker; other sizes and thicknesses on request",
     },
     Material {
         maker: "CIF",
@@ -318,7 +374,7 @@ pub const MATERIALS: &[Material] = &[
         thickness_mm: &[0.1, 0.2, 0.4, 0.8, 1.0, 1.6, 2.0],
         copper_um: &[18.0, 35.0, 70.0],
         sides: Sides::Either,
-        formats_mm: &[],
+        formats_mm: MASTER_SHEETS,
         dk: Some(4.04),
         df: Some(0.021),
         tg_c: Some(180.0),
@@ -332,7 +388,7 @@ pub const MATERIALS: &[Material] = &[
         thickness_mm: &[0.1, 0.2, 0.4, 0.8, 1.0, 1.6],
         copper_um: &[18.0, 35.0],
         sides: Sides::Either,
-        formats_mm: &[],
+        formats_mm: MASTER_SHEETS,
         dk: Some(3.68),
         df: Some(0.0095),
         tg_c: Some(190.0),
@@ -346,7 +402,7 @@ pub const MATERIALS: &[Material] = &[
         thickness_mm: &[0.1, 0.2, 0.4, 0.8],
         copper_um: &[18.0, 35.0],
         sides: Sides::Either,
-        formats_mm: &[],
+        formats_mm: MASTER_SHEETS,
         dk: Some(3.7),
         df: Some(0.002),
         tg_c: Some(185.0),
@@ -360,7 +416,7 @@ pub const MATERIALS: &[Material] = &[
         thickness_mm: &[0.2, 0.4, 0.8, 1.0, 1.6, 2.0],
         copper_um: &[18.0, 35.0, 70.0],
         sides: Sides::Either,
-        formats_mm: &[],
+        formats_mm: MASTER_SHEETS,
         dk: Some(4.3),
         df: Some(0.016),
         tg_c: Some(170.0),
@@ -374,7 +430,7 @@ pub const MATERIALS: &[Material] = &[
         thickness_mm: &[0.2, 0.4, 0.8, 1.0, 1.6, 2.0],
         copper_um: &[18.0, 35.0, 70.0],
         sides: Sides::Either,
-        formats_mm: &[],
+        formats_mm: MASTER_SHEETS,
         dk: Some(4.4),
         df: Some(0.015),
         tg_c: Some(175.0),
@@ -388,7 +444,7 @@ pub const MATERIALS: &[Material] = &[
         thickness_mm: &[0.2, 0.4, 0.8, 1.0, 1.6, 2.0],
         copper_um: &[18.0, 35.0, 70.0],
         sides: Sides::Either,
-        formats_mm: &[],
+        formats_mm: MASTER_SHEETS,
         dk: Some(4.4),
         df: Some(0.016),
         tg_c: Some(180.0),
@@ -402,7 +458,7 @@ pub const MATERIALS: &[Material] = &[
         thickness_mm: &[0.1, 0.2, 0.4, 0.8, 1.6],
         copper_um: &[18.0, 35.0],
         sides: Sides::Either,
-        formats_mm: &[],
+        formats_mm: MASTER_SHEETS,
         dk: Some(3.7),
         df: Some(0.009),
         tg_c: Some(210.0),
@@ -515,7 +571,7 @@ pub const MATERIALS: &[Material] = &[
         thickness_mm: &[0.127, 0.254, 0.508, 0.787, 1.524],
         copper_um: &[17.0, 35.0],
         sides: Sides::Either,
-        formats_mm: RF_PANEL,
+        formats_mm: &[(457.2, 609.6)],
         dk: Some(2.2),
         df: Some(0.0009),
         tg_c: None,
@@ -529,7 +585,7 @@ pub const MATERIALS: &[Material] = &[
         thickness_mm: &[0.254, 0.508, 0.762, 1.524],
         copper_um: &[17.0, 35.0],
         sides: Sides::Either,
-        formats_mm: RF_PANEL,
+        formats_mm: TACONIC_PANEL,
         dk: Some(3.5),
         df: Some(0.0018),
         tg_c: None,

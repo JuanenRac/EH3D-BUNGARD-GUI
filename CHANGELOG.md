@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.0.7] - Light and quality check with the camera of the drill head
+
 - **Light and quality check with the camera of the drill head:** the window of the node has the ring of LEDs (off and three levels, shown as the node says it) and a button for the new Quality check window. That window shows the camera with a mark on every hole it looked at, a verdict as big as a sign (OK, NOT OK or cannot judge), how many holes are right, the width of the milled channels and a line for each finding; it chooses the checks (holes, channels), the profile (standard, fine pitch, prototype), the light for the picture, the hole of the job that is in the centre (the holes of the job around it that the camera sees are judged too), the scale of the picture and its calibration from the hole just measured. A second window holds the tolerances. The profile is kept in a file next to the settings and, through the server, given to it. The ring says the result in colour. 8 tests; `--check` and `--hole N` for pictures.
 
 ## [0.0.6] - Scrolling lists, a catalogue of more than 450 bits, tabs and colours by tool, and subtle animations

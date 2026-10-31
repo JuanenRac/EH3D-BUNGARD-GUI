@@ -10,3 +10,23 @@ fr/m: fr_FR-gilles-low - CC0
 fr/f: fr_FR-siwis-medium - CC BY 4.0 (attribution)
 pt/m: pt_PT-tugão-medium - CC0
 zh/m: zh_CN-chaowen-medium - CC0
+bg/m: bg_BG-dimitar-medium - CC0
+cs/m: cs_CZ-jirka-medium - CC0
+da/m: da_DK-talesyntese-medium - CC0 (Norwegian National Library speech synthesis data)
+nl/m: nl_NL-alex-medium - CC0
+et/f: et_EE-news-medium (speaker 2, Mari) - CC BY (Speech corpus of Estonian news sentences, attribution)
+fi/m: fi_FI-harri-medium - CC0
+el/f: el_GR-rapunzelina-medium - CC0
+hu/f: hu_HU-anna-medium - CC0
+lv/m: lv_LV-aivars-medium - CC0
+no/m: no_NO-talesyntese-medium - CC0
+pl/m: pl_PL-darkman-medium - CC0
+ro/m: ro_RO-mihai-medium - CC0
+sk/f: sk_SK-lili-medium - CC0
+sl/m: sl_SI-artur-medium - CC BY 4.0 (Artur studio TTS dataset, attribution)
+sv/m: sv_SE-nst-medium - CC0
+uk/f: uk_UA-ukrainian_tts-medium (speaker 2, tetiana) - CC0
+ru/m: ru_RU-dmitri-medium - CC0
+sq/m: sq_AL-edon-medium - CC0
+eu/m: eu_ES-antton-medium - CC BY 4.0 (Antton dataset by Itzune, attribution)
+pt-br/m: pt_BR-faber-medium - CC0

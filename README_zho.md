@@ -258,6 +258,7 @@ EH3D-BUNGARD-GUI/
 │   ├── cli.rs                                   命令行
 │   ├── lib.rs bin/                              库的根文件和可执行文件 bungard-gui
 │   └── spindle.rs                               两种主轴、它们的限制，以及刀具是否适用
+├── tests/                                       检查仓库文件的测试
 ├── testdata/                                    一块小电路板：钻孔和轮廓文件，以及示例机器和刀具文件
 ├── docs/                                        两张图片的来源
 ├── tools/                                       CI 检查、README 检查和图片工具

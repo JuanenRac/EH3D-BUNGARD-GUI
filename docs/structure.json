@@ -219,6 +219,36 @@
       ]
     },
     {
+      "name": "tests/",
+      "span": 3,
+      "accent": "b",
+      "tree": {
+        "en": "the tests that look at the files of the repository",
+        "es": "las pruebas que miran los ficheros del repositorio",
+        "de": "die Tests, die die Dateien des Repositorys prüfen",
+        "fr": "les tests qui regardent les fichiers du dépôt",
+        "it": "i test che guardano i file del repository",
+        "ja": "リポジトリのファイルを調べるテスト",
+        "zh": "检查仓库文件的测试",
+        "pt": "os testes que olham para os ficheiros do repositório"
+      },
+      "rows": [
+        {
+          "name": "voices.rs",
+          "desc": {
+            "en": "the spoken notices: four recordings and a licence per voice",
+            "es": "los avisos hablados: cuatro grabaciones y una licencia por voz",
+            "de": "die gesprochenen Hinweise: vier Aufnahmen und eine Lizenz je Stimme",
+            "fr": "les avis parlés : quatre enregistrements et une licence par voix",
+            "it": "gli avvisi parlati: quattro registrazioni e una licenza per voce",
+            "ja": "音声通知：音声ごとに 4 録音とライセンス",
+            "zh": "语音提示：每个语音四段录音和一个许可",
+            "pt": "os avisos falados: quatro gravações e uma licença por voz"
+          }
+        }
+      ]
+    },
+    {
       "name": "testdata/",
       "span": 3,
       "accent": "b",

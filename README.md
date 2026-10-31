@@ -258,6 +258,7 @@ EH3D-BUNGARD-GUI/
 │   ├── cli.rs                                   the command line
 │   ├── lib.rs bin/                              the library root and the bungard-gui executable
 │   └── spindle.rs                               the two spindles, their limits and whether a bit fits each
+├── tests/                                       the tests that look at the files of the repository
 ├── testdata/                                    a small board: drilling and outline files, and the sample machine and tool files
 ├── docs/                                        the sources of the two pictures
 ├── tools/                                       CI check, README check and the picture tools

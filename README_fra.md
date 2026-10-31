@@ -258,6 +258,7 @@ EH3D-BUNGARD-GUI/
 │   ├── cli.rs                                   la ligne de commande
 │   ├── lib.rs bin/                              la racine de la bibliothèque et l'exécutable bungard-gui
 │   └── spindle.rs                               les deux broches, leurs limites et si un outil convient
+├── tests/                                       les tests qui regardent les fichiers du dépôt
 ├── testdata/                                    une petite carte : fichiers de perçage et de contour, et fichiers d'exemple de machine et d'outils
 ├── docs/                                        les sources des deux images
 ├── tools/                                       contrôle CI, contrôle du README et outils des images

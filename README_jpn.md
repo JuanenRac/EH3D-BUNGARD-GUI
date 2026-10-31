@@ -258,6 +258,7 @@ EH3D-BUNGARD-GUI/
 │   ├── cli.rs                                   コマンドライン
 │   ├── lib.rs bin/                              ライブラリのルートと実行ファイル bungard-gui
 │   └── spindle.rs                               2 つの主軸・その限界・工具が使えるか
+├── tests/                                       リポジトリのファイルを調べるテスト
 ├── testdata/                                    小さな基板：ドリルと外形のファイル、サンプルのマシン・ツールファイル
 ├── docs/                                        2 つの図の元データ
 ├── tools/                                       CI チェック、README チェック、図の生成ツール

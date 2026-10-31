@@ -93,6 +93,18 @@ Cómo encajan las partes de este repositorio: quién lo usa, qué contiene y de 
 <p align="center"><em>El visor: el trabajo en la mesa en 2D, la máquina en 3D y los mandos del trabajo.</em></p>
 
 <p align="center">
+  <img src="images/screenshots/edit-select.png" alt="edit" width="100%">
+</p>
+
+<p align="center"><em>Edición en el visor 2D: la herramienta de selección ha tomado los agujeros de la parte izquierda de la placa, listos para copiar, pegar, cortar o eliminar; cada herramienta de la lista tiene su botón para quitarla del trabajo.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/open-preview.png" alt="open file with preview" width="100%">
+</p>
+
+<p align="center"><em>La ventana de abrir con la vista previa del fichero de taladro elegido, a la derecha de la lista; un interruptor debajo la quita y la lista recupera su sitio.</em></p>
+
+<p align="center">
   <img src="images/screenshots/job-running.png" alt="job running" width="100%">
 </p>
 
@@ -121,6 +133,12 @@ Cómo encajan las partes de este repositorio: quién lo usa, qué contiene y de 
 </p>
 
 <p align="center"><em>La placa: un material de la biblioteca, su grosor, su cobre y su tamaño.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/catalogue.png" alt="catalogue of bits" width="100%">
+</p>
+
+<p align="center"><em>El catálogo de brocas, filtrado por tipo, con los avisos del husillo y del material de la placa.</em></p>
 
 <p align="center">
   <img src="images/screenshots/themes.png" alt="themes" width="100%">

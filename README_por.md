@@ -93,6 +93,18 @@ Como as partes deste repositório se encaixam: quem o usa, o que contém e de qu
 <p align="center"><em>O visualizador: o trabalho na mesa em 2D, a máquina em 3D e os comandos do trabalho.</em></p>
 
 <p align="center">
+  <img src="images/screenshots/edit-select.png" alt="edit" width="100%">
+</p>
+
+<p align="center"><em>Edição na vista 2D: a ferramenta de seleção apanhou os furos da parte esquerda da placa, prontos a copiar, colar, cortar ou eliminar; cada ferramenta da lista tem o seu botão para a retirar do trabalho.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/open-preview.png" alt="open file with preview" width="100%">
+</p>
+
+<p align="center"><em>A janela de abrir com a pré-visualização do ficheiro de furação escolhido, à direita da lista; um interruptor por baixo retira-a e a lista recupera o seu espaço.</em></p>
+
+<p align="center">
   <img src="images/screenshots/job-running.png" alt="job running" width="100%">
 </p>
 
@@ -121,6 +133,12 @@ Como as partes deste repositório se encaixam: quem o usa, o que contém e de qu
 </p>
 
 <p align="center"><em>A placa: um material da biblioteca, a sua espessura, o seu cobre e o seu tamanho.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/catalogue.png" alt="catalogue of bits" width="100%">
+</p>
+
+<p align="center"><em>O catálogo de brocas, filtrado por tipo, com os avisos do fuso e do material da placa.</em></p>
 
 <p align="center">
   <img src="images/screenshots/themes.png" alt="themes" width="100%">

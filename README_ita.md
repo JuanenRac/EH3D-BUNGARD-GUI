@@ -93,6 +93,18 @@ Come si incastrano le parti di questo repository: chi lo usa, che cosa contiene 
 <p align="center"><em>Il visualizzatore: il lavoro sul piano in 2D, la macchina in 3D e i comandi del lavoro.</em></p>
 
 <p align="center">
+  <img src="images/screenshots/edit-select.png" alt="edit" width="100%">
+</p>
+
+<p align="center"><em>Modifica nella vista 2D: lo strumento di selezione ha preso i fori della parte sinistra della scheda, pronti per copiare, incollare, tagliare o eliminare; ogni utensile dell'elenco ha il suo pulsante per toglierlo dal lavoro.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/open-preview.png" alt="open file with preview" width="100%">
+</p>
+
+<p align="center"><em>La finestra di apertura con l'anteprima del file di foratura scelto, a destra dell'elenco; un interruttore sotto la toglie e l'elenco riprende il suo spazio.</em></p>
+
+<p align="center">
   <img src="images/screenshots/job-running.png" alt="job running" width="100%">
 </p>
 
@@ -121,6 +133,12 @@ Come si incastrano le parti di questo repository: chi lo usa, che cosa contiene 
 </p>
 
 <p align="center"><em>La scheda: un materiale della libreria, il suo spessore, il suo rame e le sue dimensioni.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/catalogue.png" alt="catalogue of bits" width="100%">
+</p>
+
+<p align="center"><em>Il catalogo delle punte, filtrato per tipo, con gli avvisi del mandrino e del materiale della scheda.</em></p>
 
 <p align="center">
   <img src="images/screenshots/themes.png" alt="themes" width="100%">

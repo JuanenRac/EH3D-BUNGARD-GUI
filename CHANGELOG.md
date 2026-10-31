@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **New pictures in the README:** all the screenshots are taken again with the program (the editing of the plan view, the Open window with its preview and the catalogue are new), and `--select` (for the pictures) turns on the choosing tool and chooses the left part of the board, or the first drilling file of the Open window. In the pictures the plan view shows the job instead of the corner of the table.
+- **The note of the file chosen in the Open window** no longer overlaps the hint of the keys.
+
 ## [0.1.3] - Editing the job in the plan view, a preview in the Open window, relief and icons
 
 - **Editing the job from the plan view:** a tool of the list at the left has a button to take it out of the job (its holes or paths go from the file, the views and the panel); the plan view has a choosing tool that takes holes and paths with a click or with a box (left to right: whatever is wholly inside; right to left: whatever the box touches; Ctrl or Shift adds to the choice), and buttons (and Ctrl+C, Ctrl+X, Ctrl+V, Ctrl+A, Delete) to copy, cut, paste (a few millimetres further on, each paste a step further, and the copies are chosen) and delete. An edit writes the file again in a folder of its own and loads it like any other file, so the engines and every view see the same job; the original file is never changed and a turned work is baked into the files first. A job emptied of holes or paths still loads.

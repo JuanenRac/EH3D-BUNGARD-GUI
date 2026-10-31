@@ -93,6 +93,18 @@ EH3D-BUNGARD-GUI 是 EH3D 家族中 Bungard 机器的现代界面。它按路径
 <p align="center"><em>查看器：工作台上的 2D 作业、3D 机器以及作业控制。</em></p>
 
 <p align="center">
+  <img src="images/screenshots/edit-select.png" alt="edit" width="100%">
+</p>
+
+<p align="center"><em>在平面视图中编辑：选择工具选中了电路板左侧的孔，可复制、粘贴、剪切或删除；列表中的每把刀具都有自己的按钮，可将其从作业中移除。</em></p>
+
+<p align="center">
+  <img src="images/screenshots/open-preview.png" alt="open file with preview" width="100%">
+</p>
+
+<p align="center"><em>打开窗口，在列表右侧显示所选钻孔文件的预览；下方的开关可将其关闭，列表随即恢复原来的宽度。</em></p>
+
+<p align="center">
   <img src="images/screenshots/job-running.png" alt="job running" width="100%">
 </p>
 
@@ -121,6 +133,12 @@ EH3D-BUNGARD-GUI 是 EH3D 家族中 Bungard 机器的现代界面。它按路径
 </p>
 
 <p align="center"><em>电路板：库中的材料、厚度、铜箔和尺寸。</em></p>
+
+<p align="center">
+  <img src="images/screenshots/catalogue.png" alt="catalogue of bits" width="100%">
+</p>
+
+<p align="center"><em>钻头目录，可按类型筛选，并带有主轴和电路板材料的提示。</em></p>
 
 <p align="center">
   <img src="images/screenshots/themes.png" alt="themes" width="100%">

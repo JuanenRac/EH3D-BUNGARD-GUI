@@ -53,6 +53,8 @@ pub struct Options {
     pub hole: Option<usize>,
     /// Answers Ok to every question of the machine to the operator (the spindle, the tool change): for the pictures and the tests of the simulator.
     pub auto_ok: bool,
+    /// Turns on the choosing tool of the plan view and chooses what is in the left part of the board (`--select`): for the pictures.
+    pub select: bool,
 }
 
 impl Options {
@@ -124,6 +126,7 @@ impl Options {
                     o.hole = Some(v.parse().map_err(|_| "--hole needs a number")?);
                 }
                 "--auto-ok" => o.auto_ok = true,
+                "--select" => o.select = true,
                 other if !other.starts_with("--") => o.open.push(PathBuf::from(other)),
                 other => return Err(format!("unknown option '{other}'")),
             }

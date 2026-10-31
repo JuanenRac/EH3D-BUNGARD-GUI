@@ -641,6 +641,35 @@ impl App {
             _ => {}
         }
         app.refit_table();
+        if o.shot.is_some() && o.modal.is_none() && !o.start {
+            // a picture shows the job, not the corner of the table where it starts
+            let mut all = app.drill.base.clone();
+            all.overlay(&app.route.base);
+            if let Some((x0, y0, x1, y1)) = all.bounds() {
+                app.follow = false;
+                app.view2d.pan = (0.0, 0.0);
+                app.view2d.focus = Some(((x0 + x1) / 2.0, (y0 + y1) / 2.0));
+                let k = (app.table.width_mm / (x1 - x0 + 14.0))
+                    .min(app.table.depth_mm / (y1 - y0 + 14.0));
+                app.view2d.zoom = (k * 0.8).clamp(0.5, 20.0) as f32;
+            }
+        }
+        if o.select && o.modal.as_deref() == Some("open") {
+            // the first file of the folder is the one chosen in the Open window, with its preview
+            let first = app.browser.as_ref().and_then(|b| {
+                b.entries
+                    .iter()
+                    .position(|e| e.kind == opener::EntryKind::Drill)
+            });
+            if let Some(i) = first {
+                app.browse(i);
+            }
+        } else if o.select {
+            app.select_mode = true;
+            if let Some((x0, y0, x1, y1)) = app.board_rect() {
+                app.select_in_box((x0, y0), (x0 + (x1 - x0) * 0.45, y1), false, false);
+            }
+        }
         let nothing_asked = o.shot.is_none()
             && o.drill.is_none()
             && o.route.is_none()

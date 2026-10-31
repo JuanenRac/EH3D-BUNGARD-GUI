@@ -93,6 +93,18 @@ EH3D-BUNGARD-GUI は、EH3D ファミリーにおける Bungard マシン用の�
 <p align="center"><em>ビューア：テーブル上の 2D のジョブ、3D のマシン、ジョブの操作部。</em></p>
 
 <p align="center">
+  <img src="images/screenshots/edit-select.png" alt="edit" width="100%">
+</p>
+
+<p align="center"><em>平面ビューでの編集：選択ツールで基板の左側の穴を選んだ状態で、コピー、貼り付け、切り取り、削除ができます。リストの各工具には、ジョブから外すための専用ボタンがあります。</em></p>
+
+<p align="center">
+  <img src="images/screenshots/open-preview.png" alt="open file with preview" width="100%">
+</p>
+
+<p align="center"><em>「開く」ウィンドウ。選んだ穴あけファイルのプレビューがリストの右に出ます。下のスイッチで消すと、リストが元の幅に戻ります。</em></p>
+
+<p align="center">
   <img src="images/screenshots/job-running.png" alt="job running" width="100%">
 </p>
 
@@ -121,6 +133,12 @@ EH3D-BUNGARD-GUI は、EH3D ファミリーにおける Bungard マシン用の�
 </p>
 
 <p align="center"><em>基板：ライブラリの材料、厚さ、銅箔、サイズ。</em></p>
+
+<p align="center">
+  <img src="images/screenshots/catalogue.png" alt="catalogue of bits" width="100%">
+</p>
+
+<p align="center"><em>ビットのカタログ。種類で絞り込め、スピンドルや基板材料に関する警告が出ます。</em></p>
 
 <p align="center">
   <img src="images/screenshots/themes.png" alt="themes" width="100%">

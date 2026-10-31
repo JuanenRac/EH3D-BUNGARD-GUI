@@ -1041,7 +1041,7 @@ impl App {
             };
             cv.text(
                 x + 250.0,
-                y + 756.0,
+                y + 738.0,
                 Align2::LEFT_BOTTOM,
                 &info,
                 14.0,

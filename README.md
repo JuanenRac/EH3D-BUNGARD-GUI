@@ -93,6 +93,18 @@ How the parts of this repository fit together: who uses it, what it holds and wh
 <p align="center"><em>The viewer: the job on the table in 2D, the machine in 3D and the controls of the job.</em></p>
 
 <p align="center">
+  <img src="images/screenshots/edit-select.png" alt="edit" width="100%">
+</p>
+
+<p align="center"><em>Editing in the 2D view: the choosing tool has taken the holes of the left part of the board, ready to copy, paste, cut or delete; every tool of the list has its own button to take it out of the job.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/open-preview.png" alt="open file with preview" width="100%">
+</p>
+
+<p align="center"><em>The Open window with the preview of the drilling file chosen, at the right of the list; a switch below turns it off and the list takes its room back.</em></p>
+
+<p align="center">
   <img src="images/screenshots/job-running.png" alt="job running" width="100%">
 </p>
 
@@ -121,6 +133,12 @@ How the parts of this repository fit together: who uses it, what it holds and wh
 </p>
 
 <p align="center"><em>The board: a material from the library, its thickness, its copper and its size.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/catalogue.png" alt="catalogue of bits" width="100%">
+</p>
+
+<p align="center"><em>The catalogue of bits, filtered by kind, with the warnings for the spindle and the material of the board.</em></p>
 
 <p align="center">
   <img src="images/screenshots/themes.png" alt="themes" width="100%">

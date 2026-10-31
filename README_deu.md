@@ -93,6 +93,18 @@ Wie die Teile dieses Repositorys zusammenpassen: wer es nutzt, was es enthält u
 <p align="center"><em>Der Betrachter: der Auftrag auf dem Tisch in 2D, die Maschine in 3D und die Bedienelemente des Auftrags.</em></p>
 
 <p align="center">
+  <img src="images/screenshots/edit-select.png" alt="edit" width="100%">
+</p>
+
+<p align="center"><em>Bearbeiten in der 2D-Ansicht: Das Auswahlwerkzeug hat die Löcher der linken Platinenhälfte gewählt, bereit zum Kopieren, Einfügen, Ausschneiden oder Löschen; jedes Werkzeug der Liste hat eine eigene Schaltfläche, um es aus dem Auftrag zu entfernen.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/open-preview.png" alt="open file with preview" width="100%">
+</p>
+
+<p align="center"><em>Das Öffnen-Fenster mit der Vorschau der gewählten Bohrdatei rechts neben der Liste; ein Schalter darunter blendet sie aus, und die Liste bekommt ihren Platz zurück.</em></p>
+
+<p align="center">
   <img src="images/screenshots/job-running.png" alt="job running" width="100%">
 </p>
 
@@ -121,6 +133,12 @@ Wie die Teile dieses Repositorys zusammenpassen: wer es nutzt, was es enthält u
 </p>
 
 <p align="center"><em>Die Platine: ein Material aus der Bibliothek, ihre Dicke, ihr Kupfer und ihre Größe.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/catalogue.png" alt="catalogue of bits" width="100%">
+</p>
+
+<p align="center"><em>Der Katalog der Bohrer, nach Art gefiltert, mit den Hinweisen zur Spindel und zum Material der Platine.</em></p>
 
 <p align="center">
   <img src="images/screenshots/themes.png" alt="themes" width="100%">

@@ -93,6 +93,18 @@ Comment les parties de ce dépôt s'articulent : qui l'utilise, ce qu'il contien
 <p align="center"><em>Le visualiseur : le travail sur la table en 2D, la machine en 3D et les commandes du travail.</em></p>
 
 <p align="center">
+  <img src="images/screenshots/edit-select.png" alt="edit" width="100%">
+</p>
+
+<p align="center"><em>Édition dans la vue 2D : l'outil de sélection a pris les trous de la partie gauche de la carte, prêts à être copiés, collés, coupés ou supprimés ; chaque outil de la liste a son bouton pour le retirer du travail.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/open-preview.png" alt="open file with preview" width="100%">
+</p>
+
+<p align="center"><em>La fenêtre d'ouverture avec l'aperçu du fichier de perçage choisi, à droite de la liste ; un interrupteur en dessous le retire et la liste reprend sa place.</em></p>
+
+<p align="center">
   <img src="images/screenshots/job-running.png" alt="job running" width="100%">
 </p>
 
@@ -121,6 +133,12 @@ Comment les parties de ce dépôt s'articulent : qui l'utilise, ce qu'il contien
 </p>
 
 <p align="center"><em>La carte : un matériau de la bibliothèque, son épaisseur, son cuivre et sa taille.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/catalogue.png" alt="catalogue of bits" width="100%">
+</p>
+
+<p align="center"><em>Le catalogue des forets, filtré par type, avec les avertissements de la broche et du matériau de la carte.</em></p>
 
 <p align="center">
   <img src="images/screenshots/themes.png" alt="themes" width="100%">

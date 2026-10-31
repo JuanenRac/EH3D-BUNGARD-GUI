@@ -1201,6 +1201,85 @@ EOF
     }
 
     #[test]
+    fn a_job_of_drilling_and_routing_left_in_the_middle_goes_on_with_the_rest_of_the_drilling_the_routing_and_the_tools_off(
+    ) {
+        let mut a = app_with_both();
+        let file = std::env::temp_dir().join(format!("eh3d-bg-resume2-{}.cfg", std::process::id()));
+        a.recovery_path = Some(file.clone());
+        a.settings.holes_drilled.clear();
+        a.auto_ok = true;
+        a.fixed_dt = Some(2.0);
+        let mut tools: Vec<u8> = a.drill.scene.holes.iter().map(|h| h.tool).collect();
+        tools.sort_unstable();
+        tools.dedup();
+        assert!(tools.len() > 1);
+        let off = tools[0];
+        a.act(Act::ToolOff(Program::Drill, off));
+        a.act(Act::Start);
+        assert_eq!(
+            (a.running, a.job_queue.clone()),
+            (Some(Program::Drill), vec![Program::Route])
+        );
+        let mut done = 0;
+        for _ in 0..40_000 {
+            a.tick();
+            done = a.drill.scene.holes.iter().filter(|h| h.done).count();
+            if done >= 3 || a.running != Some(Program::Drill) {
+                break;
+            }
+        }
+        assert!(
+            a.running == Some(Program::Drill) && done >= 3,
+            "{done} holes"
+        );
+        let saved = crate::recovery::Recovery::load(&file).expect("the file of the job");
+        assert_eq!(saved.queue, vec!["route".to_string()]);
+        assert_eq!(saved.off, vec![("drill".to_string(), off)]);
+        assert!(
+            saved.drill.is_some() && saved.route.is_some(),
+            "both files are kept"
+        );
+        // the window goes down: a new one goes on with the rest of the drilling, then the routing, and the tool stays off
+        let mut b = app_with_both();
+        b.recovery_path = Some(file.clone());
+        b.settings.holes_drilled.clear();
+        b.offer_resume();
+        assert_eq!(b.modal, Some(Modal::Resume));
+        b.auto_ok = true;
+        b.fixed_dt = Some(2.0);
+        b.act(Act::ResumeContinue);
+        assert_eq!(
+            (b.running, b.job_queue.clone()),
+            (Some(Program::Drill), vec![Program::Route])
+        );
+        assert!(!b.tool_is_on(Program::Drill, off));
+        let mut routed = false;
+        for _ in 0..80_000 {
+            if b.running.is_none() {
+                break;
+            }
+            if b.running == Some(Program::Route) {
+                routed = true;
+            }
+            b.tick();
+        }
+        assert!(routed && b.running.is_none());
+        for h in &b.drill.scene.holes {
+            assert_eq!(h.done, h.tool != off, "tool {}", h.tool);
+        }
+        assert!(b
+            .route
+            .scene
+            .paths
+            .iter()
+            .all(|q| q.reached == q.points.len()));
+        assert!(
+            !file.exists(),
+            "a job that ended leaves nothing to go on from"
+        );
+    }
+
+    #[test]
     fn the_probe_measures_the_table_point_by_point_and_the_map_says_how_it_is_tilted() {
         let mut a = app();
         a.fixed_dt = Some(1.0);

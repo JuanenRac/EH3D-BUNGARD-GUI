@@ -9,6 +9,13 @@ use eh3d_drillpro::job::TabPlacement;
 /// How often the file is written at the most while the job goes on (it is also written at once when the count of the work done changes).
 const SAVE_EVERY: Duration = Duration::from_secs(2);
 
+fn program_name(p: Program) -> &'static str {
+    match p {
+        Program::Drill => "drill",
+        Program::Route => "route",
+    }
+}
+
 impl App {
     /// The place of the file of the job that was running: next to the settings, and nowhere in the tests.
     pub(super) fn recovery_file() -> Option<PathBuf> {
@@ -50,10 +57,11 @@ impl App {
                 Program::Route => "route",
             }
             .into(),
-            drill: (p == Program::Drill)
+            // the file of a program that waits in the queue is kept too, to go on with it after this one
+            drill: (p == Program::Drill || self.job_queue.contains(&Program::Drill))
                 .then(|| self.drill_path.clone())
                 .flatten(),
-            route: (p == Program::Route)
+            route: (p == Program::Route || self.job_queue.contains(&Program::Route))
                 .then(|| self.route_path.clone())
                 .flatten(),
             columns: c.columns,
@@ -79,6 +87,16 @@ impl App {
                 Program::Drill => side.scene.holes.len(),
                 Program::Route => side.scene.paths.len(),
             },
+            queue: self
+                .job_queue
+                .iter()
+                .map(|q| program_name(*q).to_string())
+                .collect(),
+            off: self
+                .off_tools
+                .iter()
+                .map(|(q, t)| (program_name(*q).to_string(), *t))
+                .collect(),
             drilled: side
                 .scene
                 .holes
@@ -197,7 +215,33 @@ impl App {
                 }
             }
         }
-        self.start_job_from(r.done);
+        // the tools that were off stay off, and the programs that were waiting their turn go on after this one
+        self.off_tools = r
+            .off
+            .iter()
+            .map(|(q, t)| {
+                (
+                    if q == "route" {
+                        Program::Route
+                    } else {
+                        Program::Drill
+                    },
+                    *t,
+                )
+            })
+            .collect();
+        let mut programs = vec![program];
+        for q in &r.queue {
+            let next = if q == "route" {
+                Program::Route
+            } else {
+                Program::Drill
+            };
+            if !programs.contains(&next) {
+                programs.push(next);
+            }
+        }
+        self.start_programs(programs, r.done);
     }
 
     /// The person leaves the job that was left.

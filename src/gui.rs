@@ -877,6 +877,11 @@ impl App {
         if skip > 0 {
             programs = self.active().map(|(p, _)| p).into_iter().collect();
         }
+        self.start_programs(programs, skip);
+    }
+
+    /// Starts the programs one after the other; the first leaves out its first `skip` holes (or paths).
+    pub(crate) fn start_programs(&mut self, programs: Vec<Program>, skip: usize) {
         if programs.is_empty() {
             if self.drill.engine.file_loaded() || self.route.engine.file_loaded() {
                 self.message = Some(self.tr(Text::JobNothingOn).to_string());

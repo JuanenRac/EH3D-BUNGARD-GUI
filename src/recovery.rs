@@ -25,6 +25,10 @@ pub struct Recovery {
     pub total: usize,
     /// Where the holes that were drilled are, in mm on the table.
     pub drilled: Vec<(f64, f64)>,
+    /// The programs of the job that wait their turn after the one that was running (`route` after `drill`).
+    pub queue: Vec<String>,
+    /// The tools that were switched off, as `(program, tool)`: the job goes on without them.
+    pub off: Vec<(String, u8)>,
 }
 
 impl Recovery {
@@ -56,6 +60,12 @@ impl Recovery {
         for (x, y) in &self.drilled {
             put("hole", format!("{x:.3},{y:.3}"));
         }
+        for q in &self.queue {
+            put("queue", q.clone());
+        }
+        for (p, t) in &self.off {
+            put("off", format!("{p}:{t}"));
+        }
         t
     }
 
@@ -85,6 +95,13 @@ impl Recovery {
                 "done" => r.done = v.parse().ok()?,
                 "total" => r.total = v.parse().ok()?,
                 "hole" => r.drilled.push(pair(v)?),
+                "queue" if matches!(v, "drill" | "route") => r.queue.push(v.to_string()),
+                "off" => {
+                    let (p, t) = v.split_once(':')?;
+                    if matches!(p, "drill" | "route") {
+                        r.off.push((p.to_string(), t.parse().ok()?));
+                    }
+                }
                 _ => {}
             }
         }
@@ -131,7 +148,23 @@ mod tests {
             done: 41,
             total: 120,
             drilled: vec![(10.0, 20.5), (12.25, 20.5)],
+            queue: vec!["route".into()],
+            off: vec![("drill".into(), 2), ("route".into(), 3)],
         }
+    }
+
+    #[test]
+    fn a_file_from_before_the_queue_and_the_tools_off_still_reads_with_none_of_them() {
+        let text = "program=drill
+drill=C:/jobs/board.ncd
+columns=1
+rows=1
+done=3
+total=9
+";
+        let r = Recovery::from_text(text).expect("an old file");
+        assert!(r.queue.is_empty() && r.off.is_empty());
+        assert_eq!((r.done, r.total), (3, 9));
     }
 
     #[test]

@@ -18,6 +18,7 @@ eh3d-bungard-formats = { path = "../EH3D-COMMON/crates/formats" }
 eh3d-fleet = { path = "../EH3D-COMMON/crates/fleet" }
 eh3d-levelling = { path = "../EH3D-COMMON/crates/levelling" }
 eh3d-aux = { path = "../EH3D-COMMON/crates/auxnode" }
+eh3d-inspect = { path = "../EH3D-COMMON/crates/inspect" }
 serde_json = "1"
 eh3d-drillpro = { path = "../EH3D-DRILLPRO" }
 eh3d-routepro = { path = "../EH3D-ROUTEPRO" }
@@ -37,3 +38,7 @@ required-features = ["gui"]
 [profile.dev]
 # a lighter debug build: the file and line of a panic stay, the full debug symbols (the bulk of the target folder) do not
 debug = "line-tables-only"
+
+[dev-dependencies]
+# the test draws a board and sends it as the camera of the node would
+jpeg-encoder = "0.6"

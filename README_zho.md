@@ -12,14 +12,14 @@
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
-  <img src="https://img.shields.io/badge/Tests-75-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-85-0f6cbd.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.0.6-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
 ---
 
-**诚实性检查 - 今天实际能运行的内容：**一个带窗口的 Rust 程序，有 75 项可在电脑上运行的测试。启动器提供现代界面，或用于手动 (MTC) 或自动 (ATC) 换刀机器的经典钻孔与铣削程序。查看器可从文件夹浏览器、拖放或命令行打开钻孔文件、HP-GL 绘图文件和包含作业的 ZIP 压缩包，在平面视图中按钻头尺寸绘出每个孔并在其上叠加铣削路径，用配置中选定尺寸的工作台以 3D 显示机器，对电路板拼板，并在作业运行时跟踪进度。作业运行在 EH3D-DRILLPRO 和 EH3D-ROUTEPRO 引擎的**模拟器**上；如何连接真实机器（电脑的 RS-232、USB-RS232 适配器，或直接或经由 EH3D-SERVER 连接 EH3D-NODE-BUNGARD）由它们读取的同一个机器文件决定，而**这些方式都没有在此窗口中试过**。连接、设置和刀具窗口只更改它们提供的值，完整的机器和刀具文件还不能编辑，3D 视图也不显示路径的高度。
+**诚实性检查 - 今天实际能运行的内容：**一个带窗口的 Rust 程序，有 85 项可在电脑上运行的测试。启动器提供现代界面，或用于手动 (MTC) 或自动 (ATC) 换刀机器的经典钻孔与铣削程序。查看器可从文件夹浏览器、拖放或命令行打开钻孔文件、HP-GL 绘图文件和包含作业的 ZIP 压缩包，在平面视图中按钻头尺寸绘出每个孔并在其上叠加铣削路径，用配置中选定尺寸的工作台以 3D 显示机器，对电路板拼板，并在作业运行时跟踪进度。作业运行在 EH3D-DRILLPRO 和 EH3D-ROUTEPRO 引擎的**模拟器**上；如何连接真实机器（电脑的 RS-232、USB-RS232 适配器，或直接或经由 EH3D-SERVER 连接 EH3D-NODE-BUNGARD）由它们读取的同一个机器文件决定，而**这些方式都没有在此窗口中试过**。连接、设置和刀具窗口只更改它们提供的值，完整的机器和刀具文件还不能编辑，3D 视图也不显示路径的高度。
 
 ---
 
@@ -31,7 +31,7 @@
 |---|---|
 | 版本 | `0.0.6` |
 | 成熟度 | 脚手架 |
-| 测试 | 75 |
+| 测试 | 85 |
 | 技术栈 | Rust |
 | 真实硬件 | 否。只在模拟器和电脑上运行过；从未通过此窗口驱动过任何机器 |
 
@@ -50,7 +50,7 @@
 | 文件与拼板 | 🟡 | 钻孔文件、HP-GL 文件和 ZIP 压缩包可从浏览器、拖放或命令行打开；电路板可按三种模式重复。已用本仓库的小型示例文件试过。 |
 | 设置 | 🟠 | 可更改工作台的可用宽度和深度并保存到机器文件；机器和刀具文件的其余部分仍用经典程序编辑。 |
 | 机器控制 | 🔴 | 作业通过 EH3D-DRILLPRO 和 EH3D-ROUTEPRO 的引擎，因此原则上具备它们的所有连接；只在模拟器上运行过。连接窗口可选择连接方式（计算机的 RS-232、USB-RS232 适配器、EH3D 节点或 EH3D 服务器），测试并保存到机器文件；暂停会在两次移动之间保持作业。 |
-| 测试 | 🟡 | 电脑上通过 75 项测试（`cargo test --features gui`）：启动器、设置、把文件读入场景、机器配置、面板和命令行。没有任何一项接触真实机器。 |
+| 测试 | 🟡 | 电脑上通过 85 项测试（`cargo test --features gui`）：启动器、设置、把文件读入场景、机器配置、面板和命令行。没有任何一项接触真实机器。 |
 | 预编译包 | 🟠 | 工作流为 Windows（64 位和 32 位）、Linux 和 macOS 构建带示例文件的程序；尚未发布版本。 |
 
 ## 🎯 概述
@@ -158,6 +158,22 @@ EH3D-BUNGARD-GUI 是 EH3D 家族中 Bungard 机器的现代界面。它按路径
 
 <p align="center"><em>服务器的机床和工位：每台机床的状态、作业和进度，以及作业发往的机床。</em></p>
 
+<p align="center">
+  <img src="images/screenshots/head-node.png" alt="钻头节点" width="100%">
+</p>
+
+<p align="center"><em>钻头节点：摄像头、主轴转速和温度、保护输出，以及摄像头周围的 LED 环形灯（关和三档亮度）。</em></p>
+<p align="center">
+  <img src="images/screenshots/quality-check.png" alt="质量检查" width="100%">
+</p>
+
+<p align="center"><em>加工后的质量检查：摄像头查看电路板，作业中的每个孔都被标出（绿色正确、红色错误、琥珀色在画面外），测量铣削沟槽，结论大如招牌。</em></p>
+<p align="center">
+  <img src="images/screenshots/quality-tolerances.png" alt="公差" width="100%">
+</p>
+
+<p align="center"><em>工坊分析器的公差：孔的尺寸和位置、圆度、毛刺、沟槽的宽度和均匀度，以及图像清晰到可以判断的标准。</em></p>
+
 ## ✨ 功能
 
 * 主题：Forge（默认）、Neon Arcade、Glass Pro、经典 Windows 灰色，以及跟随 Windows 颜色的主题。
@@ -176,6 +192,7 @@ EH3D-BUNGARD-GUI 是 EH3D 家族中 Bungard 机器的现代界面。它按路径
 * 超出工作台的作业在开始前即被拒绝；“打开”窗口列出最近打开的文件；刀具窗口统计电路板上和所有作业中每个钻头的孔数，并有重新开始计数的按钮。
 * 打开文件时（通过“打开”窗口、最近文件或拖放），刀具窗口会在文件上方打开，就像经典程序在加载文件后显示其刀具一样；设置中的复选框可将其关闭。
 * 在选项很多的地方使用下拉列表：主题、语言、机床型号和每个事件的声音都从可滚动的列表中选择，而不是一排排按钮。作业结束和请求刀具各有一份 60 个声音的列表，从高音到低音（钟声、上行和下行音阶、号角、哔声、警报、敲击、警笛），另有标准音调、无声或自己的文件；选中即播放。
+* **通过钻头摄像头控制灯光并进行质量检查：** 节点窗口可打开和关闭 LED 环形灯；“质量检查”窗口在加工后查看电路板：判断作业中的孔（是否存在、是否圆、尺寸是否正确、位置是否准确）、铣削沟槽（与刀具同宽、均匀、无变窄）以及图像本身，在图像上标出每个孔，以招牌大小显示结论（合格、不合格或无法判定），并让环形灯用颜色显示同样的结果。配置（标准、细间距、原型）、公差、比例及用已知孔校准的结果保存在文件中并交给服务器。
 
 ## 🔌 接口
 
@@ -201,7 +218,7 @@ python -I tools/ci_validate.py
 
 ## 🧪 测试
 
-测试套件有 75 项测试（`cargo test --features gui`）。它们检查启动器及其记住的内容、设置、钻孔或 HP-GL 文件如何变成场景、机器配置、面板和命令行。它使用的引擎（协议、运动、安全门）在 EH3D-DRILLPRO 和 EH3D-ROUTEPRO 中测试。CI 还运行 `cargo fmt --check` 和把警告当作错误的 `cargo clippy`，`python -I tools/ci_validate.py` 检查清单、版本、更新日志和八个 README。
+测试套件有 85 项测试（`cargo test --features gui`）。它们检查启动器及其记住的内容、设置、钻孔或 HP-GL 文件如何变成场景、机器配置、面板和命令行。它使用的引擎（协议、运动、安全门）在 EH3D-DRILLPRO 和 EH3D-ROUTEPRO 中测试。CI 还运行 `cargo fmt --check` 和把警告当作错误的 `cargo clippy`，`python -I tools/ci_validate.py` 检查清单、版本、更新日志和八个 README。
 
 ## 🏗️ 构建与发布
 
@@ -224,6 +241,7 @@ EH3D-BUNGARD-GUI/
 │   ├── gui.rs                                   窗口：启动器、平面视图、3D 视图、作业进度
 │   ├── gui/extra.rs                             打开文件、拼板、工作台设置、关于、移动视图
 │   ├── gui/fleet.rs                             服务器机床和工位窗口
+│   ├── inspection.rs gui/inspect.rs             通过摄像头检查加工质量
 │   ├── gui/opener.rs  gui/board.rs              打开、电路板、刀具和设置窗口
 │   ├── jobs.rs                                  把钻孔或 HP-GL 文件转换为视图绘制的场景
 │   ├── boards.rs                                众多厂商的基材库

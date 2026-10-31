@@ -8,6 +8,7 @@ pub mod boards;
 pub mod catalogue;
 pub mod cli;
 pub mod defaults;
+pub mod inspection;
 pub mod jobs;
 pub mod launcher;
 pub mod link;

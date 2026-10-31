@@ -47,6 +47,10 @@ pub struct Options {
     pub wait: u32,
     /// Starts the job as soon as the window is open (`--start`): for the pictures of a job in progress.
     pub start: bool,
+    /// Runs the quality check through the camera as soon as the window is open (`--check`): for the pictures of the result.
+    pub check: bool,
+    /// The hole of the job in the centre of the picture of the quality check (`--hole N`, from 1): for the pictures.
+    pub hole: Option<usize>,
     /// Answers Ok to every question of the machine to the operator (the spindle, the tool change): for the pictures and the tests of the simulator.
     pub auto_ok: bool,
 }
@@ -114,6 +118,11 @@ impl Options {
                     o.tab = Some(v.parse().map_err(|_| "--tab needs a number")?);
                 }
                 "--start" => o.start = true,
+                "--check" => o.check = true,
+                "--hole" => {
+                    let v = value("--hole")?;
+                    o.hole = Some(v.parse().map_err(|_| "--hole needs a number")?);
+                }
                 "--auto-ok" => o.auto_ok = true,
                 other if !other.starts_with("--") => o.open.push(PathBuf::from(other)),
                 other => return Err(format!("unknown option '{other}'")),

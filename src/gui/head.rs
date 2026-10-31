@@ -21,7 +21,7 @@ type Frame = (usize, usize, Vec<u8>);
 pub(crate) struct HeadState {
     pub status: Option<Result<Status, String>>,
     status_rx: Option<Receiver<Result<Status, String>>>,
-    polled: Option<Instant>,
+    pub(super) polled: Option<Instant>,
     pub measure: Option<Result<Measure, String>>,
     measure_rx: Option<Receiver<Result<Measure, String>>>,
     frame_rx: Option<Receiver<Frame>>,
@@ -149,7 +149,9 @@ impl App {
 
     /// Called on every frame: while the window is open the node is asked, and its camera runs only when it is switched on and the window is open.
     pub(super) fn head_tick(&mut self, ctx: &egui::Context) {
-        let open = self.modal == Some(Modal::Head);
+        // the camera and the status are followed while the window of the node or the one of the quality check is open
+        let open = matches!(self.modal, Some(Modal::Head | Modal::Inspect));
+        self.insp_tick();
         let link = self.head_link();
         if let Some(r) = self
             .head
@@ -169,7 +171,9 @@ impl App {
             self.head.measure = Some(r);
             self.head.measure_rx = None;
         }
-        let camera = open && link.is_some() && self.conn.head_camera;
+        // the quality check needs the picture whatever the window of the node says
+        let camera =
+            open && link.is_some() && (self.conn.head_camera || self.modal == Some(Modal::Inspect));
         if camera && self.head.stop_camera.is_none() {
             self.head_start_camera();
         } else if !camera && self.head.stop_camera.is_some() {
@@ -182,6 +186,7 @@ impl App {
             }
             if let Some((w, h, rgb)) = last {
                 let image = egui::ColorImage::from_rgb([w, h], &rgb);
+                self.insp.picture = (w, h);
                 self.head.texture =
                     Some(ctx.load_texture("head-camera", image, egui::TextureOptions::LINEAR));
             }
@@ -332,13 +337,8 @@ impl App {
                         if s.camera_model.is_empty() {
                             format!("{}  {}", s.node, s.version)
                         } else {
-                            format!(
-                                "{}  {}  ({}: {})",
-                                s.node,
-                                s.version,
-                                self.tr(Text::HeadCameraModel),
-                                s.camera_model
-                            )
+                            // the model of the camera in brackets: the line has to fit the card (the label of the model is in the title of the window of the node)
+                            format!("{}  {}  ({})", s.node, s.version, s.camera_model)
                         },
                         col(t.accent),
                     ),
@@ -393,11 +393,56 @@ impl App {
             }
         }
         if link.is_some() {
+            // the ring of LEDs around the camera
+            match &self.head.status {
+                Some(Ok(s)) if s.light => {
+                    let on = s.light_on;
+                    cv.text(
+                        rx,
+                        y + 496.0,
+                        Align2::LEFT_BOTTOM,
+                        &if on {
+                            format!("{} {} %", self.tr(Text::LightOn), s.light_level)
+                        } else {
+                            self.tr(Text::LightOff).to_string()
+                        },
+                        15.0,
+                        col(t.text),
+                    );
+                    cv.chip(rx, y + 504.0, 60.0, 34.0, "0", !on, Act::HeadLight(None));
+                    for (i, level) in [30u32, 60, 80].into_iter().enumerate() {
+                        cv.chip(
+                            rx + 64.0 + i as f32 * 62.0,
+                            y + 504.0,
+                            58.0,
+                            34.0,
+                            &format!("{level}"),
+                            on && s.light_level == level,
+                            Act::HeadLight(Some(level)),
+                        );
+                    }
+                }
+                Some(Ok(_)) => {
+                    cv.text(
+                        rx,
+                        y + 496.0,
+                        Align2::LEFT_BOTTOM,
+                        &format!(
+                            "{}: {}",
+                            self.tr(Text::LightTitle),
+                            self.tr(Text::LightNone)
+                        ),
+                        14.0,
+                        col(t.dim),
+                    );
+                }
+                _ => {}
+            }
             cv.chip(
                 rx,
-                y + 520.0,
+                y + 552.0,
                 250.0,
-                44.0,
+                40.0,
                 self.tr(Text::HeadMeasure),
                 false,
                 Act::HeadMeasure,
@@ -409,12 +454,12 @@ impl App {
                         m.height_mm().unwrap_or(0.0),
                         m.sigma_mm
                     );
-                    cv.text(rx, y + 600.0, Align2::LEFT_BOTTOM, &l, 17.0, col(t.ok));
+                    cv.text(rx, y + 622.0, Align2::LEFT_BOTTOM, &l, 17.0, col(t.ok));
                 }
                 Some(Ok(m)) => {
                     cv.text(
                         rx,
-                        y + 600.0,
+                        y + 622.0,
                         Align2::LEFT_BOTTOM,
                         &m.why,
                         16.0,
@@ -423,10 +468,20 @@ impl App {
                 }
                 Some(Err(e)) => {
                     let e: String = e.chars().take(60).collect();
-                    cv.text(rx, y + 600.0, Align2::LEFT_BOTTOM, &e, 15.0, col(t.danger));
+                    cv.text(rx, y + 622.0, Align2::LEFT_BOTTOM, &e, 15.0, col(t.danger));
                 }
                 None => {}
             }
+            // the quality check of the work
+            cv.chip(
+                x + 30.0,
+                y + 650.0,
+                280.0,
+                44.0,
+                self.tr(Text::InspOpen),
+                false,
+                Act::InspOpen,
+            );
         }
         cv.chip(
             x + 330.0,

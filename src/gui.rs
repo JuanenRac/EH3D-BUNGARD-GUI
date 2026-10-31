@@ -33,6 +33,7 @@ mod controls;
 mod extra;
 mod fleet;
 mod head;
+mod inspect;
 mod levelling;
 mod numedit;
 mod opener;
@@ -118,6 +119,20 @@ enum Act {
     HeadMode(eh3d_drillpro::protocol::connection::HeadNode),
     HeadCamera,
     HeadMeasure,
+    /// The ring of LEDs around the camera: off (`None`) or on in the white of the camera at a level.
+    HeadLight(Option<u32>),
+    /// The quality check of the work through the camera: its checks, its profile, the light for the picture, the hole in the centre, the scale, the run, the tolerances.
+    InspOpen,
+    InspToggleHoles,
+    InspToggleMilling,
+    InspPreset(usize),
+    InspLight(usize),
+    InspHole(i32),
+    InspRun,
+    InspCalibrate,
+    InspScale(f32),
+    InspSave,
+    InspTune(crate::inspection::Param, i32),
     CatSelect(usize),
     CatSpindle(i32),
     /// The probe measures the table, or stops; the map of the table is cleared.
@@ -235,6 +250,8 @@ pub struct App {
     hits: Vec<(Rect, Act)>,
     frame: u32,
     start_at_frame: Option<u32>,
+    /// The frame at which the quality check starts by itself (`--check`).
+    check_at_frame: Option<u32>,
     shot: Option<Shot>,
     close: bool,
     auto_ok: bool,
@@ -303,6 +320,8 @@ pub struct App {
     level: levelling::LevelState,
     /// The node of the drill head: what it said last, its camera.
     head: head::HeadState,
+    /// The quality check through the camera of the drill head.
+    insp: inspect::InspectState,
     /// The catalogue of bits: the kind that is shown (0 is all of them) and the first row.
     cat_kind: usize,
     cat_scroll: usize,
@@ -385,6 +404,7 @@ impl App {
             hits: Vec::new(),
             frame: 0,
             start_at_frame: o.start.then_some(4),
+            check_at_frame: o.check.then_some(40),
             shot: o.shot.clone().map(|file| Shot {
                 file,
                 wait: o.wait,
@@ -445,6 +465,7 @@ impl App {
             resume_skip: 0,
             level: levelling::LevelState::new(jobs::DEFAULT_TABLE),
             head: head::HeadState::default(),
+            insp: inspect::InspectState::default(),
             cat_kind: 0,
             cat_scroll: 0,
             cat_sel: None,
@@ -540,6 +561,13 @@ impl App {
             Some("tools") => app.show_modal(Modal::Tools),
             Some("catalogue") => app.show_modal(Modal::Catalogue),
             Some("head") => app.show_modal(Modal::Head),
+            Some("inspect") => {
+                app.insp_open();
+                if let Some(n) = o.hole {
+                    app.insp.hole = n.saturating_sub(1);
+                }
+            }
+            Some("inspect-tune") => app.show_modal(Modal::InspectTune),
             _ => {}
         }
         app.refit_table();
@@ -1040,6 +1068,18 @@ impl App {
                 self.saved = false;
             }
             Act::HeadMeasure => self.head_measure(),
+            Act::HeadLight(_)
+            | Act::InspOpen
+            | Act::InspToggleHoles
+            | Act::InspToggleMilling
+            | Act::InspPreset(_)
+            | Act::InspLight(_)
+            | Act::InspHole(_)
+            | Act::InspRun
+            | Act::InspCalibrate
+            | Act::InspScale(_)
+            | Act::InspSave
+            | Act::InspTune(..) => self.insp_act(a),
             Act::CatSelect(i) => self.cat_sel = Some(i),
             Act::CatSpindle(d) => self.cat_spindle_by(d),
             Act::LevelToggle => self.level_toggle(),
@@ -2816,6 +2856,9 @@ impl eframe::App for App {
             ctx.input(|i| (i.pointer.hover_pos(), i.pointer.primary_down()));
         if self.start_at_frame == Some(self.frame) {
             self.start_job();
+        }
+        if self.check_at_frame == Some(self.frame) {
+            self.insp_run();
         }
         // the keys: Enter takes the modern interface at the launcher; Esc stops the job
         if ctx.input(|i| i.key_pressed(egui::Key::Enter)) && self.screen == Screen::Launcher {

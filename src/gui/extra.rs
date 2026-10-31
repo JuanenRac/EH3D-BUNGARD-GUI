@@ -46,6 +46,10 @@ pub(crate) enum Modal {
     Catalogue,
     /// The node of the drill head: its link, its camera and what it reads.
     Head,
+    /// The quality check of the work through the camera of the drill head.
+    Inspect,
+    /// The tolerances of the quality check.
+    InspectTune,
 }
 
 /// A text box of the Connection window.
@@ -736,6 +740,8 @@ impl App {
             Modal::Resume => self.paint_resume(cv),
             Modal::Catalogue => self.paint_catalogue(cv),
             Modal::Head => self.paint_head(cv),
+            Modal::Inspect => self.paint_inspect(cv),
+            Modal::InspectTune => self.paint_inspect_tune(cv),
             Modal::About => {
                 let (x, y) = self.modal_card(cv, self.tr(Text::About), 420.0);
                 cv.text(

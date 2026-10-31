@@ -72,6 +72,20 @@
           }
         },
         {
+          "desc": {
+            "en": "the quality check of the work through the camera",
+            "es": "la verificación de calidad del trabajo con la cámara",
+            "it": "il controllo qualità del lavoro con la telecamera",
+            "de": "die Qualitätsprüfung der Arbeit mit der Kamera",
+            "fr": "le contrôle qualité du travail avec la caméra",
+            "pt": "a verificação de qualidade do trabalho com a câmara",
+            "zh": "通过摄像头检查加工质量",
+            "ja": "カメラによる加工の品質チェック"
+          },
+          "name": "inspection.rs  gui/inspect.rs",
+          "tree_name": "inspection.rs gui/inspect.rs"
+        },
+        {
           "name": "gui/opener.rs  gui/board.rs",
           "desc": {
             "en": "Open, board, tools and settings windows",

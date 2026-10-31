@@ -94,6 +94,90 @@ pub(crate) struct Browser {
     pub places: Vec<Place>,
     /// The row and the moment of the last click, for the double click.
     pub last_click: Option<(usize, Instant)>,
+    /// The plan of the file chosen, when the preview is on and the file is one that can be drawn.
+    pub preview: Option<Preview>,
+}
+
+/// What is drawn of a file in the preview (in mm): the holes with their diameter, and the paths.
+pub(crate) struct Preview {
+    pub holes: Vec<(f64, f64, f64)>,
+    pub paths: Vec<Vec<(f64, f64)>>,
+    /// Corners of everything drawn: x0, y0, x1, y1.
+    pub bounds: (f64, f64, f64, f64),
+    /// Holes (drilling) or paths (routing), counted.
+    pub count: usize,
+    pub drill: bool,
+}
+
+/// The largest file the preview reads (a bigger one would make the window wait).
+const PREVIEW_MAX_BYTES: u64 = 8_000_000;
+
+/// Reads a drilling or routing file to draw it; `None` when it is neither, is too big or cannot be read.
+pub(crate) fn preview_of(path: &Path) -> Option<Preview> {
+    let name = path.file_name()?.to_string_lossy().to_string();
+    if std::fs::metadata(path).ok()?.len() > PREVIEW_MAX_BYTES {
+        return None;
+    }
+    let (mut holes, mut paths) = (Vec::new(), Vec::new());
+    let drill = match eh3d_archive::kind_of(&name) {
+        Kind::Drill => {
+            let file = eh3d_drillpro::ncd::parse(&crate::jobs::read_latin1(path).ok()?).ok()?;
+            for h in &file.holes {
+                holes.push((
+                    h.x_mil as f64 * 0.0254,
+                    h.y_mil as f64 * 0.0254,
+                    crate::jobs::tool_diameter(h.tool, &file.diameters, file.metric),
+                ));
+            }
+            true
+        }
+        Kind::Route => {
+            let ext = path.extension()?.to_string_lossy().to_ascii_lowercase();
+            if ext == eh3d_bungard_formats::dxf::EXTENSION
+                || eh3d_bungard_formats::gerber::OUTLINE_EXTENSIONS.contains(&ext.as_str())
+            {
+                return None;
+            }
+            let plot = eh3d_routepro::hpgl::parse_with(
+                &crate::jobs::read_latin1(path).ok()?,
+                eh3d_routepro::hpgl::SEGMENTS_PER_CIRCLE,
+            );
+            for p in &plot.paths {
+                paths.push(
+                    p.points
+                        .iter()
+                        .map(|&(x, y)| {
+                            (
+                                x as f64 * eh3d_routepro::hpgl::UNIT_MM,
+                                y as f64 * eh3d_routepro::hpgl::UNIT_MM,
+                            )
+                        })
+                        .collect::<Vec<_>>(),
+                );
+            }
+            false
+        }
+        Kind::Other => return None,
+    };
+    let pts = holes
+        .iter()
+        .map(|h| (h.0, h.1))
+        .chain(paths.iter().flatten().copied());
+    let mut b = (f64::MAX, f64::MAX, f64::MIN, f64::MIN);
+    for (x, y) in pts {
+        b = (b.0.min(x), b.1.min(y), b.2.max(x), b.3.max(y));
+    }
+    if b.0 > b.2 {
+        return None;
+    }
+    let count = if drill { holes.len() } else { paths.len() };
+    Some(Preview {
+        holes,
+        paths,
+        bounds: b,
+        count,
+        drill,
+    })
 }
 
 /// The rows the list shows at once.
@@ -277,6 +361,7 @@ impl App {
             name_text: String::new(),
             places: places(&self.base_dir, &self.last_dir),
             last_click: None,
+            preview: None,
         };
         b.refresh();
         b
@@ -293,6 +378,7 @@ impl App {
             b.dir = dir;
             b.name_text.clear();
             b.picked.clear();
+            b.preview = None;
             b.refresh();
         }
     }
@@ -374,6 +460,40 @@ impl App {
 
     /// A click on a row: it is chosen and its name goes to the name box; a second click on the same one opens it.
     pub(crate) fn browse(&mut self, i: usize) {
+        self.browse_click(i);
+        self.update_preview();
+    }
+
+    /// Draws again the file chosen (or nothing, when the preview is off or the row is not a file that can be drawn).
+    pub(crate) fn update_preview(&mut self) {
+        if self.modal.is_none() {
+            return;
+        }
+        let on = self.settings.open_preview;
+        let Some(b) = self.browser.as_mut() else {
+            return;
+        };
+        b.preview = None;
+        if !on {
+            return;
+        }
+        let Some(e) = b.sel.and_then(|i| b.entries.get(i)) else {
+            return;
+        };
+        if e.kind == EntryKind::Drill || e.kind == EntryKind::Route {
+            if let Some(d) = &b.dir {
+                b.preview = preview_of(&d.join(&e.name));
+            }
+        }
+    }
+
+    pub(crate) fn toggle_preview(&mut self) {
+        self.settings.open_preview = !self.settings.open_preview;
+        self.remember_settings();
+        self.update_preview();
+    }
+
+    fn browse_click(&mut self, i: usize) {
         let now = Instant::now();
         let Some(b) = self.browser.as_mut() else {
             return;
@@ -527,6 +647,78 @@ impl App {
         }
     }
 
+    /// The card at the right of the window: the plan of the file chosen, fitted to it, with what it holds written below.
+    fn paint_preview(&self, cv: &mut Cv, b: &Browser, (x, y, w, h): (f32, f32, f32, f32)) {
+        let t = cv.t.clone();
+        cv.p.rect_filled(cv.rect(x, y, w, h), 8.0 * cv.u, col(t.panel_raised));
+        let Some(pr) = &b.preview else {
+            cv.text(
+                x + w / 2.0,
+                y + h / 2.0,
+                Align2::CENTER_CENTER,
+                self.tr(Text::PreviewNone),
+                16.0,
+                col(t.dim),
+            );
+            return;
+        };
+        let (m, foot) = (16.0f32, 34.0f32);
+        let (aw, ah) = (w - 2.0 * m, h - 2.0 * m - foot);
+        let (bw, bh) = (
+            (pr.bounds.2 - pr.bounds.0).max(0.001),
+            (pr.bounds.3 - pr.bounds.1).max(0.001),
+        );
+        let k = (aw as f64 / bw).min(ah as f64 / bh);
+        let (ox, oy) = (
+            x + m + (aw - (bw * k) as f32) / 2.0,
+            y + m + ah - (ah - (bh * k) as f32) / 2.0,
+        );
+        // the board outline (the box of everything drawn)
+        let at = |px: f64, py: f64| {
+            cv.pt(
+                ox + ((px - pr.bounds.0) * k) as f32,
+                oy - ((py - pr.bounds.1) * k) as f32,
+            )
+        };
+        cv.p.rect_stroke(
+            egui::Rect::from_two_pos(at(pr.bounds.0, pr.bounds.1), at(pr.bounds.2, pr.bounds.3)),
+            0.0,
+            Stroke::new(1.0, alpha(col(t.dim), 120)),
+            StrokeKind::Outside,
+        );
+        for path in &pr.paths {
+            for s in path.windows(2) {
+                cv.p.line_segment(
+                    [at(s[0].0, s[0].1), at(s[1].0, s[1].1)],
+                    Stroke::new(1.4 * cv.u, col(t.accent2)),
+                );
+            }
+        }
+        for &(hx, hy, d) in &pr.holes {
+            let r = ((d * k / 2.0) as f32 * cv.u).max(1.6 * cv.u);
+            cv.p.circle_filled(at(hx, hy), r, col(t.accent));
+        }
+        let what = if pr.drill {
+            self.tr(Text::Holes)
+        } else {
+            self.tr(Text::Routing)
+        };
+        cv.text(
+            x + m,
+            y + h - 12.0,
+            Align2::LEFT_BOTTOM,
+            &format!(
+                "{} {}  -  {:.1} x {:.1} mm",
+                pr.count,
+                what.to_lowercase(),
+                bw,
+                bh
+            ),
+            14.0,
+            col(t.text),
+        );
+    }
+
     fn type_text(&self, k: EntryKind) -> &'static str {
         match k {
             EntryKind::Folder => self.tr(Text::TypeFolder),
@@ -543,6 +735,9 @@ impl App {
             return;
         };
         let (x, y, w, h) = (WIN.0, WIN.1, 1360.0, 780.0);
+        // with the preview the list is narrower and the plan is drawn at its right
+        let pv = self.settings.open_preview;
+        let list_end = if pv { 900.0 } else { 1300.0 };
         cv.p.rect_filled(
             Rect::from_min_size(Pos2::ZERO, Vec2::new(10_000.0, 10_000.0)),
             0.0,
@@ -637,15 +832,24 @@ impl App {
             }
         }
         // the headings
-        let cols = [
-            (250.0, 480.0, Text::ColName),
-            (740.0, 210.0, Text::ColDate),
-            (960.0, 160.0, Text::ColType),
-            (1130.0, 120.0, Text::ColSize),
-        ];
+        let cols = if pv {
+            [
+                (250.0, 250.0, Text::ColName),
+                (500.0, 170.0, Text::ColDate),
+                (670.0, 110.0, Text::ColType),
+                (780.0, 120.0, Text::ColSize),
+            ]
+        } else {
+            [
+                (250.0, 480.0, Text::ColName),
+                (740.0, 210.0, Text::ColDate),
+                (960.0, 160.0, Text::ColType),
+                (1130.0, 120.0, Text::ColSize),
+            ]
+        };
         let hy = y + 120.0;
         cv.p.rect_filled(
-            cv.rect(x + 250.0, hy, 1050.0, 30.0),
+            cv.rect(x + 250.0, hy, list_end - 250.0, 30.0),
             4.0 * cv.u,
             col(t.panel_raised),
         );
@@ -673,10 +877,10 @@ impl App {
         // the bar at the side of the rows
         cv.scrollbar(
             Bar::Browse,
-            x + 1306.0,
+            x + list_end + 6.0,
             hy + 36.0,
             ROWS as f32 * 32.0 - 4.0,
-            (x + 250.0, hy + 36.0, 1062.0, ROWS as f32 * 32.0),
+            (x + 250.0, hy + 36.0, list_end - 238.0, ROWS as f32 * 32.0),
             b.entries.len(),
             ROWS,
             b.scroll,
@@ -687,7 +891,7 @@ impl App {
             let Some(e) = b.entries.get(i) else { break };
             let ry = hy + 36.0 + k as f32 * 32.0;
             let on = b.sel == Some(i) || b.picked.contains(&e.name);
-            let r = cv.rect(x + 250.0, ry, 1050.0, 30.0);
+            let r = cv.rect(x + 250.0, ry, list_end - 250.0, 30.0);
             if on {
                 cv.p.rect_filled(r, 4.0 * cv.u, alpha(col(t.accent), 90));
             } else if k % 2 == 1 {
@@ -701,7 +905,7 @@ impl App {
                 EntryKind::Other => ("-", col(t.dim)),
             };
             cv.text(x + 262.0, ry + 22.0, Align2::LEFT_BOTTOM, tag, 15.0, c);
-            let shown: String = e.name.chars().take(52).collect();
+            let shown: String = e.name.chars().take(if pv { 24 } else { 52 }).collect();
             cv.text(
                 x + 290.0,
                 ry + 22.0,
@@ -712,7 +916,7 @@ impl App {
             );
             if let Some(m) = e.modified {
                 cv.text(
-                    x + 750.0,
+                    x + cols[1].0 + 10.0,
                     ry + 22.0,
                     Align2::LEFT_BOTTOM,
                     &date_text(m),
@@ -721,7 +925,7 @@ impl App {
                 );
             }
             cv.text(
-                x + 970.0,
+                x + cols[2].0 + 10.0,
                 ry + 22.0,
                 Align2::LEFT_BOTTOM,
                 self.type_text(e.kind),
@@ -730,7 +934,7 @@ impl App {
             );
             if e.kind != EntryKind::Folder {
                 cv.text(
-                    x + 1240.0,
+                    x + cols[3].0 + cols[3].1 - 10.0,
                     ry + 22.0,
                     Align2::RIGHT_BOTTOM,
                     &size_text(e.size),
@@ -799,6 +1003,17 @@ impl App {
             false,
             Act::CloseModal,
         );
+        cv.checkbox(
+            x + 830.0,
+            y + 724.0,
+            320.0,
+            self.tr(Text::PreviewShow),
+            pv,
+            Act::TogglePreview,
+        );
+        if pv {
+            self.paint_preview(cv, b, (x + 940.0, hy, 390.0, 548.0));
+        }
         if let Some(e) = b.sel.and_then(|i| b.entries.get(i)) {
             let info = match e.kind {
                 EntryKind::Folder => self.tr(Text::TypeFolder).to_string(),
@@ -997,6 +1212,61 @@ mod tests {
         // the Open window is gone and the window of the tools is over the file
         assert_eq!(a.modal, Some(Modal::Tools));
         assert!(!a.drill.scene.holes.is_empty());
+    }
+
+    #[test]
+    fn the_preview_draws_the_file_chosen_and_can_be_switched_off() {
+        let mut a = app();
+        a.last_dir = testdata();
+        a.settings.open_preview = true;
+        a.show_modal(Modal::Open);
+        let row = |a: &App, n: &str| {
+            a.browser
+                .as_ref()
+                .unwrap()
+                .entries
+                .iter()
+                .position(|e| e.name == n)
+                .unwrap()
+        };
+        let i = row(&a, "05_small_board.ncd");
+        a.browse(i);
+        let p = a
+            .browser
+            .as_ref()
+            .unwrap()
+            .preview
+            .as_ref()
+            .expect("a drilling file is drawn");
+        assert!(p.drill && p.count > 0 && p.bounds.2 > p.bounds.0);
+        let j = row(&a, "05_board_tracks.plt");
+        a.browse(j);
+        let p = a
+            .browser
+            .as_ref()
+            .unwrap()
+            .preview
+            .as_ref()
+            .expect("a routing file is drawn");
+        assert!(!p.drill && !p.paths.is_empty());
+        // the window paints with and without it
+        a.toggle_preview();
+        assert!(!a.settings.open_preview);
+        assert!(a.browser.as_ref().unwrap().preview.is_none());
+        a.toggle_preview();
+        assert!(a.browser.as_ref().unwrap().preview.is_some());
+        // a folder has none
+        let d = a
+            .browser
+            .as_ref()
+            .unwrap()
+            .entries
+            .iter()
+            .position(|e| e.kind == EntryKind::Folder);
+        if let Some(d) = d {
+            a.browse(d);
+            assert!(a.browser.as_ref().unwrap().preview.is_none());
+        }
     }
 
     #[test]

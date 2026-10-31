@@ -107,6 +107,8 @@ pub struct Settings {
     pub ask_operator: bool,
     /// The window of the tools opens when the person opens a file, as the classic programs show theirs after loading one.
     pub tools_on_open: bool,
+    /// The Open window shows the plan of the file chosen, at its right.
+    pub open_preview: bool,
     /// How many times faster than the machine the simulation of a job runs (1 is the speed of the machine).
     pub sim_speed: f32,
     /// The model of the machine (`CCD MTC`, `CCD/2 ATC`...).
@@ -137,6 +139,7 @@ impl Default for Settings {
             board: crate::boards::Board::standard(),
             ask_operator: true,
             tools_on_open: true,
+            open_preview: true,
             sim_speed: 1.0,
             model: "CCD MTC".to_string(),
             emergency: true,
@@ -216,6 +219,9 @@ impl Settings {
                 "tools_on_open" => {
                     s.tools_on_open = !matches!(v.trim(), "no" | "off" | "false" | "0")
                 }
+                "open_preview" => {
+                    s.open_preview = !matches!(v.trim(), "no" | "off" | "false" | "0")
+                }
                 "spindle" => s.spindle = SpindleId::from_code(v).unwrap_or(s.spindle),
                 k if k.starts_with("spindle_") => {
                     if let Some(id) = SpindleId::from_code(&k["spindle_".len()..]) {
@@ -231,13 +237,14 @@ impl Settings {
 
     pub fn to_text(&self) -> String {
         format!(
-            "choice = {}\nlang = {}\ntheme = {}\nboard = {}\nask_operator = {}\ntools_on_open = {}\nsim_speed = {}\nmodel = {}\nemergency = {}\nestop_pos = {},{}\ndisplay_units = {}\nspindle = {}\nspindle_original = {}\nspindle_vfd = {}\nholes_drilled = {}\nrecent = {}\n",
+            "choice = {}\nlang = {}\ntheme = {}\nboard = {}\nask_operator = {}\ntools_on_open = {}\nopen_preview = {}\nsim_speed = {}\nmodel = {}\nemergency = {}\nestop_pos = {},{}\ndisplay_units = {}\nspindle = {}\nspindle_original = {}\nspindle_vfd = {}\nholes_drilled = {}\nrecent = {}\n",
             self.choice.map_or("ask", |c| c.key()),
             self.lang.code(),
             self.theme.key(),
             crate::boards::to_text(&self.board),
             if self.ask_operator { "yes" } else { "no" },
             if self.tools_on_open { "yes" } else { "no" },
+            if self.open_preview { "yes" } else { "no" },
             self.sim_speed,
             self.model,
             if self.emergency { "yes" } else { "no" },
@@ -366,6 +373,7 @@ mod tests {
             board: crate::boards::Board::standard().with_material(3),
             ask_operator: false,
             tools_on_open: false,
+            open_preview: false,
             sim_speed: 5.0,
             model: "CCD/2 ATC".to_string(),
             emergency: false,

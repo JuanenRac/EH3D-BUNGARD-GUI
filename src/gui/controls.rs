@@ -578,6 +578,33 @@ mod tests {
     }
 
     #[test]
+    fn the_open_window_paints_with_the_preview_on_and_off() {
+        let ctx = egui::Context::default();
+        install_fonts(&ctx);
+        let mut a = app();
+        a.animate = false;
+        a.screen = Screen::Viewer;
+        a.last_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("testdata");
+        for on in [true, false, true] {
+            a.settings.open_preview = on;
+            a.show_modal(extra::Modal::Open);
+            let i = a
+                .browser
+                .as_ref()
+                .unwrap()
+                .entries
+                .iter()
+                .position(|e| e.name == "05_small_board.ncd")
+                .unwrap();
+            a.browse(i);
+            assert_eq!(a.browser.as_ref().unwrap().preview.is_some(), on);
+            clipped_on(&mut a, &ctx);
+            clipped_on(&mut a, &ctx);
+            assert!(a.modal_card.is_some());
+        }
+    }
+
+    #[test]
     fn every_window_has_a_top_to_move_it_and_an_x_in_its_corner_to_close_it() {
         let ctx = egui::Context::default();
         install_fonts(&ctx);

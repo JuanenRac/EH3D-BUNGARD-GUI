@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **Preview in the Open window:** at the right of the list the plan of the drilling or routing file chosen is drawn before opening it (the holes with their diameter, the paths, the size of the board, and how many holes or paths it has). A switch below the list turns it on or off, the list takes the room that the plan leaves, and the choice is kept between runs (`open_preview`). A file that cannot be drawn (a folder, an archive, a drawing) says so.
+
 ## [0.1.2] - Windows without a console, windows that move, the catalogue by material and the tools of a job
 
 - **No black window on Windows:** the program does not open a console (the programs with a window of the family, DRILLPRO, ROUTEPRO and MOTIONCNC, neither); started from a terminal it attaches to it, so the help and the errors are printed there as before.

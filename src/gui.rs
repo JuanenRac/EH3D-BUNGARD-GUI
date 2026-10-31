@@ -30,11 +30,14 @@ mod board;
 mod catalogue;
 mod combo;
 mod controls;
+mod edit;
 mod extra;
 mod fleet;
 mod head;
+mod icons;
 mod inspect;
 mod levelling;
+mod look;
 mod machine3d;
 mod numedit;
 mod opener;
@@ -171,6 +174,11 @@ enum Act {
     Browse(usize),
     BrowseSort(usize),
     BrowseFilter,
+    ToggleSelect,
+    CopySel,
+    PasteSel,
+    DeleteSel,
+    RemoveTool(Program, u8),
     TogglePreview,
     BrowsePlace(usize),
     /// Opens one of the recent files.
@@ -299,6 +307,17 @@ pub struct App {
     follow: bool,
     move_board: bool,
     move_design: bool,
+    /// The choice of holes and paths in the plan view (indices into the scenes), the box being dragged (mm), whether the choosing tool is on, what was
+    /// copied, how many times it was pasted, the counter of the files written by edits, and how the plan view was drawn (scale, origin, place) to
+    /// turn the pointer into millimetres.
+    sel_holes: std::collections::BTreeSet<usize>,
+    sel_paths: std::collections::BTreeSet<usize>,
+    band: Option<((f64, f64), (f64, f64))>,
+    select_mode: bool,
+    clip: edit::Clip,
+    paste_n: u32,
+    edit_serial: u32,
+    plan_xf: std::cell::Cell<(f64, f64, f64, f64, f64)>,
     /// The board where it was left when the design started to move alone: (x0, y0, x1, y1) in mm. `None`: the board follows the design.
     board_frozen: Option<(f64, f64, f64, f64)>,
     plan_big: bool,
@@ -473,6 +492,14 @@ impl App {
             follow: false,
             move_board: false,
             move_design: false,
+            sel_holes: Default::default(),
+            sel_paths: Default::default(),
+            band: None,
+            select_mode: false,
+            clip: edit::Clip::default(),
+            paste_n: 0,
+            edit_serial: 0,
+            plan_xf: std::cell::Cell::new((0.0, 0.0, 0.0, 0.0, 0.0)),
             board_frozen: None,
             plan_big: false,
             rotation: 0,
@@ -1307,6 +1334,11 @@ impl App {
             Act::Browse(i) => self.browse(i),
             Act::BrowseSort(c) => self.browse_sort(c),
             Act::BrowseFilter => self.browse_filter(),
+            Act::ToggleSelect => self.toggle_select_mode(),
+            Act::CopySel => self.copy_selection(),
+            Act::PasteSel => self.paste_clip(),
+            Act::DeleteSel => self.delete_selection(),
+            Act::RemoveTool(p, t) => self.remove_tool(p, t),
             Act::TogglePreview => self.toggle_preview(),
             Act::BrowsePlace(i) => self.browse_place(i),
             Act::OpenRecent(i) => {
@@ -1431,20 +1463,31 @@ impl<'a> Cv<'a> {
         let arrow = if h >= 70.0 { 14.0 } else { 0.0 };
         let (ty, th) = (y + arrow, h - 2.0 * arrow);
         let track = self.rect(x, ty, w, th);
-        self.p
-            .rect_filled(track, 4.0 * self.u, alpha(col(self.t.dim), 50));
+        self.sunk(
+            track,
+            4.0 * self.u,
+            col(self.t.panel_raised),
+            self.touch(track.expand(3.0 * self.u)).0,
+        );
         let thumb_h = (th * shown as f32 / total as f32).clamp(28.0, th);
         let top = first.min(total - shown) as f32 / (total - shown) as f32 * (th - thumb_h);
         let thumb = self.rect(x, ty + top, w, thumb_h);
-        self.p.rect_filled(thumb, 4.0 * self.u, col(self.t.accent));
+        let (thumb_hover, thumb_down) = self.touch(thumb);
+        self.raised(
+            thumb,
+            4.0 * self.u,
+            col(self.t.accent),
+            thumb_hover,
+            thumb_down,
+        );
         let (mut up, mut down) = (None, None);
         if arrow > 0.0 {
             let ur = self.rect(x, y, w, arrow - 1.0);
             let dr = self.rect(x, y + h - arrow + 1.0, w, arrow - 1.0);
             for (r, pointing_up) in [(ur, true), (dr, false)] {
-                self.p
-                    .rect_filled(r, 3.0 * self.u, alpha(col(self.t.dim), 70));
-                let c = r.center();
+                let (hover, down) = self.touch(r);
+                self.raised(r, 3.0 * self.u, col(self.t.panel_raised), hover, down);
+                let c = r.center() + Vec2::new(0.0, if down { 1.5 * self.u } else { 0.0 });
                 let (hw, hh) = (3.5 * self.u, 2.5 * self.u);
                 let (tip, base) = if pointing_up {
                     (c.y - hh, c.y + hh)
@@ -1457,7 +1500,11 @@ impl<'a> Cv<'a> {
                         Pos2::new(c.x - hw, base),
                         Pos2::new(c.x + hw, base),
                     ],
-                    col(self.t.accent),
+                    if hover {
+                        Color32::WHITE
+                    } else {
+                        col(self.t.accent)
+                    },
                     Stroke::NONE,
                 ));
             }
@@ -1692,9 +1739,11 @@ impl<'a> Cv<'a> {
             }
         }
         if self.t.corner == Corner::Cut {
+            let pts: Vec<Pos2> = shape.iter().map(|&(px, py)| self.pt(px, py)).collect();
+            self.gradient_poly(&pts, shade(fill, 1.2), shade(fill, 0.8));
             self.poly(
                 &shape,
-                fill,
+                Color32::TRANSPARENT,
                 Stroke::new(
                     1.2 * self.u,
                     alpha(shade(c, 1.35), if hover { 255 } else { 140 }),
@@ -1702,7 +1751,7 @@ impl<'a> Cv<'a> {
             );
         } else {
             let body = self.rect(x, y, w, h);
-            self.p.rect_filled(body, r, fill);
+            self.gradient_rrect(body, r, shade(fill, 1.2), shade(fill, 0.8));
             self.p.rect_stroke(
                 body,
                 r,
@@ -1885,7 +1934,7 @@ impl App {
                 } else {
                     Act::CloseModal
                 };
-                mcv.chip(x + w - 52.0, y + 9.0, 40.0, 38.0, "\u{d7}", false, close);
+                mcv.close_button(x + w - 52.0, y + 9.0, 40.0, 38.0, close);
             } else {
                 self.modal_card = None;
                 self.modal_drag = None;
@@ -2358,6 +2407,13 @@ impl App {
             plan.origin.0 += pan.0 as f64;
             plan.origin.1 += pan.1 as f64;
             self.plan_scale.set(plan.scale);
+            self.plan_xf.set((
+                plan.scale,
+                plan.origin.0,
+                plan.origin.1,
+                vx as f64,
+                vy as f64,
+            ));
         }
         let screen = |x: f64, y: f64| {
             let (px, py) = plan.to_screen(&self.table, x, y);
@@ -2416,9 +2472,13 @@ impl App {
             }
             if self.layers[1] {
                 let tool_colors = self.route_tool_colors();
-                for path in &self.route.scene.paths {
+                for (pi, path) in self.route.scene.paths.iter().enumerate() {
                     let pts: Vec<(f32, f32)> =
                         path.points.iter().map(|&(x, y)| screen(x, y)).collect();
+                    if self.sel_paths.contains(&pi) {
+                        // what is chosen has a wide halo of the accent colour under it
+                        cv.polyline(&pts, 7.0, alpha(col(t.accent), 110), false);
+                    }
                     let line_color = tool_colors
                         .iter()
                         .find(|(tool, _)| *tool == path.tool)
@@ -2444,7 +2504,7 @@ impl App {
                 }
             }
             if self.layers[0] {
-                for h in &self.drill.scene.holes {
+                for (hi, h) in self.drill.scene.holes.iter().enumerate() {
                     let idx = sizes
                         .iter()
                         .position(|d| (*d - h.diameter_mm).abs() < 0.005)
@@ -2452,6 +2512,18 @@ impl App {
                     let c = col(t.size_color(idx));
                     let r = plan.hole_radius(h.diameter_mm, 2.0) as f32;
                     let (px, py) = screen(h.x_mm, h.y_mm);
+                    if self.sel_holes.contains(&hi) {
+                        cv.p.circle_filled(
+                            cv.pt(px, py),
+                            (r + 5.0) * cv.u,
+                            alpha(col(t.accent), 90),
+                        );
+                        cv.p.circle_stroke(
+                            cv.pt(px, py),
+                            (r + 5.0) * cv.u,
+                            Stroke::new(1.6 * cv.u, col(t.accent)),
+                        );
+                    }
                     if h.done {
                         cv.p.circle_filled(cv.pt(px, py), r * cv.u, c);
                     } else {
@@ -2461,6 +2533,30 @@ impl App {
                             Stroke::new(1.4 * cv.u, alpha(c, 220)),
                         );
                     }
+                }
+            }
+            // the box being dragged to choose: whole (solid line) from left to right, touching (dashed) from right to left
+            if let Some((a, b)) = self.band {
+                let (ax, ay) = screen(a.0, a.1);
+                let (bx, by) = screen(b.0, b.1);
+                let r = cv.rect(ax.min(bx), ay.min(by), (ax - bx).abs(), (ay - by).abs());
+                cv.p.rect_filled(r, 0.0, alpha(col(t.accent), 36));
+                let line = Stroke::new(1.6 * cv.u, col(t.accent));
+                if b.0 < a.0 {
+                    cv.p.extend(Shape::dashed_line(
+                        &[
+                            r.left_top(),
+                            r.right_top(),
+                            r.right_bottom(),
+                            r.left_bottom(),
+                            r.left_top(),
+                        ],
+                        line,
+                        6.0 * cv.u,
+                        4.0 * cv.u,
+                    ));
+                } else {
+                    cv.p.rect_stroke(r, 0.0, line, StrokeKind::Inside);
                 }
             }
             if let Some((hx, hy)) = head {
@@ -2499,23 +2595,67 @@ impl App {
         );
 
         cv.zones.push((cv.rect(vx, vy, vw, vh), Zone::Plan));
-        cv.chip(
-            cx + cw - 204.0,
+        let ix = cx + cw - 52.0;
+        cv.icon_chip(
+            ix,
             top + 8.0,
-            190.0,
-            30.0,
-            self.tr(Text::ResetView),
+            40.0,
+            32.0,
+            Icon::Target,
             false,
+            self.tr(Text::ResetView),
             Act::ResetView(Zone::Plan),
         );
-        cv.chip(
-            cx + cw - 204.0 - 136.0,
+        cv.icon_chip(
+            ix - 44.0,
             top + 8.0,
-            126.0,
-            30.0,
-            self.tr(Text::Rotate),
+            40.0,
+            32.0,
+            Icon::Rotate,
             false,
+            self.tr(Text::Rotate),
             Act::Rotate(1),
+        );
+        // choose, copy, paste and delete what is drawn
+        cv.icon_chip(
+            ix - 140.0,
+            top + 8.0,
+            40.0,
+            32.0,
+            Icon::Trash,
+            false,
+            self.tr(Text::DeleteSel),
+            Act::DeleteSel,
+        );
+        cv.icon_chip(
+            ix - 184.0,
+            top + 8.0,
+            40.0,
+            32.0,
+            Icon::Paste,
+            false,
+            self.tr(Text::PasteSel),
+            Act::PasteSel,
+        );
+        cv.icon_chip(
+            ix - 228.0,
+            top + 8.0,
+            40.0,
+            32.0,
+            Icon::Copy,
+            false,
+            self.tr(Text::CopySel),
+            Act::CopySel,
+        );
+        cv.icon_chip(
+            ix - 272.0,
+            top + 8.0,
+            40.0,
+            32.0,
+            Icon::Select,
+            self.select_mode,
+            self.tr(Text::SelectTool),
+            Act::ToggleSelect,
         );
         cv.text(
             cx + cw - 18.0,
@@ -3200,6 +3340,39 @@ impl eframe::App for App {
             }
         }
         self.key_mods = ctx.input(|i| (i.modifiers.command, i.modifiers.shift));
+        // editing the job in the plan view: copy, cut, paste, choose all and delete (not while a box is being typed in)
+        if self.screen == Screen::Viewer
+            && self.modal.is_none()
+            && self.edit.is_none()
+            && !ctx.egui_wants_keyboard_input()
+            && self.running.is_none()
+        {
+            let (copy, cut, paste, all, del) = ctx.input(|i| {
+                let cmd = i.modifiers.command;
+                (
+                    i.events.iter().any(|e| matches!(e, egui::Event::Copy)),
+                    i.events.iter().any(|e| matches!(e, egui::Event::Cut)),
+                    i.events.iter().any(|e| matches!(e, egui::Event::Paste(_))),
+                    cmd && i.key_pressed(egui::Key::A),
+                    i.key_pressed(egui::Key::Delete),
+                )
+            });
+            if copy {
+                self.copy_selection();
+            }
+            if cut {
+                self.cut_selection();
+            }
+            if paste {
+                self.paste_clip();
+            }
+            if all {
+                self.select_all();
+            }
+            if del {
+                self.delete_selection();
+            }
+        }
         if ctx.input(|i| i.modifiers.command && i.key_pressed(egui::Key::O))
             && self.screen == Screen::Viewer
         {
@@ -3273,10 +3446,29 @@ impl eframe::App for App {
                         .map(|b| b.bar)
                 });
                 if self.bar_drag.is_none() {
-                    self.drag_zone = at.and_then(|p| self.zone_at(p));
+                    let z = at.and_then(|p| self.zone_at(p));
+                    let choosing = z == Some(Zone::Plan)
+                        && self.select_mode
+                        && !self.move_board
+                        && !self.move_design
+                        && !resp.dragged_by(egui::PointerButton::Secondary)
+                        && !resp.dragged_by(egui::PointerButton::Middle);
+                    if let (true, Some(m)) = (choosing, at.and_then(|p| self.plan_point(p))) {
+                        // a box to choose with, instead of moving the view
+                        self.band = Some((m, m));
+                        self.drag_zone = None;
+                    } else {
+                        self.drag_zone = z;
+                    }
                 }
             }
-            if resp.dragged() && self.bar_drag.is_some() {
+            if resp.dragged() && self.band.is_some() {
+                if let Some(m) = resp.interact_pointer_pos().and_then(|p| self.plan_point(p)) {
+                    if let Some(b) = self.band.as_mut() {
+                        b.1 = m;
+                    }
+                }
+            } else if resp.dragged() && self.bar_drag.is_some() {
                 if let (Some(bar), Some(p)) = (self.bar_drag, resp.interact_pointer_pos()) {
                     self.bar_to(bar, p);
                 }
@@ -3290,6 +3482,10 @@ impl eframe::App for App {
                 }
             }
             if resp.drag_stopped() {
+                if let Some((a, b)) = self.band.take() {
+                    let add = self.key_mods.0 || self.key_mods.1;
+                    self.select_in_box(a, b, b.0 < a.0, add);
+                }
                 self.bar_drag = None;
                 if self.drag_zone == Some(Zone::Estop) {
                     self.remember_settings();
@@ -3386,6 +3582,15 @@ impl eframe::App for App {
                 .map(|(_, a)| *a);
             if let Some(a) = hit {
                 self.act(a);
+            } else if self.select_mode
+                && self.modal.is_none()
+                && self.zone_at(pos) == Some(Zone::Plan)
+            {
+                // a click on the plan view with the choosing tool on
+                if let Some(m) = self.plan_point(pos) {
+                    let add = self.key_mods.0 || self.key_mods.1;
+                    self.select_at(m, add);
+                }
             }
         }
         // fast while a job runs or a window or screen is coming in, a calm 15 frames a second otherwise (the slow breathing of the lights)

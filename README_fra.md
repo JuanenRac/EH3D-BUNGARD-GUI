@@ -12,14 +12,14 @@
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
-  <img src="https://img.shields.io/badge/Tests-136-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-141-0f6cbd.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.1.2-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
 ---
 
-**Vérification d'honnêteté - ce qui tourne aujourd'hui :** un programme Rust avec une fenêtre et 136 tests qui s'exécutent sur un ordinateur. Le lanceur propose l'interface moderne ou les programmes classiques de perçage et de fraisage pour une machine avec changement d'outil manuel (MTC) ou automatique (ATC). Le visualiseur ouvre des fichiers de perçage, des fichiers de tracé HP-GL et des archives ZIP de travaux (depuis un navigateur de dossiers, par glisser-déposer ou depuis la ligne de commande), dessine la vue en plan avec chaque trou par diamètre de foret et les trajets de fraisage par-dessus, montre la machine en 3D avec la table de la taille choisie dans la configuration, panélise la carte et suit le travail pendant qu'il tourne. Le travail s'exécute dans le **simulateur** des moteurs de EH3D-DRILLPRO et EH3D-ROUTEPRO ; le même fichier de machine qu'ils lisent décide comment on atteint une vraie machine (le RS-232 de l'ordinateur, un adaptateur USB-RS232, ou le EH3D-NODE-BUNGARD directement ou via EH3D-SERVER), et **aucune de ces voies n'a été essayée depuis cette fenêtre**. Les fenêtres de connexion, de réglages et d'outils changent les valeurs qu'elles offrent, les fichiers entiers de machine et d'outils ne sont pas encore modifiables, et la vue 3D ne montre pas la hauteur des trajets.
+**Vérification d'honnêteté - ce qui tourne aujourd'hui :** un programme Rust avec une fenêtre et 141 tests qui s'exécutent sur un ordinateur. Le lanceur propose l'interface moderne ou les programmes classiques de perçage et de fraisage pour une machine avec changement d'outil manuel (MTC) ou automatique (ATC). Le visualiseur ouvre des fichiers de perçage, des fichiers de tracé HP-GL et des archives ZIP de travaux (depuis un navigateur de dossiers, par glisser-déposer ou depuis la ligne de commande), dessine la vue en plan avec chaque trou par diamètre de foret et les trajets de fraisage par-dessus, montre la machine en 3D avec la table de la taille choisie dans la configuration, panélise la carte et suit le travail pendant qu'il tourne. Le travail s'exécute dans le **simulateur** des moteurs de EH3D-DRILLPRO et EH3D-ROUTEPRO ; le même fichier de machine qu'ils lisent décide comment on atteint une vraie machine (le RS-232 de l'ordinateur, un adaptateur USB-RS232, ou le EH3D-NODE-BUNGARD directement ou via EH3D-SERVER), et **aucune de ces voies n'a été essayée depuis cette fenêtre**. Les fenêtres de connexion, de réglages et d'outils changent les valeurs qu'elles offrent, les fichiers entiers de machine et d'outils ne sont pas encore modifiables, et la vue 3D ne montre pas la hauteur des trajets.
 
 ---
 
@@ -31,7 +31,7 @@
 |---|---|
 | Version | `0.1.2` |
 | Maturité | Échafaudage |
-| Tests | 136 |
+| Tests | 141 |
 | Pile technique | Rust |
 | Sur du matériel réel | Non. Il n'a tourné que sur le simulateur et sur un ordinateur ; aucune machine n'a été pilotée depuis cette fenêtre |
 
@@ -50,7 +50,7 @@ Chaque ligne est une partie de ce dépôt et le feu dit où elle en est aujourd'
 | Fichiers et panélisation | 🟡 | Les fichiers de perçage, HP-GL et les archives ZIP s'ouvrent depuis un navigateur, par glisser-déposer ou depuis la ligne de commande ; la carte est répétée en trois modes. Essayé avec les petits fichiers d'exemple de ce dépôt. |
 | Réglages | 🟠 | La largeur et la profondeur utiles de la table se changent et s'enregistrent dans les fichiers de la machine ; le reste des fichiers de machine et d'outils s'édite encore avec les programmes classiques. |
 | Pilotage de la machine | 🔴 | Le travail passe par les moteurs de EH3D-DRILLPRO et EH3D-ROUTEPRO, donc en principe toutes leurs connexions sont là ; il n'a tourné que sur le simulateur. La fenêtre de Connexion choisit la liaison (le RS-232 de l'ordinateur, un adaptateur USB-RS232, le nœud EH3D ou le serveur EH3D), la teste et l'enregistre dans le fichier de la machine, et Pause retient le travail entre deux mouvements. |
-| Tests | 🟡 | 136 tests passent sur un ordinateur (`cargo test --features gui`) : le lanceur, les réglages, la lecture des fichiers vers la scène, les profils de machine, le panneau et la ligne de commande. Aucun ne touche une machine. |
+| Tests | 🟡 | 141 tests passent sur un ordinateur (`cargo test --features gui`) : le lanceur, les réglages, la lecture des fichiers vers la scène, les profils de machine, le panneau et la ligne de commande. Aucun ne touche une machine. |
 | Paquets prêts à l'emploi | 🟠 | Un workflow compile le programme pour Windows (64 et 32 bits), Linux et macOS avec les fichiers d'exemple ; aucune version n'a encore été publiée. |
 
 ## 🎯 Présentation
@@ -200,6 +200,8 @@ Comment les parties de ce dépôt s'articulent : qui l'utilise, ce qu'il contien
 * **37 langues :** toute la fenêtre parle anglais, espagnol, italien, allemand, français, portugais, chinois, japonais, bulgare, croate, tchèque, danois, néerlandais, estonien, finnois, grec, hongrois, irlandais, letton, lituanien, maltais, polonais, roumain, slovaque, slovène, suédois, norvégien, islandais, ukrainien, russe, serbe, albanais, catalan, galicien, basque, portugais du Brésil et français du Canada. Les mots des 29 langues au-delà des huit premières sont traduits par le modèle et attendent la relecture de locuteurs natifs ; un texte qu'une langue n'a pas s'affiche en anglais. Les panneaux web des nœuds de la machine parlent aussi les 37 ; l'écran de la machine (HMI) garde pour l'instant les huit premières.
 * **Windows sans la fenêtre noire :** les programmes à fenêtre (celui-ci, DRILLPRO, ROUTEPRO et MOTIONCNC) n'ouvrent plus de console sous Windows ; lancés depuis un terminal, ils y écrivent toujours leur aide et leurs erreurs. **Des fenêtres qui se déplacent :** chaque fenêtre au-dessus de la principale se déplace par son haut et porte une X dans son coin supérieur droit.
 * **Aperçu dans la fenêtre d'ouverture :** à droite de la liste, le plan du fichier de perçage ou de fraisage choisi est dessiné avant l'ouverture (trous avec leur diamètre, trajets, taille de la carte). Un interrupteur en dessous l'active ou le retire et la liste occupe la place que le plan laisse ; le choix est conservé.
+* **Édition du travail dans la vue 2D :** un outil de la liste de gauche peut être retiré du travail (ses trous ou trajets disparaissent du fichier et de toutes les vues) ; dans la vue 2D l'outil de sélection prend trous et trajets d'un clic ou d'un cadre (de gauche à droite : ce qui est entièrement dedans ; de droite à gauche : ce que le cadre touche ; Ctrl ou Maj ajoute), et on peut les copier, les coller quelques millimètres plus loin, les couper et les supprimer, avec les boutons ou avec Ctrl+C, Ctrl+X, Ctrl+V, Ctrl+A et Suppr. Les fichiers écrits par une édition sont nouveaux ; l'original n'est jamais modifié.
+* **Relief et icônes partout :** boutons, cases, zones de texte, barres des listes (avec leurs petits boutons à flèche) et boîtes des listes ont un dégradé, un liseré de lumière et une ombre, et répondent au pointeur par une lueur et en s'enfonçant quand on les presse, dans tous les thèmes ; le X du coin d'une fenêtre est rouge, tourne et brille sous le pointeur ; les petits boutons de la vue 2D et de la fenêtre d'ouverture sont des icônes avec une note qui en dit le nom.
 
 ## 🔌 Interfaces
 
@@ -225,7 +227,7 @@ Lancez-le avec `run.bat` (Windows) ou `./run.sh` (Linux et macOS) ; les deux com
 
 ## 🧪 Tests
 
-La suite compte 136 tests (`cargo test --features gui`). Ils vérifient le lanceur et ce qu'il mémorise, les réglages, comment un fichier de perçage ou HP-GL devient la scène, les profils de machine, le panneau et la ligne de commande. Les moteurs qu'il utilise (protocole, mouvement, porte de sécurité) sont testés dans EH3D-DRILLPRO et EH3D-ROUTEPRO. La CI exécute aussi `cargo fmt --check` et `cargo clippy` avec les avertissements en erreurs, et `python -I tools/ci_validate.py` vérifie le manifeste, les versions, le journal des modifications et les huit README.
+La suite compte 141 tests (`cargo test --features gui`). Ils vérifient le lanceur et ce qu'il mémorise, les réglages, comment un fichier de perçage ou HP-GL devient la scène, les profils de machine, le panneau et la ligne de commande. Les moteurs qu'il utilise (protocole, mouvement, porte de sécurité) sont testés dans EH3D-DRILLPRO et EH3D-ROUTEPRO. La CI exécute aussi `cargo fmt --check` et `cargo clippy` avec les avertissements en erreurs, et `python -I tools/ci_validate.py` vérifie le manifeste, les versions, le journal des modifications et les huit README.
 
 ## 🏗️ Compilation et publication
 

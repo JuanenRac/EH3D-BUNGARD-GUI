@@ -381,6 +381,18 @@ impl App {
                 Act::ToolOff(l.prog, l.tool),
             ));
         }
+        for (i, l) in lines.iter().skip(first).take(shown).enumerate() {
+            cv.icon_chip(
+                254.0,
+                first_y + 52.0 * i as f32 + 3.0,
+                26.0,
+                24.0,
+                Icon::Trash,
+                false,
+                self.tr(Text::RemoveTool),
+                Act::RemoveTool(l.prog, l.tool),
+            );
+        }
         cv.scrollbar(
             Bar::Tools,
             284.0,

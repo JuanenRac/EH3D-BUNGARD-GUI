@@ -221,53 +221,7 @@ impl<'a> Cv<'a> {
         } else {
             base
         };
-        let drop = if down { 2.0 * self.u } else { 0.0 };
-        let body = rect.translate(Vec2::new(0.0, drop));
-        if !down {
-            self.p.rect_filled(
-                rect.translate(Vec2::new(0.0, 2.0 * self.u)),
-                r,
-                alpha(Color32::BLACK, if hover { 70 } else { 40 }),
-            );
-        }
-        if hover && !down {
-            self.p.rect_filled(
-                rect.expand(3.0 * self.u),
-                r + 3.0 * self.u,
-                alpha(col(self.t.accent), 40),
-            );
-        }
-        self.p.rect_filled(body, r, fill);
-        self.p.rect_stroke(
-            body,
-            r,
-            Stroke::new(
-                if hover { 1.6 } else { 1.0 } * self.u,
-                alpha(col(self.t.accent), if hover { 255 } else { 170 }),
-            ),
-            StrokeKind::Inside,
-        );
-        // the shine along the top edge
-        let top = body.min.y + 2.5 * self.u;
-        self.p.line_segment(
-            [
-                Pos2::new(body.min.x + 7.0 * self.u, top),
-                Pos2::new(body.max.x - 7.0 * self.u, top),
-            ],
-            Stroke::new(
-                1.3 * self.u,
-                alpha(
-                    Color32::WHITE,
-                    if down {
-                        8
-                    } else if on {
-                        60
-                    } else {
-                        28
-                    },
-                ),
-            ),
-        );
+        self.raised(rect, r, fill, hover, down);
         let ink = if on {
             col(self.t.background.0)
         } else {
@@ -655,7 +609,8 @@ impl App {
                 .fixed_pos(pos)
                 .order(egui::Order::Foreground)
                 .show(ctx, |ui| {
-                    let r = ui.add(
+                    let r = super::look::text_box(
+                        ui,
                         egui::TextEdit::singleline(buf)
                             .desired_width(430.0 * u)
                             .font(FontId::proportional(18.0 * u))

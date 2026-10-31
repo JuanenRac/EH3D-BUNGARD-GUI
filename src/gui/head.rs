@@ -220,7 +220,8 @@ impl App {
                 .fixed_pos(pos)
                 .order(egui::Order::Foreground)
                 .show(ctx, |ui| {
-                    let r = ui.add(
+                    let r = super::look::text_box(
+                        ui,
                         egui::TextEdit::singleline(buf)
                             .desired_width(430.0 * u)
                             .font(FontId::proportional(18.0 * u))

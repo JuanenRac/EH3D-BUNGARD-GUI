@@ -94,16 +94,12 @@ impl<'a> Cv<'a> {
             (off.g() as f32 + (accent.g() as f32 - off.g() as f32) * k) as u8,
             (off.b() as f32 + (accent.b() as f32 - off.b() as f32) * k) as u8,
         );
-        self.p.rect_filled(boxr, r, fill);
-        self.p.rect_stroke(
-            boxr,
-            r,
-            Stroke::new(
-                (1.2 + 0.8 * h) * self.u,
-                alpha(accent, (170.0 + 85.0 * h) as u8),
-            ),
-            StrokeKind::Inside,
-        );
+        // a box in relief when it is on, sunk into the panel when it is off
+        if k > 0.5 {
+            self.raised(boxr, r, fill, hover, down);
+        } else {
+            self.sunk(boxr, r, fill, hover);
+        }
         // the mark is drawn as it is switched: first the short stroke and then the long one
         if k > 0.0 {
             let ink = col(self.t.background.0);
@@ -224,7 +220,8 @@ impl App {
                 .fixed_pos(pos)
                 .order(egui::Order::Foreground)
                 .show(ctx, |ui| {
-                    ui.add(
+                    super::look::text_box(
+                        ui,
                         egui::TextEdit::singleline(&mut text)
                             .desired_width(560.0 * u)
                             .hint_text(self.tr(Text::SoundFileHint))
@@ -351,6 +348,17 @@ pub(crate) enum Icon {
     Stop,
     /// A warning triangle with an exclamation mark, for the emergency button.
     Alert,
+    Select,
+    Copy,
+    Paste,
+    Trash,
+    Rotate,
+    FitBoard,
+    FitTable,
+    Target,
+    Enlarge,
+    Back,
+    Up,
 }
 
 impl Cv<'_> {
@@ -420,6 +428,7 @@ impl Cv<'_> {
                 let dot = self.pt(cx, b - h * 0.32);
                 self.p.circle_filled(dot, h * 0.1 * self.u, c);
             }
+            other => self.draw_more_icon(cx, cy, size, other, c),
         }
     }
 
@@ -601,6 +610,34 @@ mod tests {
             clipped_on(&mut a, &ctx);
             clipped_on(&mut a, &ctx);
             assert!(a.modal_card.is_some());
+        }
+    }
+
+    #[test]
+    fn every_theme_paints_the_relief_the_choice_and_the_icons() {
+        let ctx = egui::Context::default();
+        install_fonts(&ctx);
+        let mut a = app();
+        a.animate = false;
+        a.screen = Screen::Viewer;
+        for id in ThemeId::ALL {
+            a.set_theme(id);
+            a.select_mode = true;
+            a.select_in_box((-1e4, -1e4), (1e4, 1e4), true, false);
+            let _ = clipped_on(&mut a, &ctx);
+            let _ = clipped_on(&mut a, &ctx);
+            for m in [
+                extra::Modal::Open,
+                extra::Modal::Settings,
+                extra::Modal::Board,
+                extra::Modal::Tools,
+            ] {
+                a.show_modal(m);
+                let _ = clipped_on(&mut a, &ctx);
+                let _ = clipped_on(&mut a, &ctx);
+                assert!(a.modal_card.is_some(), "{id:?} {m:?}");
+            }
+            a.modal = None;
         }
     }
 

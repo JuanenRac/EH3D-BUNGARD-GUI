@@ -620,7 +620,8 @@ impl App {
                 .fixed_pos(at(x + 150.0, y + 66.0))
                 .order(egui::Order::Foreground)
                 .show(ctx, |ui| {
-                    let r = ui.add(
+                    let r = super::look::text_box(
+                        ui,
                         egui::TextEdit::singleline(&mut b.path_text)
                             .desired_width(1090.0 * u)
                             .font(FontId::proportional(17.0 * u)),
@@ -631,7 +632,8 @@ impl App {
                 .fixed_pos(at(x + 440.0, y + 686.0))
                 .order(egui::Order::Foreground)
                 .show(ctx, |ui| {
-                    let r = ui.add(
+                    let r = super::look::text_box(
+                        ui,
                         egui::TextEdit::singleline(&mut b.name_text)
                             .desired_width(360.0 * u)
                             .font(FontId::proportional(17.0 * u)),
@@ -746,8 +748,26 @@ impl App {
         cv.card(x, y, w, h, true, None);
         cv.title(x + 30.0, y + 40.0, self.tr(Text::OpenFile));
         // the toolbar: back, up and the path
-        cv.chip(x + 30.0, y + 62.0, 54.0, 38.0, "<", false, Act::BrowseBack);
-        cv.chip(x + 90.0, y + 62.0, 54.0, 38.0, "^", false, Act::BrowseUp);
+        cv.icon_chip(
+            x + 30.0,
+            y + 62.0,
+            54.0,
+            38.0,
+            Icon::Back,
+            false,
+            "",
+            Act::BrowseBack,
+        );
+        cv.icon_chip(
+            x + 90.0,
+            y + 62.0,
+            54.0,
+            38.0,
+            Icon::Up,
+            false,
+            "",
+            Act::BrowseUp,
+        );
         // the places
         cv.text(
             x + 30.0,

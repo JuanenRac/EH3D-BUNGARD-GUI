@@ -340,35 +340,38 @@ impl App {
             self.move_design,
             Act::ToggleMoveDesign,
         );
-        cv.chip(
+        cv.icon_chip(
             x + 4.0,
             y + 42.0,
             col3 - 4.0,
             32.0,
-            self.tr(Text::OnBoard),
+            Icon::FitBoard,
             false,
+            self.tr(Text::OnBoard),
             Act::FitPlan(true),
         );
-        cv.chip(
+        cv.icon_chip(
             x + col3 + 6.0 + 4.0,
             y + 42.0,
             col3 - 4.0,
             32.0,
-            self.tr(Text::OnTable),
+            Icon::FitTable,
             false,
+            self.tr(Text::OnTable),
             Act::FitPlan(false),
         );
-        cv.chip(
+        cv.icon_chip(
             x + 2.0 * (col3 + 6.0) + 4.0,
             y + 42.0,
             col3 - 4.0,
             32.0,
+            Icon::Enlarge,
+            self.plan_big,
             if self.plan_big {
                 self.tr(Text::ShowBoth)
             } else {
                 self.tr(Text::Enlarge2d)
             },
-            self.plan_big,
             Act::ToggleBig,
         );
     }

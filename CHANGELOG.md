@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.1.3] - Editing the job in the plan view, a preview in the Open window, relief and icons
+
 - **Editing the job from the plan view:** a tool of the list at the left has a button to take it out of the job (its holes or paths go from the file, the views and the panel); the plan view has a choosing tool that takes holes and paths with a click or with a box (left to right: whatever is wholly inside; right to left: whatever the box touches; Ctrl or Shift adds to the choice), and buttons (and Ctrl+C, Ctrl+X, Ctrl+V, Ctrl+A, Delete) to copy, cut, paste (a few millimetres further on, each paste a step further, and the copies are chosen) and delete. An edit writes the file again in a folder of its own and loads it like any other file, so the engines and every view see the same job; the original file is never changed and a turned work is baked into the files first. A job emptied of holes or paths still loads.
 - **Relief on the controls, in every theme:** the buttons, the chips, the check boxes, the thumb of the bars and their small arrow buttons have a gradient, an edge of light on top, a shade at the bottom and a glow under the pointer, and sink when pressed; the tracks of the bars and the boxes where text is typed are sunk into the panel and light up under the pointer and with the focus; the X of the corner of a window is red, turns a quarter of a turn and glows under the pointer.
 - **Icons in place of text on the small buttons:** the plan view (reset the view, turn, choose, copy, paste, delete, fit to the board, fit to the table, enlarge) and the Open window (back, up) use pictures drawn with lines, with a note that says the name when the pointer stays over them.

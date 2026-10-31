@@ -35,6 +35,7 @@ mod fleet;
 mod head;
 mod inspect;
 mod levelling;
+mod machine3d;
 mod numedit;
 mod opener;
 mod resume;
@@ -268,6 +269,9 @@ pub struct App {
     saved: bool,
     view2d: Nav2,
     view3d: Nav3,
+    /// The machine of the 3D view: its own place (home), its start and its travel to the first point of the work.
+    m3d: machine3d::Sim3d,
+    m3d_first: Option<(f64, f64)>,
     zones: Vec<(Rect, Zone)>,
     drag_zone: Option<Zone>,
     ui_scale: f32,
@@ -428,6 +432,8 @@ impl App {
             saved: false,
             view2d: Nav2::default(),
             view3d: Nav3::default(),
+            m3d: machine3d::Sim3d::new((0.0, 0.0)),
+            m3d_first: None,
             zones: Vec::new(),
             drag_zone: None,
             ui_scale: 1.0,
@@ -821,6 +827,18 @@ impl App {
                 ..Default::default()
             });
             side.engine.start();
+            // the first point of the work, for the machine of the 3D view to travel to (the engine says where the job begins)
+            let first = side
+                .engine
+                .job_view()
+                .map(|v| (v.x_mm, v.y_mm))
+                .or_else(|| side.scene.holes.first().map(|h| (h.x_mm, h.y_mm)))
+                .or_else(|| {
+                    side.scene
+                        .paths
+                        .first()
+                        .and_then(|q| q.points.first().copied())
+                });
             side.last_done = 0;
             if skip == 0 {
                 for h in &mut side.scene.holes {
@@ -830,7 +848,9 @@ impl App {
                     pth.reached = 0;
                 }
             }
+            self.m3d_first = first;
             self.running = Some(p);
+            self.m3d.begin(self.m3d_first);
             self.paused = false;
             self.resume_skip = skip;
             self.recovery_done = usize::MAX;
@@ -860,6 +880,7 @@ impl App {
         if let Some(p) = self.running.take() {
             self.side_mut(p).engine.stop();
         }
+        self.m3d.finish();
     }
 
     fn side_mut(&mut self, p: Program) -> &mut Side {
@@ -882,12 +903,23 @@ impl App {
             .fixed_dt
             .unwrap_or_else(|| now.duration_since(self.last_tick).as_secs_f64().min(3600.0));
         self.last_tick = now;
-        let Some(p) = self.running else { return };
+        let dt = real * self.settings.sim_speed as f64;
+        let Some(p) = self.running else {
+            // no job: the machine finishes what it was doing (it goes home) and rests
+            self.m3d.advance(dt);
+            return;
+        };
         if self.paused {
             return;
         }
+        // the machine powers up, goes home and travels to the first point before the job moves; the engine waits for it
+        if self.m3d.phase() == machine3d::Phase::Parked {
+            self.m3d.begin(self.m3d_first);
+        }
+        if !self.m3d.advance(dt) {
+            return;
+        }
         let auto_ok = self.auto_ok;
-        let dt = real * self.settings.sim_speed as f64;
         let skip = self.resume_skip;
         let side = self.side_mut(p);
         if side.engine.question().is_some() {
@@ -958,12 +990,17 @@ impl App {
                 }
             }
             self.running = None;
+            self.m3d.finish();
             self.clear_recovery();
             if p == Program::Drill {
                 self.count_holes();
             }
         } else {
             self.save_recovery();
+        }
+        // the head of the machine goes where the job says, once the machine is working
+        if let Some(h) = head {
+            self.m3d.follow(h);
         }
     }
 
@@ -1147,6 +1184,7 @@ impl App {
                     self.side_mut(p).engine.answer(ok);
                     if !ok {
                         self.running = None;
+                        self.m3d.finish();
                     }
                 }
             }
@@ -1168,6 +1206,9 @@ enum Bar {
 struct BarInfo {
     bar: Bar,
     track: Rect,
+    /// The little arrows at the two ends of the bar (a click moves the list one row); none when the bar is too short for them.
+    up: Option<Rect>,
+    down: Option<Rect>,
     area: Rect,
     total: usize,
     shown: usize,
@@ -1223,17 +1264,49 @@ impl<'a> Cv<'a> {
             return;
         }
         let w = 12.0;
-        let track = self.rect(x, y, w, h);
+        // the arrows at the ends, as the bars of a list have them; a short bar has only its thumb
+        let arrow = if h >= 70.0 { 14.0 } else { 0.0 };
+        let (ty, th) = (y + arrow, h - 2.0 * arrow);
+        let track = self.rect(x, ty, w, th);
         self.p
             .rect_filled(track, 4.0 * self.u, alpha(col(self.t.dim), 50));
-        let thumb_h = (h * shown as f32 / total as f32).clamp(28.0, h);
-        let top = first.min(total - shown) as f32 / (total - shown) as f32 * (h - thumb_h);
-        let thumb = self.rect(x, y + top, w, thumb_h);
+        let thumb_h = (th * shown as f32 / total as f32).clamp(28.0, th);
+        let top = first.min(total - shown) as f32 / (total - shown) as f32 * (th - thumb_h);
+        let thumb = self.rect(x, ty + top, w, thumb_h);
         self.p.rect_filled(thumb, 4.0 * self.u, col(self.t.accent));
+        let (mut up, mut down) = (None, None);
+        if arrow > 0.0 {
+            let ur = self.rect(x, y, w, arrow - 1.0);
+            let dr = self.rect(x, y + h - arrow + 1.0, w, arrow - 1.0);
+            for (r, pointing_up) in [(ur, true), (dr, false)] {
+                self.p
+                    .rect_filled(r, 3.0 * self.u, alpha(col(self.t.dim), 70));
+                let c = r.center();
+                let (hw, hh) = (3.5 * self.u, 2.5 * self.u);
+                let (tip, base) = if pointing_up {
+                    (c.y - hh, c.y + hh)
+                } else {
+                    (c.y + hh, c.y - hh)
+                };
+                self.p.add(Shape::convex_polygon(
+                    vec![
+                        Pos2::new(c.x, tip),
+                        Pos2::new(c.x - hw, base),
+                        Pos2::new(c.x + hw, base),
+                    ],
+                    col(self.t.accent),
+                    Stroke::NONE,
+                ));
+            }
+            up = Some(ur);
+            down = Some(dr);
+        }
         let (ax, ay, aw, ah) = area;
         self.bars.push(BarInfo {
             bar,
             track,
+            up,
+            down,
             area: self.rect(ax, ay, aw, ah),
             total,
             shown,
@@ -1880,6 +1953,16 @@ impl App {
         }
     }
 
+    /// A click on an arrow of a bar: the list moves one row up (-1) or down (1).
+    fn bar_step(&mut self, bar: Bar, dir: i32) {
+        match bar {
+            Bar::Combo => self.combo_scroll(dir),
+            Bar::Tools => self.bar_wheel(Bar::Tools, dir),
+            Bar::Catalogue => self.cat_scroll_by(dir),
+            Bar::Browse => self.browse_scroll(dir),
+        }
+    }
+
     /// The pointer is at `p` on the track of a bar: the list goes to the row that the place stands for.
     fn bar_to(&mut self, bar: Bar, p: Pos2) {
         let Some(info) = self.bars.iter().rev().find(|b| b.bar == bar).copied() else {
@@ -2250,7 +2333,7 @@ impl App {
                     right_w,
                     card_h - 70.0,
                     &sizes,
-                    head,
+                    self.head3d(),
                 );
             }
             cv.zones.push((
@@ -2484,6 +2567,12 @@ impl App {
         } else {
             self.route.engine.job_view()
         }
+    }
+
+    /// Where the head of the machine of the 3D view is: the machine has a place of its own (it starts, goes home, travels to the first point and works), so the board
+    /// can be moved in the plan view without the machine following it.
+    fn head3d(&self) -> Option<(f64, f64)> {
+        Some(self.m3d.pos())
     }
 
     /// Where the head is: the running job says it; otherwise the next hole to drill.
@@ -3016,6 +3105,22 @@ impl eframe::App for App {
                 .and_then(|p| self.zone_at(p))
             {
                 self.zoom(z, scroll);
+            }
+        }
+        // a click on an arrow of a scroll bar moves the list one row, and goes no further
+        if let Some(pos) = clicked {
+            let arrow = self.bars.iter().rev().find_map(|b| {
+                if b.up.is_some_and(|r| r.expand(2.0).contains(pos)) {
+                    Some((b.bar, -1))
+                } else if b.down.is_some_and(|r| r.expand(2.0).contains(pos)) {
+                    Some((b.bar, 1))
+                } else {
+                    None
+                }
+            });
+            if let Some((bar, dir)) = arrow {
+                self.bar_step(bar, dir);
+                clicked = None;
             }
         }
         // a click on the track of a scroll bar puts the list there, and goes no further

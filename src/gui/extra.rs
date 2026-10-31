@@ -1008,15 +1008,6 @@ impl App {
                     15.0,
                     col(t.dim),
                 );
-                cv.chip(
-                    x + 530.0,
-                    y + 134.0,
-                    180.0,
-                    34.0,
-                    self.tr(Text::HeadOpen),
-                    false,
-                    Act::Show(Modal::Head),
-                );
                 match &self.conn_result {
                     Some(Ok(())) => {
                         cv.text(
@@ -1052,28 +1043,38 @@ impl App {
                         }
                     }
                 }
+                // the bottom row: test, the node of the head, save and close
                 cv.chip(
                     x + 30.0,
                     y + 480.0,
-                    230.0,
+                    190.0,
                     44.0,
                     self.tr(Text::ConnTest),
                     false,
                     Act::ConnTest,
                 );
                 cv.chip(
-                    x + 330.0,
+                    x + 230.0,
                     y + 480.0,
-                    180.0,
+                    190.0,
+                    44.0,
+                    self.tr(Text::HeadOpen),
+                    false,
+                    Act::Show(Modal::Head),
+                );
+                cv.chip(
+                    x + 430.0,
+                    y + 480.0,
+                    130.0,
                     44.0,
                     self.tr(Text::Save),
                     false,
                     Act::ConnSave,
                 );
                 cv.chip(
-                    x + 530.0,
+                    x + 570.0,
                     y + 480.0,
-                    180.0,
+                    140.0,
                     44.0,
                     self.tr(Text::Close),
                     true,

@@ -516,6 +516,54 @@ mod tests {
     }
 
     #[test]
+    fn the_machine_of_the_3d_view_does_not_follow_the_board_and_starts_before_it_works() {
+        use super::super::machine3d::Phase;
+        let mut a = app();
+        let rest = a.head3d().unwrap();
+        assert_eq!(a.m3d.phase(), Phase::Parked);
+        // moving the design in the plan view never moves the machine, with a board or without it
+        a.shift_design(25.0, 17.0);
+        a.shift_design(-40.0, 3.5);
+        assert_eq!(a.head3d().unwrap(), rest);
+        // the job: the machine powers up, goes home and travels to the first point while the work waits
+        a.auto_ok = true;
+        a.act(Act::Start);
+        assert_eq!(a.m3d.phase(), Phase::Startup);
+        let done = |a: &App| a.drill.scene.holes.iter().filter(|h| h.done).count();
+        for _ in 0..40 {
+            a.tick();
+        }
+        assert_ne!(
+            a.m3d.phase(),
+            Phase::Working,
+            "two seconds is not enough to start and travel"
+        );
+        assert_eq!(done(&a), 0, "no hole is drilled while the machine travels");
+        let mut moved = false;
+        for _ in 0..4000 {
+            a.tick();
+            moved |= a.head3d().unwrap() != rest;
+            if a.m3d.phase() == Phase::Working {
+                break;
+            }
+        }
+        assert_eq!(a.m3d.phase(), Phase::Working);
+        assert!(moved, "the head travelled to the first point");
+        // from then on the head is where the job says
+        a.tick();
+        let view = a.running_view().expect("the job runs");
+        assert_eq!(a.head3d().unwrap(), (view.x_mm, view.y_mm));
+        // moving the board in the plan view while the job runs does not make the machine jump either (its position is the job's)
+        // and a stop sends the head home
+        a.act(Act::Stop);
+        assert_eq!(a.m3d.phase(), Phase::Returning);
+        for _ in 0..4000 {
+            a.tick();
+        }
+        assert_eq!((a.m3d.phase(), a.head3d().unwrap()), (Phase::Parked, rest));
+    }
+
+    #[test]
     fn start_goes_out_while_the_job_runs_and_comes_back_with_pause_or_stop() {
         let mut a = app();
         assert_eq!(a.job_buttons(), (true, false, false));

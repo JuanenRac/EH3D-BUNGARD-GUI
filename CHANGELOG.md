@@ -4,6 +4,10 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The machine of the 3D view is a machine:** it has a place of its own (home) and a start like the real one. At rest the head waits at home, and moving the board or the design in the plan view, with a board or without it, never moves the machine (it used to follow the first hole). When a job starts the machine powers up, goes home, travels to the first point of the work and only then does the job begin, with the head following it, for drilling and for routing; when the job ends or is stopped the head goes home again. The speed of the simulation scales all of it. 11 tests.
+- **Arrows on the bars of the lists:** the scroll bar of every list (the drop-down lists, the tools, the catalogue, the browser of files) has an arrow at each end that moves the list one row.
+- **The Head node button** of the Connection window is in the bottom row, with Test, Save and Close, instead of over the row of the kinds of connection.
+
 ## [0.0.7] - Light and quality check with the camera of the drill head
 
 - **Sounds for the visual check:** two more sounds in the settings (the Job tab), for a check of the board that is correct and for one that is not, chosen like the other two: off, the beep of the program (a rise for correct, three low falling notes for not correct), one of the sixty of the catalogue, a file of yours or a voice that says "The visual check of the board is correct" or "... is not correct" (`check_ok.wav` and `check_bad.wav` in every voice of the folder `voices`, in English, Spanish, Italian, German, French, Portuguese and Chinese). "Cannot judge" has no sound of its own, because it is neither. They are off until chosen; a voice without the recording plays the beep. 1 test.

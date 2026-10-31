@@ -86,6 +86,19 @@
           "tree_name": "inspection.rs gui/inspect.rs"
         },
         {
+          "name": "gui/machine3d.rs",
+          "desc": {
+            "en": "the machine of the 3D view: start, home, first point, work",
+            "es": "la máquina de la vista 3D: arranque, home, primer punto, trabajo",
+            "it": "la macchina della vista 3D: avvio, home, primo punto, lavoro",
+            "de": "die Maschine der 3D-Ansicht: Start, Home, erster Punkt, Arbeit",
+            "fr": "la machine de la vue 3D : démarrage, home, premier point, travail",
+            "pt": "a máquina da vista 3D: arranque, home, primeiro ponto, trabalho",
+            "zh": "3D 视图的机床：启动、回原点、第一个点、加工",
+            "ja": "3D 表示のマシン：起動・ホーム・最初の点・作業"
+          }
+        },
+        {
           "name": "gui/opener.rs  gui/board.rs",
           "desc": {
             "en": "Open, board, tools and settings windows",

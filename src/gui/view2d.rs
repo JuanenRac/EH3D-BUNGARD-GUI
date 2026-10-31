@@ -296,6 +296,20 @@ impl App {
         }
     }
 
+    /// Centres both views on the middle of the work (the holes and the paths with all the copies of the panel).
+    pub(crate) fn center_on_work(&mut self) {
+        let mut all = self.drill.scene.clone();
+        all.overlay(&self.route.scene);
+        if let Some((x0, y0, x1, y1)) = all.bounds() {
+            let c = ((x0 + x1) / 2.0, (y0 + y1) / 2.0);
+            self.follow = false;
+            self.view2d.focus = Some(c);
+            self.view2d.pan = (0.0, 0.0);
+            self.view3d.focus = Some(c);
+            self.view3d.pan = (0.0, 0.0);
+        }
+    }
+
     /// Fits the board (or the whole table) into the plan view.
     pub(crate) fn fit_plan(&mut self, board: bool) {
         self.follow = false;

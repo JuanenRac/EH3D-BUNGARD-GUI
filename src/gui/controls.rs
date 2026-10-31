@@ -359,6 +359,9 @@ pub(crate) enum Icon {
     Enlarge,
     Back,
     Up,
+    Cut,
+    Undo,
+    Redo,
 }
 
 impl Cv<'_> {

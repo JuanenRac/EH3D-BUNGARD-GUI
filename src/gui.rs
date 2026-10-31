@@ -175,6 +175,12 @@ enum Act {
     BrowseSort(usize),
     BrowseFilter,
     ToggleSelect,
+    StartAt(Program, u8),
+    CutSel,
+    UndoEdit,
+    RedoEdit,
+    ConnPort(usize),
+    PortsRefresh,
     CopySel,
     PasteSel,
     DeleteSel,
@@ -310,7 +316,16 @@ pub struct App {
     /// The choice of holes and paths in the plan view (indices into the scenes), the box being dragged (mm), whether the choosing tool is on, what was
     /// copied, how many times it was pasted, the counter of the files written by edits, and how the plan view was drawn (scale, origin, place) to
     /// turn the pointer into millimetres.
+    /// The serial ports the system reports, for the Connection window.
+    com_ports: Vec<String>,
+    /// The tool each program starts with (the ones before it are left out of the job), if the person chose one.
+    start_at: Vec<(Program, u8)>,
     sel_holes: std::collections::BTreeSet<usize>,
+    /// The edits that can be undone and redone, and the move of the choice that is being dragged (mm).
+    undo: Vec<edit::Snapshot>,
+    redo: Vec<edit::Snapshot>,
+    sel_move: Option<(f64, f64)>,
+    sel_move_from: Option<(f64, f64)>,
     sel_paths: std::collections::BTreeSet<usize>,
     band: Option<((f64, f64), (f64, f64))>,
     select_mode: bool,
@@ -492,7 +507,13 @@ impl App {
             follow: false,
             move_board: false,
             move_design: false,
+            com_ports: Vec::new(),
+            start_at: Vec::new(),
             sel_holes: Default::default(),
+            undo: Vec::new(),
+            redo: Vec::new(),
+            sel_move: None,
+            sel_move_from: None,
             sel_paths: Default::default(),
             band: None,
             select_mode: false,
@@ -881,11 +902,48 @@ impl App {
 
     /// The tools of a program that are switched off in the job.
     pub(crate) fn tools_off(&self, p: Program) -> Vec<u8> {
-        self.off_tools
+        let mut off: Vec<u8> = self
+            .off_tools
             .iter()
             .filter(|(q, _)| *q == p)
             .map(|(_, t)| *t)
-            .collect()
+            .collect();
+        // a program that starts at a tool leaves out the ones that come before it
+        if let Some(&(_, first)) = self.start_at.iter().find(|(q, _)| *q == p) {
+            for t in self.job_tool_order(p) {
+                if t == first {
+                    break;
+                }
+                if !off.contains(&t) {
+                    off.push(t);
+                }
+            }
+        }
+        off
+    }
+
+    /// The tools of a program in the order the job does them: the one that the file uses first comes first.
+    pub(crate) fn job_tool_order(&self, p: Program) -> Vec<u8> {
+        let mut order: Vec<u8> = Vec::new();
+        let tools: Box<dyn Iterator<Item = u8> + '_> = match p {
+            Program::Drill => Box::new(self.drill.base.holes.iter().map(|h| h.tool)),
+            Program::Route => Box::new(self.route.base.paths.iter().map(|q| q.tool)),
+        };
+        for t in tools {
+            if !order.contains(&t) {
+                order.push(t);
+            }
+        }
+        order
+    }
+
+    pub(crate) fn toggle_start_at(&mut self, p: Program, tool: u8) {
+        if let Some(i) = self.start_at.iter().position(|x| *x == (p, tool)) {
+            self.start_at.remove(i);
+        } else {
+            self.start_at.retain(|(q, _)| *q != p);
+            self.start_at.push((p, tool));
+        }
     }
 
     pub(crate) fn tool_is_on(&self, p: Program, tool: u8) -> bool {
@@ -1353,6 +1411,7 @@ impl App {
             Act::SaveSettings => self.save_settings(),
             Act::ConnKind(k) => {
                 self.conn.kind = k;
+                self.refresh_ports();
                 self.conn_result = None;
                 self.saved = false;
             }
@@ -1364,6 +1423,12 @@ impl App {
             Act::BrowseSort(c) => self.browse_sort(c),
             Act::BrowseFilter => self.browse_filter(),
             Act::ToggleSelect => self.toggle_select_mode(),
+            Act::StartAt(p, t) => self.toggle_start_at(p, t),
+            Act::CutSel => self.cut_selection(),
+            Act::UndoEdit => self.undo_edit(),
+            Act::RedoEdit => self.redo_edit(),
+            Act::ConnPort(i) => self.pick_port(i),
+            Act::PortsRefresh => self.refresh_ports(),
             Act::CopySel => self.copy_selection(),
             Act::PasteSel => self.paste_clip(),
             Act::DeleteSel => self.delete_selection(),
@@ -1641,34 +1706,76 @@ impl<'a> Cv<'a> {
             self.first_card = Some((x, y, w, h));
         }
         let t = self.t;
+        let rect = self.rect(x, y, w, h);
+        // a card that answers (the launcher choices) lights up and lifts under the pointer
+        let hover = act.is_some() && self.touch(rect).0;
         let fill = col(t.panel);
-        let line = if hot {
+        let (top_fill, bottom_fill) = if hover {
+            (shade(fill, 1.28), shade(fill, 1.0))
+        } else {
+            (shade(fill, 1.12), shade(fill, 0.9))
+        };
+        let line = if hover {
+            col(t.accent)
+        } else if hot {
             col(t.line)
         } else {
             alpha(Color32::WHITE, 34)
         };
-        let stroke = Stroke::new(if hot { 1.6 } else { 1.0 } * self.u, line);
+        let stroke = Stroke::new(if hot || hover { 1.6 } else { 1.0 } * self.u, line);
         match t.corner {
             Corner::Cut => {
                 let c = 16.0;
-                self.poly(
-                    &[
-                        (x + c, y),
-                        (x + w, y),
-                        (x + w, y + h - c),
-                        (x + w - c, y + h),
-                        (x, y + h),
-                        (x, y + c),
-                    ],
-                    fill,
-                    stroke,
+                let shape = [
+                    (x + c, y),
+                    (x + w, y),
+                    (x + w, y + h - c),
+                    (x + w - c, y + h),
+                    (x, y + h),
+                    (x, y + c),
+                ];
+                let lift = if hover { 7.0 } else { 4.0 };
+                for (g, a) in [(lift, 40u8), (lift * 0.5, 55)] {
+                    let s: Vec<(f32, f32)> = shape.iter().map(|&(px, py)| (px, py + g)).collect();
+                    self.poly(&s, alpha(Color32::BLACK, a), Stroke::NONE);
+                }
+                let pts: Vec<Pos2> = shape.iter().map(|&(px, py)| self.pt(px, py)).collect();
+                self.gradient_poly(&pts, top_fill, bottom_fill);
+                self.poly(&shape, Color32::TRANSPARENT, stroke);
+                self.line(
+                    (x + c + 4.0, y + 2.5),
+                    (x + w - 6.0, y + 2.5),
+                    1.4,
+                    alpha(Color32::WHITE, 30),
                 );
             }
             Corner::Round | Corner::Square => {
                 let r = if t.corner == Corner::Round { 14.0 } else { 0.0 } * self.u;
-                let rect = self.rect(x, y, w, h);
-                self.p.rect_filled(rect, r, fill);
+                let lift = if hover { 7.0 } else { 4.0 } * self.u;
+                for (g, a) in [(lift, 38u8), (lift * 0.5, 52)] {
+                    self.p.rect_filled(
+                        rect.translate(Vec2::new(0.0, g)),
+                        r,
+                        alpha(Color32::BLACK, a),
+                    );
+                }
+                if hover {
+                    self.p.rect_filled(
+                        rect.expand(4.0 * self.u),
+                        r + 4.0 * self.u,
+                        alpha(col(t.accent), 34),
+                    );
+                }
+                self.gradient_rrect(rect, r, top_fill, bottom_fill);
                 self.p.rect_stroke(rect, r, stroke, StrokeKind::Inside);
+                let inset = (r * 0.6).max(8.0 * self.u);
+                self.p.line_segment(
+                    [
+                        Pos2::new(rect.min.x + inset, rect.min.y + 2.5 * self.u),
+                        Pos2::new(rect.max.x - inset, rect.min.y + 2.5 * self.u),
+                    ],
+                    Stroke::new(1.4 * self.u, alpha(Color32::WHITE, 30)),
+                );
             }
         }
         if let Some(a) = act {
@@ -2015,8 +2122,16 @@ impl App {
         cv.line((0.0, 64.0), (DESIGN_W, 64.0), 1.0, alpha(col(t.line), 150));
         let x = if back { 70.0 } else { 28.0 };
         if back {
-            cv.text(28.0, 42.0, Align2::LEFT_BOTTOM, "<", 28.0, col(t.dim));
-            cv.hits.push((cv.rect(14.0, 10.0, 48.0, 44.0), Act::Back));
+            cv.icon_chip(
+                14.0,
+                11.0,
+                46.0,
+                42.0,
+                Icon::Back,
+                false,
+                self.tr(Text::LauncherAsk),
+                Act::Back,
+            );
         }
         cv.text(x, 42.0, Align2::LEFT_BOTTOM, "EH3D", 26.0, col(t.text));
         cv.text(
@@ -2216,21 +2331,8 @@ impl App {
         let on = self.remember;
         let (bx, by) = (DESIGN_W / 2.0 - 140.0, 730.0);
         let box_rect = cv.rect(bx, by, 22.0, 22.0);
-        cv.p.rect_filled(
-            box_rect,
-            4.0 * cv.u,
-            if on {
-                col(t.accent)
-            } else {
-                Color32::TRANSPARENT
-            },
-        );
-        cv.p.rect_stroke(
-            box_rect,
-            4.0 * cv.u,
-            Stroke::new(1.5 * cv.u, col(t.accent)),
-            StrokeKind::Inside,
-        );
+        let (hover, down) = cv.touch(cv.rect(bx - 6.0, by - 6.0, 300.0, 34.0));
+        cv.check_box_small(box_rect, on, hover, down);
         let r = cv.text(
             bx + 34.0,
             by + 17.0,
@@ -2376,21 +2478,8 @@ impl App {
         for (i, n) in layer_names.into_iter().enumerate() {
             let ly = y + 12.0 + i as f32 * 26.0;
             let r = cv.rect(38.0, ly, 16.0, 16.0);
-            cv.p.rect_filled(
-                r,
-                4.0 * cv.u,
-                if self.layers[i] {
-                    col(t.accent)
-                } else {
-                    Color32::TRANSPARENT
-                },
-            );
-            cv.p.rect_stroke(
-                r,
-                4.0 * cv.u,
-                Stroke::new(1.2 * cv.u, col(t.accent)),
-                StrokeKind::Inside,
-            );
+            let (hover, down) = cv.touch(cv.rect(34.0, ly - 4.0, 200.0, 24.0));
+            cv.check_box_small(r, self.layers[i], hover, down);
             cv.text(
                 64.0,
                 ly + 13.0,
@@ -2501,9 +2590,18 @@ impl App {
             }
             if self.layers[1] {
                 let tool_colors = self.route_tool_colors();
+                let (mdx, mdy) = self.sel_move.unwrap_or((0.0, 0.0));
                 for (pi, path) in self.route.scene.paths.iter().enumerate() {
-                    let pts: Vec<(f32, f32)> =
-                        path.points.iter().map(|&(x, y)| screen(x, y)).collect();
+                    let (ox, oy) = if self.sel_paths.contains(&pi) {
+                        (mdx, mdy)
+                    } else {
+                        (0.0, 0.0)
+                    };
+                    let pts: Vec<(f32, f32)> = path
+                        .points
+                        .iter()
+                        .map(|&(x, y)| screen(x + ox, y + oy))
+                        .collect();
                     if self.sel_paths.contains(&pi) {
                         // what is chosen has a wide halo of the accent colour under it
                         cv.polyline(&pts, 7.0, alpha(col(t.accent), 110), false);
@@ -2533,6 +2631,7 @@ impl App {
                 }
             }
             if self.layers[0] {
+                let (mdx, mdy) = self.sel_move.unwrap_or((0.0, 0.0));
                 for (hi, h) in self.drill.scene.holes.iter().enumerate() {
                     let idx = sizes
                         .iter()
@@ -2540,7 +2639,11 @@ impl App {
                         .unwrap_or(0);
                     let c = col(t.size_color(idx));
                     let r = plan.hole_radius(h.diameter_mm, 2.0) as f32;
-                    let (px, py) = screen(h.x_mm, h.y_mm);
+                    let (px, py) = if self.sel_holes.contains(&hi) {
+                        screen(h.x_mm + mdx, h.y_mm + mdy)
+                    } else {
+                        screen(h.x_mm, h.y_mm)
+                    };
                     if self.sel_holes.contains(&hi) {
                         cv.p.circle_filled(
                             cv.pt(px, py),
@@ -2645,47 +2748,25 @@ impl App {
             self.tr(Text::Rotate),
             Act::Rotate(1),
         );
-        // choose, copy, paste and delete what is drawn
-        cv.icon_chip(
-            ix - 140.0,
-            top + 8.0,
-            40.0,
-            32.0,
-            Icon::Trash,
-            false,
-            self.tr(Text::DeleteSel),
-            Act::DeleteSel,
-        );
-        cv.icon_chip(
-            ix - 184.0,
-            top + 8.0,
-            40.0,
-            32.0,
-            Icon::Paste,
-            false,
-            self.tr(Text::PasteSel),
-            Act::PasteSel,
-        );
-        cv.icon_chip(
-            ix - 228.0,
-            top + 8.0,
-            40.0,
-            32.0,
-            Icon::Copy,
-            false,
-            self.tr(Text::CopySel),
-            Act::CopySel,
-        );
-        cv.icon_chip(
-            ix - 272.0,
-            top + 8.0,
-            40.0,
-            32.0,
-            Icon::Select,
-            self.select_mode,
-            self.tr(Text::SelectTool),
-            Act::ToggleSelect,
-        );
+        // choose, move, copy, cut, paste and delete what is drawn, and undo and redo it
+        let tools = [
+            (-96.0, Icon::Redo, false, Text::RedoEdit, Act::RedoEdit),
+            (-140.0, Icon::Undo, false, Text::UndoEdit, Act::UndoEdit),
+            (-192.0, Icon::Trash, false, Text::DeleteSel, Act::DeleteSel),
+            (-236.0, Icon::Paste, false, Text::PasteSel, Act::PasteSel),
+            (-280.0, Icon::Cut, false, Text::CutSel, Act::CutSel),
+            (-324.0, Icon::Copy, false, Text::CopySel, Act::CopySel),
+            (
+                -368.0,
+                Icon::Select,
+                self.select_mode,
+                Text::SelectTool,
+                Act::ToggleSelect,
+            ),
+        ];
+        for (dx, icon, on, tip, act) in tools {
+            cv.icon_chip(ix + dx, top + 8.0, 40.0, 32.0, icon, on, self.tr(tip), act);
+        }
         cv.text(
             cx + cw - 18.0,
             top + card_h - 8.0,
@@ -3048,6 +3129,12 @@ impl App {
                 mx + (iso.origin.0 - mx) * z + nav.pan.0 as f64,
                 my + (iso.origin.1 - my) * z + nav.pan.1 as f64,
             );
+            // centred on the middle of the work: Y of the files goes away from the operator, as the work is drawn
+            if let Some((fx, fy)) = nav.focus {
+                let (px, py) = iso.project(fx + shift.0, td - fy + shift.1, 30.0);
+                iso.origin.0 += mx - px;
+                iso.origin.1 += my - py;
+            }
         }
         let o = (x0, y0);
         let p = |x: f64, y: f64, z: f64| {
@@ -3401,6 +3488,42 @@ impl eframe::App for App {
             if del {
                 self.delete_selection();
             }
+            // the arrows move what is chosen: 1 mm, 0.1 mm with Shift, 10 mm with Ctrl
+            if self.selection_count() > 0 {
+                let (step, left, right, up, down) = ctx.input(|i| {
+                    let step = if i.modifiers.command {
+                        10.0
+                    } else if i.modifiers.shift {
+                        0.1
+                    } else {
+                        1.0
+                    };
+                    (
+                        step,
+                        i.key_pressed(egui::Key::ArrowLeft),
+                        i.key_pressed(egui::Key::ArrowRight),
+                        i.key_pressed(egui::Key::ArrowUp),
+                        i.key_pressed(egui::Key::ArrowDown),
+                    )
+                });
+                let dx = if right {
+                    step
+                } else if left {
+                    -step
+                } else {
+                    0.0
+                };
+                let dy = if up {
+                    step
+                } else if down {
+                    -step
+                } else {
+                    0.0
+                };
+                if dx != 0.0 || dy != 0.0 {
+                    self.move_selection(dx, dy);
+                }
+            }
         }
         if ctx.input(|i| i.modifiers.command && i.key_pressed(egui::Key::O))
             && self.screen == Screen::Viewer
@@ -3483,15 +3606,28 @@ impl eframe::App for App {
                         && !resp.dragged_by(egui::PointerButton::Secondary)
                         && !resp.dragged_by(egui::PointerButton::Middle);
                     if let (true, Some(m)) = (choosing, at.and_then(|p| self.plan_point(p))) {
-                        // a box to choose with, instead of moving the view
-                        self.band = Some((m, m));
+                        if self.is_over_choice(m) {
+                            // the choice is dragged to another place
+                            self.sel_move_from = Some(m);
+                            self.sel_move = Some((0.0, 0.0));
+                        } else {
+                            // a box to choose with, instead of moving the view
+                            self.band = Some((m, m));
+                        }
                         self.drag_zone = None;
                     } else {
                         self.drag_zone = z;
                     }
                 }
             }
-            if resp.dragged() && self.band.is_some() {
+            if resp.dragged() && self.sel_move_from.is_some() {
+                if let (Some(m), Some(from)) = (
+                    resp.interact_pointer_pos().and_then(|p| self.plan_point(p)),
+                    self.sel_move_from,
+                ) {
+                    self.sel_move = Some((m.0 - from.0, m.1 - from.1));
+                }
+            } else if resp.dragged() && self.band.is_some() {
                 if let Some(m) = resp.interact_pointer_pos().and_then(|p| self.plan_point(p)) {
                     if let Some(b) = self.band.as_mut() {
                         b.1 = m;
@@ -3511,6 +3647,12 @@ impl eframe::App for App {
                 }
             }
             if resp.drag_stopped() {
+                if let (Some((dx, dy)), Some(_)) = (self.sel_move.take(), self.sel_move_from.take())
+                {
+                    if dx.abs() + dy.abs() > 0.05 {
+                        self.move_selection(dx, dy);
+                    }
+                }
                 if let Some((a, b)) = self.band.take() {
                     let add = self.key_mods.0 || self.key_mods.1;
                     self.select_in_box(a, b, b.0 < a.0, add);

@@ -19,6 +19,14 @@ pub(crate) struct Clip {
 /// How far a pasted copy lands from the original, in mm.
 const PASTE_STEP: f64 = 5.0;
 
+/// The state of the job to come back to: its two files and the turn of the work.
+#[derive(Debug, Clone)]
+pub(crate) struct Snapshot {
+    pub drill: Option<PathBuf>,
+    pub route: Option<PathBuf>,
+    pub rotation: u8,
+}
+
 fn identity() -> Rotation {
     Rotation {
         quarters: 0,
@@ -197,19 +205,174 @@ impl App {
         }
     }
 
+    /// The hole or path nearest to a point of the table within a few pixels: (is a hole, index).
+    fn nearest(&self, p: (f64, f64)) -> Option<(bool, usize)> {
+        let tol = 7.0 / self.plan_xf.get().0.max(1e-6);
+        let mut best: Option<(f64, bool, usize)> = None;
+        if self.layers[0] {
+            for (i, h) in self.drill.scene.holes.iter().enumerate() {
+                let d =
+                    ((h.x_mm - p.0).powi(2) + (h.y_mm - p.1).powi(2)).sqrt() - h.diameter_mm / 2.0;
+                if d <= tol && best.is_none_or(|b| d < b.0) {
+                    best = Some((d, true, i));
+                }
+            }
+        }
+        if self.layers[1] {
+            for (i, path) in self.route.scene.paths.iter().enumerate() {
+                for w in path.points.windows(2) {
+                    let d = dist_to_segment(p, w[0], w[1]);
+                    if d <= tol && best.is_none_or(|b| d < b.0) {
+                        best = Some((d, false, i));
+                    }
+                }
+            }
+        }
+        best.map(|(_, hole, i)| (hole, i))
+    }
+
+    /// Is the point over something of the choice? (A drag that starts there moves the choice; anywhere else it draws a box.)
+    pub(crate) fn is_over_choice(&self, p: (f64, f64)) -> bool {
+        match self.nearest(p) {
+            Some((true, i)) => self.sel_holes.contains(&i),
+            Some((false, i)) => self.sel_paths.contains(&i),
+            None => false,
+        }
+    }
+
+    /// The holes and paths of the board file (not of the copies of the panel) that the choice stands for: a panel repeats the board, so a hole of any copy
+    /// is the same hole of the file. Paths are left out when the tabs have cut them into pieces.
+    fn file_sets(&self) -> (BTreeSet<usize>, BTreeSet<usize>) {
+        let (bh, bp) = (self.drill.base.holes.len(), self.route.base.paths.len());
+        let holes = self
+            .sel_holes
+            .iter()
+            .filter(|_| bh > 0)
+            .map(|i| i % bh)
+            .collect();
+        let copies = self
+            .panel_applied
+            .map_or(1, |(c, r, _)| (c * r).max(1) as usize);
+        let paths = if bp > 0 && self.route.scene.paths.len() == bp * copies {
+            self.sel_paths.iter().map(|i| i % bp).collect()
+        } else {
+            BTreeSet::new()
+        };
+        (holes, paths)
+    }
+
+    /// Where the copy of the panel that holds item `i` of a scene of `n` items per board sits, in mm.
+    fn copy_offset(&self, i: usize, n: usize) -> (f64, f64) {
+        match self.panel_applied {
+            Some((c, _, pitch)) if n > 0 && c > 0 => {
+                let copy = (i / n) as u32;
+                ((copy % c) as f64 * pitch.0, (copy / c) as f64 * pitch.1)
+            }
+            _ => (0.0, 0.0),
+        }
+    }
+
+    /// Takes the state of the job as it is now, to come back to it.
+    fn snapshot(&self) -> Snapshot {
+        Snapshot {
+            drill: self.drill_path.clone(),
+            route: self.route_path.clone(),
+            rotation: self.rotation,
+        }
+    }
+
+    fn push_undo(&mut self) {
+        let s = self.snapshot();
+        self.undo.push(s);
+        self.redo.clear();
+        if self.undo.len() > 50 {
+            self.undo.remove(0);
+        }
+    }
+
+    fn restore(&mut self, s: Snapshot) {
+        self.drill_path = s.drill;
+        self.route_path = s.route;
+        self.rotation = s.rotation;
+        self.reload_jobs();
+        self.clear_selection();
+        self.saved = false;
+    }
+
+    pub(crate) fn undo_edit(&mut self) {
+        if let Some(s) = self.undo.pop() {
+            let now = self.snapshot();
+            self.redo.push(now);
+            self.restore(s);
+        }
+    }
+
+    pub(crate) fn redo_edit(&mut self) {
+        if let Some(s) = self.redo.pop() {
+            let now = self.snapshot();
+            self.undo.push(now);
+            self.restore(s);
+        }
+    }
+
+    /// Moves what is chosen by this much (mm): the holes and paths change place in the file; the choice stays.
+    pub(crate) fn move_selection(&mut self, dx: f64, dy: f64) {
+        let (holes, paths) = self.file_sets();
+        if holes.is_empty() && paths.is_empty() {
+            return;
+        }
+        self.push_undo();
+        let mut changed = false;
+        if !holes.is_empty() {
+            changed |= self.edit_drill(|f, unit, _| {
+                for (i, h) in f.holes.iter_mut().enumerate() {
+                    if holes.contains(&i) {
+                        h.x_mil += (dx / unit).round() as i32;
+                        h.y_mil += (dy / unit).round() as i32;
+                    }
+                }
+            });
+        }
+        if !paths.is_empty() {
+            changed |= self.edit_route(|p, _| {
+                let u = eh3d_routepro::hpgl::UNIT_MM;
+                for (i, q) in p.paths.iter_mut().enumerate() {
+                    if paths.contains(&i) {
+                        for pt in &mut q.points {
+                            pt.0 += (dx / u).round() as i32;
+                            pt.1 += (dy / u).round() as i32;
+                        }
+                    }
+                }
+            });
+        }
+        if changed {
+            self.saved = false;
+            self.refit_table();
+            self.apply_panel();
+        }
+    }
+
     pub(crate) fn copy_selection(&mut self) {
         if self.selection_count() == 0 {
             return;
         }
         let mut c = Clip::default();
+        let (bh, bp) = (self.drill.base.holes.len(), self.route.base.paths.len());
         for &i in &self.sel_holes {
             if let Some(h) = self.drill.scene.holes.get(i) {
-                c.holes.push((h.x_mm, h.y_mm, h.tool));
+                // in the place of the board, not of the copy of the panel it was chosen in
+                let (ox, oy) = self.copy_offset(i, bh);
+                c.holes.push((h.x_mm - ox, h.y_mm - oy, h.tool));
             }
         }
         for &i in &self.sel_paths {
             if let Some(p) = self.route.scene.paths.get(i) {
-                c.paths.push((p.tool, p.points.clone()));
+                let (ox, oy) = self.copy_offset(i, bp);
+                c.paths.push((
+                    p.tool,
+                    p.points.iter().map(|&(x, y)| (x - ox, y - oy)).collect(),
+                ));
             }
         }
         self.clip = c;
@@ -223,10 +386,14 @@ impl App {
 
     /// A folder of its own for the next file written by an edit.
     fn edit_dir(&mut self) -> PathBuf {
-        self.edit_serial += 1;
-        let d = self
-            .archive_dir
-            .join(format!("edited-{}", self.edit_serial));
+        // the folder is the program's own (two windows, or two tests, never write the same file)
+        static NEXT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(1);
+        self.edit_serial = NEXT.fetch_add(1, std::sync::atomic::Ordering::SeqCst) as u32;
+        let d = self.archive_dir.join(format!(
+            "edited-{}-{}",
+            std::process::id(),
+            self.edit_serial
+        ));
         let _ = std::fs::create_dir_all(&d);
         d
     }
@@ -333,7 +500,11 @@ impl App {
     }
 
     pub(crate) fn delete_selection(&mut self) {
-        let (holes, paths) = (self.sel_holes.clone(), self.sel_paths.clone());
+        let (holes, paths) = self.file_sets();
+        if holes.is_empty() && paths.is_empty() {
+            return;
+        }
+        self.push_undo();
         let mut changed = false;
         if !holes.is_empty() {
             changed |= self.edit_drill(|f, _, _| {
@@ -361,6 +532,7 @@ impl App {
 
     /// Takes a whole tool out of the job: its holes or its paths go from the file, the views and the panel.
     pub(crate) fn remove_tool(&mut self, prog: Program, tool: u8) {
+        self.push_undo();
         let changed = match prog {
             Program::Drill => self.edit_drill(|f, _, _| {
                 f.holes.retain(|h| h.tool != tool);
@@ -370,6 +542,7 @@ impl App {
             Program::Route => self.edit_route(|p, _| p.paths.retain(|q| q.pen != tool)),
         };
         self.off_tools.retain(|x| *x != (prog, tool));
+        self.start_at.retain(|x| *x != (prog, tool));
         self.clear_selection();
         if changed {
             self.edited();
@@ -382,6 +555,7 @@ impl App {
         if clip.holes.is_empty() && clip.paths.is_empty() {
             return;
         }
+        self.push_undo();
         self.paste_n += 1;
         let (dx, dy) = (
             PASTE_STEP * self.paste_n as f64,
@@ -390,7 +564,7 @@ impl App {
         let (mut new_holes, mut new_paths) = (BTreeSet::new(), BTreeSet::new());
         let mut changed = false;
         if !clip.holes.is_empty() {
-            let before = self.drill.scene.holes.len();
+            let before = self.drill.base.holes.len();
             changed |= self.edit_drill(|f, unit, off| {
                 for &(x, y, tool) in &clip.holes {
                     f.holes.push(eh3d_drillpro::ncd::Hole {
@@ -403,10 +577,10 @@ impl App {
                     }
                 }
             });
-            new_holes.extend(before..self.drill.scene.holes.len());
+            new_holes.extend(before..self.drill.base.holes.len());
         }
         if !clip.paths.is_empty() {
-            let before = self.route.scene.paths.len();
+            let before = self.route.base.paths.len();
             changed |= self.edit_route(|p, off| {
                 let u = eh3d_routepro::hpgl::UNIT_MM;
                 for (pen, pts) in &clip.paths {
@@ -424,7 +598,7 @@ impl App {
                     });
                 }
             });
-            new_paths.extend(before..self.route.scene.paths.len());
+            new_paths.extend(before..self.route.base.paths.len());
         }
         if changed {
             self.sel_holes = new_holes;
@@ -526,6 +700,56 @@ mod tests {
             .tool_lines()
             .iter()
             .all(|l| !(l.prog == Program::Drill && l.tool == tool)));
+    }
+
+    #[test]
+    fn what_is_chosen_can_be_moved_and_every_edit_can_be_undone_and_redone() {
+        let mut a = app();
+        let (nh, h0) = (a.drill.scene.holes.len(), a.drill.scene.holes[0].clone());
+        a.sel_holes.insert(0);
+        a.move_selection(2.0, -1.0);
+        assert_eq!(a.drill.scene.holes.len(), nh);
+        let h = &a.drill.scene.holes[0];
+        assert!((h.x_mm - h0.x_mm - 2.0).abs() < 0.05 && (h.y_mm - h0.y_mm + 1.0).abs() < 0.05);
+        assert!(a.sel_holes.contains(&0), "the choice stays on what moved");
+        a.delete_selection();
+        assert_eq!(a.drill.scene.holes.len(), nh - 1);
+        a.undo_edit();
+        assert_eq!(a.drill.scene.holes.len(), nh);
+        a.undo_edit();
+        let h = &a.drill.scene.holes[0];
+        assert!((h.x_mm - h0.x_mm).abs() < 0.05 && (h.y_mm - h0.y_mm).abs() < 0.05);
+        a.redo_edit();
+        a.redo_edit();
+        assert_eq!(a.drill.scene.holes.len(), nh - 1);
+        // nothing left to undo or redo
+        a.redo_edit();
+        assert_eq!(a.drill.scene.holes.len(), nh - 1);
+    }
+
+    #[test]
+    fn a_panel_edits_the_board_and_every_copy_follows() {
+        let mut a = app();
+        let nh = a.drill.scene.holes.len();
+        a.panel.columns = 2;
+        a.panel.rows = 1;
+        a.apply_panel();
+        assert_eq!(a.drill.scene.holes.len(), nh * 2);
+        // a hole of the second copy is the same hole of the file
+        a.sel_holes.insert(nh);
+        a.delete_selection();
+        assert_eq!(a.drill.scene.holes.len(), (nh - 1) * 2);
+    }
+
+    #[test]
+    fn a_job_that_starts_at_a_tool_leaves_out_the_ones_before_it() {
+        let mut a = app();
+        let order = a.job_tool_order(Program::Drill);
+        assert!(order.len() >= 3);
+        a.toggle_start_at(Program::Drill, order[2]);
+        assert_eq!(a.tools_off(Program::Drill), vec![order[0], order[1]]);
+        a.toggle_start_at(Program::Drill, order[2]);
+        assert!(a.tools_off(Program::Drill).is_empty());
     }
 
     #[test]

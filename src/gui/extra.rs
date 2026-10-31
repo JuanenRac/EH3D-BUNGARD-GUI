@@ -132,6 +132,8 @@ pub(crate) struct Nav3 {
     pub pitch: f32,
     pub zoom: f32,
     pub pan: (f32, f32),
+    /// A point of the table the view is centred on (the middle of the work); the pan is added to it. `None`: the whole machine is centred.
+    pub focus: Option<(f64, f64)>,
 }
 
 impl Default for Nav2 {
@@ -151,6 +153,7 @@ impl Default for Nav3 {
             pitch: 30.0,
             zoom: 1.0,
             pan: (0.0, 0.0),
+            focus: None,
         }
     }
 }
@@ -269,6 +272,7 @@ impl App {
     /// Opens what the extension says it is: a job archive, a drilling file or a routing file.
     pub(crate) fn open_path(&mut self, path: &Path) {
         // a new file: the board follows its work again
+        self.start_at.clear();
         self.board_frozen = None;
         self.move_design = false;
         let name = path
@@ -427,7 +431,45 @@ impl App {
         if m == Modal::Catalogue {
             self.cat_target = None;
         }
+        if m == Modal::Connection {
+            self.refresh_ports();
+        }
         self.modal = Some(m);
+    }
+
+    /// Looks for the serial ports of the system; a link by RS-232 or by USB with no port chosen (or one that is gone) takes the first one.
+    pub(crate) fn refresh_ports(&mut self) {
+        self.com_ports = eh3d_drillpro::protocol::serial::SerialTransport::available();
+        self.com_ports.sort_by_key(|p| {
+            let n: String = p.chars().filter(|c| c.is_ascii_digit()).collect();
+            (p.len().min(4), n.parse::<u32>().unwrap_or(0), p.clone())
+        });
+        let first = self.com_ports.first().cloned();
+        let slot = match self.conn.kind {
+            LinkKind::Rs232 => Some(&mut self.conn.rs232_port),
+            LinkKind::Usb => Some(&mut self.conn.usb_port),
+            _ => None,
+        };
+        if let (Some(slot), Some(first)) = (slot, first) {
+            if slot.trim().is_empty() {
+                *slot = first;
+                self.saved = false;
+            }
+        }
+    }
+
+    /// A click on a port of the list.
+    pub(crate) fn pick_port(&mut self, i: usize) {
+        let Some(p) = self.com_ports.get(i).cloned() else {
+            return;
+        };
+        match self.conn.kind {
+            LinkKind::Rs232 => self.conn.rs232_port = p,
+            LinkKind::Usb => self.conn.usb_port = p,
+            _ => {}
+        }
+        self.saved = false;
+        self.conn_result = None;
     }
 
     // ------------------------------------------------------------------------------------------ panelization
@@ -468,6 +510,7 @@ impl App {
     pub(crate) fn apply_panel(&mut self) {
         let (c, r, pitch) = self.panel_plan();
         let many = c * r > 1;
+        let before = self.panel_applied;
         self.panel_applied = many.then_some((c, r, pitch));
         let table = self.table;
         for side in [&mut self.drill, &mut self.route] {
@@ -513,6 +556,10 @@ impl App {
                 })
                 .collect();
             self.route.scene.paths = cut;
+        }
+        // the copies of a panel change where the middle of the work is: both views go back to it
+        if before != self.panel_applied {
+            self.center_on_work();
         }
     }
 
@@ -1072,6 +1119,44 @@ impl App {
                         vec![Text::ConnAddress, Text::ConnToken, Text::ConnMachine]
                     }
                 };
+                if matches!(self.conn.kind, LinkKind::Rs232 | LinkKind::Usb) {
+                    // the ports the system reports, to choose with a click
+                    let chosen = match self.conn.kind {
+                        LinkKind::Rs232 => &self.conn.rs232_port,
+                        _ => &self.conn.usb_port,
+                    };
+                    for (i, p) in self.com_ports.iter().take(8).enumerate() {
+                        cv.chip(
+                            x + 30.0 + (i % 4) as f32 * 128.0,
+                            y + 282.0 + (i / 4) as f32 * 44.0,
+                            120.0,
+                            36.0,
+                            p,
+                            p == chosen,
+                            Act::ConnPort(i),
+                        );
+                    }
+                    if self.com_ports.is_empty() {
+                        cv.text(
+                            x + 30.0,
+                            y + 306.0,
+                            Align2::LEFT_BOTTOM,
+                            self.tr(Text::PortsNone),
+                            15.0,
+                            col(t.warn),
+                        );
+                    }
+                    cv.icon_chip(
+                        x + 30.0 + 4.0 * 128.0,
+                        y + 282.0,
+                        44.0,
+                        36.0,
+                        Icon::Rotate,
+                        false,
+                        self.tr(Text::PortsRefresh),
+                        Act::PortsRefresh,
+                    );
+                }
                 for (i, n) in labels.into_iter().enumerate() {
                     cv.text(
                         x + 30.0,

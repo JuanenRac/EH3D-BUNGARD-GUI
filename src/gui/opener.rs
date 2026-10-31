@@ -1006,13 +1006,15 @@ impl App {
             true,
             Act::BrowseOpen,
         );
-        cv.text(
+        // the notes at the bottom keep to their own room (the switch of the preview is at their right)
+        cv.text_fit(
             x + 250.0,
             y + 760.0,
             Align2::LEFT_BOTTOM,
             self.tr(Text::OpenManyHint),
             13.0,
             col(t.dim),
+            560.0,
         );
         cv.chip(
             x + 1170.0,
@@ -1048,13 +1050,14 @@ impl App {
                 col(t.dim),
             );
         }
-        cv.text(
+        cv.text_fit(
             x + 30.0,
             y + 764.0,
             Align2::LEFT_BOTTOM,
             self.tr(Text::DropHint),
             13.0,
             col(t.dim),
+            200.0,
         );
     }
 }

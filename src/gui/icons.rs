@@ -261,6 +261,46 @@ impl Cv<'_> {
                     false,
                 );
             }
+            Icon::Cut => {
+                // two rings and the blades that cross
+                for sx in [-1.0f32, 1.0] {
+                    self.p.circle_stroke(
+                        self.pt(cx + sx * h * 0.55, cy + h * 0.6),
+                        h * 0.32 * self.u,
+                        Stroke::new(2.2 * self.u, c),
+                    );
+                    self.line(
+                        (cx + sx * h * 0.45, cy + h * 0.3),
+                        (cx - sx * h * 0.7, cy - h * 0.95),
+                        2.4,
+                        c,
+                    );
+                }
+            }
+            Icon::Undo | Icon::Redo => {
+                let s = if icon == Icon::Undo { 1.0f32 } else { -1.0 };
+                let r = h * 0.62;
+                let pts: Vec<(f32, f32)> = (0..=14)
+                    .map(|i| {
+                        let a = (-80.0 + 230.0 * i as f32 / 14.0).to_radians();
+                        (
+                            cx + s * (-h * 0.05 + r * a.cos()),
+                            cy + h * 0.15 - r * a.sin() * 0.95,
+                        )
+                    })
+                    .collect();
+                self.polyline(&pts, 2.6, c, false);
+                let e = pts[0];
+                self.poly(
+                    &[
+                        (e.0 - s * h * 0.15, e.1 - h * 0.62),
+                        (e.0 - s * h * 0.15, e.1 + h * 0.3),
+                        (e.0 - s * h * 0.85, e.1 - h * 0.14),
+                    ],
+                    c,
+                    Stroke::NONE,
+                );
+            }
             Icon::Play | Icon::Pause | Icon::Stop | Icon::Alert => {}
         }
     }

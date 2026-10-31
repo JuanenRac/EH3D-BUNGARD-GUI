@@ -30,6 +30,9 @@ pub(crate) struct ToolLine {
     pub detail: String,
     pub n: usize,
     pub done: usize,
+    /// The holes of a drill or the paths of a routing tool, and how many are done (the count that is written on the row).
+    pub count: usize,
+    pub count_done: usize,
     pub color: usize,
 }
 
@@ -168,6 +171,8 @@ impl App {
                 ),
                 n: mine.len(),
                 done: mine.iter().filter(|h| h.done).count(),
+                count: mine.len(),
+                count_done: mine.iter().filter(|h| h.done).count(),
                 color: lines.len(),
             });
         }
@@ -202,6 +207,11 @@ impl App {
                 ),
                 n: points,
                 done: mine.iter().map(|q| q.reached).sum(),
+                count: mine.len(),
+                count_done: mine
+                    .iter()
+                    .filter(|q| q.points.len() > 1 && q.reached >= q.points.len())
+                    .count(),
                 color: lines.len(),
             });
         }
@@ -314,16 +324,20 @@ impl App {
             let c = col(t.size_color(l.color));
             let lit = working == Some((l.prog, l.tool));
             let r = cv.rect(38.0, y, 244.0, 48.0);
-            cv.p.rect_filled(
-                r,
-                6.0 * cv.u,
-                if lit {
-                    // the tool that is working breathes
-                    alpha(c, (55.0 + 40.0 * wave(cv.time, 1.8)) as u8)
-                } else {
-                    col(t.panel_raised)
-                },
-            );
+            let (hover, down) = cv.touch(r);
+            let base = if lit {
+                // the tool that is working breathes
+                let k = 0.25 + 0.2 * wave(cv.time, 1.8);
+                let p = col(t.panel_raised);
+                Color32::from_rgb(
+                    (p.r() as f32 + (c.r() as f32 - p.r() as f32) * k) as u8,
+                    (p.g() as f32 + (c.g() as f32 - p.g() as f32) * k) as u8,
+                    (p.b() as f32 + (c.b() as f32 - p.b() as f32) * k) as u8,
+                )
+            } else {
+                col(t.panel_raised)
+            };
+            cv.raised(r, 6.0 * cv.u, base, hover, down);
             if lit {
                 cv.p.rect_stroke(
                     r,
@@ -350,6 +364,21 @@ impl App {
                 &l.detail,
                 11.0,
                 col(t.dim),
+            );
+            // the count of what is done: holes of the drill, paths of the routing tool
+            cv.text(
+                278.0,
+                y + 36.0,
+                Align2::RIGHT_BOTTOM,
+                &format!("{}/{}", l.count_done, l.count),
+                12.0,
+                if l.count_done >= l.count && l.count > 0 {
+                    col(t.ok)
+                } else if l.count_done > 0 {
+                    col(t.accent)
+                } else {
+                    col(t.dim)
+                },
             );
             cv.p.rect_filled(
                 cv.rect(72.0, y + 40.0, 200.0, 4.0),
@@ -382,6 +411,17 @@ impl App {
             ));
         }
         for (i, l) in lines.iter().skip(first).take(shown).enumerate() {
+            // start the job at this tool: the ones before it are left out
+            cv.icon_chip(
+                226.0,
+                first_y + 52.0 * i as f32 + 3.0,
+                26.0,
+                24.0,
+                Icon::Play,
+                self.start_at.contains(&(l.prog, l.tool)),
+                self.tr(Text::StartAtTool),
+                Act::StartAt(l.prog, l.tool),
+            );
             cv.icon_chip(
                 254.0,
                 first_y + 52.0 * i as f32 + 3.0,
@@ -1033,7 +1073,7 @@ impl App {
         }
         if self.saved {
             cv.text(
-                x + 300.0,
+                x + 346.0,
                 y + h - 30.0,
                 Align2::LEFT_BOTTOM,
                 self.tr(Text::Saved),

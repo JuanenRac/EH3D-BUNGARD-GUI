@@ -4,6 +4,17 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.1.4] - More editing in the plan view, starting at a tool, serial ports and relief everywhere
+
+- **More editing in the plan view:** what is chosen is dragged to another place (the pointer on it, then drag) or moved with the arrows (1 mm, 0.1 mm with Shift, 10 mm with Ctrl); cut (the button and Ctrl+X); undo and redo of every edit (buttons, up to 50 steps). On a panel an edit changes the board, so every copy follows: a hole of any copy is the same hole of the file, and what is copied is kept where the board is.
+- **Start the job at a tool:** each tool of the list has a button that makes the job begin with it; the tools before it, in the order the job does them, are left out (as if they were switched off) for that program, drilling and routing each. The choice goes away when another file is opened or the tool is taken out.
+- **A count on each tool:** the holes done of the total of each drill and the paths done of the total of each routing tool, written on its row (green when all are done).
+- **The views go back to the middle of the work after panelizing:** the plan and the 3D view are centred on the work with all its copies.
+- **The serial ports of the system in the Connection window:** RS-232 and USB-RS232 list the ports that the system reports (COM3, COM4...), a click takes one, the first is taken when none is set, and a button looks for them again.
+- **Relief in the launcher, the panels and the layers:** the cards have a gradient, a shadow and a glow under the pointer (those that answer lift a little); the rows of the tools of the job and the check boxes of the layers have relief and answer to the pointer; the "<" that goes back to the launcher is a button with an icon and a note.
+- **The note of the saved tools** no longer hides under the button of the catalogue, and the notes at the bottom of the Open window keep to their room.
+- **Every edit writes its file in a folder of its own:** two windows, or two tests, never write the same file.
+
 - **New pictures in the README:** all the screenshots are taken again with the program (the editing of the plan view, the Open window with its preview and the catalogue are new), and `--select` (for the pictures) turns on the choosing tool and chooses the left part of the board, or the first drilling file of the Open window. In the pictures the plan view shows the job instead of the corner of the table.
 - **The note of the file chosen in the Open window** no longer overlaps the hint of the keys.
 

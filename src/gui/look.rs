@@ -7,7 +7,7 @@ use egui::epaint::{Mesh, Vertex, WHITE_UV};
 use super::*;
 
 /// The points round a rectangle with rounded corners, clockwise from the top left.
-fn round_points(rect: Rect, r: f32) -> Vec<Pos2> {
+pub(super) fn round_points(rect: Rect, r: f32) -> Vec<Pos2> {
     let r = r.min(rect.width() / 2.0).min(rect.height() / 2.0).max(0.0);
     if r < 0.5 {
         return vec![
@@ -228,6 +228,31 @@ impl Cv<'_> {
                 .line_segment([c - d, c + d], Stroke::new(3.4 * u, ink));
         }
         self.hits.push((rect, act));
+    }
+}
+
+impl Cv<'_> {
+    /// A small check box (the layers, the box of the launcher): in relief with its mark when it is on, sunk when it is off, and answering to the pointer.
+    pub(crate) fn check_box_small(&self, r: Rect, on: bool, hover: bool, down: bool) {
+        let u = self.u;
+        let radius = 4.0 * u;
+        if on {
+            let body = self.raised(r, radius, col(self.t.accent), hover, down);
+            let c = body.center();
+            let k = body.width() / 16.0;
+            let ink = col(self.t.background.0);
+            let pts = [
+                Pos2::new(c.x - 4.2 * k, c.y + 0.2 * k),
+                Pos2::new(c.x - 1.2 * k, c.y + 3.2 * k),
+                Pos2::new(c.x + 4.4 * k, c.y - 3.4 * k),
+            ];
+            self.p.add(Shape::line(
+                pts.to_vec(),
+                Stroke::new(2.0 * u * k.max(0.8), ink),
+            ));
+        } else {
+            self.sunk(r, radius, col(self.t.panel_raised), hover);
+        }
     }
 }
 

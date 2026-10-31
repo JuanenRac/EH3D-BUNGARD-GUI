@@ -1537,6 +1537,29 @@ pub const MATERIALS: &[Material] = &[
 ];
 
 /// The makers in the library, once each, in the order of the list.
+impl Material {
+    /// The text with the name of this material in the languages of the interface, when the name has words (the names that are only a designation, such as RO4003C, are the same everywhere).
+    pub fn name_text(&self) -> Option<eh3d_view::texts::Text> {
+        use eh3d_view::texts::Text;
+        Some(match self.name {
+            "FR4 epoxy, positive photoresist" => Text::MatFr4PositiveResist,
+            "FR4 epoxy, bare copper" => Text::MatFr4Bare,
+            "Laminated paper (FR2), photoresist" => Text::MatPaperResist,
+            "FR2 / FR3 / CEM-1 sheets" => Text::MatSheets,
+            "FR4 500 series, 1.6 mm" => Text::MatFr4Series16,
+            "FR4 500 series, 0.8 mm" => Text::MatFr4Series08,
+            "Thermal Clad (aluminium)" => Text::MatThermalClad,
+            "Pyralux AP flexible" => Text::MatPyralux,
+            _ => return None,
+        })
+    }
+}
+
+/// The text of a maker that is a word and not a name ("Generic").
+pub fn maker_text(maker: &str) -> Option<eh3d_view::texts::Text> {
+    (maker == "Generic").then_some(eh3d_view::texts::Text::MakerGeneric)
+}
+
 pub fn makers() -> Vec<&'static str> {
     let mut v: Vec<&'static str> = Vec::new();
     for m in MATERIALS {

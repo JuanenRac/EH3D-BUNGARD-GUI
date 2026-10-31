@@ -1375,6 +1375,12 @@ struct Cv<'a> {
     running: bool,
 }
 
+#[cfg(test)]
+thread_local! {
+    /// The texts that did not fit their room even when made smaller, in the order they were drawn (the test of the widths reads them).
+    static CLIPPED: std::cell::RefCell<Vec<String>> = const { std::cell::RefCell::new(Vec::new()) };
+}
+
 /// A slow ease: fast at first, calm at the end (0 to 1).
 fn ease_out(k: f32) -> f32 {
     1.0 - (1.0 - k.clamp(0.0, 1.0)).powi(3)
@@ -1486,11 +1492,18 @@ impl<'a> Cv<'a> {
         };
         let mut size = size;
         let w0 = width(s, size);
-        if w0 > max_w {
+        if w0 > max_w + 0.05 {
             size = (size * max_w / w0).max(size * 0.72);
         }
         let mut shown = s.to_string();
-        if width(&shown, size) > max_w {
+        if width(&shown, size) > max_w + 0.05 {
+            #[cfg(test)]
+            CLIPPED.with(|c| {
+                c.borrow_mut().push(format!(
+                    "{s} ({max_w:.0}, needs {:.0} at size {size:.1})",
+                    width(&shown, size)
+                ))
+            });
             while shown.chars().count() > 1 && width(&format!("{shown}…"), size) > max_w {
                 shown.pop();
             }
@@ -1700,13 +1713,14 @@ impl<'a> Cv<'a> {
             1.4,
             alpha(Color32::BLACK, if down { 20 } else { 55 }),
         );
-        self.text(
+        self.text_fit(
             x + w / 2.0,
             y + h / 2.0 + 6.0,
             Align2::CENTER_BOTTOM,
             &label.to_uppercase(),
             if hover { 17.5 } else { 17.0 },
             ink,
+            w - 16.0,
         );
         self.hits.push((rect, act));
     }
@@ -1974,7 +1988,7 @@ impl App {
             mx + mw / 2.0,
             my + 70.0,
             Align2::CENTER_BOTTOM,
-            "MODERN",
+            &self.tr(Text::LauncherModernTag).to_uppercase(),
             16.0,
             col(t.accent),
         );
@@ -2170,7 +2184,7 @@ impl App {
 
         // ---- left: the job
         cv.card(20.0, top, 280.0, card_h, true, None);
-        cv.title(38.0, top + 32.0, "JOB");
+        cv.title(38.0, top + 32.0, &self.tr(Text::HudJob).to_uppercase());
         let name = self
             .drill
             .engine
@@ -2553,12 +2567,15 @@ impl App {
                 ),
             ),
             (
-                "FEED Z",
+                self.tr(Text::HudFeedZ),
                 format!("{}", view.as_ref().map_or(0, |v| v.z_feed)),
             ),
-            ("SPINDLE", format!("{}", view.as_ref().map_or(0, |v| v.rpm))),
             (
-                "TOOL",
+                self.tr(Text::HudSpindle),
+                format!("{}", view.as_ref().map_or(0, |v| v.rpm)),
+            ),
+            (
+                self.tr(Text::HudTool),
                 view.as_ref()
                     .and_then(|v| v.tool)
                     .map_or("--".into(), |n| format!("T{n:02}")),
@@ -2567,13 +2584,14 @@ impl App {
         ];
         for (i, (lab, val)) in vals.iter().enumerate() {
             let x = 44.0 + i as f32 * 156.0;
-            cv.text(
+            cv.text_fit(
                 x,
                 hud_y + 42.0,
                 Align2::LEFT_BOTTOM,
                 &lab.to_uppercase(),
                 12.0,
                 col(t.dim),
+                148.0,
             );
             cv.text(
                 x,

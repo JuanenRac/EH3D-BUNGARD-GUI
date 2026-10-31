@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **No fixed English words left in the window:** the labels of the bar of the job (job, Z feed, spindle, tool), the tag of the modern interface, the column of the series of the catalogue, the kinds of link (demo, node, server), the maker "Generic" and the names of the materials that are words (epoxy, bare copper, paper, sheets, series, aluminium, flexible) now come from the texts of the interface in the 37 languages. The notes of the materials stay in English for now. 1 test keeps words of the interface out of the code that paints the window.
+- **The widths are checked in every language:** a test draws the launcher, the viewer and every window in the 37 languages and fails when the text of a button, a switch or a list does not fit its room even made smaller; the text of a button is now made smaller (and cut with an ellipsis as a last resort) like the one of a switch. The longest labels of the two switches of the plan view were shortened in Greek, Dutch, Russian and Ukrainian. 2 tests.
+
 ## [0.1.0] - 37 languages, several files at once, professional examples and a job that does the drilling and the routing
 
 - **37 languages in the whole window:** Bulgarian, Croatian, Czech, Danish, Dutch, Estonian, Finnish, Greek, Hungarian, Irish, Latvian, Lithuanian, Maltese, Polish, Romanian, Slovak, Slovenian, Swedish, Norwegian, Icelandic, Ukrainian, Russian, Serbian, Albanian, Catalan, Galician, Basque, Brazilian Portuguese and Canadian French join the first eight; the list of languages scrolls and the text of every button and switch is drawn smaller, and cut with an ellipsis if it still does not fit, where a language needs more room. The new languages are translations by the model that wait for a review by native speakers; the nodes of the machine keep the first eight for now.

@@ -275,11 +275,7 @@ impl App {
             38.0,
             y0 + 20.0,
             Align2::LEFT_BOTTOM,
-            &format!(
-                "{} {}",
-                self.board.material().maker,
-                self.board.material().name
-            ),
+            &self.material_label(self.board.material()),
             13.0,
             col(t.text),
         );
@@ -429,6 +425,22 @@ impl App {
         self.remember_settings();
     }
 
+    /// The name of a maker in the language of the interface (only "Generic" is a word).
+    pub(crate) fn maker_name(&self, maker: &str) -> String {
+        boards::maker_text(maker).map_or_else(|| maker.to_string(), |t| self.tr(t).to_string())
+    }
+
+    /// The name of a material in the language of the interface.
+    pub(crate) fn material_name(&self, m: &boards::Material) -> String {
+        m.name_text()
+            .map_or_else(|| m.name.to_string(), |t| self.tr(t).to_string())
+    }
+
+    /// Maker and name of a material.
+    pub(crate) fn material_label(&self, m: &boards::Material) -> String {
+        format!("{} {}", self.maker_name(m.maker), self.material_name(m))
+    }
+
     pub(crate) fn board_pick(&mut self, p: BoardPick) {
         let m = self.board.material();
         match p {
@@ -560,7 +572,7 @@ impl App {
             y + 82.0,
             556.0,
             ComboId::Maker,
-            makers[self.maker.min(makers.len() - 1)],
+            &self.maker_name(makers[self.maker.min(makers.len() - 1)]),
             self.combo.is_some_and(|c| c.id == ComboId::Maker),
         );
         // the materials of the maker
@@ -614,7 +626,7 @@ impl App {
                 Align2::LEFT_BOTTOM,
                 &format!(
                     "{}  -  {}{}",
-                    mat.name,
+                    self.material_name(mat),
                     mat.core.name(),
                     mat.dk.map_or(String::new(), |d| format!("  Dk {d}"))
                 ),
@@ -631,7 +643,7 @@ impl App {
             rx,
             ry + 14.0,
             Align2::LEFT_BOTTOM,
-            &format!("{} {}", m.maker, m.name),
+            &self.material_label(m),
             22.0,
             col(t.text),
         );

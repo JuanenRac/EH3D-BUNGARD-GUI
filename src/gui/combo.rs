@@ -70,7 +70,7 @@ impl App {
             ComboId::Model => crate::machines::models().iter().map(|m| m.name()).collect(),
             ComboId::Maker => crate::boards::makers()
                 .iter()
-                .map(|m| m.to_string())
+                .map(|m| self.maker_name(m))
                 .collect(),
             ComboId::Thickness => self
                 .board

@@ -1075,11 +1075,11 @@ impl App {
             Modal::Connection => {
                 let (x, y) = self.modal_card(cv, self.tr(Text::Connection), 560.0);
                 let kinds = [
-                    (LinkKind::Demo, "Demo"),
+                    (LinkKind::Demo, self.tr(Text::LinkDemo)),
                     (LinkKind::Rs232, "RS-232"),
                     (LinkKind::Usb, "USB-RS232"),
-                    (LinkKind::Node, "EH3D node"),
-                    (LinkKind::Server, "EH3D server"),
+                    (LinkKind::Node, self.tr(Text::LinkNode)),
+                    (LinkKind::Server, self.tr(Text::LinkServer)),
                 ];
                 for (i, (k, n)) in kinds.into_iter().enumerate() {
                     cv.chip(

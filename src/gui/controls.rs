@@ -42,13 +42,14 @@ impl<'a> Cv<'a> {
             Stroke::new(self.u, alpha(c, 50)),
             StrokeKind::Inside,
         );
-        self.text(
+        self.text_fit(
             x + w / 2.0,
             y + h / 2.0 + 6.0,
             Align2::CENTER_BOTTOM,
             &label.to_uppercase(),
             17.0,
             alpha(col(self.t.text), 90),
+            w - 16.0,
         );
     }
 
@@ -507,6 +508,171 @@ mod tests {
         a.fixed_dt = Some(0.05);
         a.open_path(&dir.join("05_small_board.ncd"));
         a
+    }
+
+    /// Paints a screen of the app in a language with no window and gives back the texts that did not fit their room, even made smaller.
+    fn clipped_on(a: &mut App, ctx: &egui::Context) -> Vec<String> {
+        CLIPPED.with(|c| c.borrow_mut().clear());
+        let rect = Rect::from_min_size(Pos2::ZERO, Vec2::new(DESIGN_W, DESIGN_H));
+        let input = egui::RawInput {
+            screen_rect: Some(rect),
+            ..Default::default()
+        };
+        let mut out = ctx.run_ui(input, |ui| {
+            let p = ui.ctx().layer_painter(egui::LayerId::background());
+            a.paint(&p, rect);
+        });
+        out.textures_delta.clear();
+        CLIPPED.with(|c| std::mem::take(&mut *c.borrow_mut()))
+    }
+
+    #[test]
+    fn no_text_of_a_button_a_switch_or_a_list_is_cut_in_any_language() {
+        let ctx = egui::Context::default();
+        install_fonts(&ctx);
+        let mut a = app();
+        a.animate = false;
+        let mut found: Vec<String> = Vec::new();
+        for lang in Lang::ALL {
+            a.set_lang(lang);
+            let mut screens: Vec<(String, Option<extra::Modal>, Screen)> = vec![
+                ("launcher".into(), None, Screen::Launcher),
+                ("viewer".into(), None, Screen::Viewer),
+            ];
+            for m in [
+                extra::Modal::About,
+                extra::Modal::Open,
+                extra::Modal::Panel,
+                extra::Modal::Settings,
+                extra::Modal::Connection,
+                extra::Modal::Board,
+                extra::Modal::Tools,
+                extra::Modal::Catalogue,
+                extra::Modal::Head,
+                extra::Modal::Inspect,
+                extra::Modal::InspectTune,
+            ] {
+                screens.push((format!("{m:?}"), Some(m), Screen::Viewer));
+            }
+            for (_name, modal, screen) in screens {
+                a.screen = screen;
+                a.modal = None;
+                if let Some(m) = modal {
+                    a.show_modal(m);
+                }
+                // two frames: the first one draws what the second one needs to be settled
+                clipped_on(&mut a, &ctx);
+                for t in clipped_on(&mut a, &ctx) {
+                    found.push(format!("{}: {t}", lang.code()));
+                }
+            }
+        }
+        found.sort();
+        found.dedup();
+        assert!(
+            found.is_empty(),
+            "{} texts are cut:\n{}",
+            found.len(),
+            found.join("\n")
+        );
+    }
+
+    /// The string literals of the code that paints the interface (what is before the tests of each file) that look like words of the interface.
+    fn words_in_literals(src: &str) -> Vec<String> {
+        let code = src.split("\n#[cfg(test)]").next().unwrap_or(src);
+        let mut found = Vec::new();
+        for line in code.lines() {
+            let t = line.trim_start();
+            // messages of errors, of the log and of the checks are not for the screen
+            if t.starts_with("//")
+                || [
+                    "expect(",
+                    "assert",
+                    "panic!",
+                    "Err(",
+                    "eprintln!",
+                    "println!",
+                    "write!",
+                    "unreachable!",
+                    "debug_assert",
+                    "env!(",
+                    "include_str!",
+                    "tracing::",
+                    "log::",
+                ]
+                .iter()
+                .any(|k| t.contains(k))
+            {
+                continue;
+            }
+            let chars: Vec<char> = line.chars().collect();
+            let mut i = 0;
+            while i < chars.len() {
+                if chars[i] == '"' {
+                    let mut lit = String::new();
+                    i += 1;
+                    while i < chars.len() && chars[i] != '"' {
+                        if chars[i] == '\\' {
+                            i += 1;
+                        }
+                        if i < chars.len() {
+                            lit.push(chars[i]);
+                        }
+                        i += 1;
+                    }
+                    let words: Vec<&str> = lit
+                        .split(|c: char| !c.is_ascii_alphabetic())
+                        .filter(|w| w.len() >= 2)
+                        .collect();
+                    let sentence = words.len() >= 2 && lit.contains(' ') && !lit.contains('{');
+                    let shouting = lit.len() >= 3
+                        && lit.chars().all(|c| c.is_ascii_uppercase() || c == ' ')
+                        && !["MTC", "ATC", "CCD", "DTD", "DCF", "RTD", "RCF"]
+                            .contains(&lit.as_str());
+                    if sentence || shouting {
+                        found.push(lit);
+                    }
+                }
+                i += 1;
+            }
+        }
+        found
+    }
+
+    #[test]
+    fn no_word_of_the_interface_is_written_in_the_painting_code() {
+        // the brand names and the units are the same in every language; everything else goes through the texts of eh3d-view
+        let ok = ["MTC + ATC", "Z mm/min", "USERPROFILE", "HOME"];
+        let files = [
+            ("gui.rs", include_str!("../gui.rs")),
+            ("board.rs", include_str!("board.rs")),
+            ("catalogue.rs", include_str!("catalogue.rs")),
+            ("combo.rs", include_str!("combo.rs")),
+            ("controls.rs", include_str!("controls.rs")),
+            ("extra.rs", include_str!("extra.rs")),
+            ("fleet.rs", include_str!("fleet.rs")),
+            ("head.rs", include_str!("head.rs")),
+            ("inspect.rs", include_str!("inspect.rs")),
+            ("levelling.rs", include_str!("levelling.rs")),
+            ("machine3d.rs", include_str!("machine3d.rs")),
+            ("numedit.rs", include_str!("numedit.rs")),
+            ("opener.rs", include_str!("opener.rs")),
+            ("resume.rs", include_str!("resume.rs")),
+            ("view2d.rs", include_str!("view2d.rs")),
+        ];
+        let mut bad = Vec::new();
+        for (name, src) in files {
+            for lit in words_in_literals(src) {
+                if !ok.contains(&lit.as_str()) {
+                    bad.push(format!("{name}: \"{lit}\""));
+                }
+            }
+        }
+        assert!(
+            bad.is_empty(),
+            "words of the interface outside the texts:\n{}",
+            bad.join("\n")
+        );
     }
 
     #[test]

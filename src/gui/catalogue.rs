@@ -210,10 +210,10 @@ impl App {
         // the columns
         let cols = [
             ("", 30.0),
-            ("serie", 225.0),
+            (self.tr(Text::CatSeries), 225.0),
             ("Ø mm", 295.0),
             ("L mm", 365.0),
-            ("tip mm", 430.0),
+            (&format!("{} mm", self.tr(Text::CatTip)), 430.0),
             ("°", 505.0),
             ("z", 550.0),
             ("rpm", 590.0),

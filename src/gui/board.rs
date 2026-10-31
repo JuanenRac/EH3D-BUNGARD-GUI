@@ -1068,16 +1068,11 @@ impl App {
 
 // ---------------------------------------------------------------------------------------------------------------- the settings
 
-pub(super) const LANG_NAMES: [(Lang, &str); 8] = [
-    (Lang::En, "English"),
-    (Lang::Es, "Español"),
-    (Lang::It, "Italiano"),
-    (Lang::De, "Deutsch"),
-    (Lang::Fr, "Français"),
-    (Lang::Pt, "Português"),
-    (Lang::Zh, "中文"),
-    (Lang::Ja, "日本語"),
-];
+/// The languages of the program with their names in their own language, in the order of the list.
+pub(super) fn lang_names() -> &'static [(Lang, &'static str)] {
+    static NAMES: std::sync::OnceLock<Vec<(Lang, &'static str)>> = std::sync::OnceLock::new();
+    NAMES.get_or_init(|| Lang::ALL.iter().map(|l| (*l, l.native_name())).collect())
+}
 
 impl App {
     pub(crate) fn set_theme(&mut self, id: ThemeId) {
@@ -1171,7 +1166,7 @@ impl App {
                     12.0,
                     col(t.dim),
                 );
-                let lang_name = LANG_NAMES
+                let lang_name = lang_names()
                     .iter()
                     .find(|(l, _)| *l == self.lang)
                     .map_or("", |(_, n)| *n);

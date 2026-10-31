@@ -2,7 +2,7 @@
 //! window shows one box with the value that is chosen and, when it is clicked, a list of a few rows that scrolls with the wheel; a click on a row chooses it and
 //! a click anywhere else closes the list. This replaces rows and rows of buttons, one for each value.
 
-use super::board::{BoardPick, LANG_NAMES};
+use super::board::{lang_names, BoardPick};
 use super::*;
 use eh3d_drillpro::job::TabPlacement;
 use eh3d_drillpro::protocol::sound::{self, Cue, SoundSetting};
@@ -47,7 +47,7 @@ impl App {
 
     /// The name of a voice in the list: `Voice - Español (mujer)`.
     fn voice_label(&self, lang: &str, female: bool) -> String {
-        let name = LANG_NAMES
+        let name = lang_names()
             .iter()
             .find(|(l, _)| l.code() == lang)
             .map_or(lang, |(_, n)| *n);
@@ -66,7 +66,7 @@ impl App {
                 .into_iter()
                 .map(|t| self.tr(t.text()).to_string())
                 .collect(),
-            ComboId::Lang => LANG_NAMES.into_iter().map(|(_, n)| n.to_string()).collect(),
+            ComboId::Lang => lang_names().iter().map(|(_, n)| n.to_string()).collect(),
             ComboId::Model => crate::machines::models().iter().map(|m| m.name()).collect(),
             ComboId::Maker => crate::boards::makers()
                 .iter()
@@ -156,7 +156,7 @@ impl App {
                 .iter()
                 .position(|t| *t == self.theme.id)
                 .unwrap_or(0),
-            ComboId::Lang => LANG_NAMES
+            ComboId::Lang => lang_names()
                 .iter()
                 .position(|(l, _)| *l == self.lang)
                 .unwrap_or(0),
@@ -234,7 +234,7 @@ impl App {
         }
         match c.id {
             ComboId::Theme => self.set_theme(ThemeId::ALL[row]),
-            ComboId::Lang => self.set_lang(LANG_NAMES[row].0),
+            ComboId::Lang => self.set_lang(lang_names()[row].0),
             ComboId::Model => self.apply_model(row),
             ComboId::Maker => self.board_pick(BoardPick::Maker(row)),
             ComboId::CatKind => {

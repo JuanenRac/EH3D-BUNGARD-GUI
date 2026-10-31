@@ -344,6 +344,112 @@ impl App {
         self.apply_panel();
     }
 
+    /// Several files chosen together: the drilling files make one drilling job and the routing files one routing job (the tools are numbered by their diameter),
+    /// and the window of the tools opens once over them.
+    pub(crate) fn open_many(&mut self, paths: &[PathBuf]) {
+        let mut drills: Vec<&PathBuf> = Vec::new();
+        let mut routes: Vec<&PathBuf> = Vec::new();
+        let mut others: Vec<&PathBuf> = Vec::new();
+        for p in paths {
+            let name = p
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_default();
+            if name.to_ascii_lowercase().ends_with(".zip") {
+                others.push(p);
+                continue;
+            }
+            match eh3d_archive::kind_of(&name) {
+                Kind::Drill => drills.push(p),
+                Kind::Route => routes.push(p),
+                Kind::Other => others.push(p),
+            }
+        }
+        for (list, drill) in [(drills, true), (routes, false)] {
+            match list.as_slice() {
+                [] => {}
+                [one] => self.open_path(one),
+                many => {
+                    if let Some(merged) = self.merge_sources(many, drill) {
+                        self.open_path(&merged);
+                        // the file of the work folder is not one to remember: the files chosen are
+                        let merged_text = merged.to_string_lossy().to_string();
+                        self.settings.recent.retain(|r| *r != merged_text);
+                        for p in many.iter().rev() {
+                            self.settings.remember_recent(&p.to_string_lossy());
+                        }
+                        self.remember_settings();
+                    }
+                }
+            }
+        }
+        if let Some(first) = others.first() {
+            self.open_path(first);
+        }
+        let holds_work = !self.drill.scene.holes.is_empty() || !self.route.scene.paths.is_empty();
+        if self.settings.tools_on_open && holds_work && self.message.is_none() {
+            self.show_modal(Modal::Tools);
+        }
+    }
+
+    /// The files of one kind written as one file in the work folder.
+    fn merge_sources(&mut self, files: &[&PathBuf], drill: bool) -> Option<PathBuf> {
+        let dir = self.archive_dir.join("merged");
+        std::fs::create_dir_all(&dir).ok()?;
+        let first = files.first()?.file_stem()?.to_string_lossy().to_string();
+        let out = dir.join(format!(
+            "{first}+{}.{}",
+            files.len() - 1,
+            if drill { "ncd" } else { "plt" }
+        ));
+        let text = if drill {
+            let mut holes: Vec<(u8, i32, i32)> = Vec::new();
+            let mut diameters: Vec<(u8, f64)> = Vec::new();
+            for p in files {
+                let f = jobs::read_latin1(p)
+                    .ok()
+                    .and_then(|t| eh3d_drillpro::ncd::parse(&t).ok())?;
+                for h in &f.holes {
+                    // the tools are numbered by their diameter, so two files that number theirs differently do not clash
+                    let d = jobs::tool_diameter(h.tool, &f.diameters, f.metric);
+                    let tool = ((d * 10.0).round() as i64).clamp(1, 99) as u8;
+                    if !diameters.iter().any(|(t, _)| *t == tool) {
+                        diameters.push((tool, tool as f64 / 10.0));
+                    }
+                    holes.push((tool, h.x_mil, h.y_mil));
+                }
+            }
+            diameters.sort_by_key(|(t, _)| *t);
+            holes.sort_by_key(|(t, _, _)| *t);
+            let mut s = String::from("M48\nINCH\n");
+            for (t, d) in &diameters {
+                s.push_str(&format!("T{t:02}C{:.4}\n", d / 25.4));
+            }
+            s.push_str("%\n");
+            let mut tool = None;
+            for (t, x, y) in holes {
+                if tool != Some(t) {
+                    s.push_str(&format!("T{t:02}\n"));
+                    tool = Some(t);
+                }
+                s.push_str(&format!("X{x}Y{y}\n"));
+            }
+            s.push_str("M30\n");
+            s
+        } else {
+            let mut plot = eh3d_routepro::hpgl::Plot::default();
+            for p in files {
+                let t = jobs::read_latin1(p).ok()?;
+                plot.paths
+                    .extend(eh3d_routepro::hpgl::parse_with(&t, self.route_segments()).paths);
+            }
+            let rot = super::view2d::Rotation::new((0.0, 0.0, 1.0, 1.0), 0);
+            super::view2d::rotated_plot_text(&plot, &rot)
+        };
+        std::fs::write(&out, text).ok()?;
+        Some(out)
+    }
+
     /// A file the person chose (not one named on the command line): it is opened and, when it holds work and the setting says so, the window of the tools
     /// opens over it, as the classic programs show the tools of a file after loading it.
     pub(crate) fn open_path_asking(&mut self, path: &Path) {
@@ -368,7 +474,7 @@ impl App {
     // ------------------------------------------------------------------------------------------ panelization
 
     /// The size of the board (both files together), where it starts on the table.
-    fn board(&self) -> Option<(f64, f64, f64, f64)> {
+    pub(super) fn board(&self) -> Option<(f64, f64, f64, f64)> {
         let mut all = self.drill.base.clone();
         all.overlay(&self.route.base);
         all.bounds()

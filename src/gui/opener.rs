@@ -83,6 +83,8 @@ pub(crate) struct Browser {
     pub entries: Vec<Entry>,
     pub scroll: usize,
     pub sel: Option<usize>,
+    /// The files chosen together with Ctrl or Shift (their names in this folder); they open together.
+    pub picked: Vec<String>,
     /// The column sorted by (0 name, 1 date, 2 type, 3 size) and whether it goes up.
     pub sort: (usize, bool),
     pub filter: Filter,
@@ -267,6 +269,7 @@ impl App {
             entries: Vec::new(),
             scroll: 0,
             sel: None,
+            picked: Vec::new(),
             sort: (0, true),
             filter: Filter::Supported,
             history: Vec::new(),
@@ -289,6 +292,7 @@ impl App {
             b.history.push(b.dir.clone());
             b.dir = dir;
             b.name_text.clear();
+            b.picked.clear();
             b.refresh();
         }
     }
@@ -377,9 +381,49 @@ impl App {
         let Some(e) = b.entries.get(i).cloned() else {
             return;
         };
+        let (ctrl, shift) = self.key_mods;
+        let is_file = |x: &Entry| x.kind != EntryKind::Folder;
+        let b = self.browser.as_mut().expect("the browser is there");
+        if (ctrl || shift) && is_file(&e) {
+            // several files: Ctrl adds or takes away one, Shift takes the rows from the last one chosen
+            if shift {
+                let from = b.sel.unwrap_or(i);
+                let (lo, hi) = (from.min(i), from.max(i));
+                let names: Vec<String> = b.entries[lo..=hi]
+                    .iter()
+                    .filter(|x| is_file(x))
+                    .map(|x| x.name.clone())
+                    .collect();
+                if !ctrl {
+                    b.picked.clear();
+                }
+                for n in names {
+                    if !b.picked.contains(&n) {
+                        b.picked.push(n);
+                    }
+                }
+            } else {
+                if b.picked.is_empty() {
+                    if let Some(prev) = b.sel.and_then(|s| b.entries.get(s)).filter(|x| is_file(x))
+                    {
+                        b.picked.push(prev.name.clone());
+                    }
+                }
+                if let Some(at) = b.picked.iter().position(|n| *n == e.name) {
+                    b.picked.remove(at);
+                } else {
+                    b.picked.push(e.name.clone());
+                }
+            }
+            b.sel = Some(i);
+            b.name_text = e.name.clone();
+            b.last_click = None;
+            return;
+        }
         let twice = b
             .last_click
             .is_some_and(|(row, at)| row == i && now.duration_since(at).as_millis() < 500);
+        b.picked.clear();
         b.sel = Some(i);
         b.name_text = e.name.clone();
         b.last_click = Some((i, now));
@@ -393,6 +437,14 @@ impl App {
         let Some(b) = self.browser.as_ref() else {
             return;
         };
+        // several files chosen together open together
+        if b.picked.len() > 1 {
+            let dir = b.dir.clone().unwrap_or_default();
+            let paths: Vec<PathBuf> = b.picked.iter().map(|n| dir.join(n)).collect();
+            self.modal = None;
+            self.open_many(&paths);
+            return;
+        }
         let typed = b.name_text.trim().trim_matches('"').to_string();
         if typed.is_empty() {
             if let Some(e) = b.sel.and_then(|i| b.entries.get(i)).cloned() {
@@ -634,7 +686,7 @@ impl App {
             let i = b.scroll + k;
             let Some(e) = b.entries.get(i) else { break };
             let ry = hy + 36.0 + k as f32 * 32.0;
-            let on = b.sel == Some(i);
+            let on = b.sel == Some(i) || b.picked.contains(&e.name);
             let r = cv.rect(x + 250.0, ry, 1050.0, 30.0);
             if on {
                 cv.p.rect_filled(r, 4.0 * cv.u, alpha(col(t.accent), 90));
@@ -739,9 +791,21 @@ impl App {
             y + 680.0,
             160.0,
             38.0,
-            self.tr(Text::OpenFile),
+            &if b.picked.len() > 1 {
+                format!("{} ({})", self.tr(Text::OpenFile), b.picked.len())
+            } else {
+                self.tr(Text::OpenFile).to_string()
+            },
             true,
             Act::BrowseOpen,
+        );
+        cv.text(
+            x + 250.0,
+            y + 760.0,
+            Align2::LEFT_BOTTOM,
+            self.tr(Text::OpenManyHint),
+            13.0,
+            col(t.dim),
         );
         cv.chip(
             x + 1170.0,
@@ -842,6 +906,92 @@ mod tests {
             .map(|e| e.size)
             .collect();
         assert!(sizes.windows(2).all(|w| w[0] >= w[1]));
+    }
+
+    fn row(a: &App, name: &str) -> usize {
+        a.browser
+            .as_ref()
+            .unwrap()
+            .entries
+            .iter()
+            .position(|e| e.name == name)
+            .unwrap_or_else(|| panic!("{name} is not listed"))
+    }
+
+    #[test]
+    fn a_drilling_file_and_a_routing_file_chosen_with_ctrl_open_together() {
+        let mut a = app();
+        a.last_dir = testdata();
+        a.show_modal(Modal::Open);
+        a.key_mods = (true, false);
+        let (d, r) = (
+            row(&a, "12_rf_lna_filter.ncd"),
+            row(&a, "12_rf_lna_filter.plt"),
+        );
+        a.browse(d);
+        a.browse(r);
+        assert_eq!(a.browser.as_ref().unwrap().picked.len(), 2);
+        a.act(Act::BrowseOpen);
+        assert_eq!(a.modal, Some(Modal::Tools));
+        assert!(a.drill.scene.holes.len() > 100 && !a.route.scene.paths.is_empty());
+        // Ctrl on a chosen row takes it away again
+        a.show_modal(Modal::Open);
+        a.browse(row(&a, "12_rf_lna_filter.ncd"));
+        a.browse(row(&a, "12_rf_lna_filter.plt"));
+        a.browse(row(&a, "12_rf_lna_filter.ncd"));
+        assert_eq!(
+            a.browser.as_ref().unwrap().picked,
+            vec!["12_rf_lna_filter.plt".to_string()]
+        );
+    }
+
+    #[test]
+    fn several_drilling_files_make_one_job_with_their_tools_numbered_by_diameter() {
+        let mut a = app();
+        a.last_dir = testdata();
+        a.show_modal(Modal::Open);
+        let one = |name: &str| {
+            eh3d_drillpro::ncd::parse(&crate::jobs::read_latin1(&testdata().join(name)).unwrap())
+                .unwrap()
+                .holes
+                .len()
+        };
+        let total = one("11_analog_frontend.ncd") + one("13_power_supply.ncd");
+        // Shift takes every file from one row to the other (the folders and the other kinds are not in the file list of the filter)
+        a.key_mods = (true, false);
+        a.browse(row(&a, "11_analog_frontend.ncd"));
+        a.browse(row(&a, "13_power_supply.ncd"));
+        a.act(Act::BrowseOpen);
+        assert_eq!(a.drill.scene.holes.len(), total);
+        for h in &a.drill.scene.holes {
+            assert!((h.diameter_mm - h.tool as f64 / 10.0).abs() < 0.01);
+        }
+        // the files of the work folder are not in the recent list, the ones chosen are
+        assert!(a.settings.recent.iter().all(|r| !r.contains("merged")));
+        assert!(a
+            .settings
+            .recent
+            .iter()
+            .any(|r| r.contains("13_power_supply")));
+    }
+
+    #[test]
+    fn shift_takes_the_rows_between_two_files() {
+        let mut a = app();
+        a.last_dir = testdata();
+        a.show_modal(Modal::Open);
+        let (x, y) = (
+            row(&a, "10_mcu_board.ncd"),
+            row(&a, "11_analog_frontend.ncd"),
+        );
+        a.key_mods = (false, false);
+        a.browse(x);
+        a.key_mods = (false, true);
+        a.browse(y);
+        let picked = a.browser.as_ref().unwrap().picked.clone();
+        assert!(picked.contains(&"10_mcu_board.ncd".to_string()));
+        assert!(picked.contains(&"10_mcu_board.plt".to_string()));
+        assert!(picked.contains(&"11_analog_frontend.ncd".to_string()));
     }
 
     #[test]

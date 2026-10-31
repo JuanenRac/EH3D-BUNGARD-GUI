@@ -4,6 +4,11 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **Turning the work keeps it where it is:** the work turns on its own middle, wherever it was moved to (before, it turned on the corner of the file it started from), and a turned work that would leave the table is brought back inside it; a board that stayed where it was (moving the design alone) turns on its own middle too. 1 test.
+
+- **Several files at once:** the Open window chooses two or more files with Ctrl+click or Shift+click and opens them together, drilling and routing at the same time. Several files of the same kind are joined into one job (the holes of all of them, or the paths of all of them); their tools are numbered by diameter so that two files that number theirs differently do not clash. The files chosen, not the joined one, are the recent ones. 3 tests.
+- **Four professional examples** in the `examples` folder, each with its drilling file (with the diameters of its tools declared) and its routing file: a 32-bit microcontroller board, a four-channel analog front end with an isolation slot, a 2.4 GHz amplifier and filter with via fences and isolation milling along the 50 ohm line, and a 5 V 3 A power supply. A test opens each and checks the tools, the diameters and that they fit the table.
+
 ## [0.0.9] - Drilling, routing or both, tool by tool
 
 - **Drilling, routing or both:** the job has the drilling and the routing switched on or off (in the left panel, over the list of tools, and in the tools window), and both on run one after the other (the drilling first) without the machine of the 3D view going home in between; with only one on, only that one runs; with none on, the person is told. Before this only the drilling could be run.

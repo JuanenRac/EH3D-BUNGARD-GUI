@@ -747,6 +747,132 @@ EOF
         assert!(a.settings.holes_drilled.is_empty());
     }
 
+    #[test]
+    fn the_professional_examples_open_with_their_tools_and_fit_the_table() {
+        for (name, tools) in [
+            ("10_mcu_board", 8),
+            ("11_analog_frontend", 6),
+            ("12_rf_lna_filter", 5),
+            ("13_power_supply", 6),
+        ] {
+            let mut a = app();
+            let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("testdata");
+            a.open_path(&dir.join(format!("{name}.ncd")));
+            a.open_path(&dir.join(format!("{name}.plt")));
+            assert!(a.drill.scene.holes.len() > 100, "{name}");
+            assert!(!a.route.scene.paths.is_empty(), "{name}");
+            let mut used: Vec<u8> = a.drill.scene.holes.iter().map(|h| h.tool).collect();
+            used.sort_unstable();
+            used.dedup();
+            assert_eq!(used.len(), tools, "{name}");
+            // the diameters are the declared ones (a via of 0.3 mm is not taken for a drill of 1 mm)
+            for h in &a.drill.scene.holes {
+                assert!(
+                    (h.diameter_mm - h.tool as f64 / 10.0).abs() < 0.01,
+                    "{name} T{}",
+                    h.tool
+                );
+            }
+            let (holes, paths) = a.drill.scene.outside_table();
+            assert!(holes.is_empty() && paths.is_empty(), "{name}");
+            assert!(a.route.scene.outside_table().1.is_empty(), "{name}");
+        }
+    }
+
+    /// The distance from the head of the 3D view to the nearest hole (or path point) of the job as the views draw it.
+    fn head_to_work(a: &App) -> f64 {
+        let (hx, hy) = a.head3d().unwrap();
+        let mut best = f64::MAX;
+        for h in &a.drill.scene.holes {
+            best = best.min((h.x_mm - hx).hypot(h.y_mm - hy));
+        }
+        for q in &a.route.scene.paths {
+            for p in &q.points {
+                best = best.min((p.0 - hx).hypot(p.1 - hy));
+            }
+        }
+        best
+    }
+
+    fn run_until_working(a: &mut App) {
+        a.auto_ok = true;
+        a.fixed_dt = Some(0.05);
+        a.act(Act::Start);
+        for _ in 0..4000 {
+            if a.m3d.phase() == super::super::machine3d::Phase::Working {
+                break;
+            }
+            a.tick();
+        }
+        // a few holes in
+        for _ in 0..200 {
+            a.tick();
+        }
+    }
+
+    #[test]
+    fn the_job_works_where_the_board_was_moved_to_and_where_it_was_turned() {
+        // the board moved to the middle of the table
+        let mut a = app_with_both();
+        a.shift_board(150.0, 100.0);
+        run_until_working(&mut a);
+        let d = head_to_work(&a);
+        assert!(
+            d < 3.0,
+            "the head is {d} mm from the work as drawn after moving the board"
+        );
+        a.act(Act::Stop);
+        // and turned
+        let mut b = app_with_both();
+        b.rotate_work(1);
+        b.shift_board(60.0, 40.0);
+        run_until_working(&mut b);
+        let d = head_to_work(&b);
+        assert!(
+            d < 3.0,
+            "the head is {d} mm from the work as drawn after turning the board"
+        );
+    }
+
+    fn work_bounds(a: &App) -> (f64, f64, f64, f64) {
+        let mut all = a.drill.scene.clone();
+        all.overlay(&a.route.scene);
+        all.bounds().unwrap()
+    }
+
+    #[test]
+    fn the_work_turns_on_its_own_middle_where_it_was_moved_to_and_stays_on_the_table() {
+        let mut a = app_with_both();
+        a.shift_board(150.0, 100.0);
+        let b0 = work_bounds(&a);
+        let c0 = ((b0.0 + b0.2) / 2.0, (b0.1 + b0.3) / 2.0);
+        for _ in 0..4 {
+            a.rotate_work(1);
+            let b = work_bounds(&a);
+            let c = ((b.0 + b.2) / 2.0, (b.1 + b.3) / 2.0);
+            assert!(
+                (c.0 - c0.0).abs() < 0.6 && (c.1 - c0.1).abs() < 0.6,
+                "the middle moved: {c0:?} -> {c:?}"
+            );
+            assert!(b.0 >= 0.0 && b.1 >= 0.0 && b.2 <= a.table.width_mm && b.3 <= a.table.depth_mm);
+        }
+        // at the edge of the table the turned work is brought back inside it
+        let mut e = app_with_both();
+        let w = e.table.width_mm;
+        let b = work_bounds(&e);
+        e.shift_board(w - b.2 - 1.0, 0.0);
+        e.rotate_work(1);
+        let b = work_bounds(&e);
+        assert!(b.2 <= w + 1e-6 && b.0 >= 0.0, "{b:?}");
+        // a board that stayed where it was turns with the work
+        let mut f = app_with_both();
+        f.toggle_move_design();
+        let r0 = f.board_frozen.unwrap();
+        f.rotate_work(1);
+        let r1 = f.board_frozen.unwrap();
+        assert!(((r1.2 - r1.0) - (r0.3 - r0.1)).abs() < 1e-6);
+    }
+
     fn app_with_both() -> App {
         let mut a = app();
         a.open_path(&Path::new(env!("CARGO_MANIFEST_DIR")).join("testdata/05_board_outline.plt"));

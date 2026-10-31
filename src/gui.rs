@@ -342,6 +342,8 @@ pub struct App {
     cat_sel: Option<usize>,
     /// The tool of the window of tools that the catalogue is picking a bit for.
     cat_target: Option<(Program, usize)>,
+    /// Whether Ctrl and Shift are down at the click being handled (to choose several files).
+    key_mods: (bool, bool),
     /// Which programs of the job are on (the drilling, the routing) and the tools that are switched off; the programs that are on run one after the other.
     job_drill: bool,
     job_route: bool,
@@ -494,6 +496,7 @@ impl App {
             cat_scroll: 0,
             cat_sel: None,
             cat_target: None,
+            key_mods: (false, false),
             job_drill: true,
             job_route: true,
             off_tools: Vec::new(),
@@ -3098,6 +3101,7 @@ impl eframe::App for App {
                 self.stop_job();
             }
         }
+        self.key_mods = ctx.input(|i| (i.modifiers.command, i.modifiers.shift));
         if ctx.input(|i| i.modifiers.command && i.key_pressed(egui::Key::O))
             && self.screen == Screen::Viewer
         {

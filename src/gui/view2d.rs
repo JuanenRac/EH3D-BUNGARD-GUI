@@ -177,9 +177,41 @@ impl App {
     }
 
     /// Turns the work a quarter turn (both files together) and reads it again.
+    /// The work turns on its own middle, wherever it has been moved to (not on the corner it started from), and stays on the table.
     pub(crate) fn rotate_work(&mut self, quarters: i8) {
+        let before = self.board();
         self.rotation = (self.rotation as i8 + quarters).rem_euclid(4) as u8;
         self.reload_jobs();
+        if let (Some(b0), Some(b1)) = (before, self.board()) {
+            let c0 = ((b0.0 + b0.2) / 2.0, (b0.1 + b0.3) / 2.0);
+            let c1 = ((b1.0 + b1.2) / 2.0, (b1.1 + b1.3) / 2.0);
+            let (mut dx, mut dy) = (c0.0 - c1.0, c0.1 - c1.1);
+            // a turned work that would leave the table is brought back inside it
+            // (with the three millimetres that the board has round its work)
+            let (half_w, half_h) = ((b1.2 - b1.0) / 2.0 + 3.0, (b1.3 - b1.1) / 2.0 + 3.0);
+            let (cx, cy) = (c1.0 + dx, c1.1 + dy);
+            if cx - half_w < 0.0 {
+                dx += half_w - cx;
+            } else if cx + half_w > self.table.width_mm {
+                dx -= cx + half_w - self.table.width_mm;
+            }
+            if cy - half_h < 0.0 {
+                dy += half_h - cy;
+            } else if cy + half_h > self.table.depth_mm {
+                dy -= cy + half_h - self.table.depth_mm;
+            }
+            if dx.abs() > 1e-6 || dy.abs() > 1e-6 {
+                self.shift_design(dx, dy);
+            }
+        }
+        // a board that stayed where it was turns on its own middle too
+        if quarters.rem_euclid(2) != 0 {
+            if let Some(r) = self.board_frozen.as_mut() {
+                let (cx, cy) = ((r.0 + r.2) / 2.0, (r.1 + r.3) / 2.0);
+                let (hw, hh) = ((r.2 - r.0) / 2.0, (r.3 - r.1) / 2.0);
+                *r = (cx - hh, cy - hw, cx + hh, cy + hw);
+            }
+        }
         self.view2d.focus = None;
     }
 
@@ -418,7 +450,7 @@ mod tests {
         let holes = a.drill.scene.holes.len();
         a.rotate_work(1);
         let after = a.board_rect().unwrap();
-        // the width and the depth are swapped and the corner stays
+        // the width and the depth are swapped and the board stays on the table
         let (w0, d0) = (before.2 - before.0, before.3 - before.1);
         let (w1, d1) = (after.2 - after.0, after.3 - after.1);
         assert!(
@@ -436,7 +468,9 @@ mod tests {
             .all(|h| h.x_mm >= x0 && h.x_mm <= x1 && h.y_mm >= y0 && h.y_mm <= y1));
         a.rotate_work(3);
         let back = a.board_rect().unwrap();
-        assert!((back.2 - before.2).abs() < 0.2 && (back.3 - before.3).abs() < 0.2);
+        // the same board again (it may have been brought back inside the table on the way)
+        assert!(((back.2 - back.0) - (before.2 - before.0)).abs() < 0.2);
+        assert!(((back.3 - back.1) - (before.3 - before.1)).abs() < 0.2);
     }
 
     #[test]

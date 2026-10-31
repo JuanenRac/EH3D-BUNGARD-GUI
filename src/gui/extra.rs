@@ -11,6 +11,8 @@ pub(crate) enum Zone {
     Machine,
     /// The emergency button, which is dragged to where the operator wants it.
     Estop,
+    /// The top of a window, which is dragged to move the window.
+    ModalMove,
 }
 
 /// A number that a stepper changes.
@@ -297,6 +299,7 @@ impl<'a> Cv<'a> {
             zones: Vec::new(),
             combos: Vec::new(),
             bars: Vec::new(),
+            first_card: None,
             running: self.running,
             time: self.time,
             modal_from: 0,
@@ -463,6 +466,7 @@ impl App {
 
     pub(crate) fn show_modal(&mut self, m: Modal) {
         self.saved = false;
+        self.modal_off = (0.0, 0.0);
         if m == Modal::Open {
             self.browser = Some(self.new_browser());
         }
@@ -720,7 +724,11 @@ impl App {
 
     pub(crate) fn zone_at(&self, pos: Pos2) -> Option<Zone> {
         if self.modal.is_some() {
-            return None;
+            // the top strip of a window moves it; nothing else of the window is a zone
+            return self
+                .modal_drag
+                .filter(|r| r.contains(pos))
+                .map(|_| Zone::ModalMove);
         }
         self.zones
             .iter()
@@ -745,6 +753,14 @@ impl App {
                     self.view2d.pan.1 += d.1;
                 }
             }
+            Zone::ModalMove => {
+                // the window stays on the canvas: at least a hand of it is always in view
+                if let Some((x, y, w, _)) = self.modal_card {
+                    let nx = (self.modal_off.0 + d.0).clamp(-(x + w - 160.0), DESIGN_W - 160.0 - x);
+                    let ny = (self.modal_off.1 + d.1).clamp(-y + 70.0, DESIGN_H - 70.0 - y);
+                    self.modal_off = (nx, ny);
+                }
+            }
             Zone::Estop => {
                 let (x, y) = self.settings.estop_pos;
                 self.settings.estop_pos =
@@ -767,7 +783,7 @@ impl App {
         match z {
             Zone::Plan => self.view2d.zoom = (self.view2d.zoom * k).clamp(0.3, 20.0),
             Zone::Machine => self.view3d.zoom = (self.view3d.zoom * k).clamp(0.3, 8.0),
-            Zone::Estop => {}
+            Zone::Estop | Zone::ModalMove => {}
         }
     }
 
@@ -776,6 +792,7 @@ impl App {
             Zone::Plan => self.view2d = Nav2::default(),
             Zone::Machine => self.view3d = Nav3::default(),
             Zone::Estop => self.settings.estop_pos = crate::launcher::Settings::default().estop_pos,
+            Zone::ModalMove => self.modal_off = (0.0, 0.0),
         }
     }
 

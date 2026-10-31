@@ -750,24 +750,7 @@ impl App {
                 col(t.dim),
             );
         }
-        cv.chip(
-            x + 1308.0,
-            hy,
-            36.0,
-            36.0,
-            "^",
-            false,
-            Act::BrowseScroll(-3),
-        );
-        cv.chip(
-            x + 1308.0,
-            hy + 40.0,
-            36.0,
-            36.0,
-            "v",
-            false,
-            Act::BrowseScroll(3),
-        );
+        // (the bar of the list has its own arrows: no buttons to go up and down)
         // the bottom: name, type of file, Open and Cancel
         cv.text(
             x + 250.0,

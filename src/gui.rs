@@ -169,7 +169,6 @@ enum Act {
     ConnSave,
     /// A row of the browser of the Open window.
     Browse(usize),
-    BrowseScroll(i32),
     BrowseSort(usize),
     BrowseFilter,
     BrowsePlace(usize),
@@ -346,6 +345,11 @@ pub struct App {
     tool_bits: Vec<(Program, u8, crate::catalogue::Bit)>,
     /// Whether Ctrl and Shift are down at the click being handled (to choose several files).
     key_mods: (bool, bool),
+    /// How far the window on top has been dragged from its place (design units), the place of its card as it was drawn (design units, without that move) and the strip of the top
+    /// that is taken to drag it (screen units).
+    modal_off: (f32, f32),
+    modal_card: Option<(f32, f32, f32, f32)>,
+    modal_drag: Option<Rect>,
     /// Which programs of the job are on (the drilling, the routing) and the tools that are switched off; the programs that are on run one after the other.
     job_drill: bool,
     job_route: bool,
@@ -500,6 +504,9 @@ impl App {
             cat_target: None,
             tool_bits: Vec::new(),
             key_mods: (false, false),
+            modal_off: (0.0, 0.0),
+            modal_card: None,
+            modal_drag: None,
             job_drill: true,
             job_route: true,
             off_tools: Vec::new(),
@@ -1297,7 +1304,6 @@ impl App {
             Act::FleetRefresh => self.fleet_ask(),
             Act::ConnSave => self.conn_save(),
             Act::Browse(i) => self.browse(i),
-            Act::BrowseScroll(d) => self.browse_scroll(d),
             Act::BrowseSort(c) => self.browse_sort(c),
             Act::BrowseFilter => self.browse_filter(),
             Act::BrowsePlace(i) => self.browse_place(i),
@@ -1375,6 +1381,8 @@ struct Cv<'a> {
     combos: Vec<(ComboId, f32, f32, f32)>,
     bars: Vec<BarInfo>,
     modal_from: usize,
+    /// The first card drawn on this canvas (the window, when this is the canvas of a window), in design units.
+    first_card: Option<(f32, f32, f32, f32)>,
     /// Where the pointer is and whether its button is held down: the buttons answer to both.
     pointer: Option<Pos2>,
     down: bool,
@@ -1551,6 +1559,9 @@ impl<'a> Cv<'a> {
 
     /// A card in the corner style of the theme.
     fn card(&mut self, x: f32, y: f32, w: f32, h: f32, hot: bool, act: Option<Act>) {
+        if self.first_card.is_none() {
+            self.first_card = Some((x, y, w, h));
+        }
         let t = self.t;
         let fill = col(t.panel);
         let line = if hot {
@@ -1829,6 +1840,7 @@ impl App {
             combos: Vec::new(),
             bars: Vec::new(),
             modal_from: 0,
+            first_card: None,
             pointer: self.pointer,
             down: self.pointer_down,
             time,
@@ -1843,7 +1855,10 @@ impl App {
             modal_painter.set_opacity(modal_k);
             let mut mcv = Cv {
                 p: &modal_painter,
-                o: Pos2::new(o.x, o.y + (1.0 - modal_k) * 14.0 * u),
+                o: Pos2::new(
+                    o.x + self.modal_off.0 * u,
+                    o.y + (1.0 - modal_k) * 14.0 * u + self.modal_off.1 * u,
+                ),
                 u,
                 t: &t,
                 hits: std::mem::take(&mut cv.hits),
@@ -1851,6 +1866,7 @@ impl App {
                 combos: std::mem::take(&mut cv.combos),
                 bars: std::mem::take(&mut cv.bars),
                 modal_from: 0,
+                first_card: None,
                 pointer: self.pointer,
                 down: self.pointer_down,
                 time,
@@ -1858,6 +1874,20 @@ impl App {
             };
             mcv.modal_from = mcv.hits.len();
             self.paint_modal(&mut mcv, m);
+            // every window can be moved by its top and closed with the X at the corner
+            if let Some((x, y, w, _)) = mcv.first_card {
+                self.modal_card = mcv.first_card;
+                self.modal_drag = Some(mcv.rect(x, y, (w - 64.0).max(0.0), 56.0));
+                let close = if m == Modal::Resume {
+                    Act::ResumeCancel
+                } else {
+                    Act::CloseModal
+                };
+                mcv.chip(x + w - 52.0, y + 9.0, 40.0, 38.0, "\u{d7}", false, close);
+            } else {
+                self.modal_card = None;
+                self.modal_drag = None;
+            }
             cv.modal_from = mcv.modal_from;
             cv.hits = mcv.hits;
             cv.zones = mcv.zones;
@@ -1885,7 +1915,14 @@ impl App {
             0
         };
         self.ui_scale = u;
-        self.ui_origin = o;
+        // the boxes that are typed in over a window go where the window is
+        self.ui_origin = if self.modal.is_some() {
+            Pos2::new(o.x + self.modal_off.0 * u, o.y + self.modal_off.1 * u)
+        } else {
+            self.modal_card = None;
+            self.modal_drag = None;
+            o
+        };
     }
 
     fn top_bar(&self, cv: &mut Cv, back: bool) {
@@ -2447,7 +2484,7 @@ impl App {
         }
         cv.text(
             cx + 18.0,
-            top + card_h - 16.0,
+            top + card_h - 8.0,
             Align2::LEFT_BOTTOM,
             &format!(
                 "{} {:.0} x {:.0} mm",
@@ -2480,7 +2517,7 @@ impl App {
         );
         cv.text(
             cx + cw - 18.0,
-            top + card_h - 16.0,
+            top + card_h - 8.0,
             Align2::RIGHT_BOTTOM,
             self.tr(Text::NavHint2d),
             13.0,
@@ -2948,17 +2985,16 @@ impl App {
             ],
         );
         // the board and the work on it
-        let mut all = self.drill.scene.clone();
-        all.overlay(&self.route.scene);
-        if let Some((x0b, y0b, x1b, y1b)) = all.bounds() {
+        // the same board as the plan view shows: the size chosen, or the one that stayed where it was while the design moved alone
+        if let Some((x0b, y0b, x1b, y1b)) = self.board_rect() {
             boxes(
                 cv,
                 &[(
-                    x0b - 3.0,
-                    td - y1b - 3.0,
+                    x0b,
+                    td - y1b,
                     board_z,
-                    x1b - x0b + 6.0,
-                    y1b - y0b + 6.0,
+                    x1b - x0b,
+                    y1b - y0b,
                     3.0,
                     col(t.board),
                 )],

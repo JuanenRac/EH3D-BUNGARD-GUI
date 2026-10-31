@@ -578,6 +578,73 @@ mod tests {
     }
 
     #[test]
+    fn every_window_has_a_top_to_move_it_and_an_x_in_its_corner_to_close_it() {
+        let ctx = egui::Context::default();
+        install_fonts(&ctx);
+        let mut a = app();
+        a.animate = false;
+        for m in [
+            extra::Modal::About,
+            extra::Modal::Open,
+            extra::Modal::Panel,
+            extra::Modal::Settings,
+            extra::Modal::Connection,
+            extra::Modal::Board,
+            extra::Modal::Tools,
+            extra::Modal::Catalogue,
+            extra::Modal::Head,
+            extra::Modal::Inspect,
+            extra::Modal::InspectTune,
+        ] {
+            a.screen = Screen::Viewer;
+            a.show_modal(m);
+            clipped_on(&mut a, &ctx);
+            clipped_on(&mut a, &ctx);
+            let (x, y, w, _) = a.modal_card.unwrap_or_else(|| panic!("{m:?} has no card"));
+            let drag = a
+                .modal_drag
+                .unwrap_or_else(|| panic!("{m:?} has no top to drag"));
+            let s = a.ui_scale;
+            let o = a.ui_origin;
+            // the strip of the top is over the title and ends before the X
+            assert!(
+                (drag.min.x - (o.x + x * s)).abs() < 1.0
+                    && (drag.min.y - (o.y + y * s)).abs() < 1.0,
+                "{m:?}"
+            );
+            assert!(drag.max.x < o.x + (x + w) * s - 40.0 * s, "{m:?}");
+            // the X is a button of the corner that closes the window
+            let corner = Pos2::new(o.x + (x + w - 32.0) * s, o.y + (y + 28.0) * s);
+            let close = a
+                .hits
+                .iter()
+                .rev()
+                .find(|(r, _)| r.contains(corner))
+                .map(|(_, act)| *act);
+            assert!(matches!(close, Some(Act::CloseModal)), "{m:?}: {close:?}");
+            // dragged, the window is somewhere else and its X goes with it
+            a.drag(Zone::ModalMove, (120.0, 60.0), false);
+            clipped_on(&mut a, &ctx);
+            let moved = Pos2::new(
+                o.x + (x + w - 32.0 + 120.0) * s,
+                o.y + (y + 28.0 + 60.0) * s,
+            );
+            let close = a
+                .hits
+                .iter()
+                .rev()
+                .find(|(r, _)| r.contains(moved))
+                .map(|(_, act)| *act);
+            assert!(
+                matches!(close, Some(Act::CloseModal)),
+                "{m:?} moved: {close:?}"
+            );
+            a.act(Act::CloseModal);
+            assert!(a.modal.is_none());
+        }
+    }
+
+    #[test]
     fn the_warning_of_a_catalogue_bit_and_the_notes_of_the_material_fit_in_every_language() {
         let ctx = egui::Context::default();
         install_fonts(&ctx);
@@ -1174,13 +1241,36 @@ EOF
         e.rotate_work(1);
         let b = work_bounds(&e);
         assert!(b.2 <= w + 1e-6 && b.0 >= 0.0, "{b:?}");
-        // a board that stayed where it was turns with the work
+        // a board that stayed where it was does not turn with the design
         let mut f = app_with_both();
         f.toggle_move_design();
         let r0 = f.board_frozen.unwrap();
         f.rotate_work(1);
         let r1 = f.board_frozen.unwrap();
-        assert!(((r1.2 - r1.0) - (r0.3 - r0.1)).abs() < 1e-6);
+        assert_eq!(r1, r0);
+    }
+
+    #[test]
+    fn a_window_is_moved_by_its_top_and_stays_on_the_canvas_and_a_new_one_starts_in_its_place() {
+        let mut a = app();
+        a.show_modal(Modal::Tools);
+        a.modal_card = Some((430.0, 130.0, 740.0, 420.0));
+        a.drag(Zone::ModalMove, (100.0, 50.0), false);
+        assert_eq!(a.modal_off, (100.0, 50.0));
+        // never out of the canvas: a hand of it stays in view
+        a.drag(Zone::ModalMove, (50_000.0, 50_000.0), false);
+        assert!(a.modal_off.0 < DESIGN_W && a.modal_off.1 < DESIGN_H);
+        assert!(430.0 + a.modal_off.0 <= DESIGN_W - 160.0 + 1e-3);
+        a.drag(Zone::ModalMove, (-90_000.0, -90_000.0), false);
+        assert!(
+            430.0 + 740.0 + a.modal_off.0 >= 160.0 - 1e-3 && 130.0 + a.modal_off.1 >= 70.0 - 1e-3
+        );
+        // the reset of the view puts it back, and so does opening another window
+        a.reset_view(Zone::ModalMove);
+        assert_eq!(a.modal_off, (0.0, 0.0));
+        a.drag(Zone::ModalMove, (40.0, 40.0), false);
+        a.show_modal(Modal::Catalogue);
+        assert_eq!(a.modal_off, (0.0, 0.0));
     }
 
     fn app_with_both() -> App {

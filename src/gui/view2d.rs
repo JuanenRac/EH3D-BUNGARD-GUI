@@ -204,14 +204,7 @@ impl App {
                 self.shift_design(dx, dy);
             }
         }
-        // a board that stayed where it was turns on its own middle too
-        if quarters.rem_euclid(2) != 0 {
-            if let Some(r) = self.board_frozen.as_mut() {
-                let (cx, cy) = ((r.0 + r.2) / 2.0, (r.1 + r.3) / 2.0);
-                let (hw, hh) = ((r.2 - r.0) / 2.0, (r.3 - r.1) / 2.0);
-                *r = (cx - hh, cy - hw, cx + hh, cy + hw);
-            }
-        }
+        // a board that stayed where it was (the move of the design alone) does not turn: only the design does
         self.view2d.focus = None;
     }
 

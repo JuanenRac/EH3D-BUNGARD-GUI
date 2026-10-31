@@ -1465,6 +1465,40 @@ impl<'a> Cv<'a> {
             .text(self.pt(x, y), al, s, FontId::proportional(size * self.u), c)
     }
 
+    /// The text of a button or a switch in the room it has: a longer one (another language) is drawn smaller, to a limit, and then cut with an ellipsis.
+    #[allow(clippy::too_many_arguments)]
+    fn text_fit(
+        &self,
+        x: f32,
+        y: f32,
+        al: Align2,
+        s: &str,
+        size: f32,
+        c: Color32,
+        max_w: f32,
+    ) -> Rect {
+        let width = |text: &str, sz: f32| {
+            self.p
+                .layout_no_wrap(text.to_string(), FontId::proportional(sz * self.u), c)
+                .size()
+                .x
+                / self.u
+        };
+        let mut size = size;
+        let w0 = width(s, size);
+        if w0 > max_w {
+            size = (size * max_w / w0).max(size * 0.72);
+        }
+        let mut shown = s.to_string();
+        if width(&shown, size) > max_w {
+            while shown.chars().count() > 1 && width(&format!("{shown}…"), size) > max_w {
+                shown.pop();
+            }
+            shown.push('…');
+        }
+        self.text(x, y, al, &shown, size, c)
+    }
+
     fn line(&self, a: (f32, f32), b: (f32, f32), w: f32, c: Color32) {
         self.p.line_segment(
             [self.pt(a.0, a.1), self.pt(b.0, b.1)],

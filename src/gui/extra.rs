@@ -271,13 +271,14 @@ impl<'a> Cv<'a> {
         } else {
             col(self.t.text)
         };
-        self.text(
+        self.text_fit(
             x + w / 2.0,
             y + h / 2.0 + 6.0 + if down { 2.0 } else { 0.0 },
             Align2::CENTER_BOTTOM,
             label,
             14.0,
             ink,
+            w - 14.0,
         );
         self.hits.push((rect, act));
     }

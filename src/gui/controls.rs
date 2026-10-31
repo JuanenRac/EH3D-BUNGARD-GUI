@@ -120,7 +120,7 @@ impl<'a> Cv<'a> {
                 self.line(b, end, 3.0, ink);
             }
         }
-        self.text(
+        self.text_fit(
             x + 44.0,
             y + 25.0,
             Align2::LEFT_BOTTOM,
@@ -131,6 +131,7 @@ impl<'a> Cv<'a> {
             } else {
                 alpha(col(self.t.text), 200)
             },
+            w - 52.0,
         );
         self.hits.push((row, act));
     }

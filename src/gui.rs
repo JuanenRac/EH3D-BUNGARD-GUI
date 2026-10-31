@@ -41,6 +41,7 @@ mod look;
 mod machine3d;
 mod numedit;
 mod opener;
+mod rack;
 mod resume;
 mod view2d;
 use board::BoardPick;
@@ -175,6 +176,8 @@ enum Act {
     BrowseSort(usize),
     BrowseFilter,
     ToggleSelect,
+    RackGo,
+    RackCancel,
     StartAt(Program, u8),
     CutSel,
     UndoEdit,
@@ -391,6 +394,15 @@ pub struct App {
     off_tools: Vec<(Program, u8)>,
     /// The programs that wait for the one that runs.
     job_queue: Vec<Program>,
+    /// The tool changer (the ATC models): the loads of the rack still to come (the tools of each, by program), the one being shown, the pieces of the
+    /// load still to run, the piece that runs and the holes to skip in the first one.
+    rack_loads: Vec<Vec<(Program, Vec<u8>)>>,
+    rack_show: Vec<(Program, Vec<u8>)>,
+    rack_pieces: Vec<(Program, Vec<u8>)>,
+    rack_only: Option<(Program, Vec<u8>)>,
+    rack_active: bool,
+    rack_skip: usize,
+    rack_no: (usize, usize),
     /// The clock of the animations, and when the screen and the window that are on show began to show (in seconds of that clock).
     anim0: Instant,
     anim_screen: (Option<Screen>, f32),
@@ -560,6 +572,13 @@ impl App {
             job_route: true,
             off_tools: Vec::new(),
             job_queue: Vec::new(),
+            rack_loads: Vec::new(),
+            rack_show: Vec::new(),
+            rack_pieces: Vec::new(),
+            rack_only: None,
+            rack_active: false,
+            rack_skip: 0,
+            rack_no: (0, 0),
             anim0: Instant::now(),
             anim_screen: (None, 0.0),
             anim_modal: (None, 0.0),
@@ -908,6 +927,16 @@ impl App {
             .filter(|(q, _)| *q == p)
             .map(|(_, t)| *t)
             .collect();
+        // the tool changer: only the tools of the load that is in the rack
+        if let Some((q, keep)) = &self.rack_only {
+            if *q == p {
+                for t in self.job_tool_order(p) {
+                    if !keep.contains(&t) && !off.contains(&t) {
+                        off.push(t);
+                    }
+                }
+            }
+        }
         // a program that starts at a tool leaves out the ones that come before it
         if let Some(&(_, first)) = self.start_at.iter().find(|(q, _)| *q == p) {
             for t in self.job_tool_order(p) {
@@ -1025,6 +1054,20 @@ impl App {
             self.message = Some(self.tr(Text::JobOutsideTable).to_string());
             return;
         }
+        // the models with the tool changer load the rack first (and again when the tools do not fit all at once)
+        if self.has_changer() {
+            let loads = self.rack_plan(&programs);
+            if !loads.is_empty() {
+                self.rack_active = true;
+                self.rack_skip = skip;
+                self.rack_no = (0, loads.len());
+                self.rack_loads = loads;
+                self.job_queue.clear();
+                self.rack_next();
+                return;
+            }
+        }
+        self.rack_active = false;
         self.job_queue = programs[1..].to_vec();
         self.begin_program(programs[0], skip);
     }
@@ -1109,6 +1152,7 @@ impl App {
     fn stop_job(&mut self) {
         self.paused = false;
         self.job_queue.clear();
+        self.rack_clear();
         self.clear_recovery();
         if self.running == Some(Program::Drill) {
             self.count_holes();
@@ -1249,7 +1293,21 @@ impl App {
                 self.count_holes();
             }
             // the next program of the job (the routing after the drilling) goes on without the machine going home
-            if self.job_queue.is_empty() {
+            if self.rack_active {
+                if !self.rack_pieces.is_empty() {
+                    let next = self.rack_pieces.remove(0);
+                    self.rack_only = Some(next.clone());
+                    self.begin_program(next.0, 0);
+                } else if !self.rack_loads.is_empty() {
+                    // the rack has to be loaded again
+                    self.rack_only = None;
+                    self.m3d.finish();
+                    self.rack_next();
+                } else {
+                    self.rack_clear();
+                    self.m3d.finish();
+                }
+            } else if self.job_queue.is_empty() {
                 self.m3d.finish();
             } else {
                 let next = self.job_queue.remove(0);
@@ -1423,6 +1481,8 @@ impl App {
             Act::BrowseSort(c) => self.browse_sort(c),
             Act::BrowseFilter => self.browse_filter(),
             Act::ToggleSelect => self.toggle_select_mode(),
+            Act::RackGo => self.rack_go(),
+            Act::RackCancel => self.rack_cancel(),
             Act::StartAt(p, t) => self.toggle_start_at(p, t),
             Act::CutSel => self.cut_selection(),
             Act::UndoEdit => self.undo_edit(),

@@ -637,14 +637,24 @@ impl App {
             .collect();
         let shown = self.mat_scroll.min(of_maker.len().saturating_sub(MAT_ROWS));
         if of_maker.len() > MAT_ROWS {
-            cv.chip(x + 596.0, ly, 36.0, 36.0, "^", false, Act::MatScroll(-3));
-            cv.chip(
+            cv.icon_chip(
+                x + 596.0,
+                ly,
+                36.0,
+                36.0,
+                Icon::Up,
+                false,
+                "",
+                Act::MatScroll(-3),
+            );
+            cv.icon_chip(
                 x + 596.0,
                 ly + 42.0,
                 36.0,
                 36.0,
-                "v",
+                Icon::Down,
                 false,
+                "",
                 Act::MatScroll(3),
             );
             cv.text(

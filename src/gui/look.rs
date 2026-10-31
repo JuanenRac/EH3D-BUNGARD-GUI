@@ -264,9 +264,18 @@ fn act_key(act: &Act) -> String {
 /// A text box with relief: sunk into the panel, its edge lighting up under the pointer and when it has the focus. The box of egui is drawn over it
 /// with the colour of the theme; this is the shade round it.
 pub(crate) fn text_box(ui: &mut egui::Ui, edit: egui::TextEdit<'_>) -> egui::Response {
+    text_box_show(ui, edit).response.response
+}
+
+/// The same box, giving back the whole output of egui (the state of the cursor too).
+pub(crate) fn text_box_show(
+    ui: &mut egui::Ui,
+    edit: egui::TextEdit<'_>,
+) -> egui::text_edit::TextEditOutput {
     let accent = ui.visuals().selection.stroke.color;
     let slot = ui.painter().add(Shape::Noop);
-    let r = ui.add(edit);
+    let out = edit.show(ui);
+    let r = out.response.clone();
     let hot = r.has_focus();
     let hover = r.hovered();
     let rect = r.rect;
@@ -299,5 +308,5 @@ pub(crate) fn text_box(ui: &mut egui::Ui, edit: egui::TextEdit<'_>) -> egui::Res
         ],
         Stroke::new(1.0, Color32::from_white_alpha(26)),
     );
-    r
+    out
 }

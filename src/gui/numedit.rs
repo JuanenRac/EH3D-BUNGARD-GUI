@@ -118,11 +118,13 @@ impl App {
             .fixed_pos(pos)
             .order(egui::Order::Foreground)
             .show(ctx, |ui| {
-                let mut out = egui::TextEdit::singleline(&mut ed.text)
-                    .desired_width(ed.w * u)
-                    .font(FontId::proportional(19.0 * u))
-                    .align(Align2::CENTER_CENTER)
-                    .show(ui);
+                let mut out = super::look::text_box_show(
+                    ui,
+                    egui::TextEdit::singleline(&mut ed.text)
+                        .desired_width(ed.w * u)
+                        .font(FontId::proportional(19.0 * u))
+                        .align(Align2::CENTER_CENTER),
+                );
                 if ed.fresh {
                     out.response.request_focus();
                     let n = ed.text.chars().count();

@@ -4,6 +4,12 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.1.5] - The tool changer of the ATC models, the Bungard catalogue of boards and more icons
+
+- **The tool changer of the ATC models:** the models with the changer show, before a job starts, a window with the slots of the rack (slot 0 is the test tool, in the spindle, and stays free) and the tool that goes in each, in the order the job uses them; the job starts when the operator says so. When the job uses more tools than the rack holds (the places of the model), it is done in loads: the tools that fit, a stop with the same window to load the rack again, and the rest; the tools of drilling and routing share a load while they fit. The tools that are switched off, and the ones before the tool the job starts at, are not in the plan. The manual models start at once as before.
+- **The catalogue of boards has the data of the Bungard catalogue 2024/25:** the thicknesses (0.5 to 2.5 mm), the copper (18, 35, 70 um and 105 um at 1.5 mm), the standard cuttings and the panels (510 x 570, 510 x 1150 mm; FR2 480 x 1000; FR3 and CEM-1 510 x 1150) of the four Bungard materials.
+- **Icons and relief in more places:** the arrows of the catalogue of spindles, of the choice of the hole of the quality check and of the list of materials are icons, and the box where a number is typed has the same relief as the other text boxes.
+
 ## [0.1.4] - More editing in the plan view, starting at a tool, serial ports and relief everywhere
 
 - **More editing in the plan view:** what is chosen is dragged to another place (the pointer on it, then drag) or moved with the arrows (1 mm, 0.1 mm with Shift, 10 mm with Ctrl); cut (the button and Ctrl+X); undo and redo of every edit (buttons, up to 50 steps). On a panel an edit changes the board, so every copy follows: a hole of any copy is the same hole of the file, and what is copied is kept where the board is.

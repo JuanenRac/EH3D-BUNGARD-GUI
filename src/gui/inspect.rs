@@ -569,22 +569,24 @@ impl App {
                 15.0,
                 col(t.text),
             );
-            cv.chip(
+            cv.icon_chip(
                 x + 600.0,
                 y + 636.0,
                 50.0,
                 34.0,
-                "<",
+                Icon::Back,
                 false,
+                "",
                 Act::InspHole(-1),
             );
-            cv.chip(
+            cv.icon_chip(
                 x + 660.0,
                 y + 636.0,
                 50.0,
                 34.0,
-                ">",
+                Icon::Next,
                 false,
+                "",
                 Act::InspHole(1),
             );
         }

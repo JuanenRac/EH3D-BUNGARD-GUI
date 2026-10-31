@@ -52,6 +52,8 @@ pub(crate) enum Modal {
     Inspect,
     /// The tolerances of the quality check.
     InspectTune,
+    /// The slots of the tool changer and what goes in each, before a job starts and when the rack has to be loaded again.
+    Rack,
 }
 
 /// A text box of the Connection window.
@@ -867,6 +869,7 @@ impl App {
             Modal::Tools => self.paint_tools_modal(cv),
             Modal::Fleet => self.paint_fleet_modal(cv),
             Modal::Resume => self.paint_resume(cv),
+            Modal::Rack => self.paint_rack(cv),
             Modal::Catalogue => self.paint_catalogue(cv),
             Modal::Head => self.paint_head(cv),
             Modal::Inspect => self.paint_inspect(cv),

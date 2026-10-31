@@ -227,22 +227,24 @@ impl App {
             16.0,
             col(t.text),
         );
-        cv.chip(
+        cv.icon_chip(
             x + w - 150.0,
             y + 108.0,
             56.0,
             38.0,
-            "<",
+            Icon::Back,
             false,
+            "",
             Act::CatSpindle(-1),
         );
-        cv.chip(
+        cv.icon_chip(
             x + w - 86.0,
             y + 108.0,
             56.0,
             38.0,
-            ">",
+            Icon::Next,
             false,
+            "",
             Act::CatSpindle(1),
         );
         // the columns

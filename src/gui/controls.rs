@@ -362,6 +362,8 @@ pub(crate) enum Icon {
     Cut,
     Undo,
     Redo,
+    Next,
+    Down,
 }
 
 impl Cv<'_> {

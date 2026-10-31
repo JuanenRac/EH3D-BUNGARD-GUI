@@ -261,6 +261,30 @@ impl Cv<'_> {
                     false,
                 );
             }
+            Icon::Next => {
+                self.polyline(
+                    &[
+                        (cx - h * 0.35, cy - h * 0.8),
+                        (cx + h * 0.45, cy),
+                        (cx - h * 0.35, cy + h * 0.8),
+                    ],
+                    3.2,
+                    c,
+                    false,
+                );
+            }
+            Icon::Down => {
+                self.polyline(
+                    &[
+                        (cx - h * 0.8, cy - h * 0.35),
+                        (cx, cy + h * 0.45),
+                        (cx + h * 0.8, cy - h * 0.35),
+                    ],
+                    3.2,
+                    c,
+                    false,
+                );
+            }
             Icon::Cut => {
                 // two rings and the blades that cross
                 for sx in [-1.0f32, 1.0] {

@@ -170,6 +170,7 @@ impl App {
         let Some(tool) = rows.get(row).and_then(|r| r.name) else {
             return;
         };
+        self.tool_bits.retain(|(q, n, _)| (*q, *n) != (p, tool));
         let values: Vec<f64> = match p {
             Program::Drill => {
                 let d = self

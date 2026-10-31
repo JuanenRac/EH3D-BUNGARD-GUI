@@ -342,6 +342,8 @@ pub struct App {
     cat_sel: Option<usize>,
     /// The tool of the window of tools that the catalogue is picking a bit for.
     cat_target: Option<(Program, usize)>,
+    /// The bit of the catalogue that each tool of the job took its numbers from (kept to warn when it is not suitable for the board).
+    tool_bits: Vec<(Program, u8, crate::catalogue::Bit)>,
     /// Whether Ctrl and Shift are down at the click being handled (to choose several files).
     key_mods: (bool, bool),
     /// Which programs of the job are on (the drilling, the routing) and the tools that are switched off; the programs that are on run one after the other.
@@ -496,6 +498,7 @@ impl App {
             cat_scroll: 0,
             cat_sel: None,
             cat_target: None,
+            tool_bits: Vec::new(),
             key_mods: (false, false),
             job_drill: true,
             job_route: true,

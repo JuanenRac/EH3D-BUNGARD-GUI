@@ -577,6 +577,47 @@ mod tests {
         );
     }
 
+    #[test]
+    fn the_warning_of_a_catalogue_bit_and_the_notes_of_the_material_fit_in_every_language() {
+        let ctx = egui::Context::default();
+        install_fonts(&ctx);
+        let mut a = app();
+        a.animate = false;
+        a.board = a
+            .board
+            .with_material(board_of(crate::boards::Core::Ceramic));
+        let mut short = *a
+            .cat_bits()
+            .iter()
+            .find(|b| b.kind.is_drill() && b.diameter_mm <= 1.0)
+            .expect("a drill");
+        short.flute_mm = 1.0;
+        let tool = a.used_tools(Program::Drill)[0].name.unwrap();
+        a.tool_bits.push((Program::Drill, tool, short));
+        let mut found: Vec<String> = Vec::new();
+        for lang in Lang::ALL {
+            a.set_lang(lang);
+            a.screen = Screen::Viewer;
+            a.modal = None;
+            a.show_modal(extra::Modal::Tools);
+            clipped_on(&mut a, &ctx);
+            for t in clipped_on(&mut a, &ctx) {
+                found.push(format!("{}: {t}", lang.code()));
+            }
+        }
+        found.sort();
+        found.dedup();
+        assert!(
+            found.is_empty(),
+            "texts cut:
+{}",
+            found.join(
+                "
+"
+            )
+        );
+    }
+
     /// The string literals of the code that paints the interface (what is before the tests of each file) that look like words of the interface.
     fn words_in_literals(src: &str) -> Vec<String> {
         let code = src.split("\n#[cfg(test)]").next().unwrap_or(src);
@@ -704,6 +745,108 @@ mod tests {
         // a router does not go to a drill tool, and the catalogue forgets the target when opened alone
         a.act(Act::Show(Modal::Catalogue));
         assert!(a.cat_target.is_none());
+    }
+
+    fn board_of(core: crate::boards::Core) -> usize {
+        crate::boards::MATERIALS
+            .iter()
+            .position(|m| m.core == core)
+            .expect("a material of the core")
+    }
+
+    #[test]
+    fn a_bit_of_the_catalogue_takes_the_factors_of_the_material_of_the_board_to_the_tool() {
+        use crate::boards::Core;
+        use crate::spindle::SpindleId;
+        let mut a = app();
+        a.settings.spindle = SpindleId::Original;
+        a.board = a.board.with_material(board_of(Core::Ptfe));
+        let bits = a.cat_bits();
+        let (i, b) = bits
+            .iter()
+            .enumerate()
+            .find(|(_, b)| b.kind.is_drill() && b.rpm <= 60_000 && b.diameter_mm <= 1.0)
+            .map(|(i, b)| (i, *b))
+            .expect("a small drill");
+        a.act(Act::ToolFromCat(Program::Drill, 0));
+        a.act(Act::CatSelect(i));
+        a.act(Act::CatUse);
+        let row = &a.used_tools(Program::Drill)[0];
+        let rpm: u32 = row.cells[2].trim().parse().unwrap();
+        let feed: u32 = row.cells[1].trim().parse().unwrap();
+        // PTFE wants 0.8 of the turns and of the feed
+        assert!(
+            (rpm as f64 - b.rpm as f64 * 0.8).abs() <= 500.0,
+            "{rpm} {b:?}"
+        );
+        assert!(
+            (feed as f64 - b.plunge_mm_min as f64 * 0.8).abs() <= 10.0,
+            "{feed}"
+        );
+        assert!(rpm < b.rpm && feed < b.plunge_mm_min);
+        // and the bit is remembered for the tool, to warn when it is not suitable
+        let tool = row.name.unwrap();
+        assert!(a
+            .tool_bits
+            .iter()
+            .any(|(p, n, x)| *p == Program::Drill && *n == tool && *x == b));
+    }
+
+    #[test]
+    fn a_router_of_the_catalogue_gets_its_passes_from_the_board_with_the_extra_and_its_bite() {
+        use crate::boards::Core;
+        let mut a = app_with_both();
+        a.board = a.board.with_material(board_of(Core::Fr4));
+        a.board.thickness_mm = 1.6;
+        let bits = a.cat_bits();
+        let (i, b) = bits
+            .iter()
+            .enumerate()
+            .find(|(_, b)| !b.kind.is_drill() && b.pass_mm > 0.0 && b.pass_mm < 1.0)
+            .map(|(i, b)| (i, *b))
+            .expect("a router with a small bite");
+        a.act(Act::ToolFromCat(Program::Route, 0));
+        a.act(Act::CatSelect(i));
+        a.act(Act::CatUse);
+        let row = &a.used_tools(Program::Route)[0];
+        let depth: f64 = row.cells[0].trim().parse().unwrap();
+        let passes: u32 = row.cells[1].trim().parse().unwrap();
+        // at least the board and the extra, and the passes cover that depth with the bite of the bit
+        assert!(
+            depth >= 1.6 + crate::defaults::ROUTE_EXTRA_MM - 0.06,
+            "{depth}"
+        );
+        assert_eq!(passes, (depth / b.pass_mm).ceil() as u32, "{depth} {b:?}");
+        assert!(passes as f64 * b.pass_mm >= depth - 1e-6);
+    }
+
+    #[test]
+    fn a_tool_whose_catalogue_bit_does_not_suit_the_board_is_marked_and_the_default_clears_it() {
+        let mut a = app();
+        a.board.thickness_mm = 1.6;
+        let mut short = *a
+            .cat_bits()
+            .iter()
+            .find(|b| b.kind.is_drill() && b.diameter_mm <= 1.0)
+            .expect("a drill");
+        short.flute_mm = 1.0;
+        let tool = a.used_tools(Program::Drill)[0].name.unwrap();
+        assert!(!a.tool_bit_unsuitable(Program::Drill, tool));
+        a.tool_bits.push((Program::Drill, tool, short));
+        assert!(
+            a.tool_bit_unsuitable(Program::Drill, tool),
+            "the flute is shorter than the board"
+        );
+        // a longer cutting part is suitable on the same board, and a thin board is enough for the short one
+        a.tool_bits[0].2.flute_mm = 6.0;
+        assert!(!a.tool_bit_unsuitable(Program::Drill, tool));
+        a.tool_bits[0].2.flute_mm = 1.0;
+        a.board.thickness_mm = 0.4;
+        assert!(!a.tool_bit_unsuitable(Program::Drill, tool));
+        a.board.thickness_mm = 1.6;
+        a.act(Act::ToolDefault(Program::Drill, 0));
+        assert!(!a.tool_bit_unsuitable(Program::Drill, tool));
+        assert!(a.tool_bits.is_empty());
     }
 
     #[test]

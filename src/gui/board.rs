@@ -922,6 +922,17 @@ impl App {
                     17.0,
                     if tool_on { col(t.text) } else { col(t.dim) },
                 );
+                if self.tool_bit_unsuitable(p, n) {
+                    cv.text_fit(
+                        x + 64.0,
+                        ry + 44.0,
+                        Align2::LEFT_BOTTOM,
+                        &format!("! {}", self.tr(Text::ToolBitWarn)),
+                        11.5,
+                        col(t.warn),
+                        160.0,
+                    );
+                }
                 for (ci, s) in sp.iter().enumerate() {
                     let v = r.cells.get(ci).map_or("", |c| c.trim());
                     let bx = x + 230.0 + ci as f32 * 215.0;

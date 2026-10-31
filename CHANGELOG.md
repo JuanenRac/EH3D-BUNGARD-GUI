@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **A bit of the catalogue takes the material of the board into the tool:** besides the limits of the spindle, the turns and the feed of the tool are multiplied by the factors of the material of the board of the job (the same as the default values: PTFE, ceramic and aluminium ask for less), and the details of the bit show the material applied, its factors, the depth and the passes. A note says when the material asks for fewer turns than the bit or than the spindle can give. The depth is checked: a router gets its passes from the board plus the extra and the bite of the bit (and its depth is raised to that when it was less), and a bit whose cutting length does not go through the board and the extra is warned. The window of tools marks, next to the tool, a catalogue bit that is not suitable for the board. 11 new tests and the new texts in the 37 languages. Not tried on a machine.
+
 - **A job left in the middle goes on with the whole job:** the file that is kept while a job runs now also lists the programs that wait their turn (the routing after the drilling) and the tools that are switched off, so after a stop the rest of the drilling goes on, then the routing, and the tools that were off stay off (before, only the program that was running came back). 2 tests.
 
 ## [0.1.1] - No fixed English left in the window and every label checked in 37 languages

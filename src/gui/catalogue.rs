@@ -4,6 +4,7 @@
 use super::extra::wrap;
 use super::*;
 use crate::catalogue as data;
+use crate::defaults::{self, Note, Transfer};
 use crate::spindle::{Fit, SpindleId, Why};
 use data::Kind;
 
@@ -76,40 +77,77 @@ impl App {
         if b.kind.is_drill() != (p == Program::Drill) {
             return;
         }
-        let mine = match self.settings.current_spindle().fit(&b) {
-            Fit::Fits => b,
-            Fit::Adjusted { bit, .. } => bit,
-            Fit::Incompatible(_) => return,
-        };
         let cell = |this: &Self, c: usize| -> Option<f64> {
             this.used_tools(p)
                 .get(row)
                 .and_then(|r| r.cells.get(c))
                 .and_then(|s| s.trim().parse::<f64>().ok())
         };
+        let Some(t) = self.cat_transfer(&b, cell(self, 0)) else {
+            return;
+        };
         match p {
             Program::Drill => {
-                let feed = if mine.plunge_mm_min > 0 {
-                    mine.plunge_mm_min
+                let feed = if t.plunge_mm_min > 0 {
+                    t.plunge_mm_min
                 } else {
-                    mine.feed_mm_min
+                    t.feed_mm_min
                 };
                 self.tool_set(p, row, 1, feed as f64);
-                self.tool_set(p, row, 2, mine.rpm as f64);
+                self.tool_set(p, row, 2, t.rpm as f64);
             }
             Program::Route => {
-                let depth = cell(self, 0).unwrap_or(self.board.thickness_mm);
-                if mine.pass_mm > 0.0 {
-                    let passes = (depth / mine.pass_mm).ceil().max(1.0);
-                    self.tool_set(p, row, 1, passes);
+                self.tool_set(p, row, 0, t.depth_mm);
+                if let Some(passes) = t.passes {
+                    self.tool_set(p, row, 1, passes as f64);
                 }
-                self.tool_set(p, row, 2, mine.feed_mm_min as f64);
-                self.tool_set(p, row, 3, mine.plunge_mm_min as f64);
-                self.tool_set(p, row, 4, mine.rpm as f64);
+                self.tool_set(p, row, 2, t.feed_mm_min as f64);
+                self.tool_set(p, row, 3, t.plunge_mm_min as f64);
+                self.tool_set(p, row, 4, t.rpm as f64);
             }
+        }
+        if let Some(tool) = self.used_tools(p).get(row).and_then(|r| r.name) {
+            self.tool_bits.retain(|(q, n, _)| (*q, *n) != (p, tool));
+            self.tool_bits.push((p, tool, b));
         }
         self.cat_target = None;
         self.show_modal(Modal::Tools);
+    }
+
+    /// The numbers a bit gives a tool for the spindle and the board of the job: `current` is the value now in the first cell of the tool (the extra stroke or the depth).
+    pub(crate) fn cat_transfer(&self, b: &data::Bit, current: Option<f64>) -> Option<Transfer> {
+        let current = current.unwrap_or(if b.kind.is_drill() {
+            defaults::drill_extra(b.diameter_mm)
+        } else {
+            0.0
+        });
+        defaults::transfer(
+            b,
+            &self.settings.current_spindle(),
+            self.board.material().core,
+            self.board.thickness_mm,
+            current,
+        )
+    }
+
+    /// Whether the bit that a tool took from the catalogue is not suitable now (the spindle cannot work with it, the material asks for less than the spindle turns, or the
+    /// cutting part does not go through the board and the extra).
+    pub(crate) fn tool_bit_unsuitable(&self, p: Program, tool: u8) -> bool {
+        let Some((_, _, b)) = self
+            .tool_bits
+            .iter()
+            .find(|(q, n, _)| (*q, *n) == (p, tool))
+        else {
+            return false;
+        };
+        let current = self
+            .used_tools(p)
+            .iter()
+            .find(|r| r.name == Some(tool))
+            .and_then(|r| r.cells.first())
+            .and_then(|s| s.trim().parse::<f64>().ok());
+        self.cat_transfer(b, current)
+            .is_none_or(|t| t.is_unsuitable())
     }
 
     fn kind_name(&self, k: Kind) -> &'static str {
@@ -391,19 +429,39 @@ impl App {
             );
         }
         let top = y + 32.0;
-        paint_bit(cv, b, x, top, w, 300.0, self);
+        paint_bit(cv, b, x, top, w, 230.0, self);
         let spindle = self.settings.current_spindle();
         let fit = spindle.fit(b);
         let mine = match fit {
             Fit::Adjusted { bit, .. } => bit,
             _ => *b,
         };
-        let mut ly = top + 330.0;
-        let mut line = |cv: &mut Cv, s: String, c: Color32| {
-            cv.text(x, ly, Align2::LEFT_BOTTOM, &s, 15.0, c);
-            ly += 22.0;
-        };
-        line(
+        // the numbers for the spindle and the board of the job
+        let current = self
+            .cat_target
+            .filter(|(p, _)| b.kind.is_drill() == (*p == Program::Drill))
+            .and_then(|(p, row)| {
+                self.used_tools(p)
+                    .get(row)
+                    .and_then(|r| r.cells.first())
+                    .and_then(|s| s.trim().parse::<f64>().ok())
+            });
+        let plan = self.cat_transfer(b, current);
+        let mine = plan.as_ref().map_or(mine, |t| data::Bit {
+            rpm: t.rpm,
+            feed_mm_min: t.feed_mm_min,
+            plunge_mm_min: t.plunge_mm_min,
+            ..mine
+        });
+        let mut ly = top + 262.0;
+        macro_rules! line {
+            ($cv:expr, $s:expr, $c:expr $(,)?) => {{
+                let s: String = $s;
+                $cv.text(x, ly, Align2::LEFT_BOTTOM, &s, 15.0, $c);
+                ly += 22.0;
+            }};
+        }
+        line!(
             cv,
             format!(
                 "{} 3.175   {} 38.1",
@@ -413,13 +471,13 @@ impl App {
             col(t.text),
         );
         if b.angle_deg > 0 {
-            line(
+            line!(
                 cv,
                 format!("{} {}°", self.tr(Text::CatPoint), b.angle_deg),
                 col(t.text),
             );
         }
-        line(
+        line!(
             cv,
             format!(
                 "{} rpm  {} mm/min  Z {} mm/min",
@@ -437,11 +495,41 @@ impl App {
             || mine.feed_mm_min != b.feed_mm_min
             || mine.plunge_mm_min != b.plunge_mm_min
         {
-            line(
+            line!(
                 cv,
                 format!("({} rpm: {} / {})", b.rpm, b.feed_mm_min, b.plunge_mm_min),
                 col(t.dim),
             );
+        }
+        // the material of the board: the factors that were applied, the depth and the passes, and what to look at
+        if let Some(p) = &plan {
+            line!(
+                cv,
+                format!(
+                    "{} {}  rpm x{:.2}  mm/min x{:.2}",
+                    self.tr(Text::CatBoardApplied),
+                    self.board.material().core.name(),
+                    p.rpm_factor,
+                    p.feed_factor
+                ),
+                col(t.text),
+            );
+            let mut depth = format!("{}: {:.2}", self.tr(Text::LblDepthMm), p.depth_mm);
+            if let Some(n) = p.passes {
+                depth.push_str(&format!("   {}: {n}", self.tr(Text::LblPasses)));
+            }
+            line!(cv, depth, col(t.text));
+            for n in &p.notes {
+                let text = match n {
+                    Note::LowerRpm => Text::CatNoteLowerRpm,
+                    Note::BelowSpindle => Text::CatNoteBelowSpindle,
+                    Note::FluteShort => Text::CatNoteFluteShort,
+                };
+                for l in wrap(self.tr(text), 58) {
+                    cv.text(x, ly, Align2::LEFT_BOTTOM, &l, 13.0, col(t.warn));
+                    ly += 17.0;
+                }
+            }
         }
         // whether this spindle can work with the bit, and what it needs to
         let notice: Vec<(Text, Color32)> = match fit {

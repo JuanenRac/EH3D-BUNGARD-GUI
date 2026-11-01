@@ -130,6 +130,13 @@ impl Spindle {
         if mine.rpm < self.min_rpm {
             mine.rpm = self.min_rpm;
         }
+        // the control unit of the original spindle only has 16 levels, 30000 to 60000 rpm in steps of 2000: what the job asks for becomes
+        // the nearest of them, and the bit is shown with the speed it will really get
+        if self.id == SpindleId::Original {
+            let level = (mine.rpm.clamp(30_000, 60_000) - 30_000 + 1_000) / 2_000;
+            mine.rpm = 30_000 + level.min(15) * 2_000;
+        }
+        let lower_rpm = lower_rpm || mine.rpm != bit.rpm;
         let xy_slower = mine.feed_mm_min > self.max_xy_mm_min;
         if xy_slower {
             mine.feed_mm_min = self.max_xy_mm_min;
@@ -219,7 +226,7 @@ mod tests {
     fn a_bit_that_the_spindle_can_give_takes_the_makers_values_or_the_ones_that_it_holds() {
         let slow = Spindle {
             max_rpm: 200_000,
-            ..Spindle::default_for(SpindleId::Original)
+            ..Spindle::default_for(SpindleId::Vfd)
         };
         let mut fits = 0;
         for b in all().iter().filter(|b| b.diameter_mm <= slow.max_bit_mm) {
@@ -269,6 +276,24 @@ mod tests {
             Spindle::default_for(SpindleId::Original).fit(&b),
             Fit::Incompatible(_)
         ));
+    }
+
+    #[test]
+    fn the_original_spindle_gets_the_nearest_level_of_its_control_unit() {
+        let original = Spindle::default_for(SpindleId::Original);
+        for (asked, gets) in [(18_000, 30_000), (31_000, 32_000), (45_000, 46_000), (61_500, 60_000)] {
+            let mut b = first(Kind::Drill);
+            b.rpm = asked;
+            b.diameter_mm = b.diameter_mm.min(original.max_bit_mm);
+            match original.fit(&b) {
+                Fit::Adjusted { bit, .. } => assert_eq!(bit.rpm, gets, "asked {asked}"),
+                other => panic!("asked {asked}: {other:?}"),
+            }
+        }
+        let mut b = first(Kind::Drill);
+        b.rpm = 36_000;
+        b.diameter_mm = b.diameter_mm.min(original.max_bit_mm);
+        assert!(!matches!(original.fit(&b), Fit::Incompatible(_)));
     }
 
     #[test]

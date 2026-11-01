@@ -93,7 +93,8 @@ mod tests {
         let s = scene_from_drill(&f, DEFAULT_TABLE, 0.0254);
         assert_eq!(s.holes.len(), 3);
         assert_eq!(s.holes[0].diameter_mm, 0.8);
-        assert!((s.holes[0].x_mm - 25.4).abs() < 1e-9 && (s.holes[0].y_mm - 50.8).abs() < 1e-9);
+        // a metric header means metric coordinates too: X1000 is 1.000 mm
+        assert!((s.holes[0].x_mm - 1.0).abs() < 0.02 && (s.holes[0].y_mm - 2.0).abs() < 0.02);
         assert_eq!(s.holes[1].diameter_mm, 1.0);
         assert_eq!(s.holes[2].diameter_mm, 3.0);
         assert_eq!(s.sizes(), vec![0.8, 1.0, 3.0]);

@@ -52,7 +52,7 @@ impl Spindle {
         match id {
             SpindleId::Original => Spindle {
                 id,
-                min_rpm: 3_000,
+                min_rpm: 5_000,
                 max_rpm: 63_000,
                 power_w: 150,
                 max_xy_mm_min: 3_000,
@@ -130,7 +130,7 @@ impl Spindle {
         if mine.rpm < self.min_rpm {
             mine.rpm = self.min_rpm;
         }
-        // the control unit of the original spindle only has 16 levels, 30000 to 60000 rpm in steps of 2000: what the job asks for becomes
+        // the old control unit of the original spindle (63000 rpm is the maker's figure for the spindle itself) only has 16 levels, 30000 to 60000 rpm in steps of 2000: what the job asks for becomes
         // the nearest of them, and the bit is shown with the speed it will really get
         if self.id == SpindleId::Original {
             let level = (mine.rpm.clamp(30_000, 60_000) - 30_000 + 1_000) / 2_000;

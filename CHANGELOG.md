@@ -4,6 +4,14 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **A stopped or failed job is not taken for a finished one:** the holes and paths are not marked as done, the file to resume from is kept, the queue (the milling after the drilling) does not go on, and the reason is shown.
+- **Nothing outside the table of the machine is sent to it:** the working area of the machine file (the table of the model when there is no file) limits the job; the vectors outside it are left out and counted.
+- **The thickness of the board chosen in the window decides the plan** (the routing used 1.6 mm whatever was chosen, and the drilling the one of the machine file).
+- **The original spindle is 5000 to 63000 rpm** (the figures of the maker's page); the old control unit, or the MS-DOS program that ran it, only gives 16 levels from 30000 to 60000 rpm, so a speed asked for becomes the nearest level and the window shows the speed the tool will really get.
+- **Excellon files with a header are read as the header says:** inch or metric, the zeros that are left out, the digits (`000.000`, `FILE_FORMAT`), decimal coordinates and the tool put away (`T0`); a header that only says `INCH` keeps whole mils, as the files of the machine have them.
+- **A tool table saved without an original file is read back,** and the extra stroke is written with the decimals it needs.
+- **The Gerber outline follows `G1`/`G2`/`G3` written without the zero** and the blocks that keep the last `D` code of old files; an HP-GL arc is limited to a whole turn.
+
 - **The slots of the tool changer in the plan view:** on the models with the changer, the places of the rack that the machine file has (X and Y of each slot, the test tool in the square slot 0) are drawn on the plan, in the layer of the machine, with the number of the slot and the tool of the job that goes in it.
 
 - **Tips in the window of the tool rack:** the length of the tools (38 mm, 21 mm from the ring to the tip), the compressed air (6-8 bar) and the way the depth limiter has to face the slots, in the 37 languages.

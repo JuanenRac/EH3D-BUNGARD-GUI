@@ -1,5 +1,5 @@
 //! Starting values for the tools of a job: what to take when nothing better is known. They are the usual ones for solid carbide drills and
-//! two millimetre routers on a spindle that goes up to 60000 rpm; the material of the board changes them (paper boards are softer, the
+//! two millimetre routers on a spindle that goes up to 63000 rpm (the old control unit gives 60000 at most); the material of the board changes them (paper boards are softer, the
 //! PTFE and ceramic filled laminates wear the tools and want less speed, aluminium wants much less). They are a start, to be tuned on the
 //! machine and then typed in: the values of the tool table are always the operator's to change.
 

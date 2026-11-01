@@ -167,6 +167,17 @@ def _universal_readme_ci(root: Path) -> list[str]:
     return universal_readme_check.run_in_ci(root)
 
 
+
+def _status_lights_ci(root: Path) -> list[str]:
+    """The lights of the Project status table stay inside what the manifest (maturity, evidence) allows; see tools/status_lights.py."""
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import status_lights as lights_tool
+    except ImportError:
+        return []
+    return lights_tool.run_in_ci(root)
+
+
 def main() -> int:
     problems: list[str] = []
     manifest = json.loads((ROOT / "eh3d.project.json").read_text(encoding="utf-8"))
@@ -215,13 +226,13 @@ def main() -> int:
             problems.append(f"{path.relative_to(ROOT)} mentions a word that must not appear in public files")
     problems.extend(hygiene_problems())
     problems.extend(tree_problems())
+    problems.extend(_universal_readme_ci(ROOT))
+    problems.extend(_status_lights_ci(ROOT))
     if problems:
         for problem in problems:
             print("  FAIL", problem)
         print(f"CI_VALIDATION=FAIL project={manifest.get('name')} version={version}")
         return 1
-    for _universal_problem in _universal_readme_ci(ROOT):
-        fail(_universal_problem)
     print(f"CI_VALIDATION=PASS project={manifest.get('name')} version={version}")
     return 0
 

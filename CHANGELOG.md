@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **Tips in the window of the tool rack:** the length of the tools (38 mm, 21 mm from the ring to the tip), the compressed air (6-8 bar) and the way the depth limiter has to face the slots, in the 37 languages.
+
 ## [0.1.6] - Materials without copper, more boards from the data sheets and the spindle of the maker
 
 - **Sheets without copper to mill and drill:** the library has 17 plain sheets from the maker "Generic", in their usual thicknesses: aluminium alloy 5052 / 6061 (0.2 to 5 mm), copper C110 (0.1 to 5 mm), PTFE (0.2 to 5 mm), birch plywood, MDF, balsa and basswood (inside 0.5 to 5 mm), acrylic (PMMA), polycarbonate, ABS, POM, nylon (PA6), PVC, HDPE and PETG, and G10 (FR4) and phenolic paper (Pertinax) with no copper. They have no copper (an empty list of copper, a new "no copper" kind of sides) and no dielectric constant, loss or glass transition, because nobody publishes them for these sheets; the note of each says the thicknesses are the usual ones and how the material cuts. The Board window and the panel of the board say "no copper" and hide the copper sides, the size list shows only "from the files" for them, and a board saved with one comes back as it was. The names with words are translated into the 37 languages.

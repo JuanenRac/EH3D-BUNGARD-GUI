@@ -121,7 +121,8 @@ impl App {
             .flat_map(|(p, ts)| ts.iter().map(move |&x| (*p, x)))
             .collect();
         let rows = tools.len().div_ceil(2).max(1);
-        let h = 250.0 + rows as f32 * 34.0;
+        let tips = super::extra::wrap(self.tr(Text::RackTips), 96);
+        let h = 250.0 + rows as f32 * 34.0 + tips.len() as f32 * 22.0 + 12.0;
         let title = if self.rack_no.1 > 1 {
             format!(
                 "{}  -  {} {}/{}",
@@ -174,6 +175,17 @@ impl App {
                 15.0,
                 col(t.text),
                 270.0,
+            );
+        }
+        // the things to look at when the rack is loaded (the length of the tools, the air, the depth limiter)
+        for (i, line) in tips.iter().enumerate() {
+            cv.text(
+                x + 30.0,
+                y + 144.0 + rows as f32 * 34.0 + 24.0 + i as f32 * 22.0,
+                Align2::LEFT_BOTTOM,
+                line,
+                14.0,
+                col(t.dim),
             );
         }
         let by = y + h - 70.0;

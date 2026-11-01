@@ -1096,12 +1096,15 @@ impl App {
         {
             let p = program;
             let side = self.side_mut(p);
+            // nothing outside the table of the machine is sent to it: those vectors are left out and counted
+            let area = side.table();
             side.engine.set_job_options(JobOptions {
                 ask_operator,
                 panel,
                 skip,
                 skip_tools,
                 table: levelled,
+                clip_mm: Some((area.width_mm, area.depth_mm)),
                 ..Default::default()
             });
             side.engine.start();

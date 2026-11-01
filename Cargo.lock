@@ -656,7 +656,7 @@ version = "0.0.1"
 
 [[package]]
 name = "eh3d-bungard-gui"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "arboard",
  "eframe",

@@ -281,7 +281,12 @@ mod tests {
     #[test]
     fn the_original_spindle_gets_the_nearest_level_of_its_control_unit() {
         let original = Spindle::default_for(SpindleId::Original);
-        for (asked, gets) in [(18_000, 30_000), (31_000, 32_000), (45_000, 46_000), (61_500, 60_000)] {
+        for (asked, gets) in [
+            (18_000, 30_000),
+            (31_000, 32_000),
+            (45_000, 46_000),
+            (61_500, 60_000),
+        ] {
             let mut b = first(Kind::Drill);
             b.rpm = asked;
             b.diameter_mm = b.diameter_mm.min(original.max_bit_mm);

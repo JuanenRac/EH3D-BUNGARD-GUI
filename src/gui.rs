@@ -1270,7 +1270,21 @@ impl App {
                 left = left.saturating_sub(q.points.len());
             }
         }
-        if !more {
+        if !more && side.engine.outcome() != eh3d_drillpro::classic::engine::Outcome::Completed {
+            // a stopped or failed job is not a finished one: nothing is marked as done, the file to resume from stays and the queue stops
+            let why = match side.engine.outcome() {
+                eh3d_drillpro::classic::engine::Outcome::Failed(why) => why,
+                _ => String::new(),
+            };
+            self.running = None;
+            self.rack_pieces.clear();
+            self.rack_loads.clear();
+            self.job_queue.clear();
+            self.m3d.finish();
+            if !why.is_empty() {
+                self.message = Some(why);
+            }
+        } else if !more {
             if p == Program::Drill {
                 for h in side
                     .scene

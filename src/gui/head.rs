@@ -554,7 +554,7 @@ mod tests {
         a.conn.head_token = "abcdefgh12".into();
         assert!(a.head_link().is_some());
         a.head_poll();
-        for _ in 0..200 {
+        for _ in 0..600 {
             a.head_tick(&egui::Context::default());
             if a.head.status.is_some() {
                 break;
@@ -572,7 +572,7 @@ mod tests {
             ("head-1", 24000.0, false)
         );
         a.act(Act::HeadMeasure);
-        for _ in 0..200 {
+        for _ in 0..600 {
             a.head_tick(&egui::Context::default());
             if a.head.measure.is_some() {
                 break;

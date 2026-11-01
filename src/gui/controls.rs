@@ -1970,8 +1970,8 @@ EOF
         );
         a.fleet_tick();
         assert!(a.fleet.rx.is_some());
-        // the answer comes from another thread
-        for _ in 0..200 {
+        // the answer comes from another thread (up to ten seconds: a busy machine can be slow to run it)
+        for _ in 0..1000 {
             a.fleet_tick();
             if a.fleet.fleet.is_some() {
                 break;

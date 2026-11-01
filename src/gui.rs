@@ -2751,6 +2751,46 @@ impl App {
                     cv.p.rect_stroke(r, 0.0, line, StrokeKind::Inside);
                 }
             }
+            // the slots of the tool changer, where the configuration of the machine puts them (and the tool of the job that goes in each)
+            if self.layers[2] {
+                if let Some(s) = self.drill.engine.settings().filter(|s| s.auto_change) {
+                    let assigned = self.rack_assignment();
+                    for a in &s.atc {
+                        let (px, py) = screen(a.x_mm, a.y_mm);
+                        let r = (3.5 * plan.scale as f32).clamp(5.0, 11.0);
+                        let c = alpha(col(t.accent2), 220);
+                        if a.index == 0 {
+                            // the place of the test tool
+                            cv.p.rect_stroke(
+                                Rect::from_center_size(cv.pt(px, py), Vec2::splat(2.0 * r * cv.u)),
+                                2.0 * cv.u,
+                                Stroke::new(1.6 * cv.u, c),
+                                StrokeKind::Inside,
+                            );
+                        } else {
+                            cv.p.circle_stroke(cv.pt(px, py), r * cv.u, Stroke::new(1.4 * cv.u, c));
+                        }
+                        cv.text(
+                            px,
+                            py - r - 3.0,
+                            Align2::CENTER_BOTTOM,
+                            &a.index.to_string(),
+                            11.0,
+                            col(t.dim),
+                        );
+                        if let Some((_, tool)) = assigned.iter().find(|(i, _)| *i == a.index) {
+                            cv.text(
+                                px,
+                                py + r + 13.0,
+                                Align2::CENTER_BOTTOM,
+                                tool,
+                                11.0,
+                                col(t.text),
+                            );
+                        }
+                    }
+                }
+            }
             if let Some((hx, hy)) = head {
                 let (px, py) = screen(hx, hy);
                 let breath = if cv.running { wave(cv.time, 1.6) } else { 0.0 };

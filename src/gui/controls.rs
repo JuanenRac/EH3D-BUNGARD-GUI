@@ -686,6 +686,19 @@ mod tests {
         let mut a = app();
         a.animate = false;
         a.screen = Screen::Viewer;
+        // the slots of a tool changer, as its machine file has them
+        a.settings.model = "CCD/2 ATC".to_string();
+        if let Some(s) = a.drill.engine.settings_mut() {
+            s.auto_change = true;
+            s.atc = (0..=15)
+                .map(|i| eh3d_bungard_formats::config::AtcSlot {
+                    index: i,
+                    x_mm: 330.0 + 5.0 * i as f64,
+                    y_mm: 20.0 + 18.0 * i as f64,
+                    z_mm: 30.0,
+                })
+                .collect();
+        }
         for id in ThemeId::ALL {
             a.set_theme(id);
             a.select_mode = true;

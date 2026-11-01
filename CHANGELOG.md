@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The slots of the tool changer in the plan view:** on the models with the changer, the places of the rack that the machine file has (X and Y of each slot, the test tool in the square slot 0) are drawn on the plan, in the layer of the machine, with the number of the slot and the tool of the job that goes in it.
+
 - **Tips in the window of the tool rack:** the length of the tools (38 mm, 21 mm from the ring to the tip), the compressed air (6-8 bar) and the way the depth limiter has to face the slots, in the 37 languages.
 
 ## [0.1.6] - Materials without copper, more boards from the data sheets and the spindle of the maker

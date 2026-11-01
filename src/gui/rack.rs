@@ -61,6 +61,36 @@ impl App {
         loads
     }
 
+    /// The tool of each slot of the first load of the job (slot 1 holds the first tool the job uses), for the plan view.
+    pub(crate) fn rack_assignment(&self) -> Vec<(u8, String)> {
+        if !self.has_changer() {
+            return Vec::new();
+        }
+        let live = if self.rack_only.is_some() || !self.rack_show.is_empty() {
+            // a job is going on or the window of the rack is open: what is in the rack now
+            let mut pieces: Vec<(Program, Vec<u8>)> = self.rack_show.clone();
+            if let Some(p) = &self.rack_only {
+                pieces.insert(0, p.clone());
+            }
+            pieces.extend(self.rack_pieces.clone());
+            Some(pieces)
+        } else {
+            None
+        };
+        let pieces = live.unwrap_or_else(|| {
+            self.rack_plan(&[Program::Drill, Program::Route])
+                .into_iter()
+                .next()
+                .unwrap_or_default()
+        });
+        pieces
+            .iter()
+            .flat_map(|(p, ts)| ts.iter().map(move |&t| (*p, t)))
+            .enumerate()
+            .map(|(i, (_, t))| ((i + 1) as u8, format!("T{t:02}")))
+            .collect()
+    }
+
     /// Shows the next load of the rack and waits for the operator.
     pub(crate) fn rack_next(&mut self) {
         if self.rack_loads.is_empty() {
@@ -272,6 +302,21 @@ mod tests {
         a.act(Act::RackGo);
         assert!(a.modal.is_none());
         assert!(a.running.is_some());
+    }
+
+    #[test]
+    fn each_slot_of_the_rack_is_told_its_tool_in_the_order_of_the_job() {
+        let mut a = app();
+        a.settings.model = "CCD MTC".to_string();
+        assert!(a.rack_assignment().is_empty());
+        a.settings.model = "CCD/2 ATC".to_string();
+        let slots = a.rack_assignment();
+        let tools = a.tools_to_do(Program::Drill).len() + a.tools_to_do(Program::Route).len();
+        assert_eq!(slots.len(), tools.min(a.rack_places()));
+        assert_eq!(slots[0].0, 1);
+        assert!(slots.iter().all(|(_, t)| t.starts_with('T')));
+        let first_drill = a.tools_to_do(Program::Drill)[0];
+        assert_eq!(slots[0].1, format!("T{first_drill:02}"));
     }
 
     #[test]

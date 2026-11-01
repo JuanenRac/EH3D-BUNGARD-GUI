@@ -52,9 +52,9 @@ impl Spindle {
         match id {
             SpindleId::Original => Spindle {
                 id,
-                min_rpm: 10_000,
-                max_rpm: 60_000,
-                power_w: 200,
+                min_rpm: 3_000,
+                max_rpm: 63_000,
+                power_w: 150,
                 max_xy_mm_min: 3_000,
                 max_z_mm_min: 4_000,
                 max_bit_mm: 3.2,
@@ -187,7 +187,7 @@ mod tests {
 
     #[test]
     fn the_two_spindles_have_the_turns_of_the_machines() {
-        assert_eq!(Spindle::default_for(SpindleId::Original).max_rpm, 60_000);
+        assert_eq!(Spindle::default_for(SpindleId::Original).max_rpm, 63_000);
         assert_eq!(Spindle::default_for(SpindleId::Vfd).max_rpm, 24_000);
         assert_eq!(SpindleId::from_code("vfd"), Some(SpindleId::Vfd));
         assert_eq!(

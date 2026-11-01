@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "ecosystem": "EH3D",
   "name": "EH3D-BUNGARD-GUI",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "role": "ui",
   "stack": "rust",
   "technologies": [
@@ -16,7 +16,7 @@
   "family": "CNC Workflow Tools",
   "parent": null,
   "build": "cargo build --release --features gui; cargo test --features gui",
-  "notes": "Scaffolding v0.1.5: the modern interface for the Bungard CCD machines, with the classic drilling and routing programs as the other choices of its launcher. The window opens drilling files, HP-GL files and ZIP archives of jobs (a folder browser, drag and drop, the command line), draws the plan view of the table with every hole by drill size and the routing paths on top of it, the 3D view of the machine fitted to the table size of the configuration (turned, zoomed and moved with the mouse), panelizes the board in three modes, changes and saves the table size, and shows the live progress of the job and the questions of the machine to the operator. It is themed (Forge by default, Neon Arcade, Glass Pro, classic Windows, or the colours of Windows) and in eight languages. The machine is driven by the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO with the same machine file, so the computer's RS-232, a USB-RS232 adapter and the EH3D node, directly or through the EH3D server, work as they do there; it has run on the simulator and on a computer only, never on a real machine. Missing: a pause in the middle of a move, the height of the tool paths in the 3D view, loading and saving the whole configuration and a package with the classic programs.",
+  "notes": "Scaffolding v0.1.6: the modern interface for the Bungard CCD machines, with the classic drilling and routing programs as the other choices of its launcher. The window opens drilling files, HP-GL files and ZIP archives of jobs (a folder browser, drag and drop, the command line), draws the plan view of the table with every hole by drill size and the routing paths on top of it, the 3D view of the machine fitted to the table size of the configuration (turned, zoomed and moved with the mouse), panelizes the board in three modes, changes and saves the table size, and shows the live progress of the job and the questions of the machine to the operator. It is themed (Forge by default, Neon Arcade, Glass Pro, classic Windows, or the colours of Windows) and in eight languages. The machine is driven by the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO with the same machine file, so the computer's RS-232, a USB-RS232 adapter and the EH3D node, directly or through the EH3D server, work as they do there; it has run on the simulator and on a computer only, never on a real machine. Missing: a pause in the middle of a move, the height of the tool paths in the 3D view, loading and saving the whole configuration and a package with the classic programs.",
   "native_version": {
     "file": "Cargo.toml",
     "pattern": "^version\\s*=\\s*\"(\\d+\\.\\d+\\.\\d+)\""

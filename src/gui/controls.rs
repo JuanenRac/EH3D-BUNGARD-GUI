@@ -546,6 +546,11 @@ mod tests {
         install_fonts(&ctx);
         let mut a = app();
         a.animate = false;
+        // the tool changer: the window of the rack with the tools of the job in its slots
+        a.settings.model = "CCD/2 ATC".to_string();
+        a.rack_show = a.rack_plan(&[Program::Drill, Program::Route]).remove(0);
+        a.rack_no = (2, 3);
+        a.select_mode = true;
         let mut found: Vec<String> = Vec::new();
         for lang in Lang::ALL {
             a.set_lang(lang);
@@ -565,6 +570,7 @@ mod tests {
                 extra::Modal::Head,
                 extra::Modal::Inspect,
                 extra::Modal::InspectTune,
+                extra::Modal::Rack,
             ] {
                 screens.push((format!("{m:?}"), Some(m), Screen::Viewer));
             }

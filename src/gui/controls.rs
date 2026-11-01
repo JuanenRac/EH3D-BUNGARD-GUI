@@ -571,6 +571,7 @@ mod tests {
                 extra::Modal::Inspect,
                 extra::Modal::InspectTune,
                 extra::Modal::Rack,
+                extra::Modal::Bar,
             ] {
                 screens.push((format!("{m:?}"), Some(m), Screen::Viewer));
             }
@@ -710,6 +711,7 @@ mod tests {
                 extra::Modal::Settings,
                 extra::Modal::Board,
                 extra::Modal::Tools,
+                extra::Modal::Bar,
             ] {
                 a.show_modal(m);
                 let _ = clipped_on(&mut a, &ctx);
@@ -738,6 +740,7 @@ mod tests {
             extra::Modal::Head,
             extra::Modal::Inspect,
             extra::Modal::InspectTune,
+            extra::Modal::Bar,
         ] {
             a.screen = Screen::Viewer;
             a.show_modal(m);

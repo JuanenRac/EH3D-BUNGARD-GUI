@@ -26,6 +26,7 @@ use crate::jobs;
 use crate::launcher::{self, Choice, Machine, Program, Settings};
 use crate::machines;
 
+mod bar;
 mod board;
 mod catalogue;
 mod combo;
@@ -686,6 +687,10 @@ impl App {
                 Err(e) => app.fleet.error = Some(format!("{}: {e}", f.display())),
             }
         }
+        // a model asked for on the command line is shown, and not remembered
+        if let Some(i) = o.machine.as_deref().and_then(machines::Model::from_name) {
+            app.apply_model_with(i, false);
+        }
         match o.modal.as_deref() {
             Some("about") => app.show_modal(Modal::About),
             Some("open") => app.show_modal(Modal::Open),
@@ -695,6 +700,7 @@ impl App {
             Some("connection") => app.show_modal(Modal::Connection),
             Some("board") => app.show_modal(Modal::Board),
             Some("tools") => app.show_modal(Modal::Tools),
+            Some("bar") => app.show_modal(Modal::Bar),
             Some("catalogue") => app.show_modal(Modal::Catalogue),
             Some("head") => app.show_modal(Modal::Head),
             Some("inspect") => {
@@ -707,7 +713,7 @@ impl App {
             _ => {}
         }
         app.refit_table();
-        if o.shot.is_some() && o.modal.is_none() && !o.start {
+        if o.shot.is_some() && o.modal.is_none() && !o.start && o.machine.is_none() {
             // a picture shows the job, not the corner of the table where it starts
             let mut all = app.drill.base.clone();
             all.overlay(&app.route.base);
@@ -2631,6 +2637,10 @@ impl App {
         let (vx, vy, vw, vh) = (cx + 14.0, top + 48.0, cw - 28.0, card_h - 48.0 - 108.0);
         let head_pos = self.head();
         let mut plan = Scene::new(self.table).view2d(vw as f64, vh as f64, 10.0);
+        // the machines with the tool changer show the bar past the edge of the table: the plan is fitted to hold both
+        if let Some(fit) = self.bar_fit((vw as f64, vh as f64)) {
+            plan = fit;
+        }
         {
             let (z, pan) = (self.view2d.zoom as f64, self.view2d.pan);
             let (mx, my) = (vw as f64 / 2.0, vh as f64 / 2.0);
@@ -2816,46 +2826,8 @@ impl App {
                     cv.p.rect_stroke(r, 0.0, line, StrokeKind::Inside);
                 }
             }
-            // the slots of the tool changer, where the configuration of the machine puts them (and the tool of the job that goes in each)
-            if self.layers[2] {
-                if let Some(s) = self.drill.engine.settings().filter(|s| s.auto_change) {
-                    let assigned = self.rack_assignment();
-                    for a in &s.atc {
-                        let (px, py) = screen(a.x_mm, a.y_mm);
-                        let r = (3.5 * plan.scale as f32).clamp(5.0, 11.0);
-                        let c = alpha(col(t.accent2), 220);
-                        if a.index == 0 {
-                            // the place of the test tool
-                            cv.p.rect_stroke(
-                                Rect::from_center_size(cv.pt(px, py), Vec2::splat(2.0 * r * cv.u)),
-                                2.0 * cv.u,
-                                Stroke::new(1.6 * cv.u, c),
-                                StrokeKind::Inside,
-                            );
-                        } else {
-                            cv.p.circle_stroke(cv.pt(px, py), r * cv.u, Stroke::new(1.4 * cv.u, c));
-                        }
-                        cv.text(
-                            px,
-                            py - r - 3.0,
-                            Align2::CENTER_BOTTOM,
-                            &a.index.to_string(),
-                            11.0,
-                            col(t.dim),
-                        );
-                        if let Some((_, tool)) = assigned.iter().find(|(i, _)| *i == a.index) {
-                            cv.text(
-                                px,
-                                py + r + 13.0,
-                                Align2::CENTER_BOTTOM,
-                                tool,
-                                11.0,
-                                col(t.text),
-                            );
-                        }
-                    }
-                }
-            }
+            // the bar of the tool changer with its places and the tools in them
+            self.paint_bar_plan(cv, &screen, plan.scale);
             if let Some((hx, hy)) = head {
                 let (px, py) = screen(hx, hy);
                 let breath = if cv.running { wave(cv.time, 1.6) } else { 0.0 };
@@ -3517,51 +3489,8 @@ impl App {
         let spindle_foot = p(hx, hy, 40.0);
         cv.line(spindle_foot, tip, 2.2, col(t.ok));
         cv.p.circle_filled(cv.pt(tip.0, tip.1), 5.0 * cv.u, col(t.ok));
-        // the tool changer: the rack at the short edge with the tools where the configuration puts them
-        let atc = self
-            .drill
-            .engine
-            .settings()
-            .filter(|s| s.auto_change && !s.atc.is_empty())
-            .map(|s| s.atc.clone())
-            .unwrap_or_default();
-        if !atc.is_empty() {
-            let (y_min, y_max) = atc.iter().fold((f64::MAX, f64::MIN), |(a, b), s| {
-                (a.min(s.y_mm), b.max(s.y_mm))
-            });
-            let rack_x = atc.iter().map(|s| s.x_mm).fold(f64::MIN, f64::max);
-            boxes(
-                cv,
-                &[(
-                    rack_x - 26.0,
-                    y_min - 14.0,
-                    board_z,
-                    46.0,
-                    y_max - y_min + 28.0,
-                    10.0,
-                    alu,
-                )],
-            );
-            for s in &atc {
-                let c = match s.index {
-                    0 => steel,
-                    15 => Color32::from_rgb(90, 200, 190),
-                    n => col(t.size_color((n as usize).saturating_sub(1))),
-                };
-                boxes(
-                    cv,
-                    &[(
-                        s.x_mm - 3.0,
-                        s.y_mm - 3.0,
-                        board_z + 10.0,
-                        6.0,
-                        6.0,
-                        26.0,
-                        c,
-                    )],
-                );
-            }
-        }
+        // the tool changer: the bar at the short edge with the tools in it, and the three roles of the exchange
+        self.paint_bar_3d(cv, &iso, o, shift, edge, board_z, td, tip);
         cv.text(
             x0 + 18.0,
             y0 + h + 6.0,

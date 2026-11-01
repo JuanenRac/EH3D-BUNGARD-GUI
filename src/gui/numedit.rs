@@ -40,6 +40,17 @@ impl App {
                 Field::LevCols => self.level.cols as f64,
                 Field::LevRows => self.level.rows as f64,
                 Field::TabWidth => self.len_to_display(self.panel.tab_width),
+                Field::BarN => self.bar_value(f)?,
+                Field::BarFx
+                | Field::BarFy
+                | Field::BarFz
+                | Field::BarLx
+                | Field::BarLy
+                | Field::BarLz
+                | Field::BarToolLen
+                | Field::BarRing
+                | Field::BarClear
+                | Field::BarApproach => self.len_to_display(self.bar_value(f)?),
             },
             EditTarget::ToolCell(p, row, c) => self
                 .used_tools(p)

@@ -57,6 +57,8 @@ pub struct Options {
     pub select: bool,
     /// The widths of the left and the right pane of the main screen (`--panes LEFT,RIGHT`, in the units of its drawing board): for the pictures.
     pub panes: Option<(f32, f32)>,
+    /// The model of the machine to show (`--machine "CCD/2 ATC"`), without remembering it: for the pictures.
+    pub machine: Option<String>,
 }
 
 impl Options {
@@ -81,6 +83,7 @@ impl Options {
                 "--route" => o.route = Some(PathBuf::from(value("--route")?)),
                 "--zip" => o.zip = Some(PathBuf::from(value("--zip")?)),
                 "--data" => o.data = Some(PathBuf::from(value("--data")?)),
+                "--machine" => o.machine = Some(value("--machine")?),
                 "--connection" => o.connection = Some(PathBuf::from(value("--connection")?)),
                 "--screen" => {
                     let v = value("--screen")?;

@@ -1485,6 +1485,18 @@ impl App {
                 );
                 let m = models[self.model().min(models.len() - 1)];
                 let pr = m.profile();
+                // the bar of the tool changer: where its first and its last tool are
+                if m.change == crate::machines::ToolChange::Automatic {
+                    cv.chip(
+                        x + 430.0,
+                        top + 20.0,
+                        280.0,
+                        38.0,
+                        self.tr(Text::RackSetupTitle),
+                        false,
+                        Act::Show(Modal::Bar),
+                    );
+                }
                 let ty = top + 20.0 + 38.0 + 22.0;
                 let tc = if m.change == crate::machines::ToolChange::Automatic {
                     self.tr(Text::TcAuto)
@@ -1790,6 +1802,11 @@ impl App {
     /// Takes a model: the usable area becomes the published one, the tool change is the manual or the automatic one, and the choice is
     /// remembered. The rack positions are the machine file's own.
     pub(crate) fn apply_model(&mut self, i: usize) {
+        self.apply_model_with(i, true);
+    }
+
+    /// The same, remembering the choice or not.
+    pub(crate) fn apply_model_with(&mut self, i: usize, remember: bool) {
         let models = crate::machines::models();
         let Some(m) = models.get(i).copied() else {
             return;
@@ -1815,7 +1832,9 @@ impl App {
         self.view3d = Default::default();
         self.saved = false;
         self.apply_panel();
-        self.remember_settings();
+        if remember {
+            self.remember_settings();
+        }
     }
 
     /// Changes how the coordinates of the files are read (as the Parameter window of the classic programs does) and reads the files again.

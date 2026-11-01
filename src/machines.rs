@@ -5,6 +5,7 @@
 //! are the published ones (length x width x height); which of the two flat sizes runs along the rails is taken from the photographs and
 //! is not confirmed.
 
+use eh3d_bungard_formats::config::RackEnds;
 use eh3d_view::scene::Table;
 
 /// The family a machine belongs to; the XL and the Premium have their own control unit, which this program does not drive yet.
@@ -158,9 +159,106 @@ impl Profile {
     }
 }
 
+impl Profile {
+    /// Where the bar of the tool changer is when the machine file does not say: the first and the last tool of the bar along the short
+    /// edge of the table at the loader's side, 40 mm past the work area, the places 20 mm apart as far as the edge allows, and the depth
+    /// of the grip a little above the bottom of the travel of Z. They are where the drawing starts, not what the maker publishes: the
+    /// real places are set in the window of the bar.
+    pub fn default_bar(&self) -> RackEnds {
+        let n = self.tool_places.max(1) as usize;
+        let pitch = (20.0f64).min((self.work_mm.1 - 40.0) / (n as f64 + 1.0));
+        let x = self.work_mm.0 + 40.0;
+        let z = (self.work_mm.2 - 0.6).max(0.0);
+        ((x, 20.0 + pitch, z), (x, 20.0 + pitch * n as f64, z), n)
+    }
+}
+
+/// The plan view fitted so that a rectangle past the edge of the table (the bar of the changer) is in view as well as the table: the
+/// bounds in mm of what has to be seen and the room in pixels to leave at each side.
+pub fn fit_plan(
+    table: &Table,
+    bounds: (f64, f64, f64, f64),
+    size: (f64, f64),
+    room: (f64, f64, f64, f64),
+) -> eh3d_view::scene::View2D {
+    let x0 = bounds.0.min(0.0);
+    let y0 = bounds.1.min(0.0);
+    let x1 = bounds.2.max(table.width_mm);
+    let y1 = bounds.3.max(table.depth_mm);
+    let sx = (size.0 - room.0 - room.1) / (x1 - x0).max(1.0);
+    let sy = (size.1 - room.2 - room.3) / (y1 - y0).max(1.0);
+    let scale = sx.min(sy).max(f64::MIN_POSITIVE);
+    // the top of what is seen is y1 (the screen goes down as Y goes down), and the table's top edge is at table.depth_mm
+    let free_x = size.0 - room.0 - room.1 - (x1 - x0) * scale;
+    let free_y = size.1 - room.2 - room.3 - (y1 - y0) * scale;
+    eh3d_view::scene::View2D {
+        scale,
+        origin: (
+            room.0 + free_x / 2.0 - x0 * scale,
+            room.2 + free_y / 2.0 + (y1 - table.depth_mm) * scale,
+        ),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_default_bar_of_each_model_is_inside_what_the_machine_reaches_and_in_a_line() {
+        for p in PROFILES {
+            let (first, last, n) = p.default_bar();
+            assert_eq!(n, p.tool_places as usize);
+            assert!(
+                first.0 > p.work_mm.0,
+                "the bar is past the work area: {}",
+                p.name
+            );
+            assert_eq!(first.0, last.0);
+            assert!(last.1 > first.1 && last.1 <= p.work_mm.1, "{}", p.name);
+            assert!(first.2 <= p.work_mm.2);
+            // the places on each side of the bar (the test tool and the break detector) stay on the table too
+            let pitch = (last.1 - first.1) / (n as f64 - 1.0);
+            assert!(
+                first.1 - pitch >= 0.0 && last.1 + pitch <= p.work_mm.1 + 1e-9,
+                "{}",
+                p.name
+            );
+        }
+    }
+
+    #[test]
+    fn the_fitted_plan_shows_the_table_and_the_bar_past_its_edge() {
+        let table = Table::new(325.0, 270.0);
+        let v = fit_plan(
+            &table,
+            (0.0, 0.0, 400.0, 270.0),
+            (800.0, 600.0),
+            (10.0, 90.0, 10.0, 10.0),
+        );
+        let (x0, y0) = v.to_screen(&table, 0.0, 270.0);
+        let (x1, y1) = v.to_screen(&table, 400.0, 0.0);
+        assert!(x0 >= 10.0 - 1e-6 && x1 <= 800.0 - 90.0 + 1e-6, "{x0} {x1}");
+        assert!(y0 >= 10.0 - 1e-6 && y1 <= 590.0 + 1e-6, "{y0} {y1}");
+        // without anything past the table it is the table that is fitted
+        let plain = fit_plan(
+            &table,
+            (0.0, 0.0, 0.0, 0.0),
+            (800.0, 600.0),
+            (10.0, 10.0, 10.0, 10.0),
+        );
+        let a = plain.to_screen(&table, 325.0, 0.0);
+        assert!(a.0 <= 790.0 + 1e-6 && a.1 <= 590.0 + 1e-6);
+        // a bar above the table also fits
+        let v = fit_plan(
+            &table,
+            (0.0, 0.0, 400.0, 330.0),
+            (800.0, 600.0),
+            (10.0, 10.0, 10.0, 10.0),
+        );
+        let top = v.to_screen(&table, 0.0, 330.0);
+        assert!(top.1 >= 10.0 - 1e-6);
+    }
 
     #[test]
     fn every_machine_is_a_model_with_the_manual_and_with_the_automatic_change() {

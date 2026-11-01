@@ -31,6 +31,18 @@ pub(crate) enum Field {
     TabWidth,
     LevCols,
     LevRows,
+    /// The window of the bar of the tool changer: the first and the last tool (X, Y, Z), the number of places, the lengths and the way in.
+    BarFx,
+    BarFy,
+    BarFz,
+    BarLx,
+    BarLy,
+    BarLz,
+    BarN,
+    BarToolLen,
+    BarRing,
+    BarClear,
+    BarApproach,
 }
 
 /// A window on top of the viewer.
@@ -57,6 +69,8 @@ pub(crate) enum Modal {
     InspectTune,
     /// The slots of the tool changer and what goes in each, before a job starts and when the rack has to be loaded again.
     Rack,
+    /// The bar of the tool changer: where its first and its last tool are.
+    Bar,
 }
 
 /// A text box of the Connection window.
@@ -550,6 +564,23 @@ impl App {
         let dl = self.len_from_display(d);
         self.saved = false;
         match f {
+            Field::BarN => {
+                self.bar_adjust(f, d);
+                return;
+            }
+            Field::BarFx
+            | Field::BarFy
+            | Field::BarFz
+            | Field::BarLx
+            | Field::BarLy
+            | Field::BarLz
+            | Field::BarToolLen
+            | Field::BarRing
+            | Field::BarClear
+            | Field::BarApproach => {
+                self.bar_adjust(f, dl);
+                return;
+            }
             Field::Columns => {
                 self.panel.columns = (self.panel.columns as f64 + d).clamp(1.0, 99.0) as u32
             }
@@ -866,6 +897,7 @@ impl App {
             Modal::Fleet => self.paint_fleet_modal(cv),
             Modal::Resume => self.paint_resume(cv),
             Modal::Rack => self.paint_rack(cv),
+            Modal::Bar => self.paint_bar_modal(cv),
             Modal::Catalogue => self.paint_catalogue(cv),
             Modal::Head => self.paint_head(cv),
             Modal::Inspect => self.paint_inspect(cv),

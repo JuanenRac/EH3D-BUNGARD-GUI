@@ -61,8 +61,8 @@ impl App {
         loads
     }
 
-    /// The tool of each slot of the first load of the job (slot 1 holds the first tool the job uses), for the plan view.
-    pub(crate) fn rack_assignment(&self) -> Vec<(u8, String)> {
+    /// The tool of each slot of the first load of the job (slot 1 holds the first tool the job uses): the slot, the program and the tool.
+    pub(crate) fn rack_slot_tools(&self) -> Vec<(u8, Program, u8)> {
         if !self.has_changer() {
             return Vec::new();
         }
@@ -87,7 +87,7 @@ impl App {
             .iter()
             .flat_map(|(p, ts)| ts.iter().map(move |&t| (*p, t)))
             .enumerate()
-            .map(|(i, (_, t))| ((i + 1) as u8, format!("T{t:02}")))
+            .map(|(i, (p, t))| ((i + 1) as u8, p, t))
             .collect()
     }
 
@@ -308,15 +308,14 @@ mod tests {
     fn each_slot_of_the_rack_is_told_its_tool_in_the_order_of_the_job() {
         let mut a = app();
         a.settings.model = "CCD MTC".to_string();
-        assert!(a.rack_assignment().is_empty());
+        assert!(a.rack_slot_tools().is_empty());
         a.settings.model = "CCD/2 ATC".to_string();
-        let slots = a.rack_assignment();
+        let slots = a.rack_slot_tools();
         let tools = a.tools_to_do(Program::Drill).len() + a.tools_to_do(Program::Route).len();
         assert_eq!(slots.len(), tools.min(a.rack_places()));
         assert_eq!(slots[0].0, 1);
-        assert!(slots.iter().all(|(_, t)| t.starts_with('T')));
         let first_drill = a.tools_to_do(Program::Drill)[0];
-        assert_eq!(slots[0].1, format!("T{first_drill:02}"));
+        assert_eq!((slots[0].1, slots[0].2), (Program::Drill, first_drill));
     }
 
     #[test]

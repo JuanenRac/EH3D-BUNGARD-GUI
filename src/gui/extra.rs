@@ -367,39 +367,15 @@ impl App {
             if drill { "ncd" } else { "plt" }
         ));
         let text = if drill {
-            let mut holes: Vec<(u8, i32, i32)> = Vec::new();
-            let mut diameters: Vec<(u8, f64)> = Vec::new();
+            let mut parsed = Vec::new();
             for p in files {
-                let f = jobs::read_latin1(p)
-                    .ok()
-                    .and_then(|t| eh3d_drillpro::ncd::parse(&t).ok())?;
-                for h in &f.holes {
-                    // the tools are numbered by their diameter, so two files that number theirs differently do not clash
-                    let d = jobs::tool_diameter(h.tool, &f.diameters, f.metric);
-                    let tool = ((d * 10.0).round() as i64).clamp(1, 99) as u8;
-                    if !diameters.iter().any(|(t, _)| *t == tool) {
-                        diameters.push((tool, tool as f64 / 10.0));
-                    }
-                    holes.push((tool, h.x_mil, h.y_mil));
-                }
+                parsed.push(
+                    jobs::read_latin1(p)
+                        .ok()
+                        .and_then(|t| eh3d_drillpro::ncd::parse(&t).ok())?,
+                );
             }
-            diameters.sort_by_key(|(t, _)| *t);
-            holes.sort_by_key(|(t, _, _)| *t);
-            let mut s = String::from("M48\nINCH\n");
-            for (t, d) in &diameters {
-                s.push_str(&format!("T{t:02}C{:.4}\n", d / 25.4));
-            }
-            s.push_str("%\n");
-            let mut tool = None;
-            for (t, x, y) in holes {
-                if tool != Some(t) {
-                    s.push_str(&format!("T{t:02}\n"));
-                    tool = Some(t);
-                }
-                s.push_str(&format!("X{x}Y{y}\n"));
-            }
-            s.push_str("M30\n");
-            s
+            merged_drill_text(&parsed)?
         } else {
             let mut plot = eh3d_routepro::hpgl::Plot::default();
             for p in files {
@@ -1256,10 +1232,133 @@ impl App {
     }
 }
 
+/// The drilling files written as one: every different diameter (to the hundredth of a millimetre) is one tool, so two drills that differ by 0.05 mm stay two tools
+/// and a diameter is never rounded to a tenth. A diameter of whole tenths keeps its own number (the tool tables of the machines number the tools by the diameter in
+/// tenths: 04 is 0.4 mm); any other gets the number of its nearest tenth when that is free, else the highest number that is free, and the header of the file gives its
+/// exact diameter either way. The coordinates of the files are in the same unit (the one of the settings), as they come out of the parser. `None` when there are
+/// more than 99 diameters.
+fn merged_drill_text(files: &[eh3d_drillpro::ncd::DrillFile]) -> Option<String> {
+    let mut holes: Vec<(i64, i32, i32)> = Vec::new();
+    for f in files {
+        for h in &f.holes {
+            let d = jobs::tool_diameter(h.tool, &f.diameters, f.metric);
+            holes.push(((d * 100.0).round() as i64, h.x_mil, h.y_mil));
+        }
+    }
+    let mut sizes: Vec<i64> = holes.iter().map(|h| h.0).collect();
+    sizes.sort_unstable();
+    sizes.dedup();
+    if sizes.len() > 99 {
+        return None;
+    }
+    let tenths = |size: i64| ((size + 5) / 10).clamp(1, 99) as u8;
+    let mut numbered: Vec<(i64, u8)> = Vec::new();
+    let taken = |numbered: &[(i64, u8)], n: u8| numbered.iter().any(|(_, t)| *t == n);
+    // the whole tenths first, so that 0.40 is 04 whatever else is near it
+    for &size in sizes.iter().filter(|s| *s % 10 == 0) {
+        let n = tenths(size);
+        if !taken(&numbered, n) {
+            numbered.push((size, n));
+        }
+    }
+    for &size in &sizes {
+        if numbered.iter().any(|(s, _)| *s == size) {
+            continue;
+        }
+        let near = tenths(size);
+        let n = if !taken(&numbered, near) {
+            near
+        } else {
+            (1..=99u8).rev().find(|n| !taken(&numbered, *n))?
+        };
+        numbered.push((size, n));
+    }
+    numbered.sort_by_key(|(_, n)| *n);
+    let number = |size: i64| {
+        numbered
+            .iter()
+            .find(|(s, _)| *s == size)
+            .map_or(1, |(_, n)| *n)
+    };
+    holes.sort_by_key(|(size, _, _)| number(*size));
+    let mut s = String::from(
+        "M48
+INCH
+",
+    );
+    for (size, n) in &numbered {
+        s.push_str(&format!(
+            "T{n:02}C{:.4}
+",
+            *size as f64 / 100.0 / 25.4
+        ));
+    }
+    s.push_str(
+        "%
+",
+    );
+    let mut tool = None;
+    for (size, x, y) in holes {
+        let t = number(size);
+        if tool != Some(t) {
+            s.push_str(&format!(
+                "T{t:02}
+"
+            ));
+            tool = Some(t);
+        }
+        s.push_str(&format!(
+            "X{x}Y{y}
+"
+        ));
+    }
+    s.push_str(
+        "M30
+",
+    );
+    Some(s)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::cli::Options;
+
+    #[test]
+    fn merged_files_keep_every_diameter_and_do_not_round_them() {
+        let one = eh3d_drillpro::ncd::parse(
+            "M48\nINCH\nT1C0.0138\nT2C0.0315\n%\nT1\nX100Y200\nT2\nX300Y400\nM30\n",
+        )
+        .unwrap();
+        let two = eh3d_drillpro::ncd::parse(
+            "M48\nMETRIC\nT7C0.40\nT9C0.75\n%\nT7\nX1Y2\nT9\nX3Y4\nM30\n",
+        )
+        .unwrap();
+        // 0.35 and 0.40 mm are two tools, as are 0.75 and 0.80 mm (a rounding to a tenth made each pair one)
+        let text = merged_drill_text(&[one, two]).unwrap();
+        let again = eh3d_drillpro::ncd::parse(&text).unwrap();
+        let mut sizes: Vec<f64> = again.diameters.iter().map(|(_, d)| d * 25.4).collect();
+        sizes.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        assert_eq!(sizes.len(), 4);
+        for (got, want) in sizes.iter().zip([0.35, 0.40, 0.75, 0.80]) {
+            assert!((got - want).abs() < 0.01, "{got} is not {want}");
+        }
+        assert_eq!(again.holes.len(), 4);
+        assert_eq!(again.tools.len(), 4);
+        // the 0.40 mm drill keeps the number the machine tables give it, and the 0.35 mm one does not take it
+        let number_of = |mm: f64| {
+            again
+                .diameters
+                .iter()
+                .find(|(_, d)| (d * 25.4 - mm).abs() < 0.01)
+                .map(|(n, _)| *n)
+                .unwrap()
+        };
+        assert_eq!(number_of(0.40), 4);
+        assert_eq!(number_of(0.80), 8);
+        assert_ne!(number_of(0.35), 4);
+        assert_ne!(number_of(0.75), 8);
+    }
 
     fn testdata() -> PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("testdata")

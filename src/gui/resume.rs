@@ -44,6 +44,30 @@ impl App {
         }
     }
 
+    /// The fingerprint of what the work is made of: the files and the settings that decide the order of the holes and where they are.
+    pub(super) fn work_fingerprint(
+        &self,
+        drill: Option<&PathBuf>,
+        route: Option<&PathBuf>,
+    ) -> String {
+        let settings = self.drill.engine.settings().map_or(String::new(), |m| {
+            format!(
+                "{:?}|{:?}|{:?}|{:?}|{:?}",
+                m.scale,
+                m.offset_mm,
+                m.clip_mm,
+                m.unit.mm(),
+                m.sorting
+            )
+        });
+        let files: Vec<&std::path::Path> = [drill, route]
+            .into_iter()
+            .flatten()
+            .map(|p| p.as_path())
+            .collect();
+        crate::recovery::fingerprint(&files, &settings)
+    }
+
     /// What the job needs to go on from here.
     fn recovery_now(&self, p: Program) -> Recovery {
         let side = match p {
@@ -51,7 +75,14 @@ impl App {
             Program::Route => &self.route,
         };
         let c = self.panel;
+        let keep_drill = (p == Program::Drill || self.job_queue.contains(&Program::Drill))
+            .then(|| self.drill_path.clone())
+            .flatten();
+        let keep_route = (p == Program::Route || self.job_queue.contains(&Program::Route))
+            .then(|| self.route_path.clone())
+            .flatten();
         Recovery {
+            fingerprint: self.work_fingerprint(keep_drill.as_ref(), keep_route.as_ref()),
             program: match p {
                 Program::Drill => "drill",
                 Program::Route => "route",
@@ -158,6 +189,14 @@ impl App {
         let Some(r) = self.resume.take() else { return };
         self.modal = None;
         self.screen = Screen::Viewer;
+        // the holes done are counted in the order of the holes: with other files or other settings they are not the same holes, and the job does not go on
+        if !r.fingerprint.is_empty()
+            && r.fingerprint != self.work_fingerprint(r.drill.as_ref(), r.route.as_ref())
+        {
+            self.message = Some(self.tr(Text::ResumeChanged).to_string());
+            self.clear_recovery();
+            return;
+        }
         let program = if r.program == "route" {
             Program::Route
         } else {

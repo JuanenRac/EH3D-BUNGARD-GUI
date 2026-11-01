@@ -1577,6 +1577,34 @@ EOF
     }
 
     #[test]
+    fn a_job_left_in_the_middle_does_not_go_on_when_the_files_or_the_settings_are_not_the_same() {
+        let mut a = app();
+        let file = std::env::temp_dir().join(format!("eh3d-bg-changed-{}.cfg", std::process::id()));
+        a.recovery_path = Some(file.clone());
+        a.auto_ok = true;
+        a.fixed_dt = Some(2.0);
+        a.act(Act::Start);
+        let mut saved = crate::recovery::Recovery::load(&file).expect("the file of the job");
+        assert!(!saved.fingerprint.is_empty());
+        // the same files and settings: the fingerprint is the one of now
+        let drill = saved.drill.clone();
+        assert_eq!(
+            saved.fingerprint,
+            a.work_fingerprint(drill.as_ref(), saved.route.as_ref())
+        );
+        // something changed since the job stopped (a file edited, the sorting or the offset of the machine): it does not go on and says why
+        saved.fingerprint = "0123456789abcdef".into();
+        saved.save(&file);
+        let mut b = app();
+        b.recovery_path = Some(file.clone());
+        b.offer_resume();
+        b.act(Act::ResumeContinue);
+        assert!(b.running.is_none() && b.modal.is_none());
+        assert_eq!(b.message.as_deref(), Some(b.tr(Text::ResumeChanged)));
+        assert!(!file.exists());
+    }
+
+    #[test]
     fn a_job_of_drilling_and_routing_left_in_the_middle_goes_on_with_the_rest_of_the_drilling_the_routing_and_the_tools_off(
     ) {
         let mut a = app_with_both();

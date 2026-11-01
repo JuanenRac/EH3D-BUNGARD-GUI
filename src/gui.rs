@@ -1108,6 +1108,13 @@ impl App {
                 ..Default::default()
             });
             side.engine.start();
+            // the engine refuses a job that would run on made-up data (a tool missing from the table, a gap in the rack, a height map through the server): the person is told and nothing runs
+            if let Some(why) = side.engine.error() {
+                let why = why.to_string();
+                self.job_queue.clear();
+                self.message = Some(why);
+                return;
+            }
             // the first point of the work, for the machine of the 3D view to travel to (the engine says where the job begins)
             let first = side
                 .engine

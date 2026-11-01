@@ -112,8 +112,9 @@ pub(crate) struct Preview {
 /// The largest file the preview reads (a bigger one would make the window wait).
 const PREVIEW_MAX_BYTES: u64 = 8_000_000;
 
-/// Reads a drilling or routing file to draw it; `None` when it is neither, is too big or cannot be read.
-pub(crate) fn preview_of(path: &Path) -> Option<Preview> {
+/// Reads a drilling or routing file to draw it; `None` when it is neither, is too big or cannot be read. `unit_mm` is the unit of the coordinates of a drilling
+/// file, the one of the settings (0.0254 for mils), so the preview shows the board as the job will have it.
+pub(crate) fn preview_of(path: &Path, unit_mm: f64) -> Option<Preview> {
     let name = path.file_name()?.to_string_lossy().to_string();
     if std::fs::metadata(path).ok()?.len() > PREVIEW_MAX_BYTES {
         return None;
@@ -124,8 +125,8 @@ pub(crate) fn preview_of(path: &Path) -> Option<Preview> {
             let file = eh3d_drillpro::ncd::parse(&crate::jobs::read_latin1(path).ok()?).ok()?;
             for h in &file.holes {
                 holes.push((
-                    h.x_mil as f64 * 0.0254,
-                    h.y_mil as f64 * 0.0254,
+                    h.x_mil as f64 * unit_mm,
+                    h.y_mil as f64 * unit_mm,
                     crate::jobs::tool_diameter(h.tool, &file.diameters, file.metric),
                 ));
             }
@@ -470,6 +471,7 @@ impl App {
             return;
         }
         let on = self.settings.open_preview;
+        let unit_mm = self.drill.engine.settings().map_or(0.0254, |s| s.unit.mm());
         let Some(b) = self.browser.as_mut() else {
             return;
         };
@@ -482,7 +484,7 @@ impl App {
         };
         if e.kind == EntryKind::Drill || e.kind == EntryKind::Route {
             if let Some(d) = &b.dir {
-                b.preview = preview_of(&d.join(&e.name));
+                b.preview = preview_of(&d.join(&e.name), unit_mm);
             }
         }
     }
@@ -1080,6 +1082,19 @@ mod tests {
             screen: Some(Screen::Viewer),
             ..Default::default()
         })
+    }
+
+    #[test]
+    fn the_preview_of_a_drilling_file_follows_the_unit_of_the_settings() {
+        let dir = std::env::temp_dir().join(format!("eh3d-preview-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("p.ncd");
+        std::fs::write(&file, "M48\nINCH\nT1C0.0315\n%\nT1\nX1000Y2000\nM30\n").unwrap();
+        let mils = preview_of(&file, 0.0254).unwrap();
+        let tenths = preview_of(&file, 0.00254).unwrap();
+        assert!((mils.holes[0].0 - 25.4).abs() < 1e-9 && (mils.holes[0].1 - 50.8).abs() < 1e-9);
+        assert!((tenths.holes[0].0 - 2.54).abs() < 1e-9 && (tenths.holes[0].1 - 5.08).abs() < 1e-9);
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

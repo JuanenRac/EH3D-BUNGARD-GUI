@@ -7,6 +7,10 @@ All notable changes to this project are documented here.
 - **The slots of the tool changer in the plan view:** on the models with the changer, the places of the rack that the machine file has (X and Y of each slot, the test tool in the square slot 0) are drawn on the plan, in the layer of the machine, with the number of the slot and the tool of the job that goes in it.
 
 - **Tips in the window of the tool rack:** the length of the tools (38 mm, 21 mm from the ring to the tip), the compressed air (6-8 bar) and the way the depth limiter has to face the slots, in the 37 languages.
+- **Joining files keeps every drill:** the tools of the joined file are one for each different diameter, to the hundredth of a millimetre (a rounding to a tenth made 0.35 and 0.40 mm one drill); a diameter of whole tenths keeps its own number (04 is 0.4 mm) and the others get a free one, with the exact diameter in the header.
+- **The preview of the Open window follows the unit of the settings,** as the view of the job does.
+- **A job that was left in the middle goes on only with the same files and settings:** the recovery file keeps a fingerprint of the files and of the settings that decide the order of the holes (sorting, offset, scale, unit, area); with another one the holes done would not be the same holes, so the job does not go on and the screen says so (one new text in the 37 languages).
+- **A job the programs refuse is not started and the person is told:** a tool whose line in the tool table cannot be read, a gap in the rack of the tool changer, a height map in use when the job goes through the server, and a drill file with slots (which this format of holes does not hold) now stop with the reason of the engine on the screen instead of running on made-up data or losing the slots (the tool tables also read a decimal comma, and the formats report the lines they leave out).
 
 ## [0.1.6] - Materials without copper, more boards from the data sheets and the spindle of the maker
 

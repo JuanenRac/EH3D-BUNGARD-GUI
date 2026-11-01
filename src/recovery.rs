@@ -29,6 +29,28 @@ pub struct Recovery {
     pub queue: Vec<String>,
     /// The tools that were switched off, as `(program, tool)`: the job goes on without them.
     pub off: Vec<(String, u8)>,
+    /// What the work was made of: a fingerprint of the files of the job and of the settings that decide the order of the holes (the sorting, the offset, the scale, the
+    /// unit and the area). The holes done are counted in that order, so a job goes on from the count only when the fingerprint is the same.
+    pub fingerprint: String,
+}
+
+/// A fingerprint (FNV-1a, 64 bits) of the content of some files and of a text that describes the settings; empty files are read as nothing.
+pub fn fingerprint(files: &[&Path], settings: &str) -> String {
+    let mut h: u64 = 0xcbf2_9ce4_8422_2325;
+    let mut eat = |bytes: &[u8]| {
+        for b in bytes {
+            h ^= *b as u64;
+            h = h.wrapping_mul(0x0000_0100_0000_01b3);
+        }
+        // a separator, so that the end of one thing and the start of the next cannot be moved
+        h ^= 0xff;
+        h = h.wrapping_mul(0x0000_0100_0000_01b3);
+    };
+    for f in files {
+        eat(&std::fs::read(f).unwrap_or_default());
+    }
+    eat(settings.as_bytes());
+    format!("{h:016x}")
 }
 
 impl Recovery {
@@ -66,6 +88,7 @@ impl Recovery {
         for (p, t) in &self.off {
             put("off", format!("{p}:{t}"));
         }
+        put("fingerprint", self.fingerprint.clone());
         t
     }
 
@@ -96,6 +119,7 @@ impl Recovery {
                 "total" => r.total = v.parse().ok()?,
                 "hole" => r.drilled.push(pair(v)?),
                 "queue" if matches!(v, "drill" | "route") => r.queue.push(v.to_string()),
+                "fingerprint" => r.fingerprint = v.to_string(),
                 "off" => {
                     let (p, t) = v.split_once(':')?;
                     if matches!(p, "drill" | "route") {
@@ -150,6 +174,7 @@ mod tests {
             drilled: vec![(10.0, 20.5), (12.25, 20.5)],
             queue: vec!["route".into()],
             off: vec![("drill".into(), 2), ("route".into(), 3)],
+            fingerprint: "00ff00ff00ff00ff".into(),
         }
     }
 
@@ -165,6 +190,34 @@ total=9
         let r = Recovery::from_text(text).expect("an old file");
         assert!(r.queue.is_empty() && r.off.is_empty());
         assert_eq!((r.done, r.total), (3, 9));
+    }
+
+    #[test]
+    fn the_fingerprint_changes_with_a_file_or_with_a_setting_and_with_nothing_else() {
+        let dir = std::env::temp_dir().join(format!("eh3d-fingerprint-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        let file = dir.join("a.ncd");
+        std::fs::write(
+            &file,
+            "T01
+X100Y100
+",
+        )
+        .unwrap();
+        let same = fingerprint(&[file.as_path()], "mils|special");
+        assert_eq!(same, fingerprint(&[file.as_path()], "mils|special"));
+        assert_ne!(same, fingerprint(&[file.as_path()], "mils|x first"));
+        std::fs::write(
+            &file,
+            "T01
+X100Y101
+",
+        )
+        .unwrap();
+        assert_ne!(same, fingerprint(&[file.as_path()], "mils|special"));
+        let _ = std::fs::remove_dir_all(&dir);
+        // a file that is gone reads as nothing, and the fingerprint is still there to be different
+        assert_eq!(fingerprint(&[], "").len(), 16);
     }
 
     #[test]

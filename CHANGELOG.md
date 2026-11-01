@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.1.7] - Safer jobs, the real spindle and Excellon files read as they say
+
 - **A stopped or failed job is not taken for a finished one:** the holes and paths are not marked as done, the file to resume from is kept, the queue (the milling after the drilling) does not go on, and the reason is shown.
 - **Nothing outside the table of the machine is sent to it:** the working area of the machine file (the table of the model when there is no file) limits the job; the vectors outside it are left out and counted.
 - **The thickness of the board chosen in the window decides the plan** (the routing used 1.6 mm whatever was chosen, and the drilling the one of the machine file).

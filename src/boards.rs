@@ -32,6 +32,16 @@ pub enum Core {
     Aluminium,
     /// A flexible polyimide film.
     Flex,
+    /// A solid aluminium alloy sheet (not the metal core of an LED board, which is `Aluminium`).
+    Metal,
+    /// A solid copper sheet.
+    Copper,
+    /// Wood and wood products (plywood, MDF, balsa).
+    Wood,
+    /// A rigid thermoplastic that cuts clean (acrylic, polycarbonate, POM, PVC).
+    Plastic,
+    /// A thermoplastic that softens and sticks to the tool (ABS, nylon, HDPE, PETG).
+    SoftPlastic,
 }
 
 impl Core {
@@ -48,6 +58,11 @@ impl Core {
             Core::Ceramic => "Ceramic",
             Core::Aluminium => "Aluminium",
             Core::Flex => "Flex",
+            Core::Metal => "Metal",
+            Core::Copper => "Copper",
+            Core::Wood => "Wood",
+            Core::Plastic => "Plastic",
+            Core::SoftPlastic => "Soft plastic",
         }
     }
 }
@@ -81,6 +96,8 @@ pub enum Sides {
     One,
     Two,
     Either,
+    /// No copper at all: a plain sheet to mill and drill (metal, wood, plastic, bare laminate).
+    NoCopper,
 }
 
 /// The standard cuttings of the Bungard boards (the catalogue of 2024/25: 1.5 mm, 35 and 70 um) and the two panels they are cut from.
@@ -161,6 +178,24 @@ const TH_FLEX: &[f64] = &[0.05, 0.075, 0.1, 0.125];
 const TH_TO_15: &[f64] = &[0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.5];
 const TH_TO_24: &[f64] = &[0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0, 2.4];
 const TH_TO_32: &[f64] = &[0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0, 2.4, 3.2];
+/// The usual thicknesses of aluminium sheet inside 0.2 to 5 mm.
+const TH_ALUMINIUM_SHEET: &[f64] = &[
+    0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0, 1.2, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0,
+];
+/// The usual thicknesses of copper sheet inside 0.1 to 5 mm.
+const TH_COPPER_SHEET: &[f64] = &[0.1, 0.2, 0.3, 0.5, 0.8, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0];
+/// The usual thicknesses of PTFE sheet inside 0.2 to 5 mm.
+const TH_PTFE_SHEET: &[f64] = &[0.2, 0.5, 0.8, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0];
+/// The usual thicknesses of plywood and the light woods inside 0.5 to 5 mm.
+const TH_WOOD: &[f64] = &[0.5, 0.8, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0];
+const TH_MDF: &[f64] = &[2.5, 3.0, 4.0, 5.0];
+const TH_BALSA: &[f64] = &[0.5, 0.8, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0];
+/// The usual thicknesses of the extruded and cast plastic sheet up to 5 mm.
+const TH_PLASTIC: &[f64] = &[1.0, 1.5, 2.0, 3.0, 4.0, 5.0];
+const TH_PLASTIC_THIN: &[f64] = &[0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0];
+const TH_PLASTIC_THICK: &[f64] = &[1.0, 2.0, 3.0, 4.0, 5.0];
+const TH_G10: &[f64] = &[0.5, 0.8, 1.0, 1.6, 2.0, 3.0, 4.0, 5.0];
+const TH_PERTINAX: &[f64] = &[0.8, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0];
 const CU_STD: &[f64] = &[18.0, 35.0, 70.0, 105.0];
 /// 12 to 105 um (3/8 to 3 oz), the usual steps of a range of the data sheets.
 const CU_12_105: &[f64] = &[12.0, 18.0, 35.0, 70.0, 105.0];
@@ -2124,6 +2159,211 @@ pub const MATERIALS: &[Material] = &[
         photoresist: false,
         note: "High thermal conductivity glass composite (CEM-3 grade) for LED boards, double sided, thermal conductivity 1.10 W/mK, CTI 600 V, Tg 140 C by TMA; the data sheet gives results for 1.6 mm boards with 1 oz copper",
     },
+    // ---- sheet and plate without copper, to mill and to drill
+    m(
+        "Generic",
+        "Aluminium sheet (5052 / 6061)",
+        Core::Metal,
+        TH_ALUMINIUM_SHEET,
+        &[],
+        Sides::NoCopper,
+        None,
+        None,
+        None,
+        "Alloy sheet 5052 (easy to form) or 6061 (stiffer, machines better); Usual thicknesses, sold cut to size; no copper, no electrical figures given (they depend on the grade); slow turns, a lubricant and shallow passes; clamp it flat and remove the chips",
+    ),
+    m(
+        "Generic",
+        "Copper sheet (C110)",
+        Core::Copper,
+        TH_COPPER_SHEET,
+        &[],
+        Sides::NoCopper,
+        None,
+        None,
+        None,
+        "Pure copper sheet C110 (ETP); Usual thicknesses, sold cut to size; no copper, no electrical figures given (they depend on the grade); soft and gummy, so low turns, a moderate feed, shallow passes and a lubricant; use sharp single-flute tools",
+    ),
+    m(
+        "Generic",
+        "Birch plywood",
+        Core::Wood,
+        TH_WOOD,
+        &[],
+        Sides::NoCopper,
+        None,
+        None,
+        None,
+        "Birch plywood with a thin cross-grained layup; Usual thicknesses, sold cut to size; no copper, no electrical figures given (they depend on the grade); high turns with a single-flute router, a clean exit side needs a sacrificial board; the dust is to be extracted",
+    ),
+    m(
+        "Generic",
+        "MDF",
+        Core::Wood,
+        TH_MDF,
+        &[],
+        Sides::NoCopper,
+        None,
+        None,
+        None,
+        "Medium density fibreboard; Usual thicknesses, sold cut to size; no copper, no electrical figures given (they depend on the grade); machines clean and dulls the tools quickly; the dust is fine and must be extracted",
+    ),
+    m(
+        "Generic",
+        "Balsa wood",
+        Core::Wood,
+        TH_BALSA,
+        &[],
+        Sides::NoCopper,
+        None,
+        None,
+        None,
+        "Balsa sheet for models and mock-ups; Usual thicknesses, sold cut to size; no copper, no electrical figures given (they depend on the grade); very soft: high turns, a fast feed and a sharp tool, held down gently",
+    ),
+    m(
+        "Generic",
+        "Basswood (lime)",
+        Core::Wood,
+        TH_WOOD,
+        &[],
+        Sides::NoCopper,
+        None,
+        None,
+        None,
+        "Basswood (lime) sheet for models; Usual thicknesses, sold cut to size; no copper, no electrical figures given (they depend on the grade); soft and even grained, cuts clean at high turns",
+    ),
+    m(
+        "Generic",
+        "PTFE sheet",
+        Core::Ptfe,
+        TH_PTFE_SHEET,
+        &[],
+        Sides::NoCopper,
+        None,
+        None,
+        None,
+        "Solid PTFE sheet (virgin), not the glass laminate for circuits; Usual thicknesses, sold cut to size; no copper, no electrical figures given (they depend on the grade); soft and slippery, it moves under the clamp and does not take glue; do not let the tool heat it",
+    ),
+    m(
+        "Generic",
+        "Acrylic (PMMA)",
+        Core::Plastic,
+        TH_PLASTIC,
+        &[],
+        Sides::NoCopper,
+        None,
+        None,
+        None,
+        "Cast or extruded acrylic sheet; Usual thicknesses, sold cut to size; no copper, no electrical figures given (they depend on the grade); single-flute tools cut it clean; too many turns with a slow feed melt it and it chips if the tool is dull",
+    ),
+    m(
+        "Generic",
+        "Polycarbonate (PC)",
+        Core::Plastic,
+        TH_PLASTIC_THIN,
+        &[],
+        Sides::NoCopper,
+        None,
+        None,
+        None,
+        "Polycarbonate sheet; Usual thicknesses, sold cut to size; no copper, no electrical figures given (they depend on the grade); tough, it does not chip but it softens with heat: sharp tools and a steady feed",
+    ),
+    m(
+        "Generic",
+        "ABS",
+        Core::SoftPlastic,
+        TH_PLASTIC,
+        &[],
+        Sides::NoCopper,
+        None,
+        None,
+        None,
+        "ABS sheet; Usual thicknesses, sold cut to size; no copper, no electrical figures given (they depend on the grade); it softens and sticks to the tool when it heats: moderate turns and a fast feed",
+    ),
+    m(
+        "Generic",
+        "POM",
+        Core::Plastic,
+        TH_PLASTIC,
+        &[],
+        Sides::NoCopper,
+        None,
+        None,
+        None,
+        "Acetal copolymer or homopolymer (POM, sold as Delrin and other trade names); Usual thicknesses, sold cut to size; no copper, no electrical figures given (they depend on the grade); machines very clean with sharp tools",
+    ),
+    m(
+        "Generic",
+        "Nylon (PA6)",
+        Core::SoftPlastic,
+        TH_PLASTIC_THICK,
+        &[],
+        Sides::NoCopper,
+        None,
+        None,
+        None,
+        "Polyamide 6 sheet; Usual thicknesses, sold cut to size; no copper, no electrical figures given (they depend on the grade); it takes up water and moves, and it leaves burrs: sharp tools, moderate turns and a fast feed",
+    ),
+    m(
+        "Generic",
+        "PVC",
+        Core::Plastic,
+        TH_PLASTIC_THIN,
+        &[],
+        Sides::NoCopper,
+        None,
+        None,
+        None,
+        "Rigid PVC sheet; Usual thicknesses, sold cut to size; no copper, no electrical figures given (they depend on the grade); it cuts clean but gives off harmful fumes when it overheats: keep it cool, extract the dust and the fumes",
+    ),
+    m(
+        "Generic",
+        "HDPE",
+        Core::SoftPlastic,
+        TH_PLASTIC_THICK,
+        &[],
+        Sides::NoCopper,
+        None,
+        None,
+        None,
+        "High density polyethylene sheet; Usual thicknesses, sold cut to size; no copper, no electrical figures given (they depend on the grade); waxy and soft, it melts and rolls up into strings: a fast feed and a sharp single-flute tool",
+    ),
+    m(
+        "Generic",
+        "PETG",
+        Core::SoftPlastic,
+        TH_PLASTIC_THIN,
+        &[],
+        Sides::NoCopper,
+        None,
+        None,
+        None,
+        "PETG sheet; Usual thicknesses, sold cut to size; no copper, no electrical figures given (they depend on the grade); tough and it melts when it heats: moderate turns and a fast feed",
+    ),
+    m(
+        "Generic",
+        "G10 (FR4 without copper)",
+        Core::Fr4,
+        TH_G10,
+        &[],
+        Sides::NoCopper,
+        None,
+        None,
+        None,
+        "Glass-epoxy laminate (G10 or FR4) with no copper, for jigs, spacers and fixtures; Usual thicknesses, sold cut to size; no copper, no electrical figures given (they depend on the grade); the glass wears the tools like the board material does, and the dust must be extracted",
+    ),
+    m(
+        "Generic",
+        "Phenolic paper (Pertinax)",
+        Core::Fr2,
+        TH_PERTINAX,
+        &[],
+        Sides::NoCopper,
+        None,
+        None,
+        None,
+        "Paper and phenolic resin laminate (FR2 grade, known as Pertinax) with no copper; Usual thicknesses, sold cut to size; no copper, no electrical figures given (they depend on the grade); soft and easy to cut, it frays at the exit side without a backing board",
+    ),
 ];
 
 /// The makers in the library, once each, in the order of the list.
@@ -2141,6 +2381,17 @@ impl Material {
             "FR4 600 series, positive presensitized" => Text::MatFr4Series600,
             "Thermal Clad (aluminium)" => Text::MatThermalClad,
             "Pyralux AP flexible" => Text::MatPyralux,
+            "Aluminium sheet (5052 / 6061)" => Text::MatAluminiumSheet,
+            "Copper sheet (C110)" => Text::MatCopperSheet,
+            "Birch plywood" => Text::MatBirchPlywood,
+            "Balsa wood" => Text::MatBalsa,
+            "Basswood (lime)" => Text::MatBasswood,
+            "PTFE sheet" => Text::MatPtfeSheet,
+            "Acrylic (PMMA)" => Text::MatAcrylic,
+            "Polycarbonate (PC)" => Text::MatPolycarbonate,
+            "Nylon (PA6)" => Text::MatNylon,
+            "G10 (FR4 without copper)" => Text::MatG10Plain,
+            "Phenolic paper (Pertinax)" => Text::MatPhenolicPaper,
             _ => return None,
         })
     }
@@ -2210,11 +2461,16 @@ impl Board {
         Board {
             material: index.min(MATERIALS.len() - 1),
             thickness_mm: near(m.thickness_mm, self.thickness_mm),
-            copper_um: near(m.copper_um, self.copper_um),
+            // a sheet without copper has none (0), and the layers stay as they were for when a copper board is chosen again
+            copper_um: if m.copper_um.is_empty() {
+                0.0
+            } else {
+                near(m.copper_um, self.copper_um)
+            },
             layers: match m.sides {
                 Sides::One => 1,
                 Sides::Two => 2,
-                Sides::Either => self.layers.clamp(1, 2),
+                Sides::Either | Sides::NoCopper => self.layers.clamp(1, 2),
             },
             size_mm: self.size_mm,
         }
@@ -2223,6 +2479,12 @@ impl Board {
     /// A one-line description for the screen.
     pub fn describe(&self) -> String {
         let m = self.material();
+        if self.has_no_copper() {
+            return format!(
+                "{} {} - {:.2} mm - no copper",
+                m.maker, m.name, self.thickness_mm
+            );
+        }
         format!(
             "{} {} - {:.2} mm - {:.0} um Cu - {}",
             m.maker,
@@ -2235,6 +2497,11 @@ impl Board {
                 "2 layers"
             }
         )
+    }
+
+    /// Whether the material is a plain sheet with no copper to etch or to isolate.
+    pub fn has_no_copper(&self) -> bool {
+        self.material().sides == Sides::NoCopper
     }
 }
 
@@ -2279,10 +2546,13 @@ mod tests {
 
     #[test]
     fn every_material_is_complete() {
-        assert!(MATERIALS.len() >= 140);
+        assert!(MATERIALS.len() >= 160);
         for m in MATERIALS {
-            assert!(
-                !m.thickness_mm.is_empty() && !m.copper_um.is_empty(),
+            // a material has a thickness; it has copper unless it is a plain sheet (and then it has none at all)
+            assert!(!m.thickness_mm.is_empty(), "{}", m.name);
+            assert_eq!(
+                m.copper_um.is_empty(),
+                m.sides == Sides::NoCopper,
                 "{}",
                 m.name
             );
@@ -2379,6 +2649,121 @@ mod tests {
                 "{}",
                 m.name
             );
+        }
+    }
+
+    fn sheet(name: &str) -> &'static Material {
+        MATERIALS
+            .iter()
+            .find(|m| m.maker == "Generic" && m.name == name && m.sides == Sides::NoCopper)
+            .unwrap_or_else(|| panic!("{name}"))
+    }
+
+    #[test]
+    fn the_sheets_without_copper_have_the_thicknesses_that_were_asked_for() {
+        let range = |m: &Material| (m.thickness_mm[0], *m.thickness_mm.last().unwrap());
+        // aluminium alloy 0.2 to 5 mm, copper 0.1 to 5 mm, PTFE 0.2 to 5 mm
+        assert_eq!(range(sheet("Aluminium sheet (5052 / 6061)")), (0.2, 5.0));
+        assert_eq!(range(sheet("Copper sheet (C110)")), (0.1, 5.0));
+        assert_eq!(range(sheet("PTFE sheet")), (0.2, 5.0));
+        assert_eq!(sheet("Aluminium sheet (5052 / 6061)").core, Core::Metal);
+        assert_eq!(sheet("Copper sheet (C110)").core, Core::Copper);
+        assert_eq!(sheet("PTFE sheet").core, Core::Ptfe);
+        // the woods: every one inside 0.5 to 5 mm, and between them they reach both ends
+        let woods: Vec<&Material> = MATERIALS.iter().filter(|m| m.core == Core::Wood).collect();
+        assert!(woods.len() >= 4);
+        for w in &woods {
+            let (lo, hi) = range(w);
+            assert!(lo >= 0.5 && hi <= 5.0, "{}", w.name);
+            assert_eq!(w.maker, "Generic");
+        }
+        assert!(woods.iter().any(|w| range(w).0 == 0.5) && woods.iter().any(|w| range(w).1 == 5.0));
+        // the other plastics and the plain laminates are all there
+        for name in [
+            "Acrylic (PMMA)",
+            "Polycarbonate (PC)",
+            "ABS",
+            "POM",
+            "Nylon (PA6)",
+            "PVC",
+            "HDPE",
+            "PETG",
+            "G10 (FR4 without copper)",
+            "Phenolic paper (Pertinax)",
+            "Birch plywood",
+            "MDF",
+            "Balsa wood",
+            "Basswood (lime)",
+        ] {
+            let m = sheet(name);
+            assert!(!m.thickness_mm.is_empty(), "{name}");
+        }
+        assert_eq!(sheet("G10 (FR4 without copper)").core, Core::Fr4);
+        assert_eq!(sheet("Phenolic paper (Pertinax)").core, Core::Fr2);
+        for m in MATERIALS.iter().filter(|m| m.sides == Sides::NoCopper) {
+            // no copper, no invented electrical figures, and the note says the thicknesses are the usual ones
+            assert!(m.copper_um.is_empty() && !m.photoresist, "{}", m.name);
+            assert!(
+                m.dk.is_none() && m.df.is_none() && m.tg_c.is_none(),
+                "{}",
+                m.name
+            );
+            assert!(m.note.contains("Usual thicknesses"), "{}", m.name);
+            assert!(
+                m.thickness_mm.iter().all(|t| (0.1..=5.0).contains(t)),
+                "{}",
+                m.name
+            );
+        }
+        assert!(
+            MATERIALS
+                .iter()
+                .filter(|m| m.sides == Sides::NoCopper)
+                .count()
+                >= 17
+        );
+    }
+
+    #[test]
+    fn a_sheet_without_copper_has_copper_zero_and_comes_back_from_its_text() {
+        let b = Board::standard();
+        assert!(!b.has_no_copper());
+        let idx = MATERIALS
+            .iter()
+            .position(|m| m.name == "Copper sheet (C110)")
+            .unwrap();
+        let s = b.with_material(idx);
+        assert!(s.has_no_copper());
+        assert_eq!(s.copper_um, 0.0);
+        assert!((s.thickness_mm - 1.5).abs() < 1e-9 || (s.thickness_mm - 2.0).abs() < 1e-9);
+        assert!(s.describe().contains("no copper"));
+        assert_eq!(from_text(&to_text(&s)), Some(s));
+        // going back to a laminate takes copper again
+        let back = s.with_material(b.material);
+        assert!(!back.has_no_copper() && back.copper_um > 0.0);
+    }
+
+    #[test]
+    fn the_names_with_words_of_the_sheets_have_their_text() {
+        let words = [
+            "Aluminium sheet (5052 / 6061)",
+            "Copper sheet (C110)",
+            "Birch plywood",
+            "Balsa wood",
+            "Basswood (lime)",
+            "PTFE sheet",
+            "Acrylic (PMMA)",
+            "Polycarbonate (PC)",
+            "Nylon (PA6)",
+            "G10 (FR4 without copper)",
+            "Phenolic paper (Pertinax)",
+        ];
+        for w in words {
+            assert!(sheet(w).name_text().is_some(), "{w}");
+        }
+        // the designations are the same in every language
+        for n in ["MDF", "ABS", "POM", "PVC", "HDPE", "PETG"] {
+            assert!(sheet(n).name_text().is_none(), "{n}");
         }
     }
 

@@ -592,6 +592,61 @@ mod tests {
     }
 
     #[test]
+    fn the_board_window_paints_the_sheets_without_copper_in_any_language() {
+        use super::super::board::BoardPick;
+        use super::super::combo::ComboId;
+        let ctx = egui::Context::default();
+        install_fonts(&ctx);
+        let mut a = app();
+        a.animate = false;
+        a.screen = Screen::Viewer;
+        // one of each kind of sheet without copper (empty copper list, no formats) and, between them, a laminate with copper
+        let picks: Vec<usize> = crate::boards::MATERIALS
+            .iter()
+            .enumerate()
+            .filter(|(_, m)| m.sides == crate::boards::Sides::NoCopper)
+            .map(|(i, _)| i)
+            .collect();
+        assert!(picks.len() >= 15);
+        let copper = a.board.material;
+        let mut found: Vec<String> = Vec::new();
+        for lang in Lang::ALL {
+            a.set_lang(lang);
+            for &i in &picks {
+                a.board = a.board.with_material(i);
+                assert!(a.board.has_no_copper() && a.board.copper_um == 0.0);
+                a.show_modal(extra::Modal::Board);
+                clipped_on(&mut a, &ctx);
+                for t in clipped_on(&mut a, &ctx) {
+                    found.push(format!("{}: {t}", lang.code()));
+                }
+                // the lists of the window do not break with an empty copper or an empty size
+                for id in [ComboId::Thickness, ComboId::BoardSize] {
+                    let items = a.combo_items(id);
+                    assert!(!items.is_empty());
+                    assert!(a.combo_current(id) < items.len());
+                }
+                assert!(a.board.material().copper_um.is_empty());
+                // the sides and the copper cannot be picked on a sheet without copper
+                let before = a.board;
+                a.board_pick(BoardPick::Layers(1));
+                a.board_pick(BoardPick::Copper(0));
+                assert_eq!(a.board.copper_um, before.copper_um);
+                a.modal = None;
+            }
+            a.board = a.board.with_material(copper);
+        }
+        found.sort();
+        found.dedup();
+        assert!(
+            found.is_empty(),
+            "{} texts are cut:\n{}",
+            found.len(),
+            found.join("\n")
+        );
+    }
+
+    #[test]
     fn the_open_window_paints_with_the_preview_on_and_off() {
         let ctx = egui::Context::default();
         install_fonts(&ctx);

@@ -293,16 +293,24 @@ impl App {
             38.0,
             y0 + 38.0,
             Align2::LEFT_BOTTOM,
-            &format!(
-                "{:.2} mm - {:.0} um Cu - {}",
-                self.board.thickness_mm,
-                self.board.copper_um,
-                if self.board.layers == 1 {
-                    self.tr(Text::LblOneSide)
-                } else {
-                    self.tr(Text::LblTwoSides)
-                }
-            ),
+            &if self.board.has_no_copper() {
+                format!(
+                    "{:.2} mm - {}",
+                    self.board.thickness_mm,
+                    self.tr(Text::LblNoCopper)
+                )
+            } else {
+                format!(
+                    "{:.2} mm - {:.0} um Cu - {}",
+                    self.board.thickness_mm,
+                    self.board.copper_um,
+                    if self.board.layers == 1 {
+                        self.tr(Text::LblOneSide)
+                    } else {
+                        self.tr(Text::LblTwoSides)
+                    }
+                )
+            },
             12.0,
             col(t.dim),
         );
@@ -513,7 +521,9 @@ impl App {
                 }
             }
             BoardPick::Layers(n) => {
-                if (n == 1 && m.sides != Sides::Two) || (n == 2 && m.sides != Sides::One) {
+                if m.sides != Sides::NoCopper
+                    && ((n == 1 && m.sides != Sides::Two) || (n == 2 && m.sides != Sides::One))
+                {
                     self.board.layers = n;
                 }
             }
@@ -712,7 +722,12 @@ impl App {
         ry += 28.0;
         let facts = format!(
             "{}{}{}{}",
-            m.core.name(),
+            // the name of the material says what a plain sheet is made of; only the laminates show their core
+            if m.sides == Sides::NoCopper {
+                ""
+            } else {
+                m.core.name()
+            },
             m.tg_c
                 .map_or(String::new(), |g| format!("  -  Tg {g:.0} C")),
             m.dk.map_or(String::new(), |d| format!("  -  Dk {d}")),
@@ -775,31 +790,44 @@ impl App {
                 Act::Board(BoardPick::Copper(i)),
             );
         }
-        ry += 54.0;
-        cv.text(
-            rx,
-            ry + 14.0,
-            Align2::LEFT_BOTTOM,
-            &self.tr(Text::LblCopperSides).to_uppercase(),
-            12.0,
-            col(t.dim),
-        );
-        ry += 20.0;
-        for (n, label) in [
-            (1u8, self.tr(Text::LblOneSide)),
-            (2u8, self.tr(Text::LblTwoSides)),
-        ] {
-            cv.chip(
-                rx + (n - 1) as f32 * 132.0,
-                ry,
-                124.0,
-                34.0,
-                label,
-                b.layers == n,
-                Act::Board(BoardPick::Layers(n)),
+        if b.has_no_copper() {
+            // a plain sheet: the line says so, and there are no copper sides to choose
+            cv.text(
+                rx,
+                ry + 24.0,
+                Align2::LEFT_BOTTOM,
+                self.tr(Text::LblNoCopper),
+                15.0,
+                col(t.text),
             );
         }
         ry += 54.0;
+        if !b.has_no_copper() {
+            cv.text(
+                rx,
+                ry + 14.0,
+                Align2::LEFT_BOTTOM,
+                &self.tr(Text::LblCopperSides).to_uppercase(),
+                12.0,
+                col(t.dim),
+            );
+            ry += 20.0;
+            for (n, label) in [
+                (1u8, self.tr(Text::LblOneSide)),
+                (2u8, self.tr(Text::LblTwoSides)),
+            ] {
+                cv.chip(
+                    rx + (n - 1) as f32 * 132.0,
+                    ry,
+                    124.0,
+                    34.0,
+                    label,
+                    b.layers == n,
+                    Act::Board(BoardPick::Layers(n)),
+                );
+            }
+            ry += 54.0;
+        }
         cv.text(
             rx,
             ry + 14.0,

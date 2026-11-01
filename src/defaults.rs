@@ -10,16 +10,46 @@ use crate::spindle::{Fit, Spindle};
 /// The extra depth below the board that a router goes, in mm.
 pub const ROUTE_EXTRA_MM: f64 = 0.3;
 
+/// What the material of the board asks of the tools: the factors of the speed and the feed over the values of the bit, and the deepest cut of a router in one pass.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Machining {
+    /// The factor of the turns (1.0 leaves the speed of the bit).
+    pub rpm_factor: f64,
+    /// The factor of the feed in the plane and in Z.
+    pub feed_factor: f64,
+    /// The deepest cut of a router in one pass, in mm; 0 leaves it to the bite of the bit (one millimetre without it).
+    pub pass_mm: f64,
+}
+
+/// The table of the materials: the one place where these starting values are set (to be tuned on the machine). Prudent figures for the tools of a small
+/// spindle: the woods and the plastics that cut clean keep the high turns (a single-flute tool clears the chips); the plastics that soften turn less and
+/// feed faster so the tool does not heat them; aluminium and copper turn slow with a moderate feed and shallow passes (and want a lubricant); the PTFE
+/// turns less and is not heated; none of them go above the speed of the bit, so none passes the top of the spindle.
+pub fn machining(core: Core) -> Machining {
+    let (rpm_factor, feed_factor, pass_mm) = match core {
+        Core::Fr2 | Core::Fr3 | Core::Cem1 => (1.0, 1.3, 0.0),
+        Core::Cem3 | Core::Fr4 | Core::Polyimide => (1.0, 1.0, 0.0),
+        Core::Hydrocarbon | Core::Ptfe => (0.8, 0.8, 0.0),
+        Core::Flex => (1.0, 1.2, 0.0),
+        Core::Aluminium => (0.5, 0.5, 0.0),
+        Core::Ceramic => (0.3, 0.2, 0.0),
+        Core::Metal => (0.4, 0.4, 0.3),
+        Core::Copper => (0.3, 0.5, 0.2),
+        Core::Wood => (1.0, 1.5, 1.5),
+        Core::Plastic => (0.8, 1.2, 1.0),
+        Core::SoftPlastic => (0.6, 1.5, 1.0),
+    };
+    Machining {
+        rpm_factor,
+        feed_factor,
+        pass_mm,
+    }
+}
+
 /// How the material changes the speed and the feed: (rpm factor, feed factor).
 pub fn material_factors(core: Core) -> (f64, f64) {
-    match core {
-        Core::Fr2 | Core::Fr3 | Core::Cem1 => (1.0, 1.3),
-        Core::Cem3 | Core::Fr4 | Core::Polyimide => (1.0, 1.0),
-        Core::Hydrocarbon | Core::Ptfe => (0.8, 0.8),
-        Core::Flex => (1.0, 1.2),
-        Core::Aluminium => (0.5, 0.5),
-        Core::Ceramic => (0.3, 0.2),
-    }
+    let m = machining(core);
+    (m.rpm_factor, m.feed_factor)
 }
 
 fn round_to(v: f64, step: f64) -> f64 {
@@ -110,8 +140,16 @@ pub fn transfer(
         (thickness_mm + current.max(0.0), None)
     } else {
         let depth = current.max(round_to(thickness_mm + ROUTE_EXTRA_MM, 0.1));
-        let passes = if bit.pass_mm > 0.0 {
-            (depth / bit.pass_mm).ceil().max(1.0) as u32
+        // the bite of the bit, held to what the material allows in one pass
+        let cap = machining(core).pass_mm;
+        let pass = match (bit.pass_mm > 0.0, cap > 0.0) {
+            (true, true) => bit.pass_mm.min(cap),
+            (true, false) => bit.pass_mm,
+            (false, true) => cap,
+            (false, false) => 0.0,
+        };
+        let passes = if pass > 0.0 {
+            (depth / pass).ceil().max(1.0) as u32
         } else {
             1
         };
@@ -155,8 +193,10 @@ pub fn drill(diameter_mm: f64, core: Core) -> (f64, u32, u32) {
 /// that cuts through a board of `thickness_mm`.
 pub fn route(thickness_mm: f64, core: Core) -> (f64, u32, u32, u32, u32) {
     let depth = round_to(thickness_mm + 0.3, 0.1);
-    let passes = (thickness_mm / 1.0).ceil().max(1.0) as u32;
-    let (kr, kf) = material_factors(core);
+    let m = machining(core);
+    let pass = if m.pass_mm > 0.0 { m.pass_mm } else { 1.0 };
+    let passes = (thickness_mm / pass).ceil().max(1.0) as u32;
+    let (kr, kf) = (m.rpm_factor, m.feed_factor);
     (
         depth,
         passes,
@@ -335,5 +375,101 @@ mod tests {
             .unwrap()
             .notes
             .is_empty());
+    }
+
+    const NEW_CORES: [Core; 5] = [
+        Core::Metal,
+        Core::Copper,
+        Core::Wood,
+        Core::Plastic,
+        Core::SoftPlastic,
+    ];
+
+    #[test]
+    fn every_material_keeps_inside_the_limits_of_the_spindle() {
+        let top = original().max_rpm;
+        let all = [
+            Core::Fr2,
+            Core::Fr3,
+            Core::Cem1,
+            Core::Cem3,
+            Core::Fr4,
+            Core::Hydrocarbon,
+            Core::Ptfe,
+            Core::Polyimide,
+            Core::Ceramic,
+            Core::Aluminium,
+            Core::Flex,
+        ]
+        .into_iter()
+        .chain(NEW_CORES);
+        for core in all {
+            let m = machining(core);
+            assert!(m.rpm_factor > 0.0 && m.rpm_factor <= 1.0, "{core:?}");
+            assert!(m.feed_factor > 0.0 && m.feed_factor <= 2.0, "{core:?}");
+            assert!(m.pass_mm >= 0.0 && m.pass_mm <= 2.0, "{core:?}");
+            for d in [0.3, 0.8, 1.5, 2.5, 6.0] {
+                let (e, f, r) = drill(d, core);
+                assert!(e > 0.0 && (50..=9_999).contains(&f), "{core:?}");
+                assert!((1_000..=top).contains(&r), "{core:?} {d}");
+            }
+            for t in [0.2, 1.6, 5.0] {
+                let (depth, passes, xy, z, rpm) = route(t, core);
+                assert!(depth > t && passes >= 1 && xy >= z, "{core:?}");
+                assert!((1_000..=top).contains(&rpm), "{core:?}");
+            }
+            // the bits of the catalogue never go over the top turns once the material is applied
+            for b in crate::catalogue::all().iter().take(400) {
+                if let Some(t) = transfer(b, &original(), core, 1.6, 0.5) {
+                    assert!(t.rpm <= top, "{core:?}");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn the_sheets_without_copper_are_cut_as_each_material_asks() {
+        let fr4 = drill(1.0, Core::Fr4);
+        // the woods keep the turns and go faster; the plastics that soften turn less and go faster still
+        assert_eq!(drill(1.0, Core::Wood).2, fr4.2);
+        assert!(drill(1.0, Core::Wood).1 > fr4.1);
+        assert!(drill(1.0, Core::SoftPlastic).2 < drill(1.0, Core::Plastic).2);
+        assert!(drill(1.0, Core::Plastic).2 < fr4.2);
+        assert!(drill(1.0, Core::SoftPlastic).1 > fr4.1);
+        // the metals turn slow, the copper slower than the aluminium alloy, and both go in shallow passes
+        assert!(drill(1.0, Core::Metal).2 <= 30_000);
+        assert!(drill(1.0, Core::Copper).2 < drill(1.0, Core::Metal).2);
+        assert!(machining(Core::Metal).pass_mm < 0.5 && machining(Core::Copper).pass_mm < 0.5);
+        assert!(route(3.0, Core::Metal).1 >= 10 && route(3.0, Core::Copper).1 >= 15);
+        assert_eq!(route(3.0, Core::Wood).1, 2);
+        // the PTFE is not heated: fewer turns than the glass laminate
+        assert!(drill(1.0, Core::Ptfe).2 < fr4.2);
+        // the laminates keep what they had
+        assert_eq!(machining(Core::Fr4).pass_mm, 0.0);
+        assert_eq!(route(1.6, Core::Fr4).1, 2);
+    }
+
+    #[test]
+    fn the_pass_of_the_material_holds_the_bite_of_the_bit() {
+        let mut r = a_router(2.0);
+        r.pass_mm = 1.0;
+        r.flute_mm = 8.0;
+        let fr4 = transfer(&r, &original(), Core::Fr4, 3.0, 0.0).unwrap();
+        let copper = transfer(&r, &original(), Core::Copper, 3.0, 0.0).unwrap();
+        assert_eq!(fr4.passes, Some(4));
+        assert_eq!(copper.passes, Some(17));
+        // a bit that gives no bite takes the one of the material
+        r.pass_mm = 0.0;
+        let metal = transfer(&r, &original(), Core::Metal, 3.0, 0.0)
+            .unwrap()
+            .passes
+            .unwrap();
+        assert!((11..=12).contains(&metal), "{metal}");
+        assert_eq!(
+            transfer(&r, &original(), Core::Fr4, 3.0, 0.0)
+                .unwrap()
+                .passes,
+            Some(1)
+        );
     }
 }

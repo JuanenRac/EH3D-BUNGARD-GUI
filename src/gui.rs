@@ -112,6 +112,8 @@ enum Act {
     Tab(u8),
     FileUnit(u8),
     DisplayMil(bool),
+    /// The window fills the screen, or not.
+    ToggleFullscreen,
     /// A value to type: what it is and where its box goes (x, y, width).
     Edit(EditTarget, f32, f32, f32),
     ToolDefault(Program, usize),
@@ -383,6 +385,11 @@ pub struct App {
     tool_bits: Vec<(Program, u8, crate::catalogue::Bit)>,
     /// Whether Ctrl and Shift are down at the click being handled (to choose several files).
     key_mods: (bool, bool),
+    /// The widths of the left and of the right pane of the main screen (the middle one is what is left), and whether the window was set to full screen.
+    panes: (f32, f32),
+    fullscreen_applied: bool,
+    /// What a move of the design left over when the offset of the machine (kept to 0.01 mm) took its part: it goes with the next move.
+    move_rest: (f64, f64),
     /// How far the window on top has been dragged from its place (design units), the place of its card as it was drawn (design units, without that move) and the strip of the top
     /// that is taken to drag it (screen units).
     modal_off: (f32, f32),
@@ -426,6 +433,8 @@ impl App {
             launcher::settings_path()
         };
         let settings = Settings::load(&settings_path);
+        let settings_panes = (settings.pane_left, settings.pane_right);
+        let settings_fullscreen = settings.fullscreen;
         let lang = o.lang.unwrap_or(settings.lang);
         let theme_id = o.theme.unwrap_or(settings.theme);
         let dlang = drill_lang(lang);
@@ -456,10 +465,15 @@ impl App {
             }
         }
         let board = settings.board;
-        let maker = crate::boards::makers()
-            .iter()
-            .position(|m| *m == board.material().maker)
-            .unwrap_or(0);
+        // the list of makers starts with "all makers" (place 0); the view the person left is the one that comes back
+        let maker = if settings.all_makers {
+            0
+        } else {
+            crate::boards::makers()
+                .iter()
+                .position(|m| *m == board.material().maker)
+                .map_or(0, |i| i + 1)
+        };
         let mut app = App {
             screen: o.screen.unwrap_or(match settings.choice {
                 Some(Choice::Modern) => Screen::Viewer,
@@ -565,6 +579,18 @@ impl App {
             cat_target: None,
             tool_bits: Vec::new(),
             key_mods: (false, false),
+            panes: o
+                .panes
+                .map(|(l, r)| {
+                    let (l, _, r) = crate::panes::split(l, r);
+                    (l, r)
+                })
+                .unwrap_or_else(|| {
+                    let (l, _, r) = crate::panes::split(settings_panes.0, settings_panes.1);
+                    (l, r)
+                }),
+            fullscreen_applied: settings_fullscreen && o.shot.is_none(),
+            move_rest: (0.0, 0.0),
             modal_off: (0.0, 0.0),
             modal_card: None,
             modal_drag: None,
@@ -740,18 +766,21 @@ impl App {
         let file = jobs::read_latin1(path)
             .ok()
             .and_then(|t| eh3d_drillpro::ncd::parse(&t).ok());
-        let (unit, offset) = self
+        let (unit, offset, scale) = self
             .drill
             .engine
             .settings()
-            .map_or((0.0254, (0.0, 0.0)), |s| (s.unit.mm(), s.offset_mm));
+            .map_or((0.0254, (0.0, 0.0), (1.0, 1.0)), |s| {
+                (s.unit.mm(), s.offset_mm, s.scale)
+            });
         match file {
             Some(f) => {
                 self.drill.scene = jobs::scene_from_drill(&f, self.table, unit);
                 self.drill.offset = offset;
+                // the job takes the scale of the machine and then the offset: the drawing does the same, in the same order
                 for h in &mut self.drill.scene.holes {
-                    h.x_mm += offset.0;
-                    h.y_mm += offset.1;
+                    h.x_mm = h.x_mm * scale.0 + offset.0;
+                    h.y_mm = h.y_mm * scale.1 + offset.1;
                 }
                 self.drill.base = self.drill.scene.clone();
                 self.message = None;
@@ -1041,6 +1070,10 @@ impl App {
                 self.message = Some(self.tr(Text::JobNothingOn).to_string());
             }
             return;
+        }
+        // a board bigger than the table (turned too) is said before the job starts; the job is not stopped by it
+        if let Some((head, detail)) = self.board_fit_warning() {
+            self.message = Some(format!("{head}: {detail}"));
         }
         // a job that does not fit on the table is refused before it starts, not found out on the machine
         let outside = programs.iter().any(|p| {
@@ -1426,6 +1459,10 @@ impl App {
             }
             Act::Tab(i) => self.settings_tab = i,
             Act::FileUnit(i) => self.set_file_unit(i),
+            Act::ToggleFullscreen => {
+                self.settings.fullscreen = !self.settings.fullscreen;
+                self.remember_settings();
+            }
             Act::DisplayMil(v) => {
                 self.settings.display_mil = v;
                 self.remember_settings();
@@ -2493,13 +2530,12 @@ impl App {
         let t = cv.t.clone();
         self.top_bar(cv, true);
         let sizes = self.sizes();
-        let right_w = (DESIGN_W * 0.38).clamp(420.0, 680.0);
-        let mid_w = DESIGN_W - 316.0 - 20.0 - right_w - 16.0;
+        let (left_w, mid_w, right_w) = crate::panes::split(self.panes.0, self.panes.1);
         let (top, hud_y) = (84.0, DESIGN_H - 196.0);
         let card_h = hud_y - top - 18.0;
 
         // ---- left: the job
-        cv.card(20.0, top, 280.0, card_h, true, None);
+        cv.card(20.0, top, left_w, card_h, true, None);
         cv.title(38.0, top + 32.0, &self.tr(Text::HudJob).to_uppercase());
         let name = self
             .drill
@@ -2511,7 +2547,7 @@ impl App {
             38.0,
             top + 70.0,
             Align2::LEFT_BOTTOM,
-            &name,
+            &board::fit_text(&name, left_w - 50.0, 19.0),
             19.0,
             col(t.text),
         );
@@ -2545,7 +2581,7 @@ impl App {
                     col(t.text),
                 );
                 cv.hits
-                    .push((cv.rect(38.0, ry, 244.0, 20.0), Act::Entry(i)));
+                    .push((cv.rect(38.0, ry, left_w - 36.0, 20.0), Act::Entry(i)));
             }
             y += 10.0 + usable.len().min(6) as f32 * 22.0;
         }
@@ -2583,7 +2619,7 @@ impl App {
 
         // ---- centre: the plan from above
         let (cx, cw) = (
-            316.0,
+            20.0 + left_w + 16.0,
             if self.plan_big {
                 mid_w + right_w + 16.0
             } else {
@@ -2668,7 +2704,7 @@ impl App {
                 Stroke::new(1.2 * cv.u, alpha(col(t.line), 140)),
                 StrokeKind::Inside,
             );
-            if let Some((x0, y0, x1, y1)) = self.board_rect() {
+            if let Some((x0, y0, x1, y1)) = self.panel_rect() {
                 let (a, b) = screen(x0, y1);
                 let (c, d) = screen(x1, y0);
                 cv.p.rect_filled(
@@ -2856,6 +2892,8 @@ impl App {
         );
 
         cv.zones.push((cv.rect(vx, vy, vw, vh), Zone::Plan));
+        // the board does not fit the table of the active machine, even turned: the warning lies over the plan
+        self.paint_fit_warning(cv, vx + 12.0, vy + 22.0);
         let ix = cx + cw - 52.0;
         cv.icon_chip(
             ix,
@@ -2970,6 +3008,29 @@ impl App {
                 13.0,
                 col(t.dim),
             );
+        }
+
+        // ---- the thin bars between the panes: almost invisible until the pointer is over one, then lit; they are dragged to share the width
+        {
+            let (bl, br) = crate::panes::bars(self.panes.0, self.panes.1);
+            let bars: Vec<(f32, Zone)> = if self.plan_big {
+                vec![(bl, Zone::SplitLeft)]
+            } else {
+                vec![(bl, Zone::SplitLeft), (br, Zone::SplitRight)]
+            };
+            for (bx, z) in bars {
+                let r = cv.rect(bx - 8.0, top, 16.0, card_h);
+                let (hover, _) = cv.touch(r);
+                let lit = hover || self.drag_zone == Some(z);
+                let (a, w) = if lit { (200, 3.0) } else { (22, 1.0) };
+                cv.line(
+                    (bx, top + 24.0),
+                    (bx, top + card_h - 24.0),
+                    w,
+                    alpha(col(t.accent), a),
+                );
+                cv.zones.push((r, z));
+            }
         }
 
         // ---- bottom: the numbers and the buttons
@@ -3373,7 +3434,7 @@ impl App {
         );
         // the board and the work on it
         // the same board as the plan view shows: the size chosen, or the one that stayed where it was while the design moved alone
-        if let Some((x0b, y0b, x1b, y1b)) = self.board_rect() {
+        if let Some((x0b, y0b, x1b, y1b)) = self.panel_rect() {
             boxes(
                 cv,
                 &[(
@@ -3585,6 +3646,22 @@ impl eframe::App for App {
             }
         }
         self.key_mods = ctx.input(|i| (i.modifiers.command, i.modifiers.shift));
+        // the words of the menu of the text boxes
+        ctx.data_mut(|d| d.insert_temp(egui::Id::unique("ui-language"), self.lang));
+        self.run_pending_text_keys(&ctx);
+        // F11 fills the screen or gives it back; the window follows the setting (a picture keeps its size)
+        if self.shot.is_none() {
+            if ctx.input(|i| i.key_pressed(egui::Key::F11)) {
+                self.act(Act::ToggleFullscreen);
+            }
+            if self.settings.fullscreen != self.fullscreen_applied {
+                self.fullscreen_applied = self.settings.fullscreen;
+                ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(self.fullscreen_applied));
+                if !self.fullscreen_applied {
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Maximized(true));
+                }
+            }
+        }
         // editing the job in the plan view: copy, cut, paste, choose all and delete (not while a box is being typed in)
         if self.screen == Screen::Viewer
             && self.modal.is_none()
@@ -3790,6 +3867,9 @@ impl eframe::App for App {
                 if self.drag_zone == Some(Zone::Estop) {
                     self.remember_settings();
                 }
+                if matches!(self.drag_zone, Some(Zone::SplitLeft | Zone::SplitRight)) {
+                    self.keep_panes();
+                }
                 self.drag_zone = None;
             }
             if resp.double_clicked() {
@@ -3817,6 +3897,14 @@ impl eframe::App for App {
         if let Some(pos) = double {
             if let Some(z) = self.zone_at(pos) {
                 self.reset_view(z);
+            }
+        }
+        // over a thin bar (or while one is dragged) the pointer shows that the width can be changed
+        if let Some(p) = ctx.input(|i| i.pointer.hover_pos()) {
+            if matches!(self.zone_at(p), Some(Zone::SplitLeft | Zone::SplitRight))
+                || matches!(self.drag_zone, Some(Zone::SplitLeft | Zone::SplitRight))
+            {
+                ctx.set_cursor_icon(egui::CursorIcon::ResizeHorizontal);
             }
         }
         let scroll = ctx.input(|i| i.smooth_scroll_delta.y);
@@ -3912,6 +4000,7 @@ impl eframe::App for App {
 /// Opens the window.
 pub fn run(o: &Options) -> eframe::Result {
     let app = App::new(o);
+    let fullscreen = o.shot.is_none() && app.settings.fullscreen;
     let size = if o.shot.is_some() {
         Vec2::new(1600.0, 900.0)
     } else {
@@ -3923,7 +4012,8 @@ pub fn run(o: &Options) -> eframe::Result {
             .with_min_inner_size([900.0, 560.0])
             .with_resizable(true)
             .with_maximize_button(true)
-            .with_maximized(o.shot.is_none())
+            .with_maximized(o.shot.is_none() && !fullscreen)
+            .with_fullscreen(fullscreen)
             .with_title("EH3D-BUNGARD-GUI"),
         ..Default::default()
     };

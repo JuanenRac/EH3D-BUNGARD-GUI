@@ -73,9 +73,8 @@ impl App {
                 .collect(),
             ComboId::Lang => lang_names().iter().map(|(_, n)| n.to_string()).collect(),
             ComboId::Model => crate::machines::models().iter().map(|m| m.name()).collect(),
-            ComboId::Maker => crate::boards::makers()
-                .iter()
-                .map(|m| self.maker_name(m))
+            ComboId::Maker => std::iter::once(self.tr(Text::AllMakers).to_string())
+                .chain(crate::boards::makers().iter().map(|m| self.maker_name(m)))
                 .collect(),
             ComboId::Thickness => self
                 .board

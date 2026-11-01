@@ -55,6 +55,8 @@ pub struct Options {
     pub auto_ok: bool,
     /// Turns on the choosing tool of the plan view and chooses what is in the left part of the board (`--select`): for the pictures.
     pub select: bool,
+    /// The widths of the left and the right pane of the main screen (`--panes LEFT,RIGHT`, in the units of its drawing board): for the pictures.
+    pub panes: Option<(f32, f32)>,
 }
 
 impl Options {
@@ -127,6 +129,10 @@ impl Options {
                 }
                 "--auto-ok" => o.auto_ok = true,
                 "--select" => o.select = true,
+                "--panes" => {
+                    let v = value("--panes")?;
+                    o.panes = Some(crate::panes::parse(&v).ok_or("--panes needs LEFT,RIGHT")?);
+                }
                 other if !other.starts_with("--") => o.open.push(PathBuf::from(other)),
                 other => return Err(format!("unknown option '{other}'")),
             }

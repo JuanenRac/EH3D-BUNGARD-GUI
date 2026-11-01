@@ -13,6 +13,7 @@ pub mod jobs;
 pub mod launcher;
 pub mod link;
 pub mod machines;
+pub mod panes;
 pub mod recovery;
 pub mod spindle;
 

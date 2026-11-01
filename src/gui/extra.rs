@@ -13,6 +13,9 @@ pub(crate) enum Zone {
     Estop,
     /// The top of a window, which is dragged to move the window.
     ModalMove,
+    /// The thin bar between the list of the job and the plan view, and the one between the plan view and the machine view: dragged to give the panes more or less width.
+    SplitLeft,
+    SplitRight,
 }
 
 /// A number that a stepper changes.
@@ -741,6 +744,12 @@ impl App {
                     self.modal_off = (nx, ny);
                 }
             }
+            Zone::SplitLeft => {
+                self.panes = crate::panes::drag_left(self.panes.0, self.panes.1, d.0);
+            }
+            Zone::SplitRight => {
+                self.panes = crate::panes::drag_right(self.panes.0, self.panes.1, d.0);
+            }
             Zone::Estop => {
                 let (x, y) = self.settings.estop_pos;
                 self.settings.estop_pos =
@@ -763,7 +772,7 @@ impl App {
         match z {
             Zone::Plan => self.view2d.zoom = (self.view2d.zoom * k).clamp(0.3, 20.0),
             Zone::Machine => self.view3d.zoom = (self.view3d.zoom * k).clamp(0.3, 8.0),
-            Zone::Estop | Zone::ModalMove => {}
+            Zone::Estop | Zone::ModalMove | Zone::SplitLeft | Zone::SplitRight => {}
         }
     }
 
@@ -773,7 +782,18 @@ impl App {
             Zone::Machine => self.view3d = Nav3::default(),
             Zone::Estop => self.settings.estop_pos = crate::launcher::Settings::default().estop_pos,
             Zone::ModalMove => self.modal_off = (0.0, 0.0),
+            Zone::SplitLeft | Zone::SplitRight => {
+                self.panes = (crate::panes::DEFAULT_LEFT, crate::panes::DEFAULT_RIGHT);
+                self.keep_panes();
+            }
         }
+    }
+
+    /// Remembers the widths of the panes between runs.
+    pub(crate) fn keep_panes(&mut self) {
+        self.settings.pane_left = self.panes.0;
+        self.settings.pane_right = self.panes.1;
+        self.remember_settings();
     }
 
     // ------------------------------------------------------------------------------------------ the windows
@@ -1381,6 +1401,108 @@ mod tests {
         assert!(!a.route.scene.paths.is_empty());
         a.open_path(&testdata().join("DRILLPRO.DCF"));
         assert!(a.message.is_some());
+    }
+
+    /// The holes the job sends to the machine (the plan of the engine, in mm on the table) and the holes the views draw are the same points.
+    fn assert_job_matches_views(a: &mut App, what: &str) {
+        a.auto_ok = true;
+        a.start_job();
+        let mut job = a.drill.engine.hole_order();
+        let mut seen: Vec<(f64, f64)> = a
+            .drill
+            .scene
+            .holes
+            .iter()
+            .map(|h| (h.x_mm, h.y_mm))
+            .collect();
+        let key = |p: &(f64, f64)| ((p.0 * 100.0).round() as i64, (p.1 * 100.0).round() as i64);
+        job.sort_by_key(key);
+        seen.sort_by_key(key);
+        assert_eq!(
+            job.len(),
+            seen.len(),
+            "{what}: the job and the views have not the same holes"
+        );
+        for (j, s) in job.iter().zip(&seen) {
+            assert!(
+                (j.0 - s.0).abs() < 0.011 && (j.1 - s.1).abs() < 0.011,
+                "{what}: the job drills at {j:?} where the views draw {s:?}"
+            );
+        }
+        a.stop_job();
+    }
+
+    #[test]
+    fn after_moving_the_board_and_making_a_panel_the_job_drills_where_the_views_draw() {
+        for (cols, rows, dx, dy) in [
+            (1.0, 1.0, 0.0, 0.0),
+            (2.0, 2.0, 12.0, 7.5),
+            (3.0, 1.0, 20.0, 5.0),
+        ] {
+            let mut a = app();
+            a.open_path(&testdata().join("05_small_board.ncd"));
+            a.open_path(&testdata().join("05_board_outline.plt"));
+            a.shift_board(dx, dy);
+            a.adjust(Field::Columns, cols - 1.0);
+            a.adjust(Field::Rows, rows - 1.0);
+            assert_job_matches_views(&mut a, &format!("{cols}x{rows} moved {dx},{dy}"));
+        }
+    }
+
+    #[test]
+    fn a_board_dragged_in_many_small_steps_is_drilled_where_it_is_drawn() {
+        // a drag moves the design by tiny steps; the offset of the machine is kept to 0.01 mm, and steps rounded away made the job
+        // drift from the drawing
+        let mut a = app();
+        a.open_path(&testdata().join("05_small_board.ncd"));
+        a.open_path(&testdata().join("05_board_outline.plt"));
+        for i in 0..300 {
+            a.shift_board(0.003 + (i % 3) as f64 * 0.0007, 0.002);
+        }
+        a.adjust(Field::Columns, 1.0);
+        a.adjust(Field::Rows, 1.0);
+        assert_job_matches_views(&mut a, "300 small steps");
+        // and the offset the machine has is the distance the board went
+        let off = a.drill.engine.settings().unwrap().offset_mm;
+        assert!((a.drill.offset.0 - off.0).abs() < 0.02 && (a.drill.offset.1 - off.1).abs() < 0.02);
+    }
+
+    #[test]
+    fn the_scale_of_the_machine_is_in_the_drawing_as_it_is_in_the_job() {
+        let mut a = app();
+        a.drill.engine.settings_mut().unwrap().scale = (1.1, 0.9);
+        a.open_path(&testdata().join("05_small_board.ncd"));
+        a.shift_board(10.0, 5.0);
+        a.adjust(Field::Columns, 1.0);
+        assert_job_matches_views(&mut a, "scaled");
+    }
+
+    #[test]
+    fn the_board_the_views_draw_covers_every_copy_of_the_panel() {
+        for (c, r) in [(2.0, 2.0), (3.0, 1.0)] {
+            let mut a = app();
+            a.open_path(&testdata().join("05_small_board.ncd"));
+            a.open_path(&testdata().join("05_board_outline.plt"));
+            a.shift_board(15.0, 9.0);
+            a.adjust(Field::Columns, c - 1.0);
+            a.adjust(Field::Rows, r - 1.0);
+            let (x0, y0, x1, y1) = a.panel_rect().unwrap();
+            for h in &a.drill.scene.holes {
+                assert!(
+                    h.x_mm >= x0 && h.x_mm <= x1 && h.y_mm >= y0 && h.y_mm <= y1,
+                    "{h:?} outside {x0},{y0},{x1},{y1}"
+                );
+            }
+            for p in &a.route.scene.paths {
+                for &(x, y) in &p.points {
+                    assert!(x >= x0 - 1e-6 && x <= x1 + 1e-6 && y >= y0 - 1e-6 && y <= y1 + 1e-6);
+                }
+            }
+            // the board of one copy is still the size of one board
+            let (bx0, by0, bx1, by1) = a.board_rect().unwrap();
+            assert!(bx1 - bx0 < x1 - x0 || c == 1.0);
+            assert!(by1 - by0 < y1 - y0 || r == 1.0);
+        }
     }
 
     #[test]

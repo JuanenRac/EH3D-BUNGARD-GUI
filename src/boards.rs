@@ -2402,6 +2402,72 @@ pub fn maker_text(maker: &str) -> Option<eh3d_view::texts::Text> {
     (maker == "Generic").then_some(eh3d_view::texts::Text::MakerGeneric)
 }
 
+/// One letter as it is sorted: lower case and without the accent.
+fn plain_letter(c: char) -> char {
+    match c {
+        '\u{e0}'..='\u{e5}' | '\u{101}' | '\u{103}' | '\u{105}' => 'a',
+        '\u{e7}' | '\u{107}' | '\u{10d}' => 'c',
+        '\u{10f}' | '\u{111}' => 'd',
+        '\u{e8}'..='\u{eb}' | '\u{113}' | '\u{117}' | '\u{119}' | '\u{11b}' => 'e',
+        '\u{11f}' => 'g',
+        '\u{ec}'..='\u{ef}' | '\u{131}' | '\u{12b}' => 'i',
+        '\u{142}' => 'l',
+        '\u{f1}' | '\u{144}' | '\u{148}' => 'n',
+        '\u{f2}'..='\u{f6}' | '\u{f8}' | '\u{151}' => 'o',
+        '\u{159}' => 'r',
+        '\u{15b}' | '\u{161}' | '\u{15f}' => 's',
+        '\u{163}' | '\u{165}' => 't',
+        '\u{f9}'..='\u{fc}' | '\u{16b}' | '\u{16f}' | '\u{171}' => 'u',
+        '\u{fd}' | '\u{ff}' => 'y',
+        '\u{17a}' | '\u{17c}' | '\u{17e}' => 'z',
+        c => c,
+    }
+}
+
+/// A piece of a name for sorting: a run of digits is a number, anything else is text.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+enum SortPart {
+    Text(String),
+    Number(u128),
+}
+
+/// The name cut in pieces for sorting: capitals and accents do not count, and a number is worth its value (so "FR4 500" comes before "FR4 1000").
+fn sort_parts(name: &str) -> Vec<SortPart> {
+    let mut parts = Vec::new();
+    let mut text = String::new();
+    let mut digits = String::new();
+    let flush_text = |text: &mut String, parts: &mut Vec<SortPart>| {
+        if !text.is_empty() {
+            parts.push(SortPart::Text(std::mem::take(text)));
+        }
+    };
+    for c in name.chars() {
+        if c.is_ascii_digit() {
+            flush_text(&mut text, &mut parts);
+            digits.push(c);
+        } else {
+            if !digits.is_empty() {
+                parts.push(SortPart::Number(digits.parse().unwrap_or(u128::MAX)));
+                digits.clear();
+            }
+            for l in c.to_lowercase() {
+                text.push(plain_letter(l));
+            }
+        }
+    }
+    if !digits.is_empty() {
+        parts.push(SortPart::Number(digits.parse().unwrap_or(u128::MAX)));
+    }
+    flush_text(&mut text, &mut parts);
+    parts
+}
+
+/// The order of the lists of makers and of materials: alphabetical without regard to capitals or accents, numbers by their value.
+pub fn natural_cmp(a: &str, b: &str) -> std::cmp::Ordering {
+    sort_parts(a).cmp(&sort_parts(b)).then_with(|| a.cmp(b))
+}
+
+/// The makers, in alphabetical order (the data of the library keeps its own order).
 pub fn makers() -> Vec<&'static str> {
     let mut v: Vec<&'static str> = Vec::new();
     for m in MATERIALS {
@@ -2409,6 +2475,24 @@ pub fn makers() -> Vec<&'static str> {
             v.push(m.maker);
         }
     }
+    v.sort_by(|a, b| natural_cmp(a, b));
+    v
+}
+
+/// The materials the list shows: those of one maker, or (`None`) those of all the makers mixed, in alphabetical order of the name
+/// that `name_of` gives them (the maker breaks a tie). Each comes with its place in [`MATERIALS`].
+pub fn materials_view(
+    maker: Option<&str>,
+    name_of: &dyn Fn(&Material) -> String,
+) -> Vec<(usize, &'static Material)> {
+    let mut v: Vec<(usize, &'static Material)> = MATERIALS
+        .iter()
+        .enumerate()
+        .filter(|(_, m)| maker.is_none_or(|k| m.maker == k))
+        .collect();
+    v.sort_by(|(_, a), (_, b)| {
+        natural_cmp(&name_of(a), &name_of(b)).then_with(|| natural_cmp(a.maker, b.maker))
+    });
     v
 }
 
@@ -2786,5 +2870,161 @@ mod tests {
         assert_eq!(from_text("x|y|1|2|3|"), None);
         assert_eq!(from_text(""), None);
         assert!(b.describe().contains("FR-4"));
+    }
+}
+
+/// Whether a board of a size fits the table of the active machine.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Fit {
+    /// It fits as it lies.
+    Fits,
+    /// It fits only turned 90 degrees (no warning: the operator can lay it that way).
+    FitsTurned,
+    /// It fits in neither way: how many mm it goes over the width and over the depth of the table in the way that goes over least.
+    TooBig { over_w: f64, over_d: f64 },
+    /// The size of the board or of the table is not known.
+    Unknown,
+}
+
+/// Compares a board (width, depth) with the table (width, depth), both in mm. The board may be turned 90 degrees, so a warning is only for a board that
+/// fits in neither way. A size that is not known (zero, negative or missing) gives [`Fit::Unknown`].
+pub fn fit_on_table(board: Option<(f64, f64)>, table: Option<(f64, f64)>) -> Fit {
+    const EPS: f64 = 0.01;
+    let ok = |s: (f64, f64)| s.0.is_finite() && s.1.is_finite() && s.0 > 0.0 && s.1 > 0.0;
+    let (Some(b), Some(t)) = (board.filter(|s| ok(*s)), table.filter(|s| ok(*s))) else {
+        return Fit::Unknown;
+    };
+    if b.0 <= t.0 + EPS && b.1 <= t.1 + EPS {
+        return Fit::Fits;
+    }
+    if b.1 <= t.0 + EPS && b.0 <= t.1 + EPS {
+        return Fit::FitsTurned;
+    }
+    let as_lies = ((b.0 - t.0).max(0.0), (b.1 - t.1).max(0.0));
+    let turned = ((b.1 - t.0).max(0.0), (b.0 - t.1).max(0.0));
+    let (over_w, over_d) = if turned.0 + turned.1 < as_lies.0 + as_lies.1 {
+        turned
+    } else {
+        as_lies
+    };
+    Fit::TooBig { over_w, over_d }
+}
+
+#[cfg(test)]
+mod fit_tests {
+    use super::*;
+
+    const TABLE: Option<(f64, f64)> = Some((495.0, 325.0));
+
+    #[test]
+    fn a_board_that_lies_on_the_table_fits() {
+        assert_eq!(fit_on_table(Some((160.0, 100.0)), TABLE), Fit::Fits);
+        assert_eq!(fit_on_table(Some((495.0, 325.0)), TABLE), Fit::Fits);
+    }
+
+    #[test]
+    fn a_board_that_fits_only_turned_gives_no_warning() {
+        assert_eq!(fit_on_table(Some((320.0, 480.0)), TABLE), Fit::FitsTurned);
+    }
+
+    #[test]
+    fn a_board_that_fits_in_neither_way_says_how_much_it_goes_over() {
+        // 510 x 1150 is over in both ways; turned it goes over less
+        let f = fit_on_table(Some((510.0, 1150.0)), TABLE);
+        assert_eq!(
+            f,
+            Fit::TooBig {
+                over_w: 15.0,
+                over_d: 825.0
+            }
+        );
+        // only the width is over
+        assert_eq!(
+            fit_on_table(Some((520.0, 300.0)), TABLE),
+            Fit::TooBig {
+                over_w: 25.0,
+                over_d: 0.0
+            }
+        );
+    }
+
+    #[test]
+    fn the_table_changes_the_answer() {
+        let b = Some((520.0, 400.0));
+        assert!(matches!(fit_on_table(b, TABLE), Fit::TooBig { .. }));
+        assert_eq!(fit_on_table(b, Some((600.0, 500.0))), Fit::Fits);
+    }
+
+    #[test]
+    fn an_unknown_size_gives_no_answer() {
+        assert_eq!(fit_on_table(None, TABLE), Fit::Unknown);
+        assert_eq!(fit_on_table(Some((100.0, 100.0)), None), Fit::Unknown);
+        assert_eq!(fit_on_table(Some((0.0, 100.0)), TABLE), Fit::Unknown);
+        assert_eq!(fit_on_table(Some((100.0, f64::NAN)), TABLE), Fit::Unknown);
+    }
+}
+
+#[cfg(test)]
+mod order_tests {
+    use super::*;
+    use std::cmp::Ordering;
+
+    #[test]
+    fn capitals_and_accents_do_not_count() {
+        assert_eq!(natural_cmp("Zebra", "apple"), Ordering::Greater);
+        assert_eq!(natural_cmp("apple", "Banana"), Ordering::Less);
+        assert_eq!(natural_cmp("\u{e9}cole", "Ecole2"), Ordering::Less);
+        assert_eq!(natural_cmp("\u{e9}clair", "eclat"), Ordering::Less);
+        assert_eq!(natural_cmp("\u{c1}rbol", "azul"), Ordering::Less);
+        assert_eq!(natural_cmp("\u{c1}rbol", "Brazo"), Ordering::Less);
+    }
+
+    #[test]
+    fn numbers_go_by_their_value() {
+        assert_eq!(natural_cmp("FR4 500", "FR4 1000"), Ordering::Less);
+        assert_eq!(natural_cmp("FR4 1000", "FR4 500"), Ordering::Greater);
+        assert_eq!(natural_cmp("R-5775", "R-5670"), Ordering::Greater);
+        assert_eq!(natural_cmp("a2", "a10"), Ordering::Less);
+        assert_eq!(natural_cmp("a2", "a2"), Ordering::Equal);
+    }
+
+    #[test]
+    fn the_makers_come_in_alphabetical_order() {
+        let m = makers();
+        for w in m.windows(2) {
+            assert_ne!(natural_cmp(w[0], w[1]), Ordering::Greater, "{w:?}");
+        }
+        assert!(m.contains(&"Generic"));
+    }
+
+    #[test]
+    fn the_materials_of_a_maker_are_in_order_and_are_the_makers() {
+        let name = |m: &Material| m.name.to_string();
+        for maker in makers() {
+            let v = materials_view(Some(maker), &name);
+            assert_eq!(v.len(), of_maker(maker).len());
+            assert!(v.iter().all(|(_, m)| m.maker == maker));
+            for w in v.windows(2) {
+                assert_ne!(natural_cmp(w[0].1.name, w[1].1.name), Ordering::Greater);
+            }
+        }
+    }
+
+    #[test]
+    fn the_view_of_all_makers_has_every_material_once_in_order_of_name() {
+        let name = |m: &Material| m.name.to_string();
+        let all = materials_view(None, &name);
+        assert_eq!(all.len(), MATERIALS.len());
+        let mut places: Vec<usize> = all.iter().map(|(i, _)| *i).collect();
+        places.sort_unstable();
+        places.dedup();
+        assert_eq!(places.len(), MATERIALS.len());
+        for w in all.windows(2) {
+            assert_ne!(natural_cmp(w[0].1.name, w[1].1.name), Ordering::Greater);
+        }
+        // each one is the material of that place, so choosing it from this view gives the same board as from the view of its maker
+        for (i, m) in &all {
+            assert_eq!((m.maker, m.name), (MATERIALS[*i].maker, MATERIALS[*i].name));
+        }
     }
 }

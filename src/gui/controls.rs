@@ -1852,13 +1852,56 @@ EOF
         let rogers = crate::boards::makers()
             .iter()
             .position(|m| *m == "Rogers")
-            .unwrap();
+            .unwrap()
+            + 1; // the list of makers starts with "all makers"
         a.board_pick(super::super::board::BoardPick::Maker(rogers));
         a.mat_scroll_by(1000);
         let n = crate::boards::of_maker("Rogers").len();
         assert_eq!(a.mat_scroll, n - super::super::board::MAT_ROWS);
         a.mat_scroll_by(-1000);
         assert_eq!(a.mat_scroll, 0);
+    }
+
+    #[test]
+    fn the_list_of_makers_starts_with_all_of_them_and_a_board_is_chosen_the_same_from_it() {
+        use super::super::board::BoardPick;
+        let mut a = app();
+        let items = a.combo_items(super::super::combo::ComboId::Maker);
+        assert_eq!(items[0], a.tr(Text::AllMakers));
+        assert_eq!(items.len(), crate::boards::makers().len() + 1);
+        a.board_pick(BoardPick::Maker(0));
+        assert!(a.settings.all_makers);
+        let all = a.materials_shown();
+        assert_eq!(all.len(), crate::boards::MATERIALS.len());
+        // the same board comes out of the view of all the makers as out of the view of its maker
+        let (place, m) = all[all.len() / 2];
+        a.board_pick(BoardPick::Material(place));
+        let from_all = a.board;
+        let maker = crate::boards::makers()
+            .iter()
+            .position(|k| *k == m.maker)
+            .unwrap();
+        a.board_pick(BoardPick::Maker(maker + 1));
+        assert!(!a.settings.all_makers);
+        assert!(a.materials_shown().iter().any(|(i, _)| *i == place));
+        a.board_pick(BoardPick::Material(place));
+        assert_eq!(a.board, from_all);
+    }
+
+    #[test]
+    fn a_board_bigger_than_the_table_is_warned_about_and_the_warning_follows_the_machine() {
+        let mut a = app();
+        a.board.size_mm = Some((200.0, 100.0));
+        assert!(a.board_fit_warning().is_none());
+        // bigger than the table in both ways, even turned
+        a.board.size_mm = Some((a.table.width_mm + 30.0, a.table.depth_mm + 30.0));
+        let (head, detail) = a.board_fit_warning().expect("no warning");
+        assert_eq!(head, a.tr(Text::BoardTooBig));
+        assert!(detail.contains("30.0"), "{detail}");
+        // a bigger table takes the warning away
+        a.table.width_mm += 100.0;
+        a.table.depth_mm += 100.0;
+        assert!(a.board_fit_warning().is_none());
     }
 
     #[test]

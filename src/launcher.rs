@@ -125,6 +125,13 @@ pub struct Settings {
     pub holes_drilled: std::collections::BTreeMap<u8, u64>,
     /// The files opened last, the newest first (at most [`RECENT_MAX`]).
     pub recent: Vec<String>,
+    /// The window fills the screen (off: it opens maximized).
+    pub fullscreen: bool,
+    /// The list of boards shows the boards of all the makers mixed (off: those of the maker of the board in use).
+    pub all_makers: bool,
+    /// The width of the left pane and of the right pane of the main screen, in the units of its drawing board (the middle one is what is left).
+    pub pane_left: f32,
+    pub pane_right: f32,
 }
 
 /// How many recent files are kept.
@@ -152,6 +159,10 @@ impl Default for Settings {
             ],
             holes_drilled: std::collections::BTreeMap::new(),
             recent: Vec::new(),
+            fullscreen: false,
+            all_makers: false,
+            pane_left: crate::panes::DEFAULT_LEFT,
+            pane_right: crate::panes::DEFAULT_RIGHT,
         }
     }
 }
@@ -222,6 +233,15 @@ impl Settings {
                 "open_preview" => {
                     s.open_preview = !matches!(v.trim(), "no" | "off" | "false" | "0")
                 }
+                "fullscreen" => s.fullscreen = matches!(v.trim(), "yes" | "on" | "true" | "1"),
+                "all_makers" => s.all_makers = matches!(v.trim(), "yes" | "on" | "true" | "1"),
+                "panes" => {
+                    if let Some((l, r)) = crate::panes::parse(v) {
+                        let (l, _, r) = crate::panes::split(l, r);
+                        s.pane_left = l;
+                        s.pane_right = r;
+                    }
+                }
                 "spindle" => s.spindle = SpindleId::from_code(v).unwrap_or(s.spindle),
                 k if k.starts_with("spindle_") => {
                     if let Some(id) = SpindleId::from_code(&k["spindle_".len()..]) {
@@ -237,7 +257,7 @@ impl Settings {
 
     pub fn to_text(&self) -> String {
         format!(
-            "choice = {}\nlang = {}\ntheme = {}\nboard = {}\nask_operator = {}\ntools_on_open = {}\nopen_preview = {}\nsim_speed = {}\nmodel = {}\nemergency = {}\nestop_pos = {},{}\ndisplay_units = {}\nspindle = {}\nspindle_original = {}\nspindle_vfd = {}\nholes_drilled = {}\nrecent = {}\n",
+            "choice = {}\nlang = {}\ntheme = {}\nboard = {}\nask_operator = {}\ntools_on_open = {}\nopen_preview = {}\nsim_speed = {}\nmodel = {}\nemergency = {}\nestop_pos = {},{}\ndisplay_units = {}\nspindle = {}\nspindle_original = {}\nspindle_vfd = {}\nholes_drilled = {}\nrecent = {}\nfullscreen = {}\nall_makers = {}\npanes = {},{}\n",
             self.choice.map_or("ask", |c| c.key()),
             self.lang.code(),
             self.theme.key(),
@@ -259,7 +279,11 @@ impl Settings {
                 .map(|(t, n)| format!("{t}:{n}"))
                 .collect::<Vec<_>>()
                 .join(","),
-            self.recent.join("|")
+            self.recent.join("|"),
+            if self.fullscreen { "yes" } else { "no" },
+            if self.all_makers { "yes" } else { "no" },
+            self.pane_left,
+            self.pane_right
         )
     }
 
@@ -389,12 +413,38 @@ mod tests {
             ],
             holes_drilled: [(1u8, 9172u64), (3, 40)].into_iter().collect(),
             recent: vec!["C:/jobs/a.ncd".to_string(), "C:/jobs/b.zip".to_string()],
+            fullscreen: true,
+            all_makers: true,
+            pane_left: 300.0,
+            pane_right: 500.0,
         };
         s.save(&path).unwrap();
         assert_eq!(Settings::load(&path), s);
         let ask = Settings::default();
         assert!(ask.to_text().contains("choice = ask"));
         assert_eq!(Settings::parse(&ask.to_text()), ask);
+    }
+
+    #[test]
+    fn the_window_and_the_pane_widths_are_remembered_and_have_defaults() {
+        let d = Settings::default();
+        assert!(!d.fullscreen && !d.all_makers);
+        assert_eq!((d.pane_left, d.pane_right), (280.0, 608.0));
+        // an older file without these lines gives the defaults
+        let old = Settings::parse("lang = es\n");
+        assert_eq!(old.pane_left, 280.0);
+        assert!(!old.fullscreen);
+        let s = Settings::parse("fullscreen = yes\nall_makers = yes\npanes = 300, 500\n");
+        assert!(s.fullscreen && s.all_makers);
+        assert_eq!((s.pane_left, s.pane_right), (300.0, 500.0));
+        assert_eq!(Settings::parse(&s.to_text()), s);
+        // widths outside the limits are brought back inside them
+        let wild = Settings::parse("panes = 5, 5000\n");
+        let (l, m, r) = crate::panes::split(wild.pane_left, wild.pane_right);
+        assert_eq!((l, r), (wild.pane_left, wild.pane_right));
+        assert!(m >= crate::panes::MIN[1] - 0.01);
+        // a line that is not numbers keeps the defaults
+        assert_eq!(Settings::parse("panes = x\n").pane_left, 280.0);
     }
 
     #[test]

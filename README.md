@@ -197,6 +197,7 @@ How the parts of this repository fit together: who uses it, what it holds and wh
 
 * Themes: Forge (the default), Neon Arcade, Glass Pro, the classic Windows grey and one that follows the colours of Windows.
 * 37 languages in the whole window: English, Spanish, French, Italian, German, Chinese, Japanese and European Portuguese.
+* Text boxes have the menu of the right button (Cut, Copy, Paste, Select all, Undo) and take the usual keys; the width of the list of the job, of the plan view and of the machine view is adjusted by dragging the thin bars between them (a double click gives the default back); the window can fill the screen (F11 or Settings); a board that does not fit the table of the active machine, even turned 90 degrees, is warned about; and the list of boards is in alphabetical order and also shows the boards of all the makers at once.
 * Machine profiles with the published sizes and an adjustable table: the machine in 3D grows with the usable area of the configuration.
 * A window of the machines and stations: with the server connection it shows every machine of the server grouped by station, what each one is doing, its job with the progress, the jobs ready, and chooses the machine the jobs of the window go to; `--fleet FILE.json` shows a saved answer without a server.
 * Choosing a machine model in the settings fits both views to its table: the 2D plan, the 3D machine (frame, rails, gantry and tool rack of that model) and the zoom start again for the new measures.

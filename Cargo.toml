@@ -9,7 +9,7 @@ readme = "README.md"
 
 [features]
 default = []
-gui = ["dep:eframe", "dep:png", "dep:jpeg-decoder"]
+gui = ["dep:eframe", "dep:png", "dep:jpeg-decoder", "dep:arboard"]
 
 [dependencies]
 eh3d-view = { path = "../EH3D-COMMON/crates/view" }
@@ -22,13 +22,15 @@ eh3d-inspect = { path = "../EH3D-COMMON/crates/inspect" }
 serde_json = "1"
 eh3d-drillpro = { path = "../EH3D-DRILLPRO" }
 eh3d-routepro = { path = "../EH3D-ROUTEPRO" }
-eframe = { version = "0.37.0", default-features = false, features = ["glow", "default_fonts"], optional = true }
+eframe = { version = "0.37.0", default-features = false, features = ["glow", "default_fonts", "clipboard"], optional = true }
 png = { version = "0.17", optional = true }
 jpeg-decoder = { version = "0.3", default-features = false, optional = true }
+# only to know whether the clipboard holds text (the menu of the right button greys Paste out when it does not)
+arboard = { version = "3", default-features = false, optional = true }
 
 # the window of Linux needs a windowing system chosen at build time (X11 and Wayland); Windows and macOS have their own
 [target.'cfg(target_os = "linux")'.dependencies]
-eframe = { version = "0.37.0", default-features = false, features = ["glow", "default_fonts", "x11", "wayland"], optional = true }
+eframe = { version = "0.37.0", default-features = false, features = ["glow", "default_fonts", "clipboard", "x11", "wayland"], optional = true }
 
 [[bin]]
 name = "bungard-gui"

@@ -197,6 +197,7 @@ Como as partes deste repositório se encaixam: quem o usa, o que contém e de qu
 
 * Temas: Forge (o predefinido), Neon Arcade, Glass Pro, o cinzento clássico do Windows e um que segue as cores do Windows.
 * 37 línguas em toda a janela: inglês, espanhol, francês, italiano, alemão, chinês, japonês e português de Portugal.
+* As caixas de texto têm o menu do botão direito (Cortar, Copiar, Colar, Selecionar tudo, Anular) e aceitam os atalhos habituais; a largura da lista do trabalho, da vista em planta e da vista da máquina ajusta-se arrastando as barras finas que existem entre elas (um duplo clique repõe o valor predefinido); a janela pode ocupar todo o ecrã (F11 ou Definições); avisa-se quando uma placa não cabe na mesa da máquina ativa, nem sequer rodada 90 graus; e a lista de placas está por ordem alfabética e mostra também, de uma só vez, as placas de todos os fabricantes.
 * Perfis de máquina com as medidas publicadas e uma mesa ajustável: a máquina em 3D cresce com a área útil da configuração.
 * Uma janela das máquinas e estações: com a ligação ao servidor mostra todas as máquinas do servidor agrupadas por estação, o que cada uma faz, o seu trabalho com o progresso, os trabalhos prontos, e escolhe a máquina para onde vão os trabalhos da janela; `--fleet FICHEIRO.json` mostra uma resposta guardada sem servidor.
 * Escolher um modelo de máquina nas definições ajusta as duas vistas à sua mesa: a planta 2D, a máquina 3D (estrutura, calhas, pórtico e armazém de ferramentas desse modelo) e o zoom recomeçam com as novas medidas.

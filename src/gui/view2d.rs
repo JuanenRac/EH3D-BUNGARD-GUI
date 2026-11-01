@@ -210,11 +210,23 @@ impl App {
 
     /// Moves the board on the table by this much (mm): the offset of the machine changes, and so does what the views show.
     pub(crate) fn shift_board(&mut self, dx: f64, dy: f64) {
-        // the board goes with its design
+        // the board goes with its design, by what the offset of the machine really takes
+        let (dx, dy) = self.quantize_move(dx, dy);
         if let Some(r) = self.board_frozen.as_mut() {
             *r = (r.0 + dx, r.1 + dy, r.2 + dx, r.3 + dy);
         }
-        self.shift_design(dx, dy);
+        self.shift_design_exact(dx, dy);
+    }
+
+    /// The offset of the machine is kept to 0.01 mm. A drag moves the design by much smaller steps, and a step that is rounded away would
+    /// move what is drawn and not what is sent to the machine: so what does not fit in this step waits for the next one, and the design goes only by
+    /// what the offset takes. Returns that amount.
+    pub(crate) fn quantize_move(&mut self, dx: f64, dy: f64) -> (f64, f64) {
+        let q = |v: f64| (v * 100.0).round() / 100.0;
+        let (tx, ty) = (self.move_rest.0 + dx, self.move_rest.1 + dy);
+        let (ax, ay) = (q(tx), q(ty));
+        self.move_rest = (tx - ax, ty - ay);
+        (ax, ay)
     }
 
     /// Turns on or off the move of the design alone: the board stays where it is while the design is dragged over it and over the table.
@@ -228,6 +240,15 @@ impl App {
 
     /// The design (the holes and the paths) goes `dx` and `dy` millimetres on its own: the board and the table stay.
     pub(crate) fn shift_design(&mut self, dx: f64, dy: f64) {
+        let (dx, dy) = self.quantize_move(dx, dy);
+        self.shift_design_exact(dx, dy);
+    }
+
+    /// The same, by an amount that is already a multiple of the 0.01 mm of the offset.
+    fn shift_design_exact(&mut self, dx: f64, dy: f64) {
+        if dx == 0.0 && dy == 0.0 {
+            return;
+        }
         let mut moved = false;
         for side in [&mut self.drill, &mut self.route] {
             if let Some(s) = side.engine.settings_mut() {
@@ -315,7 +336,7 @@ impl App {
         self.follow = false;
         self.view2d.pan = (0.0, 0.0);
         if board {
-            if let Some((x0, y0, x1, y1)) = self.board_rect() {
+            if let Some((x0, y0, x1, y1)) = self.panel_rect() {
                 let (w, d) = ((x1 - x0).max(1.0), (y1 - y0).max(1.0));
                 self.view2d.focus = Some(((x0 + x1) / 2.0, (y0 + y1) / 2.0));
                 self.view2d.zoom = ((self.table.width_mm / w).min(self.table.depth_mm / d) * 0.92)

@@ -136,7 +136,8 @@ impl App {
                         )));
                     out.state.store(ui.ctx(), out.response.id);
                     ed.fresh = false;
-                } else if out.response.lost_focus() {
+                } else if !out.response.has_focus() && !egui::Popup::is_any_open(ui.ctx()) {
+                    // the box ends when it has lost the keyboard, but not while the menu of the right button over it is open
                     finished = true;
                 }
             });

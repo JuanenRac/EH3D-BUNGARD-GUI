@@ -3,7 +3,7 @@
 
 use super::extra::wrap;
 use super::*;
-use crate::boards::{self, Sides, MATERIALS};
+use crate::boards::{self, Sides};
 use eh3d_drillpro::protocol::sound::Cue;
 
 /// The materials of a maker that the Board window shows at once.
@@ -231,6 +231,8 @@ impl App {
     /// one that is working lit. Returns where the next thing goes.
     pub(super) fn paint_job_tools(&self, cv: &mut Cv, y0: f32, max_y: f32) -> f32 {
         let t = cv.t.clone();
+        // the card is as wide as the person dragged it: what is inside takes that width
+        let lw = crate::panes::split(self.panes.0, self.panes.1).0;
         let lines = self.tool_lines();
         let (drills, routes) = (
             lines.iter().filter(|l| l.prog == Program::Drill).count(),
@@ -315,7 +317,7 @@ impl App {
             col(t.dim),
         );
         cv.hits.push((
-            cv.rect(30.0, y0 - 16.0, 260.0, 60.0),
+            cv.rect(30.0, y0 - 16.0, lw - 20.0, 60.0),
             Act::Show(Modal::Board),
         ));
         let working = self
@@ -331,7 +333,7 @@ impl App {
         for l in lines.iter().skip(first).take(shown) {
             let c = col(t.size_color(l.color));
             let lit = working == Some((l.prog, l.tool));
-            let r = cv.rect(38.0, y, 244.0, 48.0);
+            let r = cv.rect(38.0, y, lw - 36.0, 48.0);
             let (hover, down) = cv.touch(r);
             let base = if lit {
                 // the tool that is working breathes
@@ -361,7 +363,11 @@ impl App {
                 72.0,
                 y + 20.0,
                 Align2::LEFT_BOTTOM,
-                &format!("{tag}  T{:02}  {}", l.tool, l.main),
+                &fit_text(
+                    &format!("{tag}  T{:02}  {}", l.tool, l.main),
+                    lw - 128.0,
+                    15.0,
+                ),
                 15.0,
                 if on { col(t.text) } else { col(t.dim) },
             );
@@ -369,13 +375,13 @@ impl App {
                 72.0,
                 y + 36.0,
                 Align2::LEFT_BOTTOM,
-                &l.detail,
+                &fit_text(&l.detail, lw - 115.0, 11.0),
                 11.0,
                 col(t.dim),
             );
             // the count of what is done: holes of the drill, paths of the routing tool
             cv.text(
-                278.0,
+                lw - 2.0,
                 y + 36.0,
                 Align2::RIGHT_BOTTOM,
                 &format!("{}/{}", l.count_done, l.count),
@@ -389,13 +395,18 @@ impl App {
                 },
             );
             cv.p.rect_filled(
-                cv.rect(72.0, y + 40.0, 200.0, 4.0),
+                cv.rect(72.0, y + 40.0, lw - 80.0, 4.0),
                 2.0 * cv.u,
                 alpha(Color32::WHITE, 26),
             );
             if l.n > 0 {
                 cv.p.rect_filled(
-                    cv.rect(72.0, y + 40.0, 200.0 * l.done as f32 / l.n as f32, 4.0),
+                    cv.rect(
+                        72.0,
+                        y + 40.0,
+                        (lw - 80.0) * l.done as f32 / l.n as f32,
+                        4.0,
+                    ),
                     2.0 * cv.u,
                     c,
                 );
@@ -408,7 +419,7 @@ impl App {
                 cv.rect(
                     80.0,
                     first_y + 52.0 * i as f32,
-                    if total > shown { 190.0 } else { 202.0 },
+                    if total > shown { lw - 90.0 } else { lw - 78.0 },
                     48.0,
                 ),
                 Act::CenterTool(l.prog, l.tool),
@@ -421,7 +432,7 @@ impl App {
         for (i, l) in lines.iter().skip(first).take(shown).enumerate() {
             // start the job at this tool: the ones before it are left out
             cv.icon_chip(
-                226.0,
+                lw - 54.0,
                 first_y + 52.0 * i as f32 + 3.0,
                 26.0,
                 24.0,
@@ -431,7 +442,7 @@ impl App {
                 Act::StartAt(l.prog, l.tool),
             );
             cv.icon_chip(
-                254.0,
+                lw - 26.0,
                 first_y + 52.0 * i as f32 + 3.0,
                 26.0,
                 24.0,
@@ -443,10 +454,10 @@ impl App {
         }
         cv.scrollbar(
             Bar::Tools,
-            284.0,
+            lw + 4.0,
             first_y,
             shown as f32 * 52.0 - 4.0,
-            (30.0, first_y, 262.0, shown as f32 * 52.0),
+            (30.0, first_y, lw - 18.0, shown as f32 * 52.0),
             total,
             shown,
             first,
@@ -463,6 +474,75 @@ impl App {
             return Some(r);
         }
         self.board_rect_following_design()
+    }
+
+    /// The size of the board in use: the chosen one or the one of the files.
+    pub(crate) fn board_size_now(&self) -> Option<(f64, f64)> {
+        self.board
+            .size_mm
+            .or_else(|| self.board_rect().map(|(a, b, c, e)| (c - a, e - b)))
+    }
+
+    /// Does the board in use fit the table of the active machine (turned 90 degrees too)?
+    pub(crate) fn board_fit(&self) -> boards::Fit {
+        boards::fit_on_table(
+            self.board_size_now(),
+            Some((self.table.width_mm, self.table.depth_mm)),
+        )
+    }
+
+    /// The warning for a board that does not fit the table in either way: the headline, and the sizes of the board and of the table with
+    /// the side that goes over.
+    pub(crate) fn board_fit_warning(&self) -> Option<(String, String)> {
+        let boards::Fit::TooBig { over_w, over_d } = self.board_fit() else {
+            return None;
+        };
+        let (bw, bd) = self.board_size_now()?;
+        let u = self.len_unit();
+        let mut detail = format!(
+            "{} {} x {} {u}  |  {} {} x {} {u}",
+            self.tr(Text::BoardTitle),
+            self.len_text(bw),
+            self.len_text(bd),
+            self.tr(Text::TableNoun),
+            self.len_text(self.table.width_mm),
+            self.len_text(self.table.depth_mm),
+        );
+        for (name, over) in [(Text::LblWidth, over_w), (Text::LblDepth, over_d)] {
+            if over > 0.0 {
+                detail.push_str(&format!(
+                    "  |  {} +{} {u}",
+                    self.tr(name),
+                    self.len_text(over)
+                ));
+            }
+        }
+        Some((self.tr(Text::BoardTooBig).to_string(), detail))
+    }
+
+    /// Draws the warning of a board that does not fit (nothing when it fits), the headline in the colour of danger and the sizes under it.
+    pub(super) fn paint_fit_warning(&self, cv: &mut Cv, x: f32, y: f32) {
+        let Some((head, detail)) = self.board_fit_warning() else {
+            return;
+        };
+        let t = cv.t.clone();
+        cv.text(x, y, Align2::LEFT_BOTTOM, &head, 15.0, col(t.danger));
+        cv.text(x, y + 20.0, Align2::LEFT_BOTTOM, &detail, 13.0, col(t.dim));
+    }
+
+    /// What the views draw as the board: the board, and when the work is a panel, all the copies of it (the board of each copy is where its
+    /// holes and paths are). The size of one board stays [`App::board_rect`].
+    pub(crate) fn panel_rect(&self) -> Option<(f64, f64, f64, f64)> {
+        let (x0, y0, x1, y1) = self.board_rect()?;
+        Some(match self.panel_applied {
+            Some((c, r, (px, py))) => (
+                x0,
+                y0,
+                x1 + c.saturating_sub(1) as f64 * px,
+                y1 + r.saturating_sub(1) as f64 * py,
+            ),
+            None => (x0, y0, x1, y1),
+        })
     }
 
     /// The board as the files and the chosen size make it: it starts three millimetres before the work.
@@ -490,6 +570,14 @@ impl App {
         boards::maker_text(maker).map_or_else(|| maker.to_string(), |t| self.tr(t).to_string())
     }
 
+    /// The name of what the list of makers shows as chosen.
+    pub(crate) fn shown_maker_name(&self) -> String {
+        self.shown_maker().map_or_else(
+            || self.tr(Text::AllMakers).to_string(),
+            |m| self.maker_name(m),
+        )
+    }
+
     /// The name of a material in the language of the interface.
     pub(crate) fn material_name(&self, m: &boards::Material) -> String {
         m.name_text()
@@ -507,6 +595,9 @@ impl App {
             BoardPick::Maker(i) => {
                 self.maker = i;
                 self.mat_scroll = 0;
+                // the view is remembered with the other preferences: all the makers, or the maker the board's own
+                self.settings.all_makers = i == 0;
+                self.remember_settings();
                 return;
             }
             BoardPick::Material(i) => self.board = self.board.with_material(i),
@@ -539,11 +630,22 @@ impl App {
         self.apply_board();
     }
 
+    /// The maker whose materials the list shows (`None`: all the makers mixed). The first entry of the list of makers is "all makers".
+    pub(crate) fn shown_maker(&self) -> Option<&'static str> {
+        let makers = boards::makers();
+        match self.maker {
+            0 => None,
+            i => Some(makers[(i - 1).min(makers.len() - 1)]),
+        }
+    }
+
+    /// The materials the list shows now, in alphabetical order of the names in the language of the interface.
+    pub(crate) fn materials_shown(&self) -> Vec<(usize, &'static boards::Material)> {
+        boards::materials_view(self.shown_maker(), &|m| self.material_name(m))
+    }
+
     pub(crate) fn mat_scroll_by(&mut self, delta: i32) {
-        let of_maker = MATERIALS
-            .iter()
-            .filter(|m| m.maker == boards::makers()[self.maker.min(boards::makers().len() - 1)])
-            .count();
+        let of_maker = self.materials_shown().len();
         let max = of_maker.saturating_sub(MAT_ROWS);
         self.mat_scroll = (self.mat_scroll as i64 + delta as i64).clamp(0, max as i64) as usize;
     }
@@ -620,7 +722,6 @@ impl App {
         let b = self.board;
         let m = b.material();
         // the makers
-        let makers = boards::makers();
         cv.text(
             x + 30.0,
             y + 74.0,
@@ -634,17 +735,13 @@ impl App {
             y + 82.0,
             556.0,
             ComboId::Maker,
-            &self.maker_name(makers[self.maker.min(makers.len() - 1)]),
+            &self.shown_maker_name(),
             self.combo.is_some_and(|c| c.id == ComboId::Maker),
         );
         // the materials of the maker
-        let maker = makers[self.maker.min(makers.len() - 1)];
+        let all_makers = self.shown_maker().is_none();
         let mut ly = y + 82.0 + 38.0 + 14.0;
-        let of_maker: Vec<(usize, &crate::boards::Material)> = MATERIALS
-            .iter()
-            .enumerate()
-            .filter(|(_, mt)| mt.maker == maker)
-            .collect();
+        let of_maker = self.materials_shown();
         let shown = self.mat_scroll.min(of_maker.len().saturating_sub(MAT_ROWS));
         if of_maker.len() > MAT_ROWS {
             cv.icon_chip(
@@ -697,7 +794,13 @@ impl App {
                 ly + 24.0,
                 Align2::LEFT_BOTTOM,
                 &format!(
-                    "{}  -  {}{}",
+                    "{}{}  -  {}{}",
+                    // in the view of all the makers each name comes with its maker
+                    if all_makers {
+                        format!("{} - ", self.maker_name(mat.maker))
+                    } else {
+                        String::new()
+                    },
                     self.material_name(mat),
                     mat.core.name(),
                     mat.dk.map_or(String::new(), |d| format!("  Dk {d}"))
@@ -899,6 +1002,8 @@ impl App {
                 Act::Edit(EditTarget::BoardSize(width), rx + 272.0, yy + 2.0, 96.0),
             ));
         }
+        // a board that is bigger than the table of the active machine (turned 90 degrees too) is warned about; the choice is not stopped
+        self.paint_fit_warning(cv, rx, ry + 2.0 * 46.0 + 24.0);
         cv.chip(
             x + w - 200.0,
             y + h - 60.0,
@@ -1340,6 +1445,24 @@ impl App {
                         Act::SetSpeed(v),
                     );
                 }
+                // the window fills the screen (F11 does the same)
+                cv.chip(
+                    x + 30.0,
+                    sy + 78.0,
+                    380.0,
+                    38.0,
+                    &format!(
+                        "{}{}",
+                        if self.settings.fullscreen {
+                            "[X] "
+                        } else {
+                            "[ ] "
+                        },
+                        self.tr(Text::FullScreen)
+                    ),
+                    self.settings.fullscreen,
+                    Act::ToggleFullscreen,
+                );
             }
             1 => {
                 // the model of the machine
@@ -1754,4 +1877,15 @@ impl App {
             mm
         }
     }
+}
+
+/// The text cut so that it fits `width` design units at the font size (an average letter is a little over half the size), with dots at the end.
+pub(super) fn fit_text(text: &str, width: f32, size: f32) -> String {
+    let max = ((width / (size * 0.58)).floor().max(4.0)) as usize;
+    if text.chars().count() <= max {
+        return text.to_string();
+    }
+    let mut out: String = text.chars().take(max - 1).collect();
+    out.push('\u{2026}');
+    out
 }

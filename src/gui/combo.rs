@@ -40,7 +40,12 @@ const SOUND_FIXED: usize = 3;
 impl App {
     /// The spoken voices that are recorded in the folder of the voices: (language, female).
     pub(crate) fn voices(&self) -> Vec<(&'static str, bool)> {
+        // the folder next to the program, or - when the program runs from a build folder somewhere else (CARGO_TARGET_DIR) - the one of the repository it was built from
         sound::voices_dir()
+            .or_else(|| {
+                let own = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("voices");
+                own.is_dir().then_some(own)
+            })
             .map(|d| sound::available_voices(&d))
             .unwrap_or_default()
     }

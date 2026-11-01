@@ -1115,6 +1115,8 @@ impl App {
                 self.message = Some(why);
                 return;
             }
+            // what the person should know and does not stop the job (tools that run with the cautious values)
+            let warning = side.engine.warning().map(str::to_string);
             // the first point of the work, for the machine of the 3D view to travel to (the engine says where the job begins)
             let first = side
                 .engine
@@ -1135,6 +1137,9 @@ impl App {
                 for pth in &mut side.scene.paths {
                     pth.reached = 0;
                 }
+            }
+            if warning.is_some() {
+                self.message = warning;
             }
             self.m3d_first = first;
             self.running = Some(p);

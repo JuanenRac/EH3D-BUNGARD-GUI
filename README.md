@@ -87,6 +87,7 @@ How the parts of this repository fit together: who uses it, what it holds and wh
 
 ## 🖼️ Screenshots
 
+
 <p align="center">
   <img src="images/screenshots/viewer.png" alt="viewer" width="100%">
 </p>
@@ -112,46 +113,34 @@ How the parts of this repository fit together: who uses it, what it holds and wh
 <p align="center"><em>A job running: the holes and paths that are done, the position of the tool, and Pause and Stop.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/neon-theme.png" alt="Neon Arcade theme" width="100%">
+  <img src="images/screenshots/atc-bar.png" alt="tool bar of the ATC models" width="100%">
 </p>
 
-<p align="center"><em>The Neon Arcade theme with the board panelized.</em></p>
+<p align="center"><em>The tool bar of an ATC model: the places of the tools drawn beside the table in the plan view and in 3D, with the tool to take and the place to leave it.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/tools.png" alt="tools" width="100%">
+  <img src="images/screenshots/atc-bar-window.png" alt="tool bar window" width="100%">
 </p>
 
-<p align="center"><em>The tools: feeds, speeds and depths, the holes of each drill on the board and the holes drilled in all.</em></p>
+<p align="center"><em>The window of the tool bar: where the first and the last tool are, how many places there are and the size of the tools; the places between them are evenly spaced.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/machine-settings.png" alt="settings" width="100%">
+  <img src="images/screenshots/panes.png" alt="adjustable panes" width="100%">
 </p>
 
-<p align="center"><em>The settings: every Bungard model, the table and the units of the files.</em></p>
+<p align="center"><em>The three parts of the main window with other widths: dragging the thin bars between them gives more room to the list, the plan view or the machine view (a double click gives the default back).</em></p>
 
 <p align="center">
-  <img src="images/screenshots/board.png" alt="board" width="100%">
+  <img src="images/screenshots/board-too-big.png" alt="board larger than the table" width="100%">
 </p>
 
-<p align="center"><em>The board: a material from the library, its thickness, its copper and its size.</em></p>
+<p align="center"><em>The warning over the plan view when the board does not fit the table of the machine, even turned 90 degrees: the sizes of both and how much goes over.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/catalogue.png" alt="catalogue of bits" width="100%">
+  <img src="images/screenshots/boards-all-makers.png" alt="list of boards with all makers" width="100%">
 </p>
 
-<p align="center"><em>The catalogue of bits, filtered by kind, with the warnings for the spindle and the material of the board.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/themes.png" alt="themes" width="100%">
-</p>
-
-<p align="center"><em>Eleven themes in the settings window, each one named in the language of the window.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/sounds.png" alt="sounds" width="100%">
-</p>
-
-<p align="center"><em>The list of sounds of the end of the job: sixty sounds from the high ones to the low ones, the standard tone, none or a file of your own.</em></p>
+<p align="center"><em>The list of boards with the boards of every maker at once: the first entry of the maker menu is All makers, and the list is in alphabetical order.</em></p>
 
 <p align="center">
   <img src="images/screenshots/panel.png" alt="panel" width="100%">
@@ -160,16 +149,58 @@ How the parts of this repository fit together: who uses it, what it holds and wh
 <p align="center"><em>The Panelization window: the copies of the board and the tabs of the outside, chosen with drop-down lists and steppers.</em></p>
 
 <p align="center">
+  <img src="images/screenshots/panelized.png" alt="board panelized 2 x 2" width="100%">
+</p>
+
+<p align="center"><em>The board panelized 2 x 2 on the table of a CCD/2: the four copies are laid on the virtual board with the gap between them, in the plan view and in 3D.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/tools.png" alt="tools" width="100%">
+</p>
+
+<p align="center"><em>The tools: feeds, speeds and depths, the holes of each drill on the board and the holes drilled in all.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/settings.png" alt="general settings" width="100%">
+</p>
+
+<p align="center"><em>The general settings: theme, language, units, simulation speed and the switch for full screen (F11 does the same).</em></p>
+
+<p align="center">
+  <img src="images/screenshots/machine-settings.png" alt="settings" width="100%">
+</p>
+
+<p align="center"><em>The settings: every Bungard model, the table and the units of the files.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/themes.png" alt="themes" width="100%">
+</p>
+
+<p align="center"><em>Eleven themes in the settings window, each one named in the language of the window.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/neon-theme.png" alt="Neon Arcade theme" width="100%">
+</p>
+
+<p align="center"><em>The Neon Arcade theme.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/sounds.png" alt="sounds" width="100%">
+</p>
+
+<p align="center"><em>The list of sounds of the end of the job: sixty sounds from the high ones to the low ones, the standard tone, none or a file of your own.</em></p>
+
+<p align="center">
   <img src="images/screenshots/calibration.png" alt="calibration" width="100%">
 </p>
 
 <p align="center"><em>The calibration of the table: the map of heights measured in a grid of points, with the spread and the tilt.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/paper-theme.png" alt="light theme" width="100%">
+  <img src="images/screenshots/catalogue.png" alt="catalogue of bits" width="100%">
 </p>
 
-<p align="center"><em>The Paper theme, a light one.</em></p>
+<p align="center"><em>The catalogue of bits, filtered by kind, with the warnings for the spindle and the material of the board.</em></p>
 
 <p align="center">
   <img src="images/screenshots/fleet.png" alt="machines and stations" width="100%">
@@ -182,11 +213,13 @@ How the parts of this repository fit together: who uses it, what it holds and wh
 </p>
 
 <p align="center"><em>The node of the drill head: its camera, the speed and the temperature of the spindle, the protect output and the ring of LEDs around the camera (off and three levels).</em></p>
+
 <p align="center">
   <img src="images/screenshots/quality-check.png" alt="quality check" width="100%">
 </p>
 
 <p align="center"><em>The quality check after the job: the camera looks at the board, every hole of the job is marked (green right, red wrong, amber out of view), the milled channels are measured and the verdict is as big as a sign.</em></p>
+
 <p align="center">
   <img src="images/screenshots/quality-tolerances.png" alt="tolerances" width="100%">
 </p>

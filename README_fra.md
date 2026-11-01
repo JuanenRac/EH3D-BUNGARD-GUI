@@ -87,6 +87,7 @@ Comment les parties de ce dépôt s'articulent : qui l'utilise, ce qu'il contien
 
 ## 🖼️ Captures d'écran
 
+
 <p align="center">
   <img src="images/screenshots/viewer.png" alt="viewer" width="100%">
 </p>
@@ -112,46 +113,34 @@ Comment les parties de ce dépôt s'articulent : qui l'utilise, ce qu'il contien
 <p align="center"><em>Un travail en cours : les trous et trajets faits, la position de l'outil, Pause et Stop.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/neon-theme.png" alt="Neon Arcade theme" width="100%">
+  <img src="images/screenshots/atc-bar.png" alt="barre d'outils des modèles ATC" width="100%">
 </p>
 
-<p align="center"><em>Le thème Neon Arcade avec la carte en panneau.</em></p>
+<p align="center"><em>La barre porte-outils d'un modèle ATC : les emplacements des outils dessinés à côté de la table dans la vue en plan et en 3D, avec l'outil à prendre et l'emplacement où le déposer.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/tools.png" alt="tools" width="100%">
+  <img src="images/screenshots/atc-bar-window.png" alt="fenêtre de la barre d'outils" width="100%">
 </p>
 
-<p align="center"><em>Les outils : avances, vitesses et profondeurs, les trous de chaque foret sur la carte et les trous percés au total.</em></p>
+<p align="center"><em>La fenêtre de la barre porte-outils : où se trouvent le premier et le dernier outil, combien il y a d'emplacements et la taille des outils ; les emplacements intermédiaires sont à égale distance.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/machine-settings.png" alt="settings" width="100%">
+  <img src="images/screenshots/panes.png" alt="volets réglables" width="100%">
 </p>
 
-<p align="center"><em>Les réglages : chaque modèle Bungard, la table et les unités des fichiers.</em></p>
+<p align="center"><em>Les trois parties de la fenêtre principale avec d'autres largeurs : faire glisser les barres fines qui les séparent donne plus de place à la liste, à la vue en plan ou à la vue de la machine (un double clic rend la valeur d'origine).</em></p>
 
 <p align="center">
-  <img src="images/screenshots/board.png" alt="board" width="100%">
+  <img src="images/screenshots/board-too-big.png" alt="carte plus grande que la table" width="100%">
 </p>
 
-<p align="center"><em>La carte : un matériau de la bibliothèque, son épaisseur, son cuivre et sa taille.</em></p>
+<p align="center"><em>L'avertissement sur la vue en plan quand la carte ne tient pas sur la table de la machine, même tournée de 90 degrés : les tailles des deux et de combien elle dépasse.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/catalogue.png" alt="catalogue of bits" width="100%">
+  <img src="images/screenshots/boards-all-makers.png" alt="liste des cartes de tous les fabricants" width="100%">
 </p>
 
-<p align="center"><em>Le catalogue des forets, filtré par type, avec les avertissements de la broche et du matériau de la carte.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/themes.png" alt="themes" width="100%">
-</p>
-
-<p align="center"><em>Onze thèmes dans la fenêtre des réglages, chacun nommé dans la langue de la fenêtre.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/sounds.png" alt="sounds" width="100%">
-</p>
-
-<p align="center"><em>La liste des sons de la fin du travail : soixante sons des aigus aux graves, la tonalité standard, aucun ou un fichier à soi.</em></p>
+<p align="center"><em>La liste des cartes avec celles de tous les fabricants à la fois : la première entrée du menu des fabricants est Tous les fabricants et la liste est en ordre alphabétique.</em></p>
 
 <p align="center">
   <img src="images/screenshots/panel.png" alt="panel" width="100%">
@@ -160,16 +149,58 @@ Comment les parties de ce dépôt s'articulent : qui l'utilise, ce qu'il contien
 <p align="center"><em>La fenêtre Panélisation : les copies de la carte et les ponts de l'extérieur, choisis avec des listes déroulantes et des compteurs.</em></p>
 
 <p align="center">
+  <img src="images/screenshots/panelized.png" alt="carte en panneau 2 x 2" width="100%">
+</p>
+
+<p align="center"><em>La carte en panneau 2 x 2 sur la table d'une CCD/2 : les quatre copies sont placées sur la carte virtuelle avec l'espace entre elles, dans la vue en plan et en 3D.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/tools.png" alt="tools" width="100%">
+</p>
+
+<p align="center"><em>Les outils : avances, vitesses et profondeurs, les trous de chaque foret sur la carte et les trous percés au total.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/settings.png" alt="réglages généraux" width="100%">
+</p>
+
+<p align="center"><em>Les réglages généraux : thème, langue, unités, vitesse de simulation et l'interrupteur du plein écran (F11 fait la même chose).</em></p>
+
+<p align="center">
+  <img src="images/screenshots/machine-settings.png" alt="settings" width="100%">
+</p>
+
+<p align="center"><em>Les réglages : chaque modèle Bungard, la table et les unités des fichiers.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/themes.png" alt="themes" width="100%">
+</p>
+
+<p align="center"><em>Onze thèmes dans la fenêtre des réglages, chacun nommé dans la langue de la fenêtre.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/neon-theme.png" alt="thème Neon Arcade" width="100%">
+</p>
+
+<p align="center"><em>Le thème Neon Arcade.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/sounds.png" alt="sounds" width="100%">
+</p>
+
+<p align="center"><em>La liste des sons de la fin du travail : soixante sons des aigus aux graves, la tonalité standard, aucun ou un fichier à soi.</em></p>
+
+<p align="center">
   <img src="images/screenshots/calibration.png" alt="calibration" width="100%">
 </p>
 
 <p align="center"><em>L'étalonnage de la table : la carte des hauteurs mesurées sur une grille de points, avec l'écart et l'inclinaison.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/paper-theme.png" alt="light theme" width="100%">
+  <img src="images/screenshots/catalogue.png" alt="catalogue of bits" width="100%">
 </p>
 
-<p align="center"><em>Le thème Papier, un thème clair.</em></p>
+<p align="center"><em>Le catalogue des forets, filtré par type, avec les avertissements de la broche et du matériau de la carte.</em></p>
 
 <p align="center">
   <img src="images/screenshots/fleet.png" alt="machines and stations" width="100%">
@@ -182,11 +213,13 @@ Comment les parties de ce dépôt s'articulent : qui l'utilise, ce qu'il contien
 </p>
 
 <p align="center"><em>Le nœud de la tête de perçage : sa caméra, la vitesse et la température de la broche, la sortie de protection et l'anneau de LED autour de la caméra (éteint et trois niveaux).</em></p>
+
 <p align="center">
   <img src="images/screenshots/quality-check.png" alt="contrôle qualité" width="100%">
 </p>
 
 <p align="center"><em>Le contrôle qualité après le travail : la caméra regarde la carte, chaque trou du travail est marqué (vert bon, rouge mauvais, ambre hors de l'image), les canaux fraisés sont mesurés et le verdict est grand comme un panneau.</em></p>
+
 <p align="center">
   <img src="images/screenshots/quality-tolerances.png" alt="tolérances" width="100%">
 </p>

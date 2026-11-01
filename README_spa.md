@@ -87,6 +87,7 @@ Cómo encajan las partes de este repositorio: quién lo usa, qué contiene y de 
 
 ## 🖼️ Capturas de pantalla
 
+
 <p align="center">
   <img src="images/screenshots/viewer.png" alt="viewer" width="100%">
 </p>
@@ -112,46 +113,34 @@ Cómo encajan las partes de este repositorio: quién lo usa, qué contiene y de 
 <p align="center"><em>Un trabajo en marcha: los agujeros y trayectorias hechos, la posición de la herramienta, Pausa y Stop.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/neon-theme.png" alt="Neon Arcade theme" width="100%">
+  <img src="images/screenshots/atc-bar.png" alt="barra de herramientas de los modelos ATC" width="100%">
 </p>
 
-<p align="center"><em>El tema Neon Arcade con la placa en panel.</em></p>
+<p align="center"><em>La barra portaherramientas de un modelo ATC: los puestos de las herramientas dibujados junto a la mesa en la vista en planta y en 3D, con la herramienta que se toma y el puesto donde se deja.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/tools.png" alt="tools" width="100%">
+  <img src="images/screenshots/atc-bar-window.png" alt="ventana de la barra de herramientas" width="100%">
 </p>
 
-<p align="center"><em>Las herramientas: avances, velocidades y profundidades, los agujeros de cada broca en la placa y los hechos en total.</em></p>
+<p align="center"><em>La ventana de la barra portaherramientas: dónde están la primera y la última herramienta, cuántos puestos hay y el tamaño de las herramientas; los puestos intermedios quedan a igual distancia.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/machine-settings.png" alt="settings" width="100%">
+  <img src="images/screenshots/panes.png" alt="divisores ajustables" width="100%">
 </p>
 
-<p align="center"><em>Los ajustes: cada modelo Bungard, la mesa y las unidades de los ficheros.</em></p>
+<p align="center"><em>Las tres partes de la ventana principal con otros anchos: arrastrar las barras finas que las separan da más sitio a la lista, a la vista en planta o a la vista de la máquina (un doble clic devuelve el valor de origen).</em></p>
 
 <p align="center">
-  <img src="images/screenshots/board.png" alt="board" width="100%">
+  <img src="images/screenshots/board-too-big.png" alt="placa mayor que la mesa" width="100%">
 </p>
 
-<p align="center"><em>La placa: un material de la biblioteca, su grosor, su cobre y su tamaño.</em></p>
+<p align="center"><em>El aviso sobre la vista en planta cuando la placa no cabe en la mesa de la máquina, ni siquiera girada 90 grados: los tamaños de ambas y cuánto se pasa.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/catalogue.png" alt="catalogue of bits" width="100%">
+  <img src="images/screenshots/boards-all-makers.png" alt="lista de placas con todos los fabricantes" width="100%">
 </p>
 
-<p align="center"><em>El catálogo de brocas, filtrado por tipo, con los avisos del husillo y del material de la placa.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/themes.png" alt="themes" width="100%">
-</p>
-
-<p align="center"><em>Once temas en la ventana de ajustes, cada uno con su nombre en el idioma de la ventana.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/sounds.png" alt="sounds" width="100%">
-</p>
-
-<p align="center"><em>La lista de sonidos del final del trabajo: sesenta sonidos de los agudos a los graves, el tono estándar, ninguno o un fichero propio.</em></p>
+<p align="center"><em>La lista de placas con las de todos los fabricantes a la vez: la primera entrada del menú de fabricantes es Todos los fabricantes y la lista está en orden alfabético.</em></p>
 
 <p align="center">
   <img src="images/screenshots/panel.png" alt="panel" width="100%">
@@ -160,16 +149,58 @@ Cómo encajan las partes de este repositorio: quién lo usa, qué contiene y de 
 <p align="center"><em>La ventana de Panelización: las copias de la placa y las muescas del exterior, elegidas con listas desplegables y contadores.</em></p>
 
 <p align="center">
+  <img src="images/screenshots/panelized.png" alt="placa en panel 2 x 2" width="100%">
+</p>
+
+<p align="center"><em>La placa en panel 2 x 2 sobre la mesa de una CCD/2: las cuatro copias se colocan en la placa virtual con el espacio entre ellas, en la vista en planta y en 3D.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/tools.png" alt="tools" width="100%">
+</p>
+
+<p align="center"><em>Las herramientas: avances, velocidades y profundidades, los agujeros de cada broca en la placa y los hechos en total.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/settings.png" alt="ajustes generales" width="100%">
+</p>
+
+<p align="center"><em>Los ajustes generales: tema, idioma, unidades, velocidad de simulación y el interruptor de pantalla completa (F11 hace lo mismo).</em></p>
+
+<p align="center">
+  <img src="images/screenshots/machine-settings.png" alt="settings" width="100%">
+</p>
+
+<p align="center"><em>Los ajustes: cada modelo Bungard, la mesa y las unidades de los ficheros.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/themes.png" alt="themes" width="100%">
+</p>
+
+<p align="center"><em>Once temas en la ventana de ajustes, cada uno con su nombre en el idioma de la ventana.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/neon-theme.png" alt="tema Neon Arcade" width="100%">
+</p>
+
+<p align="center"><em>El tema Neon Arcade.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/sounds.png" alt="sounds" width="100%">
+</p>
+
+<p align="center"><em>La lista de sonidos del final del trabajo: sesenta sonidos de los agudos a los graves, el tono estándar, ninguno o un fichero propio.</em></p>
+
+<p align="center">
   <img src="images/screenshots/calibration.png" alt="calibration" width="100%">
 </p>
 
 <p align="center"><em>La calibración de la mesa: el mapa de alturas medido en una malla de puntos, con la diferencia y la inclinación.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/paper-theme.png" alt="light theme" width="100%">
+  <img src="images/screenshots/catalogue.png" alt="catalogue of bits" width="100%">
 </p>
 
-<p align="center"><em>El tema Papel, uno claro.</em></p>
+<p align="center"><em>El catálogo de brocas, filtrado por tipo, con los avisos del husillo y del material de la placa.</em></p>
 
 <p align="center">
   <img src="images/screenshots/fleet.png" alt="machines and stations" width="100%">
@@ -182,11 +213,13 @@ Cómo encajan las partes de este repositorio: quién lo usa, qué contiene y de 
 </p>
 
 <p align="center"><em>El nodo del cabezal de taladro: su cámara, la velocidad y la temperatura del husillo, la salida de protección y el aro de LEDs alrededor de la cámara (apagado y tres niveles).</em></p>
+
 <p align="center">
   <img src="images/screenshots/quality-check.png" alt="verificación de calidad" width="100%">
 </p>
 
 <p align="center"><em>La verificación de calidad tras el trabajo: la cámara mira la placa, cada agujero del trabajo queda marcado (verde bien, rojo mal, ámbar fuera de la imagen), se miden los canales fresados y el veredicto es grande como un cartel.</em></p>
+
 <p align="center">
   <img src="images/screenshots/quality-tolerances.png" alt="tolerancias" width="100%">
 </p>

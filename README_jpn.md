@@ -87,6 +87,7 @@ EH3D-BUNGARD-GUI は、EH3D ファミリーにおける Bungard マシン用の�
 
 ## 🖼️ スクリーンショット
 
+
 <p align="center">
   <img src="images/screenshots/viewer.png" alt="viewer" width="100%">
 </p>
@@ -112,46 +113,34 @@ EH3D-BUNGARD-GUI は、EH3D ファミリーにおける Bungard マシン用の�
 <p align="center"><em>実行中のジョブ：完了した穴と経路、ツールの位置、一時停止と停止。</em></p>
 
 <p align="center">
-  <img src="images/screenshots/neon-theme.png" alt="Neon Arcade theme" width="100%">
+  <img src="images/screenshots/atc-bar.png" alt="ATC モデルのツールバー" width="100%">
 </p>
 
-<p align="center"><em>基板を面付けした Neon Arcade テーマ。</em></p>
+<p align="center"><em>ATC モデルのツールバー：テーブルの横にツールの位置を平面ビューと 3D で表示し、取るツールと戻す位置を示します。</em></p>
 
 <p align="center">
-  <img src="images/screenshots/tools.png" alt="tools" width="100%">
+  <img src="images/screenshots/atc-bar-window.png" alt="ツールバーのウィンドウ" width="100%">
 </p>
 
-<p align="center"><em>ツール：送り、回転数、深さ、基板上の各ドリルの穴数と累計の穴あけ数。</em></p>
+<p align="center"><em>ツールバーのウィンドウ：最初と最後のツールの位置、位置の数、ツールの大きさを設定します。間の位置は等間隔に配置されます。</em></p>
 
 <p align="center">
-  <img src="images/screenshots/machine-settings.png" alt="settings" width="100%">
+  <img src="images/screenshots/panes.png" alt="幅を調整できるペイン" width="100%">
 </p>
 
-<p align="center"><em>設定：Bungard の各モデル、テーブル、ファイルの単位。</em></p>
+<p align="center"><em>メインウィンドウの 3 つの部分を別の幅にした例：間の細いバーをドラッグすると、リスト、平面ビュー、マシンビューの幅を変えられます（ダブルクリックで初期値に戻ります）。</em></p>
 
 <p align="center">
-  <img src="images/screenshots/board.png" alt="board" width="100%">
+  <img src="images/screenshots/board-too-big.png" alt="テーブルより大きい基板" width="100%">
 </p>
 
-<p align="center"><em>基板：ライブラリの材料、厚さ、銅箔、サイズ。</em></p>
+<p align="center"><em>基板が 90 度回転してもマシンのテーブルに収まらないときに平面ビューに出る警告：両方のサイズと、はみ出す量を表示します。</em></p>
 
 <p align="center">
-  <img src="images/screenshots/catalogue.png" alt="catalogue of bits" width="100%">
+  <img src="images/screenshots/boards-all-makers.png" alt="全メーカーの基板リスト" width="100%">
 </p>
 
-<p align="center"><em>ビットのカタログ。種類で絞り込め、スピンドルや基板材料に関する警告が出ます。</em></p>
-
-<p align="center">
-  <img src="images/screenshots/themes.png" alt="themes" width="100%">
-</p>
-
-<p align="center"><em>設定ウィンドウの 11 のテーマ。名前はウィンドウの言語で表示されます。</em></p>
-
-<p align="center">
-  <img src="images/screenshots/sounds.png" alt="sounds" width="100%">
-</p>
-
-<p align="center"><em>ジョブ終了の音のリスト：高音から低音まで 60 種類、標準の音、なし、自分のファイル。</em></p>
+<p align="center"><em>全メーカーの基板をまとめて表示するリスト：メーカーメニューの最初の項目が「全メーカー」で、リストは名前順に並びます。</em></p>
 
 <p align="center">
   <img src="images/screenshots/panel.png" alt="panel" width="100%">
@@ -160,16 +149,58 @@ EH3D-BUNGARD-GUI は、EH3D ファミリーにおける Bungard マシン用の�
 <p align="center"><em>パネル化ウィンドウ：基板のコピーと外形の切り残しを、ドロップダウンとカウンターで選びます。</em></p>
 
 <p align="center">
+  <img src="images/screenshots/panelized.png" alt="2 x 2 に面付けした基板" width="100%">
+</p>
+
+<p align="center"><em>CCD/2 のテーブル上で 2 x 2 に面付けした基板：4 つのコピーが間隔を空けて仮想基板上に配置され、平面ビューと 3D で確認できます。</em></p>
+
+<p align="center">
+  <img src="images/screenshots/tools.png" alt="tools" width="100%">
+</p>
+
+<p align="center"><em>ツール：送り、回転数、深さ、基板上の各ドリルの穴数と累計の穴あけ数。</em></p>
+
+<p align="center">
+  <img src="images/screenshots/settings.png" alt="一般設定" width="100%">
+</p>
+
+<p align="center"><em>一般設定：テーマ、言語、単位、シミュレーション速度、全画面表示のスイッチ（F11 でも同じ操作ができます）。</em></p>
+
+<p align="center">
+  <img src="images/screenshots/machine-settings.png" alt="settings" width="100%">
+</p>
+
+<p align="center"><em>設定：Bungard の各モデル、テーブル、ファイルの単位。</em></p>
+
+<p align="center">
+  <img src="images/screenshots/themes.png" alt="themes" width="100%">
+</p>
+
+<p align="center"><em>設定ウィンドウの 11 のテーマ。名前はウィンドウの言語で表示されます。</em></p>
+
+<p align="center">
+  <img src="images/screenshots/neon-theme.png" alt="Neon Arcade テーマ" width="100%">
+</p>
+
+<p align="center"><em>Neon Arcade テーマ。</em></p>
+
+<p align="center">
+  <img src="images/screenshots/sounds.png" alt="sounds" width="100%">
+</p>
+
+<p align="center"><em>ジョブ終了の音のリスト：高音から低音まで 60 種類、標準の音、なし、自分のファイル。</em></p>
+
+<p align="center">
   <img src="images/screenshots/calibration.png" alt="calibration" width="100%">
 </p>
 
 <p align="center"><em>テーブル校正：点のグリッドで測定した高さマップと、高低差・傾き。</em></p>
 
 <p align="center">
-  <img src="images/screenshots/paper-theme.png" alt="light theme" width="100%">
+  <img src="images/screenshots/catalogue.png" alt="catalogue of bits" width="100%">
 </p>
 
-<p align="center"><em>ペーパーテーマ（明るいテーマ）。</em></p>
+<p align="center"><em>ビットのカタログ。種類で絞り込め、スピンドルや基板材料に関する警告が出ます。</em></p>
 
 <p align="center">
   <img src="images/screenshots/fleet.png" alt="machines and stations" width="100%">
@@ -182,11 +213,13 @@ EH3D-BUNGARD-GUI は、EH3D ファミリーにおける Bungard マシン用の�
 </p>
 
 <p align="center"><em>ドリルヘッドのノード：カメラ、スピンドルの回転数と温度、保護出力、カメラ周囲の LED リング（オフと 3 段階）。</em></p>
+
 <p align="center">
   <img src="images/screenshots/quality-check.png" alt="品質チェック" width="100%">
 </p>
 
 <p align="center"><em>加工後の品質チェック：カメラが基板を確認し、ジョブの各穴にマークが付き（緑は良好、赤は不良、琥珀色は画像の外）、フライス溝を測定して、看板のような大きさで結果を示します。</em></p>
+
 <p align="center">
   <img src="images/screenshots/quality-tolerances.png" alt="許容差" width="100%">
 </p>

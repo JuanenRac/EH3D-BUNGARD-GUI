@@ -87,6 +87,7 @@ EH3D-BUNGARD-GUI 是 EH3D 家族中 Bungard 机器的现代界面。它按路径
 
 ## 🖼️ 屏幕截图
 
+
 <p align="center">
   <img src="images/screenshots/viewer.png" alt="viewer" width="100%">
 </p>
@@ -112,46 +113,34 @@ EH3D-BUNGARD-GUI 是 EH3D 家族中 Bungard 机器的现代界面。它按路径
 <p align="center"><em>运行中的作业：已完成的孔和路径、刀具位置，以及暂停和停止。</em></p>
 
 <p align="center">
-  <img src="images/screenshots/neon-theme.png" alt="Neon Arcade theme" width="100%">
+  <img src="images/screenshots/atc-bar.png" alt="ATC 型号的刀具架" width="100%">
 </p>
 
-<p align="center"><em>带拼板的 Neon Arcade 主题。</em></p>
+<p align="center"><em>ATC 型号的刀具架：刀位绘制在工作台旁，平面视图和 3D 视图中都有显示，并标出要取的刀具和放回的位置。</em></p>
 
 <p align="center">
-  <img src="images/screenshots/tools.png" alt="tools" width="100%">
+  <img src="images/screenshots/atc-bar-window.png" alt="刀具架窗口" width="100%">
 </p>
 
-<p align="center"><em>刀具：进给、转速和深度，电路板上每个钻头的孔数以及累计钻孔数。</em></p>
+<p align="center"><em>刀具架窗口：第一把和最后一把刀具的位置、刀位数量和刀具尺寸；中间的刀位等距排列。</em></p>
 
 <p align="center">
-  <img src="images/screenshots/machine-settings.png" alt="settings" width="100%">
+  <img src="images/screenshots/panes.png" alt="可调整宽度的分栏" width="100%">
 </p>
 
-<p align="center"><em>设置：每种 Bungard 型号、工作台和文件的单位。</em></p>
+<p align="center"><em>主窗口三个部分的另一种宽度：拖动它们之间的细条，可以给列表、平面视图或机器视图更多空间（双击恢复默认值）。</em></p>
 
 <p align="center">
-  <img src="images/screenshots/board.png" alt="board" width="100%">
+  <img src="images/screenshots/board-too-big.png" alt="电路板大于工作台" width="100%">
 </p>
 
-<p align="center"><em>电路板：库中的材料、厚度、铜箔和尺寸。</em></p>
+<p align="center"><em>电路板即使旋转 90 度也放不下机器工作台时，平面视图上显示的警告：两者的尺寸以及超出多少。</em></p>
 
 <p align="center">
-  <img src="images/screenshots/catalogue.png" alt="catalogue of bits" width="100%">
+  <img src="images/screenshots/boards-all-makers.png" alt="包含所有厂商的电路板列表" width="100%">
 </p>
 
-<p align="center"><em>钻头目录，可按类型筛选，并带有主轴和电路板材料的提示。</em></p>
-
-<p align="center">
-  <img src="images/screenshots/themes.png" alt="themes" width="100%">
-</p>
-
-<p align="center"><em>设置窗口中的十一种主题，每种都以窗口语言命名。</em></p>
-
-<p align="center">
-  <img src="images/screenshots/sounds.png" alt="sounds" width="100%">
-</p>
-
-<p align="center"><em>作业结束声音的列表：六十个声音，从高音到低音，另有标准音调、无声或自己的文件。</em></p>
+<p align="center"><em>同时列出所有厂商电路板的列表：厂商菜单的第一项是“所有厂商”，列表按字母顺序排列。</em></p>
 
 <p align="center">
   <img src="images/screenshots/panel.png" alt="panel" width="100%">
@@ -160,16 +149,58 @@ EH3D-BUNGARD-GUI 是 EH3D 家族中 Bungard 机器的现代界面。它按路径
 <p align="center"><em>拼板窗口：板子的副本和外轮廓的连接点，通过下拉列表和计数器选择。</em></p>
 
 <p align="center">
+  <img src="images/screenshots/panelized.png" alt="2 x 2 拼板" width="100%">
+</p>
+
+<p align="center"><em>在 CCD/2 工作台上按 2 x 2 拼板的电路板：四份副本带着间距摆放在虚拟板上，平面视图和 3D 视图中都可看到。</em></p>
+
+<p align="center">
+  <img src="images/screenshots/tools.png" alt="tools" width="100%">
+</p>
+
+<p align="center"><em>刀具：进给、转速和深度，电路板上每个钻头的孔数以及累计钻孔数。</em></p>
+
+<p align="center">
+  <img src="images/screenshots/settings.png" alt="常规设置" width="100%">
+</p>
+
+<p align="center"><em>常规设置：主题、语言、单位、模拟速度和全屏开关（F11 的作用相同）。</em></p>
+
+<p align="center">
+  <img src="images/screenshots/machine-settings.png" alt="settings" width="100%">
+</p>
+
+<p align="center"><em>设置：每种 Bungard 型号、工作台和文件的单位。</em></p>
+
+<p align="center">
+  <img src="images/screenshots/themes.png" alt="themes" width="100%">
+</p>
+
+<p align="center"><em>设置窗口中的十一种主题，每种都以窗口语言命名。</em></p>
+
+<p align="center">
+  <img src="images/screenshots/neon-theme.png" alt="Neon Arcade 主题" width="100%">
+</p>
+
+<p align="center"><em>Neon Arcade 主题。</em></p>
+
+<p align="center">
+  <img src="images/screenshots/sounds.png" alt="sounds" width="100%">
+</p>
+
+<p align="center"><em>作业结束声音的列表：六十个声音，从高音到低音，另有标准音调、无声或自己的文件。</em></p>
+
+<p align="center">
   <img src="images/screenshots/calibration.png" alt="calibration" width="100%">
 </p>
 
 <p align="center"><em>工作台校准：在点阵上测得的高度图，含高低差和倾斜。</em></p>
 
 <p align="center">
-  <img src="images/screenshots/paper-theme.png" alt="light theme" width="100%">
+  <img src="images/screenshots/catalogue.png" alt="catalogue of bits" width="100%">
 </p>
 
-<p align="center"><em>纸张主题，一种浅色主题。</em></p>
+<p align="center"><em>钻头目录，可按类型筛选，并带有主轴和电路板材料的提示。</em></p>
 
 <p align="center">
   <img src="images/screenshots/fleet.png" alt="machines and stations" width="100%">
@@ -182,11 +213,13 @@ EH3D-BUNGARD-GUI 是 EH3D 家族中 Bungard 机器的现代界面。它按路径
 </p>
 
 <p align="center"><em>钻头节点：摄像头、主轴转速和温度、保护输出，以及摄像头周围的 LED 环形灯（关和三档亮度）。</em></p>
+
 <p align="center">
   <img src="images/screenshots/quality-check.png" alt="质量检查" width="100%">
 </p>
 
 <p align="center"><em>加工后的质量检查：摄像头查看电路板，作业中的每个孔都被标出（绿色正确、红色错误、琥珀色在画面外），测量铣削沟槽，结论大如招牌。</em></p>
+
 <p align="center">
   <img src="images/screenshots/quality-tolerances.png" alt="公差" width="100%">
 </p>

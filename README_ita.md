@@ -87,6 +87,7 @@ Come si incastrano le parti di questo repository: chi lo usa, che cosa contiene 
 
 ## 🖼️ Schermate
 
+
 <p align="center">
   <img src="images/screenshots/viewer.png" alt="viewer" width="100%">
 </p>
@@ -112,46 +113,34 @@ Come si incastrano le parti di questo repository: chi lo usa, che cosa contiene 
 <p align="center"><em>Un lavoro in corso: i fori e i percorsi fatti, la posizione dell'utensile, Pausa e Stop.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/neon-theme.png" alt="Neon Arcade theme" width="100%">
+  <img src="images/screenshots/atc-bar.png" alt="barra utensili dei modelli ATC" width="100%">
 </p>
 
-<p align="center"><em>Il tema Neon Arcade con la scheda in pannello.</em></p>
+<p align="center"><em>La barra portautensili di un modello ATC: i posti degli utensili disegnati accanto al piano nella vista in pianta e in 3D, con l'utensile da prendere e il posto dove lasciarlo.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/tools.png" alt="tools" width="100%">
+  <img src="images/screenshots/atc-bar-window.png" alt="finestra della barra utensili" width="100%">
 </p>
 
-<p align="center"><em>Gli utensili: avanzamenti, velocità e profondità, i fori di ogni punta sulla scheda e quelli eseguiti in totale.</em></p>
+<p align="center"><em>La finestra della barra portautensili: dove si trovano il primo e l'ultimo utensile, quanti posti ci sono e la dimensione degli utensili; i posti intermedi sono a distanza uguale.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/machine-settings.png" alt="settings" width="100%">
+  <img src="images/screenshots/panes.png" alt="pannelli regolabili" width="100%">
 </p>
 
-<p align="center"><em>Le impostazioni: ogni modello Bungard, il piano e le unità dei file.</em></p>
+<p align="center"><em>Le tre parti della finestra principale con altre larghezze: trascinando le barre sottili che le separano si dà più spazio all'elenco, alla vista in pianta o alla vista della macchina (un doppio clic ripristina il valore iniziale).</em></p>
 
 <p align="center">
-  <img src="images/screenshots/board.png" alt="board" width="100%">
+  <img src="images/screenshots/board-too-big.png" alt="scheda più grande del piano" width="100%">
 </p>
 
-<p align="center"><em>La scheda: un materiale della libreria, il suo spessore, il suo rame e le sue dimensioni.</em></p>
+<p align="center"><em>L'avviso sulla vista in pianta quando la scheda non sta sul piano della macchina, nemmeno ruotata di 90 gradi: le dimensioni di entrambi e di quanto sporge.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/catalogue.png" alt="catalogue of bits" width="100%">
+  <img src="images/screenshots/boards-all-makers.png" alt="elenco delle schede di tutti i produttori" width="100%">
 </p>
 
-<p align="center"><em>Il catalogo delle punte, filtrato per tipo, con gli avvisi del mandrino e del materiale della scheda.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/themes.png" alt="themes" width="100%">
-</p>
-
-<p align="center"><em>Undici temi nella finestra delle impostazioni, ognuno con il nome nella lingua della finestra.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/sounds.png" alt="sounds" width="100%">
-</p>
-
-<p align="center"><em>L'elenco dei suoni della fine del lavoro: sessanta suoni dai più acuti ai più gravi, il tono standard, nessuno o un file proprio.</em></p>
+<p align="center"><em>L'elenco delle schede con quelle di tutti i produttori insieme: la prima voce del menu dei produttori è Tutti i produttori e l'elenco è in ordine alfabetico.</em></p>
 
 <p align="center">
   <img src="images/screenshots/panel.png" alt="panel" width="100%">
@@ -160,16 +149,58 @@ Come si incastrano le parti di questo repository: chi lo usa, che cosa contiene 
 <p align="center"><em>La finestra Pannellizzazione: le copie della scheda e i ponticelli dell'esterno, scelti con menu a tendina e contatori.</em></p>
 
 <p align="center">
+  <img src="images/screenshots/panelized.png" alt="scheda in pannello 2 x 2" width="100%">
+</p>
+
+<p align="center"><em>La scheda in pannello 2 x 2 sul piano di una CCD/2: le quattro copie sono disposte sulla scheda virtuale con lo spazio tra loro, nella vista in pianta e in 3D.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/tools.png" alt="tools" width="100%">
+</p>
+
+<p align="center"><em>Gli utensili: avanzamenti, velocità e profondità, i fori di ogni punta sulla scheda e quelli eseguiti in totale.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/settings.png" alt="impostazioni generali" width="100%">
+</p>
+
+<p align="center"><em>Le impostazioni generali: tema, lingua, unità, velocità di simulazione e l'interruttore dello schermo intero (F11 fa lo stesso).</em></p>
+
+<p align="center">
+  <img src="images/screenshots/machine-settings.png" alt="settings" width="100%">
+</p>
+
+<p align="center"><em>Le impostazioni: ogni modello Bungard, il piano e le unità dei file.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/themes.png" alt="themes" width="100%">
+</p>
+
+<p align="center"><em>Undici temi nella finestra delle impostazioni, ognuno con il nome nella lingua della finestra.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/neon-theme.png" alt="tema Neon Arcade" width="100%">
+</p>
+
+<p align="center"><em>Il tema Neon Arcade.</em></p>
+
+<p align="center">
+  <img src="images/screenshots/sounds.png" alt="sounds" width="100%">
+</p>
+
+<p align="center"><em>L'elenco dei suoni della fine del lavoro: sessanta suoni dai più acuti ai più gravi, il tono standard, nessuno o un file proprio.</em></p>
+
+<p align="center">
   <img src="images/screenshots/calibration.png" alt="calibration" width="100%">
 </p>
 
 <p align="center"><em>La calibrazione del tavolo: la mappa delle altezze misurate in una griglia di punti, con la differenza e l'inclinazione.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/paper-theme.png" alt="light theme" width="100%">
+  <img src="images/screenshots/catalogue.png" alt="catalogue of bits" width="100%">
 </p>
 
-<p align="center"><em>Il tema Carta, uno chiaro.</em></p>
+<p align="center"><em>Il catalogo delle punte, filtrato per tipo, con gli avvisi del mandrino e del materiale della scheda.</em></p>
 
 <p align="center">
   <img src="images/screenshots/fleet.png" alt="machines and stations" width="100%">
@@ -182,11 +213,13 @@ Come si incastrano le parti di questo repository: chi lo usa, che cosa contiene 
 </p>
 
 <p align="center"><em>Il nodo della testa di foratura: la sua telecamera, la velocità e la temperatura del mandrino, l'uscita di protezione e l'anello di LED attorno alla telecamera (spento e tre livelli).</em></p>
+
 <p align="center">
   <img src="images/screenshots/quality-check.png" alt="controllo qualità" width="100%">
 </p>
 
 <p align="center"><em>Il controllo qualità dopo il lavoro: la telecamera guarda la scheda, ogni foro del lavoro è segnato (verde giusto, rosso sbagliato, ambra fuori immagine), i canali fresati sono misurati e il verdetto è grande come un cartello.</em></p>
+
 <p align="center">
   <img src="images/screenshots/quality-tolerances.png" alt="tolleranze" width="100%">
 </p>

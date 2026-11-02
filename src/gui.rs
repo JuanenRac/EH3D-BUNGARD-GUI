@@ -3748,8 +3748,10 @@ impl eframe::App for App {
                 }
             }
         }
+        // not while the window is already open: a held key or a second press would build it again and send it back to the folder it starts in
         if ctx.input(|i| i.modifiers.command && i.key_pressed(egui::Key::O))
             && self.screen == Screen::Viewer
+            && self.modal != Some(Modal::Open)
         {
             self.show_modal(Modal::Open);
         }

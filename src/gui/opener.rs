@@ -238,16 +238,13 @@ impl Browser {
         let mut all = Vec::new();
         match &self.dir {
             None => {
-                for l in b'A'..=b'Z' {
-                    let d = format!("{}:\\", l as char);
-                    if Path::new(&d).exists() {
-                        all.push(Entry {
-                            name: d,
-                            kind: EntryKind::Folder,
-                            size: 0,
-                            modified: None,
-                        });
-                    }
+                for l in drive_letters() {
+                    all.push(Entry {
+                        name: format!("{l}:\\"),
+                        kind: EntryKind::Folder,
+                        size: 0,
+                        modified: None,
+                    });
                 }
             }
             Some(d) => {
@@ -255,7 +252,12 @@ impl Browser {
                     for e in rd.flatten() {
                         let name = e.file_name().to_string_lossy().to_string();
                         let meta = e.metadata().ok();
-                        let dir = e.path().is_dir();
+                        // the listing already says what the entry is; only a link has to be followed (a stat of every entry is slow on a network folder)
+                        let dir = match e.file_type() {
+                            Ok(t) if t.is_symlink() => e.path().is_dir(),
+                            Ok(t) => t.is_dir(),
+                            Err(_) => false,
+                        };
                         if name.starts_with('.') && dir {
                             continue;
                         }
@@ -333,17 +335,35 @@ fn places(base: &Path, last: &Path) -> Vec<Place> {
             }
         }
     }
-    for l in b'A'..=b'Z' {
-        let d = format!("{}:\\", l as char);
-        if Path::new(&d).exists() {
-            v.push(Place {
-                label: None,
-                name: format!("{}:", l as char),
-                path: PathBuf::from(d),
-            });
-        }
+    for l in drive_letters() {
+        v.push(Place {
+            label: None,
+            name: format!("{l}:"),
+            path: PathBuf::from(format!("{l}:\\")),
+        });
     }
     v
+}
+
+/// The letters of the drives that exist. On Windows the system gives them all at once; asking each letter in turn waits for every network drive that does not answer.
+fn drive_letters() -> Vec<char> {
+    #[cfg(windows)]
+    {
+        #[link(name = "kernel32")]
+        extern "system" {
+            fn GetLogicalDrives() -> u32;
+        }
+        // SAFETY: the function takes nothing and only returns a bit mask.
+        let mask = unsafe { GetLogicalDrives() };
+        (0..26u32)
+            .filter(|i| mask & (1 << i) != 0)
+            .map(|i| (b'A' + i as u8) as char)
+            .collect()
+    }
+    #[cfg(not(windows))]
+    {
+        Vec::new()
+    }
 }
 
 impl App {
@@ -380,6 +400,7 @@ impl App {
             b.name_text.clear();
             b.picked.clear();
             b.preview = None;
+            b.last_click = None;
             b.refresh();
         }
     }
@@ -401,6 +422,7 @@ impl App {
             if let Some(prev) = b.history.pop() {
                 b.dir = prev;
                 b.name_text.clear();
+                b.last_click = None;
                 b.refresh();
             }
         }
@@ -1228,6 +1250,37 @@ mod tests {
         assert!(picked.contains(&"10_mcu_board.ncd".to_string()));
         assert!(picked.contains(&"10_mcu_board.plt".to_string()));
         assert!(picked.contains(&"11_analog_frontend.ncd".to_string()));
+    }
+
+    #[test]
+    fn the_first_click_after_entering_a_folder_is_never_the_second_of_a_double_click() {
+        let root = std::env::temp_dir().join(format!("eh3d-bg-open-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(root.join("one").join("two")).unwrap();
+        let mut a = app();
+        a.last_dir = root.clone();
+        a.show_modal(Modal::Open);
+        // a double click on the folder goes in; the first row of the new list is a folder too
+        a.browse(0);
+        a.browse(0);
+        assert_eq!(a.browser.as_ref().unwrap().dir, Some(root.join("one")));
+        // the next click, at once, only chooses it
+        a.browse(0);
+        assert_eq!(a.browser.as_ref().unwrap().dir, Some(root.join("one")));
+        assert_eq!(a.browser.as_ref().unwrap().sel, Some(0));
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn the_list_of_drives_comes_from_the_system() {
+        let mut a = app();
+        a.last_dir = testdata();
+        a.show_modal(Modal::Open);
+        a.browser.as_mut().unwrap().dir = None;
+        a.browser.as_mut().unwrap().refresh();
+        assert!(a.browser.as_ref().unwrap().dir.is_none());
+        #[cfg(windows)]
+        assert!(super::drive_letters().contains(&'C'));
     }
 
     #[test]

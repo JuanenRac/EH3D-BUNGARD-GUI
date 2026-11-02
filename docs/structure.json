@@ -215,6 +215,20 @@
             "zh": "两种主轴、它们的限制，以及刀具是否适用",
             "ja": "2 つの主軸・その限界・工具が使えるか"
           }
+        },
+        {
+          "name": "updates.rs  gui/update.rs",
+          "desc": {
+            "en": "the update from GitHub: release, package, checksum, install and undo",
+            "es": "la actualización desde GitHub: versión, paquete, suma de control, instalación y deshacer",
+            "it": "l'aggiornamento da GitHub: versione, pacchetto, checksum, installazione e annullamento",
+            "de": "die Aktualisierung von GitHub: Version, Paket, Prüfsumme, Installation und Rückgängig",
+            "fr": "la mise à jour depuis GitHub : version, paquet, somme de contrôle, installation et annulation",
+            "pt": "a atualização a partir do GitHub: versão, pacote, soma de controlo, instalação e anulação",
+            "zh": "从 GitHub 更新：版本、安装包、校验和、安装与撤销",
+            "ja": "GitHub からの更新：リリース、パッケージ、チェックサム、インストール、元に戻す"
+          },
+          "tree_name": "updates.rs gui/update.rs"
         }
       ]
     },

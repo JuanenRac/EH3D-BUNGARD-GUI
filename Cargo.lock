@@ -677,7 +677,7 @@ dependencies = [
 
 [[package]]
 name = "eh3d-common"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "chrono",
  "semver",
@@ -691,7 +691,7 @@ dependencies = [
 
 [[package]]
 name = "eh3d-drillpro"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "eh3d-archive",
  "eh3d-bungard-formats",
@@ -729,7 +729,7 @@ version = "0.0.1"
 
 [[package]]
 name = "eh3d-routepro"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "eh3d-bungard-formats",
  "eh3d-drillpro",

@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 ## [Unreleased]
 
 - **A summary window before a job moves a real machine:** over the view of the job, the window lists what it does, how long it takes, how far each axis goes (a dry run of the exact plan), the sanity checks of the file (a work that is tiny or far from the corner, bigger than the table, a scale that is not 1) and a plan that would take an axis past its course; the job starts from its OK button and OK / Cancel leave it. The words are the ones of the programs, in the 37 languages. `confirm_start` in the machine file turns it off; with `dry_run = reject` (the default) a plan that leaves the course is refused instead.
+- **The settings of the tool changer are documented** (the five `RACK_` lines of the machine file, with their defaults) together with what is still unknown about the ATC models: the side the chuck comes in from, the grip height, the number of places and whether the original DOS reader accepts those lines. A test keeps the README in line with the keys and defaults of the code.
 
 ## [0.1.9] - Width and depth of the board change places with one touch, round tools in the bar of the ATC models and a failure inside a job that is told
 

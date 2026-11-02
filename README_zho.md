@@ -273,6 +273,8 @@ EH3D-BUNGARD-GUI 是 EH3D 家族中 Bungard 机器的现代界面。它按路径
 
 连接由 EH3D-DRILLPRO 和 EH3D-ROUTEPRO 的**机器文件**决定（`machine.cfg`，含 `connection = demo|rs232|usb|node|server` 以及在真实机器上调好的每个值）：`--connection FILE` 指向它，没有它时作业在模拟器上运行。`--data DIR` 是经典程序的机器和刀具文件所在的文件夹（`DRILLPRO.DCF`、`DRILLPRO.DTD`、`ROUTEPRO.RCF`、`ROUTEPRO.RTD`；`testdata/` 中有示例）。设置窗口可更改工作台的可用宽度和深度，并保存到这些文件。窗口记住的内容（启动器的选择、语言和主题）保存在用户设置文件夹里的一个小文件中，与其他 EH3D 程序放在一起。`--theme forge|neon|glass|windows-classic|system` 和 `--lang en|es|it|de|fr|pt|zh|ja` 选择外观和语言。
 
+**换刀器（ATC 型号）。** 换刀器会在机器文件中刀架位置之后再读取五行，每行是一个键和一个以毫米为单位的值：`RACK_TOOL_LENGTH`（38）、`RACK_RING_TO_TIP`（21）、`RACK_CLEARANCE`（8：夹头在各位置之间移动时高出刀尖多少）、`RACK_APPROACH`（-8：夹头沿 X 从刀架的哪一侧进入，负值表示从工作台一侧，0 表示直接下落到该位置）和 `RACK_REACH_X`（150：刀架可以超出工作台边缘多远）。文件中没有这些行时使用上述值。抓取刀具的高度就是其位置的 Z（在刀具架窗口中设置）。**以上内容均未在真实的 ATC 机器上验证，仍有四点待定：** 夹头必须从哪一侧进入、抓取刀具时的 Z、每个型号的刀架有多少个位置（此处为 15：测试刀具、14 把刀具和断刀检测器），以及原始 DOS 程序读取机器文件时是否接受 `RACK_` 行。在机器给出答案之前，请在文件中自行调整。
+
 ## 🚀 快速开始
 
 ```bash

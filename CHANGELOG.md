@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **A summary window before a job moves a real machine:** over the view of the job, the window lists what it does, how long it takes, how far each axis goes (a dry run of the exact plan), the sanity checks of the file (a work that is tiny or far from the corner, bigger than the table, a scale that is not 1) and a plan that would take an axis past its course; the job starts from its OK button and OK / Cancel leave it. The words are the ones of the programs, in the 37 languages. `confirm_start` in the machine file turns it off; with `dry_run = reject` (the default) a plan that leaves the course is refused instead.
+
 ## [0.1.9] - Width and depth of the board change places with one touch, round tools in the bar of the ATC models and a failure inside a job that is told
 
 - **Width and depth of the board change places with one touch:** a button in the boards window swaps them (the board that does not go into the machine often does turned), and an icon in the 2D view turns the board a quarter on its own, the design staying where it is; a board that stayed where it was keeps its middle. The text is in the 37 languages.

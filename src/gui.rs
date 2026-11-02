@@ -90,6 +90,8 @@ enum Act {
     Stop,
     Back,
     Answer(bool),
+    /// The answer to the summary of the job: start it, or leave it.
+    Summary(bool),
     /// A file of the ZIP archive of the job (by its place among the drilling and routing files).
     Entry(usize),
     Show(Modal),
@@ -403,6 +405,8 @@ pub struct App {
     off_tools: Vec<(Program, u8)>,
     /// The programs that wait for the one that runs.
     job_queue: Vec<Program>,
+    /// The summary of a job that waits for the person's answer before a machine that moves is started: the program, the holes already done and the lines.
+    summary_ask: Option<(Program, usize, Vec<String>)>,
     /// The tool changer (the ATC models): the loads of the rack still to come (the tools of each, by program), the one being shown, the pieces of the
     /// load still to run, the piece that runs and the holes to skip in the first one.
     rack_loads: Vec<Vec<(Program, Vec<u8>)>>,
@@ -600,6 +604,7 @@ impl App {
             job_route: true,
             off_tools: Vec::new(),
             job_queue: Vec::new(),
+            summary_ask: None,
             rack_loads: Vec::new(),
             rack_show: Vec::new(),
             rack_pieces: Vec::new(),
@@ -1114,6 +1119,11 @@ impl App {
 
     /// Starts one program of the job (the rest wait in the queue).
     fn begin_program(&mut self, program: Program, skip: usize) {
+        self.begin_program_with(program, skip, false);
+    }
+
+    /// The same; with `started` the engine already started the job (the person accepted its summary) and only the rest is done.
+    fn begin_program_with(&mut self, program: Program, skip: usize, started: bool) {
         let ask_operator = self.settings.ask_operator;
         let levelled = self.level_for_jobs();
         let skip_tools = self.tools_off(program);
@@ -1136,23 +1146,31 @@ impl App {
         {
             let p = program;
             let side = self.side_mut(p);
-            // nothing outside the table of the machine is sent to it: those vectors are left out and counted
-            let area = side.table();
-            side.engine.set_job_options(JobOptions {
-                ask_operator,
-                panel,
-                skip,
-                skip_tools,
-                table: levelled,
-                clip_mm: Some((area.width_mm, area.depth_mm)),
-                ..Default::default()
-            });
-            side.engine.start();
+            if !started {
+                // nothing outside the table of the machine is sent to it: those vectors are left out and counted
+                let area = side.table();
+                side.engine.set_job_options(JobOptions {
+                    ask_operator,
+                    panel,
+                    skip,
+                    skip_tools,
+                    table: levelled,
+                    clip_mm: Some((area.width_mm, area.depth_mm)),
+                    ..Default::default()
+                });
+                side.engine.start();
+            }
             // the engine refuses a job that would run on made-up data (a tool missing from the table, a gap in the rack, a height map through the server): the person is told and nothing runs
             if let Some(why) = side.engine.error() {
                 let why = why.to_string();
                 self.job_queue.clear();
                 self.message = Some(why);
+                return;
+            }
+            // a machine that moves: the engine shows the summary of the job (what it does, how long, how far the axes go, what looks wrong) and waits
+            let pending = side.engine.pending_summary().map(|l| l.to_vec());
+            if let Some(lines) = pending {
+                self.summary_ask = Some((program, skip, lines));
                 return;
             }
             // what the person should know and does not stop the job (tools that run with the cautious values)
@@ -1593,6 +1611,17 @@ impl App {
             Act::Back => {
                 self.stop_job();
                 self.screen = Screen::Launcher;
+            }
+            Act::Summary(start) => {
+                if let Some((p, skip, _)) = self.summary_ask.take() {
+                    if start {
+                        self.side_mut(p).engine.accept_summary();
+                        self.begin_program_with(p, skip, true);
+                    } else {
+                        self.side_mut(p).engine.decline_summary();
+                        self.job_queue.clear();
+                    }
+                }
             }
             Act::Answer(ok) => {
                 if let Some(p) = self.running {
@@ -3217,6 +3246,56 @@ impl App {
                 );
             }
         }
+        self.paint_summary(cv);
+    }
+
+    /// The summary of the job over everything else, with its two buttons.
+    fn paint_summary(&self, cv: &mut Cv) {
+        let Some((_, _, lines)) = &self.summary_ask else {
+            return;
+        };
+        let t = cv.t.clone();
+        let h = 190.0 + 34.0 * lines.len() as f32;
+        let y = ((DESIGN_H - h) / 2.0).max(20.0);
+        cv.p.rect_filled(
+            Rect::from_min_size(Pos2::new(0.0, 0.0), Vec2::new(10_000.0, 10_000.0)),
+            0.0,
+            alpha(Color32::BLACK, 150),
+        );
+        cv.card(250.0, y, 1100.0, h, true, None);
+        for (i, l) in lines.iter().enumerate() {
+            let (size, color) = if i == 0 {
+                (30.0, t.text)
+            } else {
+                (22.0, t.dim)
+            };
+            cv.text(
+                290.0,
+                y + 24.0 + 34.0 * i as f32,
+                Align2::LEFT_TOP,
+                l,
+                size,
+                col(color),
+            );
+        }
+        cv.button(
+            560.0,
+            y + h - 100.0,
+            220.0,
+            70.0,
+            self.tr(Text::Ok),
+            col(t.ok),
+            Act::Summary(true),
+        );
+        cv.button(
+            820.0,
+            y + h - 100.0,
+            220.0,
+            70.0,
+            self.tr(Text::Abort),
+            col(t.danger),
+            Act::Summary(false),
+        );
     }
 
     fn running_view(&self) -> Option<eh3d_drillpro::classic::engine::JobView> {

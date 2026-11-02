@@ -3,6 +3,7 @@
 All notable changes to this project are documented here.
 
 ## [Unreleased]
+- **The summary before a start is the shared one (`eh3d-summary` in EH3D-COMMON):** the interface shows what the drilling and routing programs show, from the same crate; nothing changes on the screen.
 
 - **The button that swaps the width and the depth of the board is under the two fields,** not beside them, in the window of the boards; the warning that the board does not fit the table moves down with it.
 - **A summary window before a job moves a real machine:** over the view of the job, the window lists what it does, how long it takes, how far each axis goes (a dry run of the exact plan), the sanity checks of the file (a work that is tiny or far from the corner, bigger than the table, a scale that is not 1) and a plan that would take an axis past its course; the job starts from its OK button and OK / Cancel leave it. The words are the ones of the programs, in the 37 languages. `confirm_start` in the machine file turns it off; with `dry_run = reject` (the default) a plan that leaves the course is refused instead.

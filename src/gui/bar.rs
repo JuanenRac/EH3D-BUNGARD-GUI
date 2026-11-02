@@ -122,7 +122,7 @@ impl App {
     }
 
     /// Where the bar starts from for this machine: the model's own first and last tool, with the depth inside the travel of the file.
-    fn bar_default(&self) -> RackEnds {
+    pub(crate) fn bar_default(&self) -> RackEnds {
         let (mut a, mut b, n) = self.bar_profile().default_bar();
         if let Some(s) = self.drill.engine.settings() {
             let z = a.2.min(s.z_max_depth_mm);

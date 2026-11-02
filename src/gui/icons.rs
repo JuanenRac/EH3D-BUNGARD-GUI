@@ -355,8 +355,180 @@ impl Cv<'_> {
                     Stroke::NONE,
                 );
             }
+            Icon::Folder => {
+                self.polyline(
+                    &[
+                        (cx - h * 0.95, cy + h * 0.7),
+                        (cx - h * 0.95, cy - h * 0.7),
+                        (cx - h * 0.3, cy - h * 0.7),
+                        (cx, cy - h * 0.4),
+                        (cx + h * 0.95, cy - h * 0.4),
+                        (cx + h * 0.95, cy + h * 0.7),
+                        (cx - h * 0.95, cy + h * 0.7),
+                    ],
+                    2.4,
+                    c,
+                    false,
+                );
+                self.line(
+                    (cx - h * 0.95, cy - h * 0.05),
+                    (cx + h * 0.95, cy - h * 0.05),
+                    2.0,
+                    c,
+                );
+            }
+            Icon::BoardWin => {
+                self.polyline(
+                    &[
+                        (cx - h * 0.95, cy - h * 0.65),
+                        (cx + h * 0.95, cy - h * 0.65),
+                        (cx + h * 0.95, cy + h * 0.65),
+                        (cx - h * 0.95, cy + h * 0.65),
+                        (cx - h * 0.95, cy - h * 0.65),
+                    ],
+                    2.4,
+                    c,
+                    false,
+                );
+                for (sx, sy) in [(-1.0f32, -1.0f32), (1.0, -1.0), (-1.0, 1.0), (1.0, 1.0)] {
+                    self.p.circle_filled(
+                        self.pt(cx + sx * h * 0.6, cy + sy * h * 0.33),
+                        1.7 * self.u,
+                        c,
+                    );
+                }
+            }
+            Icon::DrillWin => {
+                // the shank, the flutes that wind round the bit and its point
+                self.line((cx, cy - h * 0.95), (cx, cy - h * 0.4), 3.4, c);
+                self.polyline(
+                    &[
+                        (cx - h * 0.38, cy - h * 0.3),
+                        (cx + h * 0.38, cy - h * 0.05),
+                        (cx - h * 0.38, cy + h * 0.2),
+                        (cx + h * 0.38, cy + h * 0.45),
+                    ],
+                    2.2,
+                    c,
+                    false,
+                );
+                self.poly(
+                    &[
+                        (cx - h * 0.38, cy + h * 0.42),
+                        (cx + h * 0.38, cy + h * 0.42),
+                        (cx, cy + h * 1.0),
+                    ],
+                    c,
+                    Stroke::NONE,
+                );
+            }
+            Icon::GridWin => {
+                for (sx, sy) in [(-1.0f32, -1.0f32), (1.0, -1.0), (-1.0, 1.0), (1.0, 1.0)] {
+                    let (x0, y0) = (cx + sx * h * 0.5, cy + sy * h * 0.5);
+                    self.polyline(
+                        &[
+                            (x0 - h * 0.38, y0 - h * 0.38),
+                            (x0 + h * 0.38, y0 - h * 0.38),
+                            (x0 + h * 0.38, y0 + h * 0.38),
+                            (x0 - h * 0.38, y0 + h * 0.38),
+                            (x0 - h * 0.38, y0 - h * 0.38),
+                        ],
+                        2.2,
+                        c,
+                        false,
+                    );
+                }
+            }
+            Icon::Sliders => {
+                for (i, k) in [0.3f32, 0.75, 0.45].into_iter().enumerate() {
+                    let y = cy + (i as f32 - 1.0) * h * 0.65;
+                    self.line((cx - h * 0.95, y), (cx + h * 0.95, y), 2.0, c);
+                    self.p.circle_filled(
+                        self.pt(cx + (k * 2.0 - 1.0) * h * 0.6, y),
+                        3.2 * self.u,
+                        c,
+                    );
+                }
+            }
+            Icon::Plug => {
+                self.poly(
+                    &[
+                        (cx - h * 0.6, cy - h * 0.15),
+                        (cx + h * 0.6, cy - h * 0.15),
+                        (cx + h * 0.6, cy + h * 0.5),
+                        (cx - h * 0.6, cy + h * 0.5),
+                    ],
+                    c,
+                    Stroke::NONE,
+                );
+                for sx in [-1.0f32, 1.0] {
+                    self.line(
+                        (cx + sx * h * 0.3, cy - h * 0.2),
+                        (cx + sx * h * 0.3, cy - h * 0.9),
+                        2.6,
+                        c,
+                    );
+                }
+                self.line((cx, cy + h * 0.5), (cx, cy + h * 0.95), 2.6, c);
+            }
+            Icon::Nodes => {
+                let pts = [(0.0f32, -0.7f32), (-0.85, 0.6), (0.85, 0.6)];
+                for (px, py) in pts {
+                    self.line((cx, cy), (cx + px * h, cy + py * h), 1.8, c);
+                    self.p
+                        .circle_filled(self.pt(cx + px * h, cy + py * h), 3.4 * self.u, c);
+                }
+                self.p
+                    .circle_stroke(self.pt(cx, cy), 4.2 * self.u, Stroke::new(2.0 * self.u, c));
+            }
+            Icon::Info => {
+                let ring: Vec<(f32, f32)> = (0..=20)
+                    .map(|i| {
+                        let a = i as f32 * std::f32::consts::TAU / 20.0;
+                        (cx + h * 0.95 * a.cos(), cy + h * 0.95 * a.sin())
+                    })
+                    .collect();
+                self.polyline(&ring, 2.2, c, false);
+                self.p
+                    .circle_filled(self.pt(cx, cy - h * 0.45), 1.9 * self.u, c);
+                self.line((cx, cy - h * 0.1), (cx, cy + h * 0.55), 2.6, c);
+            }
             Icon::Play | Icon::Pause | Icon::Stop | Icon::Alert => {}
         }
+    }
+
+    /// A medium button of the top bar: its picture at the left and its name beside it, in the room that is left (a longer word, in another language, is drawn smaller).
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn top_button(
+        &mut self,
+        x: f32,
+        y: f32,
+        w: f32,
+        h: f32,
+        icon: Icon,
+        label: &str,
+        on: bool,
+        act: Act,
+    ) {
+        self.chip(x, y, w, h, "", on, act);
+        let rect = self.rect(x, y, w, h);
+        let (_, down) = self.touch(rect);
+        let ink = if on {
+            col(self.t.background.0)
+        } else {
+            col(self.t.text)
+        };
+        let dy = if down { 1.8 } else { 0.0 };
+        self.draw_icon(x + 17.0, y + h / 2.0 + dy, 20.0, icon, ink);
+        self.text_fit(
+            x + 32.0,
+            y + h / 2.0 + 5.0 + dy,
+            Align2::LEFT_BOTTOM,
+            label,
+            14.0,
+            ink,
+            w - 38.0,
+        );
     }
 
     /// A small button with a picture and, when the pointer stays over it, a note with its name.

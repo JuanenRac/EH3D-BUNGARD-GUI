@@ -4,6 +4,7 @@
 
 use super::*;
 use crate::machines::ToolChange;
+use eh3d_bungard_formats::config::{rack_line, AtcSlot};
 
 impl App {
     /// Does the machine of the settings change the tools by itself?
@@ -11,6 +12,67 @@ impl App {
         crate::machines::models()
             .get(self.model())
             .is_some_and(|m| m.change == ToolChange::Automatic)
+    }
+
+    /// The places of the bar a program of the job is planned with when its own machine file does not carry them: the routing takes those of the drilling
+    /// file (the bar is one, the two programs share it), and a bar with no places anywhere is planned with the ones it is drawn in, but only on a
+    /// simulated machine (on a real one a bar nobody has measured is not driven to: the operator changes the tools). `None`: the program is planned
+    /// with what its file has.
+    pub(crate) fn bar_for_job(&self, p: Program) -> Option<Vec<AtcSlot>> {
+        if !self.has_changer() {
+            return None;
+        }
+        let drill_atc = self
+            .drill
+            .engine
+            .settings()
+            .map(|s| s.atc.clone())
+            .unwrap_or_default();
+        let (own, real) = match p {
+            Program::Drill => (&drill_atc, self.drill.engine.connection().is_real()),
+            Program::Route => (
+                &self
+                    .route
+                    .engine
+                    .settings()
+                    .map(|s| s.atc.clone())
+                    .unwrap_or_default(),
+                self.route.engine.connection().is_real(),
+            ),
+        };
+        if !own.is_empty() {
+            return None;
+        }
+        if !drill_atc.is_empty() {
+            return Some(drill_atc);
+        }
+        if real {
+            return None;
+        }
+        let (a, b, n) = self.bar_default();
+        Some(rack_line(a, b, n))
+    }
+
+    /// Puts the places of the bar into the file of a program for the start of a job (and the automatic change on), and gives back what was there, to
+    /// be put back by [`App::restore_bar`] once the job is planned: the machine file keeps only what the person set.
+    pub(crate) fn lend_bar(&mut self, p: Program, line: &[AtcSlot]) -> (Vec<AtcSlot>, bool) {
+        let side = self.side_mut(p);
+        let Some(st) = side.engine.settings_mut() else {
+            return (Vec::new(), false);
+        };
+        let before = (
+            std::mem::replace(&mut st.atc, line.to_vec()),
+            st.auto_change,
+        );
+        st.auto_change = true;
+        before
+    }
+
+    pub(crate) fn restore_bar(&mut self, p: Program, before: (Vec<AtcSlot>, bool)) {
+        if let Some(st) = self.side_mut(p).engine.settings_mut() {
+            st.atc = before.0;
+            st.auto_change = before.1;
+        }
     }
 
     /// How many tools the rack holds at once.
@@ -348,5 +410,111 @@ mod tests {
         // the real rack holds every tool in one load
         let plan = a.rack_plan(&[Program::Drill, Program::Route]);
         assert_eq!(plan.len(), 1);
+    }
+
+    /// Plays a whole job and says whether the operator was ever asked for a tool and how far along X the head went.
+    fn play_whole_job(a: &mut App) -> (bool, f64) {
+        a.auto_ok = true;
+        a.fixed_dt = Some(2.0);
+        a.act(Act::Start);
+        if a.modal == Some(Modal::Rack) {
+            a.act(Act::RackGo);
+        }
+        let (mut asked, mut max_x) = (false, 0.0f64);
+        for _ in 0..200_000 {
+            for p in [Program::Drill, Program::Route] {
+                let side = match p {
+                    Program::Drill => &a.drill,
+                    Program::Route => &a.route,
+                };
+                if matches!(
+                    side.engine.question(),
+                    Some(eh3d_drillpro::classic::engine::Question::ToolChange(_))
+                ) {
+                    asked = true;
+                }
+            }
+            if let Some(p) = a.running {
+                let side = match p {
+                    Program::Drill => &a.drill,
+                    Program::Route => &a.route,
+                };
+                if let Some(h) = side.engine.head_mm() {
+                    max_x = max_x.max(h.0);
+                }
+            }
+            a.tick();
+            if a.modal == Some(Modal::Rack) {
+                a.act(Act::RackGo);
+            }
+            if a.running.is_none() && a.modal.is_none() && a.rack_loads.is_empty() {
+                break;
+            }
+        }
+        (asked, max_x)
+    }
+
+    #[test]
+    fn with_the_changer_the_operator_is_never_asked_for_a_tool_and_the_head_goes_to_the_bar() {
+        for moved in [false, true] {
+            let mut a = app();
+            a.apply_model(crate::machines::Model::from_name("CCD/2 ATC").unwrap());
+            if moved {
+                a.shift_board(60.0, 40.0);
+                // the job drills where the board was moved to, as the views draw it (and not where the file was when it was opened)
+                a.auto_ok = true;
+                a.act(Act::Start);
+                a.act(Act::RackGo);
+                let mut job = a.drill.engine.hole_order();
+                let mut seen: Vec<(f64, f64)> = a
+                    .drill
+                    .scene
+                    .holes
+                    .iter()
+                    .map(|h| (h.x_mm, h.y_mm))
+                    .collect();
+                let key =
+                    |p: &(f64, f64)| ((p.0 * 100.0).round() as i64, (p.1 * 100.0).round() as i64);
+                job.sort_by_key(key);
+                seen.sort_by_key(key);
+                assert_eq!(job.len(), seen.len());
+                for (j, s) in job.iter().zip(&seen) {
+                    assert!(
+                        (j.0 - s.0).abs() < 0.011 && (j.1 - s.1).abs() < 0.011,
+                        "{j:?} {s:?}"
+                    );
+                }
+                a.stop_job();
+            }
+            let (asked, max_x) = play_whole_job(&mut a);
+            assert!(
+                !asked,
+                "the operator was asked to change a tool (moved: {moved})"
+            );
+            assert!(
+                max_x > a.table.width_mm,
+                "the head never went to the bar: {max_x} (moved: {moved})"
+            );
+            assert!(a.drill.scene.holes.iter().all(|h| h.done), "moved: {moved}");
+        }
+    }
+
+    #[test]
+    fn by_hand_the_operator_is_asked_for_each_tool() {
+        let mut a = app();
+        a.apply_model(crate::machines::Model::from_name("CCD MTC").unwrap());
+        let (asked, max_x) = play_whole_job(&mut a);
+        assert!(asked);
+        assert!(max_x <= a.table.width_mm);
+    }
+
+    #[test]
+    fn the_places_proposed_for_a_bar_without_places_are_not_kept_in_the_machine_file() {
+        let mut a = app();
+        a.apply_model(crate::machines::Model::from_name("CCD/2 ATC").unwrap());
+        assert!(a.bar_for_job(Program::Drill).is_some());
+        assert!(a.bar_for_job(Program::Route).is_some());
+        let _ = play_whole_job(&mut a);
+        assert!(a.drill.engine.settings().unwrap().atc.is_empty());
     }
 }

@@ -3,6 +3,14 @@
 All notable changes to this project are documented here.
 
 ## [Unreleased]
+- **On the ATC models the operator is never asked to change a tool:** the head goes to the place of the tool in the bar, takes it (leaving the one it held in its own place), comes back to the board and works with it, in drilling and in routing (a routing job used to ask for each cutter); the manual models still ask.
+- **A machine file with no places for the bar is planned with the places the bar is drawn in** when the machine is simulated, so the ATC models run in the demo without a machine file that has the `RACK_` lines; on a real connection a bar nobody has measured is not driven to, and the tools are asked for.
+- **The routing of an ATC model takes the bar of the drilling file,** since the bar is one for both programs.
+- **The 3D view shows the head going to the bar and back:** the head follows the steps of the plan (the reference runs, the trips to the bar, the exchanges, the moves from hole to hole and the plunges) instead of jumping from hole to hole, and the tip of the tool goes down and up with Z.
+- **The spindle of the 3D view is the original one, drawn at its real size** (174 mm long, a 33 mm chrome body, a 20 mm nose with a 27 mm collar, the cable connector at an angle) as a solid of facets with light and shade, with the drill or the cutter of the job in its collet, instead of boxes.
+- **The buttons of the top bar are grouped and have a picture and a word:** the file; the job (board, tools, copies); the machine (settings, connection, nodes); and the program, with a line between the groups, medium size, the word fitted in every language.
+- **The Open window no longer stalls on the drives and the folders,** Ctrl+O does not rebuild the window and go back to the first folder, and the click that enters a folder does not count as the first of a double click.
+- **The settings of the tool changer bar change in the real program even when the folder has no machine file** (the program starts from the one that comes with it, in EH3D-DRILLPRO).
 - **The summary before a start is the shared one (`eh3d-summary` in EH3D-COMMON):** the interface shows what the drilling and routing programs show, from the same crate; nothing changes on the screen.
 
 - **The button that swaps the width and the depth of the board is under the two fields,** not beside them, in the window of the boards; the warning that the board does not fit the table moves down with it.

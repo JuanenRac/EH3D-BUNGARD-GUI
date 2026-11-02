@@ -12,14 +12,14 @@
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
-  <img src="https://img.shields.io/badge/Tests-198-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-213-0f6cbd.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.1.9-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
 ---
 
-**Honesty check - what actually runs today:** a Rust program with a window and 198 tests that run on a computer. The launcher offers the modern interface or the classic drilling and routing programs for a machine with manual (MTC) or automatic (ATC) tool change. The viewer opens drilling files, HP-GL plot files and ZIP archives of jobs (from a folder browser, by drag and drop or from the command line), draws the plan view with every hole by drill size and the routing paths over it, shows the machine in 3D with the table of the size chosen in the configuration, panelizes the board and follows the job as it runs. The job runs on the **simulator** of the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO; the same machine file they read decides how a real machine is reached (the computer's RS-232, a USB-RS232 adapter, or the EH3D-NODE-BUNGARD directly or through EH3D-SERVER), and **none of those has been tried from this window**. The windows of the connection, the settings and the tools change the values they offer, the whole machine and tool files cannot be edited yet, and the 3D view does not show the height of the tool paths.
+**Honesty check - what actually runs today:** a Rust program with a window and 213 tests that run on a computer. The launcher offers the modern interface or the classic drilling and routing programs for a machine with manual (MTC) or automatic (ATC) tool change. The viewer opens drilling files, HP-GL plot files and ZIP archives of jobs (from a folder browser, by drag and drop or from the command line), draws the plan view with every hole by drill size and the routing paths over it, shows the machine in 3D with the table of the size chosen in the configuration, panelizes the board and follows the job as it runs. The job runs on the **simulator** of the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO; the same machine file they read decides how a real machine is reached (the computer's RS-232, a USB-RS232 adapter, or the EH3D-NODE-BUNGARD directly or through EH3D-SERVER), and **none of those has been tried from this window**. The windows of the connection, the settings and the tools change the values they offer, the whole machine and tool files cannot be edited yet, and the 3D view does not show the height of the tool paths.
 
 ---
 
@@ -31,7 +31,7 @@
 |---|---|
 | Version | `0.1.9` |
 | Maturity | Scaffolding |
-| Tests | 198 |
+| Tests | 213 |
 | Stack | Rust |
 | On real hardware | No. It has run on the simulator and on a computer only; no machine has been driven from this window |
 
@@ -50,7 +50,7 @@ Each line is one part of this repository and the light says how far it is today.
 | Files and panelization | 🟡 | Drilling files, HP-GL files and ZIP archives are opened from a browser, by drag and drop or from the command line; the board is repeated in three modes. Tried with the small sample files of this repository. |
 | Settings | 🟠 | The usable width and depth of the table are changed and saved to the machine files; the rest of the machine and tool files is still edited with the classic programs. |
 | Machine control | 🔴 | The job goes through the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO, so every connection they have is there in principle; it has run on the simulator only. The Connection window chooses the link (the computer's RS-232, a USB-RS232 adapter, the EH3D node or the EH3D server), tests it and saves it to the machine file, and Pause holds the job between two moves. |
-| Tests | 🟡 | 198 tests pass on a computer (`cargo test --features gui`): the launcher, the settings, the reading of the files into the scene, the machine profiles, the panel and the command line. None of them touches a machine. |
+| Tests | 🟡 | 213 tests pass on a computer (`cargo test --features gui`): the launcher, the settings, the reading of the files into the scene, the machine profiles, the panel and the command line. None of them touches a machine. |
 | Ready-made packages | 🟠 | A workflow builds the program for Windows (64 and 32 bits), Linux and macOS with the sample files; no release has been published yet. |
 
 ## 🎯 Overview
@@ -261,6 +261,8 @@ How the parts of this repository fit together: who uses it, what it holds and wh
 * **Launcher, panels and layers in relief:** the cards of the launcher and the panels have a gradient, a shadow and a glow under the pointer, the list of tools of the job and the check boxes of the layers answer to the pointer too, and the "<" that goes back to the launcher is now a button with its note.
 * **The tool changer of the ATC models:** before a job starts, a window shows the slots of the rack (slot 0 is the test tool, in the spindle, and stays free) and what goes in each, in the order the job uses the tools; a job with more tools than the rack holds is done in loads: the tools that fit, a stop to load the rack again, and the rest. The tools of drilling and routing share a load while they fit.
 * **The tool bar of the ATC models:** the bar at the end of the machine where the tools wait is drawn in the plan view and in the 3D view: its places in a line with their numbers, the tools in them (the colour of their size and their number), the tool in the head, the one to take next and the free place where the used one is left. A button in the Settings window opens a window where the exact position (X, Y, Z) of the first and the last tool and the number of places are set; the places between them are spaced evenly and are saved in the machine file with the other places of the changer, next to the lengths of the tools (38 mm, 21 mm from the ring to the tip), the height the chuck travels at over the tools and the side it comes in from. **None of this has been tried on a real machine.**
+* **The tools are changed by the machine, and the simulation shows it:** on the ATC models the operator is never asked for a tool, in drilling or in routing: the head goes to the place of the tool in the bar, takes it (leaving the one it held in its own place), comes back to the board and works. The 3D view follows the steps of the plan, so the trips to the bar, the exchanges and the plunges are seen, and its spindle is the original one at its real size (174 mm long, a 33 mm round body, a 20 mm nose with a 27 mm collar) with the tool of the job in its collet. In the simulation a machine file with no places for the bar is planned with the places the bar is drawn in; on a real connection the tools are asked for until the places are set.
+* **The top bar** keeps its medium buttons in groups, each with a picture and a word: the file; the board, the tools and the copies; the settings, the connection and the nodes; and the program.
 * **Bungard catalogue in the board library:** the four Bungard materials carry the data of the 2024/25 catalogue (thicknesses 0.5 to 2.5 mm, copper 18, 35 and 70 um and 105 um at 1.5 mm, the standard cuttings and the panels of 510 x 570 and 510 x 1150 mm; FR2, FR3 and CEM-1 panels). The arrows of the catalogue of the spindle, of the quality check and of the materials, and the boxes of the numbers, have icons and relief too.
 
 ## 🔌 Interfaces
@@ -289,7 +291,7 @@ Run it with `run.bat` (Windows) or `./run.sh` (Linux and macOS); both build the 
 
 ## 🧪 Testing
 
-The suite has 198 tests (`cargo test --features gui`). They check the launcher and what it remembers, the settings, how a drilling or an HP-GL file becomes the scene, the machine profiles, the panel and the command line. The engines it uses (protocol, motion, safety gate) are tested in EH3D-DRILLPRO and EH3D-ROUTEPRO. The CI also runs `cargo fmt --check` and `cargo clippy` with warnings as errors, and `python -I tools/ci_validate.py` checks the manifest, the versions, the changelog and the eight READMEs.
+The suite has 213 tests (`cargo test --features gui`). They check the launcher and what it remembers, the settings, how a drilling or an HP-GL file becomes the scene, the machine profiles, the panel and the command line. The engines it uses (protocol, motion, safety gate) are tested in EH3D-DRILLPRO and EH3D-ROUTEPRO. The CI also runs `cargo fmt --check` and `cargo clippy` with warnings as errors, and `python -I tools/ci_validate.py` checks the manifest, the versions, the changelog and the eight READMEs.
 
 ## 🏗️ Build & Release
 

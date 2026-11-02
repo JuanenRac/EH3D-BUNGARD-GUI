@@ -365,6 +365,15 @@ pub(crate) enum Icon {
     Redo,
     Next,
     Down,
+    /// The buttons of the top bar: a folder, the board, a drill, a grid of copies, sliders, a plug, a net of nodes and an information sign.
+    Folder,
+    BoardWin,
+    DrillWin,
+    GridWin,
+    Sliders,
+    Plug,
+    Nodes,
+    Info,
 }
 
 impl Cv<'_> {
@@ -539,6 +548,52 @@ mod tests {
         });
         out.textures_delta.clear();
         CLIPPED.with(|c| std::mem::take(&mut *c.borrow_mut()))
+    }
+
+    #[test]
+    fn the_buttons_of_the_top_bar_come_in_groups_apart_and_clear_of_the_theme_and_language() {
+        let ctx = egui::Context::default();
+        install_fonts(&ctx);
+        let mut a = app();
+        a.animate = false;
+        a.screen = Screen::Viewer;
+        clipped_on(&mut a, &ctx);
+        clipped_on(&mut a, &ctx);
+        let mut bar: Vec<(f32, f32, extra::Modal)> = a
+            .hits
+            .iter()
+            .filter(|(r, _)| r.min.y < 64.0)
+            .filter_map(|(r, act)| match act {
+                Act::Show(m) => Some((r.min.x, r.max.x, *m)),
+                _ => None,
+            })
+            .collect();
+        bar.sort_by(|x, y| x.0.total_cmp(&y.0));
+        let order: Vec<extra::Modal> = bar.iter().map(|b| b.2).collect();
+        use extra::Modal::*;
+        assert_eq!(
+            order,
+            [Open, Board, Tools, Panel, Settings, Connection, Fleet, About]
+        );
+        for w in bar.windows(2) {
+            assert!(w[1].0 - w[0].1 >= 3.0, "{:?} touches {:?}", w[0], w[1]);
+        }
+        // the theme and the language are at the right: nothing of the bar goes over them
+        assert!(bar.last().unwrap().1 < DESIGN_W - 230.0, "{:?}", bar.last());
+        let launcher = {
+            a.screen = Screen::Launcher;
+            clipped_on(&mut a, &ctx);
+            clipped_on(&mut a, &ctx);
+            a.hits
+                .iter()
+                .filter(|(r, _)| r.min.y < 64.0)
+                .filter(|(_, act)| matches!(act, Act::Show(_)))
+                .count()
+        };
+        assert_eq!(
+            launcher, 1,
+            "the launcher has the button of the program only"
+        );
     }
 
     #[test]
@@ -1118,20 +1173,26 @@ mod tests {
             "two seconds is not enough to start and travel"
         );
         assert_eq!(done(&a), 0, "no hole is drilled while the machine travels");
-        let mut moved = false;
         for _ in 0..4000 {
             a.tick();
-            moved |= a.head3d().unwrap() != rest;
             if a.m3d.phase() == Phase::Working {
                 break;
             }
         }
         assert_eq!(a.m3d.phase(), Phase::Working);
-        assert!(moved, "the head travelled to the first point");
-        // from then on the head is where the job says
+        // from then on the head is where the steps of the plan say (the reference runs first, then the trip to the first hole)
+        let mut moved = false;
+        for _ in 0..400_000 {
+            a.tick();
+            if a.head3d().unwrap() != rest {
+                moved = true;
+                break;
+            }
+        }
+        assert!(moved, "the head left home along the plan");
         a.tick();
-        let view = a.running_view().expect("the job runs");
-        assert_eq!(a.head3d().unwrap(), (view.x_mm, view.y_mm));
+        let at = a.drill.engine.head_mm().expect("the job follows the steps");
+        assert_eq!(a.head3d().unwrap(), (at.0, at.1));
         // moving the board in the plan view while the job runs does not make the machine jump either (its position is the job's)
         // and a stop sends the head home
         a.act(Act::Stop);
@@ -1328,8 +1389,14 @@ EOF
             }
             a.tick();
         }
-        // a few holes in
-        for _ in 0..200 {
+        // the head follows the steps of the plan (the reference runs first): on until a hole is done, so that it is at the work
+        for _ in 0..400_000 {
+            if a.drill.scene.holes.iter().any(|h| h.done) {
+                break;
+            }
+            a.tick();
+        }
+        for _ in 0..20 {
             a.tick();
         }
     }

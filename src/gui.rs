@@ -44,6 +44,7 @@ mod numedit;
 mod opener;
 mod rack;
 mod resume;
+mod spindle3d;
 mod view2d;
 use board::BoardPick;
 use combo::{Combo, ComboId};
@@ -56,6 +57,11 @@ use std::sync::mpsc::Receiver;
 /// The design size of the canvas; everything is laid out in these units and scaled to the window.
 const DESIGN_W: f32 = 1600.0;
 const DESIGN_H: f32 = 900.0;
+/// The buttons of the top bar: where they start along the bar and how wide each is.
+const TOP_BAR_FROM: f32 = 300.0;
+const TOP_BUTTON_W: f32 = 118.0;
+/// The button of the nodes and stations has the longest word in most languages.
+const TOP_BUTTON_WIDE: f32 = 156.0;
 
 fn col(c: Rgb) -> Color32 {
     Color32::from_rgb(c.0, c.1, c.2)
@@ -309,6 +315,8 @@ pub struct App {
     drag_zone: Option<Zone>,
     ui_scale: f32,
     ui_origin: Pos2,
+    /// How deep the head is below its home, in mm, while a simulated job runs (the steps of the plan say it).
+    head_z: Option<f64>,
     pointer: Option<Pos2>,
     pointer_down: bool,
     /// The value being typed, and the seconds the last frame took (the simulated job follows the clock of the machine).
@@ -531,6 +539,7 @@ impl App {
             drag_zone: None,
             ui_scale: 1.0,
             ui_origin: Pos2::ZERO,
+            head_z: None,
             pointer: None,
             pointer_down: false,
             edit: None,
@@ -1143,23 +1152,31 @@ impl App {
             }),
             (None, None) => None,
         };
+        // a program whose machine file has no places for the bar of the changer is planned with the places the bar is drawn in
+        let lent_bar = self
+            .bar_for_job(program)
+            .map(|line| self.lend_bar(program, &line));
+        if !started {
+            let side = self.side_mut(program);
+            // nothing outside the table of the machine is sent to it: those vectors are left out and counted
+            let area = side.table();
+            side.engine.set_job_options(JobOptions {
+                ask_operator,
+                panel,
+                skip,
+                skip_tools,
+                table: levelled,
+                clip_mm: Some((area.width_mm, area.depth_mm)),
+                ..Default::default()
+            });
+            side.engine.start();
+        }
+        if let Some(before) = lent_bar {
+            self.restore_bar(program, before);
+        }
         {
             let p = program;
             let side = self.side_mut(p);
-            if !started {
-                // nothing outside the table of the machine is sent to it: those vectors are left out and counted
-                let area = side.table();
-                side.engine.set_job_options(JobOptions {
-                    ask_operator,
-                    panel,
-                    skip,
-                    skip_tools,
-                    table: levelled,
-                    clip_mm: Some((area.width_mm, area.depth_mm)),
-                    ..Default::default()
-                });
-                side.engine.start();
-            }
             // the engine refuses a job that would run on made-up data (a tool missing from the table, a gap in the rack, a height map through the server): the person is told and nothing runs
             if let Some(why) = side.engine.error() {
                 let why = why.to_string();
@@ -1176,17 +1193,21 @@ impl App {
             // what the person should know and does not stop the job (tools that run with the cautious values)
             let warning = side.engine.warning().map(str::to_string);
             // the first point of the work, for the machine of the 3D view to travel to (the engine says where the job begins)
-            let first = side
-                .engine
-                .job_view()
-                .map(|v| (v.x_mm, v.y_mm))
-                .or_else(|| side.scene.holes.first().map(|h| (h.x_mm, h.y_mm)))
-                .or_else(|| {
-                    side.scene
-                        .paths
-                        .first()
-                        .and_then(|q| q.points.first().copied())
-                });
+            // (a job whose steps the engine follows starts from home like the machine does: the head goes where the plan says)
+            let first = if side.engine.head_mm().is_some() {
+                None
+            } else {
+                side.engine
+                    .job_view()
+                    .map(|v| (v.x_mm, v.y_mm))
+                    .or_else(|| side.scene.holes.first().map(|h| (h.x_mm, h.y_mm)))
+                    .or_else(|| {
+                        side.scene
+                            .paths
+                            .first()
+                            .and_then(|q| q.points.first().copied())
+                    })
+            };
             side.last_done = 0;
             if skip == 0 {
                 for h in &mut side.scene.holes {
@@ -1285,7 +1306,12 @@ impl App {
         let more = side.engine.tick_for(dt);
         let done = side.engine.done();
         let view = side.engine.job_view();
-        let head = view.as_ref().map(|v| (v.x_mm, v.y_mm));
+        // the head goes where the steps of the plan take it (the trips to the tool bar included); an engine that does not follow them says where the next hole is
+        let track = side.engine.head_mm();
+        let head = track
+            .map(|h| (h.0, h.1))
+            .or_else(|| view.as_ref().map(|v| (v.x_mm, v.y_mm)));
+        let head_z = track.map(|h| h.2);
         let percent = view.as_ref().map_or(0, |v| v.percent);
         if p == Program::Drill {
             // the hole that was drilled is the one nearest to the head (the engine drills them in its own order)
@@ -1403,6 +1429,7 @@ impl App {
         } else {
             self.save_recovery();
         }
+        self.head_z = head_z;
         // the head of the machine goes where the job says, once the machine is working
         if let Some(h) = head {
             self.m3d.follow(h);
@@ -2331,38 +2358,56 @@ impl App {
             col(t.dim),
         );
         cv.hits.push((r.expand(6.0), Act::NextLang));
-        // the windows: open a file, panelization, settings, about
-        if back {
-            let items = [
-                (330.0, Text::OpenFile, Modal::Open),
-                (454.0, Text::BoardTitle, Modal::Board),
-                (578.0, Text::ToolsTitle, Modal::Tools),
-                (702.0, Text::PanelTitle, Modal::Panel),
-                (826.0, Text::SettingsTitle, Modal::Settings),
-                (950.0, Text::Connection, Modal::Connection),
-                (1198.0, Text::FleetTitle, Modal::Fleet),
-            ];
-            for (x, n, m) in items {
-                cv.chip(
-                    x,
-                    14.0,
-                    if m == Modal::Fleet { 220.0 } else { 118.0 },
-                    36.0,
-                    self.tr(n),
-                    self.modal == Some(m),
-                    Act::Show(m),
+        // the windows, in groups with a line between them: the file; the job (board, tools, copies); the machine (settings, connection, nodes); the program
+        let groups: [&[(Icon, Text, Modal)]; 4] = [
+            &[(Icon::Folder, Text::OpenFile, Modal::Open)],
+            &[
+                (Icon::BoardWin, Text::BoardTitle, Modal::Board),
+                (Icon::DrillWin, Text::ToolsTitle, Modal::Tools),
+                (Icon::GridWin, Text::PanelTitle, Modal::Panel),
+            ],
+            &[
+                (Icon::Sliders, Text::SettingsTitle, Modal::Settings),
+                (Icon::Plug, Text::Connection, Modal::Connection),
+                (Icon::Nodes, Text::FleetTitle, Modal::Fleet),
+            ],
+            &[(Icon::Info, Text::About, Modal::About)],
+        ];
+        let (bw, bh, gap, sep) = (TOP_BUTTON_W, 40.0, 4.0, 14.0);
+        let mut x = TOP_BAR_FROM;
+        for (gi, group) in groups.iter().enumerate() {
+            // the launcher has the program's button only (at the place it has in the full bar)
+            let shown = back || gi == 3;
+            if gi > 0 && back {
+                cv.line(
+                    (x + sep / 2.0 - gap / 2.0, 16.0),
+                    (x + sep / 2.0 - gap / 2.0, 48.0),
+                    1.0,
+                    alpha(col(t.line), 170),
                 );
             }
+            for &(icon, text, modal) in group.iter() {
+                let w = if modal == Modal::Fleet {
+                    TOP_BUTTON_WIDE
+                } else {
+                    bw
+                };
+                if shown {
+                    cv.top_button(
+                        x,
+                        12.0,
+                        w,
+                        bh,
+                        icon,
+                        self.tr(text),
+                        self.modal == Some(modal),
+                        Act::Show(modal),
+                    );
+                }
+                x += w + gap;
+            }
+            x += sep - gap;
         }
-        cv.chip(
-            if back { 1074.0 } else { 970.0 },
-            14.0,
-            118.0,
-            36.0,
-            self.tr(Text::About),
-            self.modal == Some(Modal::About),
-            Act::Show(Modal::About),
-        );
     }
 
     fn paint_launcher(&self, cv: &mut Cv) {
@@ -3313,6 +3358,36 @@ impl App {
         Some(self.m3d.pos())
     }
 
+    /// How high the tip of the tool is over the top of the board in the 3D view, in mm: the steps of the plan say how far down the head is (home is the top).
+    fn head_lift_mm(&self) -> f64 {
+        let at_board = self
+            .drill
+            .engine
+            .settings()
+            .map_or(23.7, |m| m.z_max_depth_mm - m.base_mm - m.board_mm)
+            .clamp(8.0, 60.0);
+        match (self.running, self.head_z) {
+            (Some(_), Some(z)) => (at_board - z).clamp(-4.0, 60.0),
+            _ => at_board,
+        }
+    }
+
+    /// The diameter of the tool in the head, in mm: the drill of the hole that is next, or a cutter while a routing job runs.
+    fn head_tool_diameter(&self) -> f64 {
+        let tool = self.running_view().and_then(|v| v.tool);
+        match self.running {
+            Some(Program::Route) => 2.0,
+            _ => self
+                .drill
+                .scene
+                .holes
+                .iter()
+                .find(|h| Some(h.tool) == tool)
+                .or_else(|| self.drill.scene.holes.first())
+                .map_or(1.0, |h| h.diameter_mm),
+        }
+    }
+
     /// Where the head is: the running job says it; otherwise the next hole to drill.
     fn head(&self) -> Option<(f64, f64)> {
         if let Some(v) = self.running_view() {
@@ -3361,7 +3436,8 @@ impl App {
         let shift = (px_m + 60.0, py_m + 60.0);
         let mut iso = Iso::fit(
             &Table::new(wx + 2.0 * shift.0, wy + 2.0 * shift.1 + 80.0),
-            150.0,
+            // the gantry and the spindle of its real height (174 mm long, over the board)
+            230.0,
             w as f64,
             h as f64,
         );
@@ -3401,6 +3477,7 @@ impl App {
             draw_boxes(cv, &iso, o, shift, list, edge);
         };
         let (hx, hy) = head.unwrap_or((tw / 2.0, td / 2.0));
+        let lift = self.head_lift_mm();
         // the work is drawn as in the plan view: Y of the files goes away from the operator, and the machine's Y comes towards him
         let hy = td - hy;
         let board_z = 30.0;
@@ -3569,14 +3646,29 @@ impl App {
                     alu,
                 ),
                 (hx - 64.0, fy1 + 40.0, 62.0, 44.0, 44.0, 44.0, motor),
-                (hx - 24.0, hy - 22.0, 44.0, 44.0, 44.0, 76.0, alu),
-                (hx - 9.0, hy - 9.0, 36.0, 18.0, 18.0, 72.0, steel),
+                // the slide that carries the spindle, beside it (the spindle itself is drawn below, with its own sizes)
+                (
+                    hx - 32.0,
+                    hy - 22.0,
+                    top + lift + 30.0,
+                    14.0,
+                    44.0,
+                    150.0,
+                    alu,
+                ),
             ],
         );
-        let tip = p(hx, hy, top);
-        let spindle_foot = p(hx, hy, 40.0);
-        cv.line(spindle_foot, tip, 2.2, col(t.ok));
-        cv.p.circle_filled(cv.pt(tip.0, tip.1), 5.0 * cv.u, col(t.ok));
+        // the spindle of the original machine at its real size, with the tool in its collet
+        let tool_d = self.head_tool_diameter();
+        self.paint_spindle(
+            cv,
+            &iso,
+            &|x, y, z| p(x, y, z),
+            (hx, hy, top + lift),
+            tool_d,
+        );
+        let tip = p(hx, hy, top + lift);
+        cv.p.circle_filled(cv.pt(tip.0, tip.1), 2.4 * cv.u, col(t.ok));
         // the tool changer: the bar at the short edge with the tools in it, and the three roles of the exchange
         self.paint_bar_3d(cv, &iso, o, shift, edge, board_z, td, tip);
         cv.text(

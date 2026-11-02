@@ -650,6 +650,23 @@ impl App {
         self.mat_scroll = (self.mat_scroll as i64 + delta as i64).clamp(0, max as i64) as usize;
     }
 
+    /// Turns the board a quarter on the table: its width and its depth change places and the design stays where it is. A board that is the size of the files has no
+    /// size of its own yet, so it takes the one it shows. A board that stayed where it was keeps its middle.
+    pub(crate) fn board_swap(&mut self) {
+        let Some((w, d)) = self.board_size_now() else {
+            return;
+        };
+        if (w - d).abs() < 1e-9 {
+            return;
+        }
+        self.board.size_mm = Some((d, w));
+        if let Some(r) = self.board_frozen.as_mut() {
+            let c = ((r.0 + r.2) / 2.0, (r.1 + r.3) / 2.0);
+            *r = (c.0 - d / 2.0, c.1 - w / 2.0, c.0 + d / 2.0, c.1 + w / 2.0);
+        }
+        self.apply_board();
+    }
+
     pub(crate) fn board_adjust(&mut self, width: bool, d: f32) {
         let d = self.len_from_display(d as f64) as f32;
         let (w, h) = self.board.size_mm.unwrap_or_else(|| {
@@ -1002,6 +1019,16 @@ impl App {
                 Act::Edit(EditTarget::BoardSize(width), rx + 272.0, yy + 2.0, 96.0),
             ));
         }
+        // width and depth change places with one touch: the board that does not go into the machine often does turned
+        cv.chip(
+            rx + 520.0,
+            ry + 23.0 - 19.0,
+            240.0,
+            38.0,
+            self.tr(Text::BoardSwap),
+            false,
+            Act::BoardSwap,
+        );
         // a board that is bigger than the table of the active machine (turned 90 degrees too) is warned about; the choice is not stopped
         self.paint_fit_warning(cv, rx, ry + 2.0 * 46.0 + 24.0);
         cv.chip(

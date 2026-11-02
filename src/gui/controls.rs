@@ -353,6 +353,7 @@ pub(crate) enum Icon {
     Paste,
     Trash,
     Rotate,
+    TurnBoard,
     FitBoard,
     FitTable,
     Target,
@@ -1905,6 +1906,29 @@ EOF
         a.table.width_mm += 100.0;
         a.table.depth_mm += 100.0;
         assert!(a.board_fit_warning().is_none());
+    }
+
+    #[test]
+    fn a_board_that_does_not_go_into_the_machine_is_turned_with_one_touch() {
+        let mut a = app();
+        let (w, d) = (120.0, 60.0);
+        a.board.size_mm = Some((w, d));
+        a.board_swap();
+        assert_eq!(a.board.size_mm, Some((d, w)));
+        // twice is the board as it was
+        a.board_swap();
+        assert_eq!(a.board.size_mm, Some((w, d)));
+        // the middle of a board that stayed where it was does not move
+        a.board_frozen = Some((10.0, 20.0, 10.0 + w, 20.0 + d));
+        a.board_swap();
+        let (x0, y0, x1, y1) = a.board_frozen.unwrap();
+        assert!(((x0 + x1) / 2.0 - (10.0 + w / 2.0)).abs() < 1e-9);
+        assert!(((y0 + y1) / 2.0 - (20.0 + d / 2.0)).abs() < 1e-9);
+        assert!(((x1 - x0) - d).abs() < 1e-9 && ((y1 - y0) - w).abs() < 1e-9);
+        // a square board has nothing to change
+        a.board.size_mm = Some((50.0, 50.0));
+        a.board_swap();
+        assert_eq!(a.board.size_mm, Some((50.0, 50.0)));
     }
 
     #[test]

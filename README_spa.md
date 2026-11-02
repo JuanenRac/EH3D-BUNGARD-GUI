@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
   <img src="https://img.shields.io/badge/Tests-198-0f6cbd.svg" alt="Tests">
-  <img src="https://img.shields.io/badge/Version-0.1.8-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-0.1.9-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
@@ -29,7 +29,7 @@
 
 | | |
 |---|---|
-| Versión | `0.1.8` |
+| Versión | `0.1.9` |
 | Madurez | Andamiaje |
 | Pruebas | 198 |
 | Pila tecnológica | Rust |
@@ -243,6 +243,7 @@ Cómo encajan las partes de este repositorio: quién lo usa, qué contiene y de 
 * Una vista 2D que sigue cada herramienta, gira juntos los ficheros de taladrado y fresado y mueve la placa; una biblioteca de más de cien materiales base; sonidos al terminar el trabajo y en el cambio de herramienta.
 * Ficheros de otros programas: el contorno de una placa Gerber (`.GKO`, `.GM1`, `.GML` o un `.GBR` que se declara perfil) y un dibujo DXF se abren como trabajos de fresado; los círculos y arcos de los ficheros de trazado (`CI`, `AA`, `AR`) se cortan en cuerdas según el ángulo de cuerda de la configuración.
 * Un trabajo que no cabe en la mesa se rechaza antes de empezar; la ventana Abrir lista los últimos ficheros abiertos; la ventana de herramientas cuenta los agujeros de cada broca en la placa y en todos los trabajos, con un botón que pone los contadores a cero.
+* El ancho y el fondo de la placa se intercambian con un toque (un botón en la ventana de placas y un icono en la vista 2D que gira la placa sola, con el diseño donde está), porque una placa que no entra en la máquina muchas veces entra girada; las herramientas de la barra de los modelos ATC se dibujan redondas en 3D; un fallo dentro de un trabajo para la máquina y se muestra, y cada cierre inesperado queda también en `eh3d-crash.log` en la carpeta de configuración.
 * La ventana de herramientas se abre sobre un fichero que abres (desde la ventana Abrir, los recientes o soltándolo), como los programas clásicos muestran las herramientas de un fichero tras cargarlo; una casilla de los ajustes lo desactiva.
 * Listas desplegables donde una elección tiene muchos valores: el tema, el idioma, el modelo de la máquina y el sonido de cada evento se eligen en una lista que se desplaza, en lugar de filas de botones. El final del trabajo y la petición de herramienta tienen cada uno su lista de 60 sonidos, de los agudos a los graves (carillones, notas que suben y bajan, fanfarrias, pitidos, alarmas, golpes, sirenas), el tono estándar, ninguno o un fichero propio; al elegir uno suena.
 * **Luz y verificación de calidad con la cámara del cabezal:** la ventana del nodo enciende y apaga el aro de LEDs, y la ventana Verificación de calidad mira la placa después del trabajo: juzga los agujeros del trabajo (que estén, redondos, del tamaño justo, en su sitio), los canales fresados (tan anchos como la herramienta, regulares, sin estrechamientos) y la propia foto, marca cada agujero sobre la imagen, muestra un veredicto grande como un cartel (CORRECTO, NO CORRECTO o no se puede juzgar) y hace que el aro diga lo mismo en color. Los perfiles (estándar, paso fino, prototipo), las tolerancias, la escala y su calibración con un agujero conocido se guardan en un fichero y se entregan al servidor. El resultado también puede decirse en voz alta: dos sonidos más en los ajustes, para una comprobación correcta y otra que no lo es, cada uno apagado, un pitido, un sonido del catálogo, un fichero tuyo o una voz que dice que la comprobación visual de la placa es correcta o no es correcta, como los otros sonidos.

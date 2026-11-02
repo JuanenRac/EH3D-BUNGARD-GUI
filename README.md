@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
   <img src="https://img.shields.io/badge/Tests-198-0f6cbd.svg" alt="Tests">
-  <img src="https://img.shields.io/badge/Version-0.1.8-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-0.1.9-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
@@ -29,7 +29,7 @@
 
 | | |
 |---|---|
-| Version | `0.1.8` |
+| Version | `0.1.9` |
 | Maturity | Scaffolding |
 | Tests | 198 |
 | Stack | Rust |
@@ -243,6 +243,7 @@ How the parts of this repository fit together: who uses it, what it holds and wh
 * A 2D view that follows each tool, turns the drilling and routing files together and moves the board; a library of more than a hundred base materials; sounds at the end of the job and at a tool change.
 * Files of other programs: the outline of a Gerber board (`.GKO`, `.GM1`, `.GML` or a `.GBR` that calls itself the profile) and a DXF drawing open as routing jobs; the circles and arcs of plotter files (`CI`, `AA`, `AR`) are cut into chords by the chord angle of the configuration.
 * A job that does not fit on the table is refused before it starts; the Open window lists the last files opened; the tools window counts the holes of each drill on the board and in all the jobs, with a button that starts the counts again.
+* The width and the depth of the board change places with one touch (a button in the boards window, and an icon in the 2D view that turns the board on its own, the design staying where it is), because a board that does not go into the machine often does turned; the tools of the bar of the ATC models are drawn round in 3D; a failure inside a job stops the machine and is shown, and every crash is also recorded in `eh3d-crash.log` in the configuration folder.
 * The window of the tools opens over a file you open (from the Open window, the recent files or by dropping it), as the classic programs show the tools of a file after loading it; a check box in the settings turns it off.
 * Drop-down lists where a choice has many values: the theme, the language, the model of the machine and the sound of each event are chosen from a list that scrolls, instead of rows of buttons. The end of the job and the request for a tool each have their own list of 60 sounds, from the high ones to the low ones (chimes, rising and falling notes, fanfares, beeps, alarms, knocks, sirens), the standard tone, none, or a file of your own; choosing one plays it.
 * **Light and quality check with the camera of the head:** the window of the node turns the ring of LEDs on and off, and the Quality check window looks at the board after the job: it judges the holes of the job (there, round, the right size, in place), the milled channels (as wide as the tool, even, no pinches) and the picture itself, marks every hole on the picture, shows a verdict as big as a sign (OK, NOT OK or cannot judge) and makes the ring say the same in colour. Presets of the profile (standard, fine pitch, prototype), tolerances, the scale and its calibration from a known hole are kept in a file and given to the server. The result can be said aloud: two more sounds in the settings, for a check that is correct and one that is not, each off, a beep, a sound of the catalogue, a file of yours or a voice that says that the visual check of the board is correct or is not correct, like the other sounds.

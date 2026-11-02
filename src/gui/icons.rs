@@ -152,6 +152,36 @@ impl Cv<'_> {
                     Stroke::NONE,
                 );
             }
+            Icon::TurnBoard => {
+                // the board as a rectangle, standing on its short side, and the arrow that turns it a quarter
+                let (a, b) = (h * 0.95, h * 0.55);
+                let rect = [
+                    (cx - b, cy - a * 0.55),
+                    (cx + b, cy - a * 0.55),
+                    (cx + b, cy + a * 0.55),
+                    (cx - b, cy + a * 0.55),
+                    (cx - b, cy - a * 0.55),
+                ];
+                self.polyline(&rect, 2.2, c, false);
+                let r = h * 1.15;
+                let arc: Vec<(f32, f32)> = (0..=10)
+                    .map(|i| {
+                        let ang = (200.0 - 100.0 * i as f32 / 10.0).to_radians();
+                        (cx + r * ang.cos(), cy - r * ang.sin())
+                    })
+                    .collect();
+                self.polyline(&arc, 2.2, c, false);
+                let e = arc[10];
+                self.poly(
+                    &[
+                        (e.0 - h * 0.45, e.1 - h * 0.05),
+                        (e.0 + h * 0.2, e.1 - h * 0.5),
+                        (e.0 + h * 0.3, e.1 + h * 0.35),
+                    ],
+                    c,
+                    Stroke::NONE,
+                );
+            }
             Icon::FitBoard => {
                 let (a, b) = (h * 0.95, h * 0.4);
                 for (sx, sy) in [(-1.0f32, -1.0f32), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)] {

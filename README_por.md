@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
   <img src="https://img.shields.io/badge/Tests-198-0f6cbd.svg" alt="Tests">
-  <img src="https://img.shields.io/badge/Version-0.1.8-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-0.1.9-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
@@ -29,7 +29,7 @@
 
 | | |
 |---|---|
-| Versão | `0.1.8` |
+| Versão | `0.1.9` |
 | Maturidade | Estrutura inicial |
 | Testes | 198 |
 | Tecnologias | Rust |
@@ -243,6 +243,7 @@ Como as partes deste repositório se encaixam: quem o usa, o que contém e de qu
 * Uma vista 2D que segue cada ferramenta, roda em conjunto os ficheiros de furação e de fresagem e move a placa; uma biblioteca com mais de cem materiais de base; sons no fim do trabalho e na troca de ferramenta.
 * Ficheiros de outros programas: o contorno de uma placa Gerber (`.GKO`, `.GM1`, `.GML` ou um `.GBR` que se declara perfil) e um desenho DXF abrem-se como trabalhos de fresagem; os círculos e arcos dos ficheiros de traçado (`CI`, `AA`, `AR`) são cortados em cordas pelo ângulo de corda da configuração.
 * Um trabalho que não cabe na mesa é recusado antes de começar; a janela Abrir lista os últimos ficheiros abertos; a janela das ferramentas conta os furos de cada broca na placa e em todos os trabalhos, com um botão que repõe os contadores a zero.
+* A largura e a profundidade da placa trocam-se com um toque (um botão na janela das placas e um ícone na vista 2D que roda a placa sozinha, ficando o desenho onde está), porque uma placa que não cabe na máquina muitas vezes cabe rodada; as ferramentas da barra dos modelos ATC são desenhadas redondas em 3D; uma falha dentro de um trabalho para a máquina e é mostrada, e cada encerramento inesperado fica também em `eh3d-crash.log` na pasta de configuração.
 * A janela de ferramentas abre-se sobre um ficheiro que abre (pela janela Abrir, pelos recentes ou largando-o), como os programas clássicos mostram as ferramentas de um ficheiro depois de o carregar; uma caixa nas definições desliga-a.
 * Listas pendentes onde uma escolha tem muitos valores: o tema, o idioma, o modelo da máquina e o som de cada evento escolhem-se numa lista que desliza, em vez de filas de botões. O fim do trabalho e o pedido de ferramenta têm cada um a sua lista de 60 sons, dos agudos aos graves (carrilhões, notas a subir e a descer, fanfarras, apitos, alarmes, pancadas, sirenes), o tom padrão, nenhum ou um ficheiro próprio; ao escolher um, ele toca.
 * **Luz e verificação de qualidade com a câmara da cabeça:** a janela do nó liga e desliga o anel de LEDs, e a janela Verificação de qualidade olha para a placa depois do trabalho: julga os furos do trabalho (existem, redondos, do tamanho certo, no sítio), os canais fresados (tão largos como a ferramenta, regulares, sem estreitamentos) e a própria foto, marca cada furo na imagem, mostra um veredicto grande como um cartaz (APROVADO, REPROVADO ou não avaliável) e faz o anel dizer o mesmo a cores. Os perfis (padrão, passo fino, protótipo), as tolerâncias, a escala e a sua calibração com um furo conhecido guardam-se num ficheiro e entregam-se ao servidor. O resultado também pode ser dito em voz alta: mais dois sons nas definições, para uma verificação correta e outra que não o é, cada um desligado, um apito, um som do catálogo, um ficheiro teu ou uma voz que diz que a verificação visual da placa está correta ou não está correta, como os outros sons.

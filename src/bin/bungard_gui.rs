@@ -9,6 +9,7 @@
 use eh3d_bungard_gui::cli::Options;
 
 fn main() -> eframe::Result {
+    eh3d_drillpro::crash::install("bungard-gui", env!("CARGO_PKG_VERSION"));
     attach_console();
     match Options::parse(std::env::args().skip(1)) {
         Ok(o) => eh3d_bungard_gui::gui::run(&o),

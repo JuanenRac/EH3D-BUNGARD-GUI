@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
   <img src="https://img.shields.io/badge/Tests-198-0f6cbd.svg" alt="Tests">
-  <img src="https://img.shields.io/badge/Version-0.1.8-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-0.1.9-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
@@ -29,7 +29,7 @@
 
 | | |
 |---|---|
-| Version | `0.1.8` |
+| Version | `0.1.9` |
 | Reifegrad | Gerüst |
 | Tests | 198 |
 | Technologie-Stack | Rust |
@@ -243,6 +243,7 @@ Wie die Teile dieses Repositorys zusammenpassen: wer es nutzt, was es enthält u
 * Eine 2D-Ansicht, die jedem Werkzeug folgt, Bohr- und Fräsdatei gemeinsam dreht und die Platine verschiebt; eine Bibliothek mit mehr als hundert Basismaterialien; Töne am Ende des Auftrags und beim Werkzeugwechsel.
 * Dateien anderer Programme: der Umriss einer Gerber-Platine (`.GKO`, `.GM1`, `.GML` oder eine `.GBR`, die sich als Profil ausweist) und eine DXF-Zeichnung öffnen sich als Fräsaufträge; die Kreise und Bögen der Plotterdateien (`CI`, `AA`, `AR`) werden nach dem Sehnenwinkel der Konfiguration in Sehnen zerlegt.
 * Ein Auftrag, der nicht auf den Tisch passt, wird vor dem Start abgelehnt; das Öffnen-Fenster listet die zuletzt geöffneten Dateien; das Werkzeugfenster zählt die Löcher jedes Bohrers auf der Platine und in allen Aufträgen, mit einer Taste, die die Zähler zurücksetzt.
+* Breite und Tiefe der Platine werden mit einer Berührung getauscht (eine Schaltfläche im Platinenfenster und ein Symbol in der 2D-Ansicht, das nur die Platine dreht, während der Entwurf bleibt, wo er ist), denn eine Platine, die nicht in die Maschine passt, passt oft gedreht; die Werkzeuge der Leiste der ATC-Modelle werden in 3D rund gezeichnet; ein Fehler innerhalb eines Auftrags hält die Maschine an und wird angezeigt, und jeder Absturz wird auch in `eh3d-crash.log` im Konfigurationsordner festgehalten.
 * Das Werkzeugfenster öffnet sich über einer Datei, die Sie öffnen (im Fenster Öffnen, aus den letzten Dateien oder durch Ablegen), wie die klassischen Programme die Werkzeuge einer Datei nach dem Laden zeigen; ein Kontrollkästchen in den Einstellungen schaltet es ab.
 * Auswahllisten, wo eine Wahl viele Werte hat: Thema, Sprache, Maschinenmodell und der Ton jedes Ereignisses werden aus einer scrollbaren Liste gewählt statt aus Reihen von Knöpfen. Das Ende des Auftrags und die Werkzeuganforderung haben je eine eigene Liste mit 60 Tönen, von hohen bis zu tiefen (Glocken, steigende und fallende Töne, Fanfaren, Piepser, Alarme, Klopfen, Sirenen), den Standardton, keinen oder eine eigene Datei; die Wahl wird abgespielt.
 * **Licht und Qualitätsprüfung mit der Kamera des Kopfes:** Das Fenster des Knotens schaltet den LED-Ring ein und aus, und das Fenster Qualitätsprüfung betrachtet die Platine nach dem Auftrag: Es beurteilt die Bohrungen des Auftrags (vorhanden, rund, richtige Größe, am Platz), die gefrästen Kanäle (so breit wie das Werkzeug, gleichmäßig, ohne Engstellen) und das Bild selbst, markiert jede Bohrung im Bild, zeigt ein Urteil so groß wie ein Schild (IN ORDNUNG, NICHT IN ORDNUNG oder nicht beurteilbar) und lässt den Ring dasselbe in Farbe zeigen. Profile (Standard, Feinraster, Prototyp), Toleranzen, der Maßstab und seine Kalibrierung an einer bekannten Bohrung werden in einer Datei gespeichert und dem Server übergeben. Das Ergebnis kann auch gesprochen werden: zwei weitere Töne in den Einstellungen, für eine Prüfung in Ordnung und eine nicht in Ordnung, jeweils aus, ein Piepton, ein Ton des Katalogs, eine eigene Datei oder eine Stimme, die sagt, dass die Sichtprüfung der Platine in Ordnung oder nicht in Ordnung ist, wie die anderen Töne.

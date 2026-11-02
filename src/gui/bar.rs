@@ -71,6 +71,45 @@ fn ellipse(c: (f32, f32), rx: f32, ry: f32) -> Vec<(f32, f32)> {
         .collect()
 }
 
+/// A cylinder standing on the table in the 3D view, as the eye sees it: the front half of its foot, the back half of its top, a stripe of light on one side and the top face. `r` is in
+/// millimetres; `bottom` and `top` are the centres of its two ellipses on the screen.
+#[allow(clippy::too_many_arguments)]
+fn cylinder(
+    cv: &mut Cv,
+    bottom: (f32, f32),
+    top: (f32, f32),
+    r_px: f32,
+    fill: Color32,
+    edge: Color32,
+    lit: Color32,
+) {
+    let (rx, ry) = (r_px * 1.15, r_px * 0.62);
+    let half = |c: (f32, f32), from: f32| -> Vec<(f32, f32)> {
+        (0..=8)
+            .map(|i| {
+                let a = from + i as f32 * std::f32::consts::PI / 8.0;
+                (c.0 + rx * a.cos(), c.1 + ry * a.sin())
+            })
+            .collect()
+    };
+    // the front half of the foot (right to left) and the back half of the top (left to right)
+    let mut body = half(bottom, 0.0);
+    body.extend(half(top, std::f32::consts::PI));
+    cv.poly(&body, fill, Stroke::new(1.0 * cv.u, edge));
+    // the light on the left side makes it round
+    let x = -0.5 * rx;
+    cv.polyline(
+        &[
+            (top.0 + x, top.1 + ry * 0.85),
+            (bottom.0 + x, bottom.1 + ry * 0.85),
+        ],
+        1.4,
+        lit,
+        false,
+    );
+    cv.poly(&ellipse(top, rx, ry), lit, Stroke::new(1.0 * cv.u, edge));
+}
+
 impl App {
     /// The machine in the settings has a tool changer (an ATC model) and so a bar.
     pub(crate) fn bar_shown(&self) -> bool {
@@ -505,27 +544,36 @@ impl App {
             cv.poly(
                 &hole,
                 alpha(Color32::BLACK, 190),
-                Stroke::new(1.0 * cv.u, edge),
+                Stroke::new(1.6 * cv.u, alpha(Color32::WHITE, 90)),
             );
             if let Some((_, tool, color)) = d.tools.iter().find(|(i, _, _)| *i == s.index) {
-                let w = rr * 0.8;
-                draw_boxes(
+                // a drill as it stands in the bar: the ring that the changer holds (in the colour of its size), the shank above it and the flat end of the shank
+                let y = table_depth - s.y_mm;
+                let k = iso.k as f32;
+                let ring = (rr as f32 * 0.85) * k;
+                let stem = (rr as f32 * 0.38) * k;
+                let ring_h = (shank * 0.22).clamp(2.0, 6.0);
+                let size = col(t.size_color(*color));
+                let steel = Color32::from_rgb(168, 174, 182);
+                cylinder(
                     cv,
-                    iso,
-                    o,
-                    shift,
-                    &[(
-                        s.x_mm - w,
-                        table_depth - s.y_mm - w,
-                        top,
-                        2.0 * w,
-                        2.0 * w,
-                        shank,
-                        col(t.size_color(*color)),
-                    )],
+                    p(s.x_mm, y, top),
+                    p(s.x_mm, y, top + ring_h),
+                    ring,
+                    size,
                     edge,
+                    alpha(Color32::WHITE, 90),
                 );
-                let (px, py) = p(s.x_mm, table_depth - s.y_mm, top + shank + 3.0);
+                cylinder(
+                    cv,
+                    p(s.x_mm, y, top + ring_h),
+                    p(s.x_mm, y, top + shank),
+                    stem,
+                    steel,
+                    edge,
+                    alpha(Color32::WHITE, 150),
+                );
+                let (px, py) = p(s.x_mm, y, top + shank + 3.0);
                 cv.text(
                     px,
                     py,

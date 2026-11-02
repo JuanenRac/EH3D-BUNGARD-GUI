@@ -4,6 +4,14 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.1.9] - Width and depth of the board change places with one touch, round tools in the bar of the ATC models and a failure inside a job that is told
+
+- **Width and depth of the board change places with one touch:** a button in the boards window swaps them (the board that does not go into the machine often does turned), and an icon in the 2D view turns the board a quarter on its own, the design staying where it is; a board that stayed where it was keeps its middle. The text is in the 37 languages.
+- **The tools of the bar of the ATC models are round:** in the 3D view each tool stands in its place as a drill does, with the ring that the changer holds in the colour of its size and the shank above it, with light on one side, instead of a box; the places of the bar have a rim.
+- **A failure inside the work is told, and the machine is stopped:** when the thread that runs a job (or the Offset window) panics, the run no longer stays at "running" for ever with nothing said: the machine is stopped first and the state becomes failed with "internal error" and the words of the panic.
+- **A record of crashes:** a panic is also appended to `eh3d-crash.log` in the configuration folder (`%APPDATA%\EH3D`, `~/.config/eh3d`) with the program, its version, the words and the place, because a window program on Windows has no console to show it.
+- **The CI checks the pictures of the README.**
+
 ## [0.1.8] - Resizable panes, the tool bar of the ATC models, copy and paste, and jobs that land on the board
 
 - **The tool bar of the ATC models is drawn and set:** on a model with the changer the bar at the end of the machine where the tools wait is drawn in the plan view (which grows to hold it past the edge of the table) and in the 3D view, with its places in a line and numbered, the tools in them (the colour of their size and their number), the tool in the head, the one to take next and the free place where the used one is left. A button in the Settings window opens the window of the bar: the exact position (X, Y, Z) of the first and of the last tool, the number of places, the length of the tools (38 mm, 21 mm from the ring to the tip), the height the chuck travels at over the tools and the side it comes in from. The places between the first and the last are spaced evenly, the first and the last stay inside what the machine reaches, and everything is saved in the machine file with the other places of the changer (a file without places starts from the model's). The bar in the 3D view was drawn from the wrong end of the table. `--machine MODEL` shows a model in the pictures without remembering it. **This has not been tried on a real machine: check every point with the spindle stopped.**

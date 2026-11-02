@@ -106,6 +106,7 @@ enum Act {
     ToggleMoveDesign,
     ToggleBig,
     Rotate(i8),
+    BoardSwap,
     FitPlan(bool),
     CenterTool(Program, u8),
     ToggleEmergency,
@@ -1457,6 +1458,7 @@ impl App {
             Act::ToggleMoveDesign => self.toggle_move_design(),
             Act::ToggleBig => self.plan_big = !self.plan_big,
             Act::Rotate(q) => self.rotate_work(q),
+            Act::BoardSwap => self.board_swap(),
             Act::FitPlan(b) => self.fit_plan(b),
             Act::CenterTool(p, t) => self.center_on_tool(p, t),
             Act::ToggleEmergency => {
@@ -2901,6 +2903,13 @@ impl App {
                 self.select_mode,
                 Text::SelectTool,
                 Act::ToggleSelect,
+            ),
+            (
+                -420.0,
+                Icon::TurnBoard,
+                false,
+                Text::BoardSwap,
+                Act::BoardSwap,
             ),
         ];
         for (dx, icon, on, tip, act) in tools {

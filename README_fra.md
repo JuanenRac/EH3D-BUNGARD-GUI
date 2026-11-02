@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
   <img src="https://img.shields.io/badge/Tests-198-0f6cbd.svg" alt="Tests">
-  <img src="https://img.shields.io/badge/Version-0.1.8-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-0.1.9-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
@@ -29,7 +29,7 @@
 
 | | |
 |---|---|
-| Version | `0.1.8` |
+| Version | `0.1.9` |
 | Maturité | Échafaudage |
 | Tests | 198 |
 | Pile technique | Rust |
@@ -243,6 +243,7 @@ Comment les parties de ce dépôt s'articulent : qui l'utilise, ce qu'il contien
 * Une vue 2D qui suit chaque outil, fait tourner ensemble les fichiers de perçage et de fraisage et déplace la carte ; une bibliothèque de plus de cent matériaux de base ; des sons à la fin du travail et au changement d'outil.
 * Fichiers d'autres programmes : le contour d'une carte Gerber (`.GKO`, `.GM1`, `.GML` ou un `.GBR` qui se déclare profil) et un dessin DXF s'ouvrent comme travaux de fraisage ; les cercles et arcs des fichiers de tracé (`CI`, `AA`, `AR`) sont découpés en cordes selon l'angle de corde de la configuration.
 * Un travail qui ne tient pas sur la table est refusé avant de commencer ; la fenêtre Ouvrir liste les derniers fichiers ouverts ; la fenêtre des outils compte les trous de chaque foret sur la carte et dans tous les travaux, avec un bouton qui remet les compteurs à zéro.
+* La largeur et la profondeur de la carte s'échangent d'un geste (un bouton dans la fenêtre des cartes et une icône dans la vue 2D qui tourne la carte seule, le dessin restant où il est), car une carte qui n'entre pas dans la machine entre souvent tournée ; les outils de la barre des modèles ATC sont dessinés ronds en 3D ; une défaillance dans un travail arrête la machine et s'affiche, et chaque plantage est aussi consigné dans `eh3d-crash.log` dans le dossier de configuration.
 * La fenêtre des outils s'ouvre sur un fichier que vous ouvrez (depuis la fenêtre Ouvrir, les récents ou par glisser-déposer), comme les programmes classiques montrent les outils d'un fichier après l'avoir chargé ; une case des réglages la désactive.
 * Listes déroulantes là où un choix a beaucoup de valeurs : le thème, la langue, le modèle de la machine et le son de chaque événement se choisissent dans une liste qui défile, au lieu de rangées de boutons. La fin du travail et la demande d'outil ont chacune leur liste de 60 sons, des aigus aux graves (carillons, notes montantes et descendantes, fanfares, bips, alarmes, coups, sirènes), la tonalité standard, aucun ou un fichier à soi ; le choix est joué.
 * **Lumière et contrôle qualité avec la caméra de la tête :** la fenêtre du nœud allume et éteint l'anneau de LED, et la fenêtre Contrôle qualité regarde la carte après le travail : elle juge les trous du travail (présents, ronds, à la bonne taille, à leur place), les canaux fraisés (aussi larges que l'outil, réguliers, sans pincement) et la photo elle-même, marque chaque trou sur l'image, affiche un verdict grand comme un panneau (VALIDE, NON VALIDE ou non évaluable) et fait dire la même chose à l'anneau en couleur. Les profils (standard, pas fin, prototype), les tolérances, l'échelle et son étalonnage sur un trou connu sont gardés dans un fichier et donnés au serveur. Le résultat peut aussi être dit à voix haute : deux sons de plus dans les réglages, pour un contrôle correct et un qui ne l'est pas, chacun éteint, un bip, un son du catalogue, un fichier à vous ou une voix qui dit que le contrôle visuel de la carte est correct ou n'est pas correct, comme les autres sons.

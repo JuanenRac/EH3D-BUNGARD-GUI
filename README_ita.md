@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
   <img src="https://img.shields.io/badge/Tests-198-0f6cbd.svg" alt="Tests">
-  <img src="https://img.shields.io/badge/Version-0.1.8-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-0.1.9-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
@@ -29,7 +29,7 @@
 
 | | |
 |---|---|
-| Versione | `0.1.8` |
+| Versione | `0.1.9` |
 | Maturità | Impalcatura |
 | Test | 198 |
 | Stack tecnologico | Rust |
@@ -243,6 +243,7 @@ Come si incastrano le parti di questo repository: chi lo usa, che cosa contiene 
 * Una vista 2D che segue ogni utensile, ruota insieme i file di foratura e fresatura e sposta la scheda; una libreria di oltre cento materiali di base; suoni a fine lavoro e al cambio utensile.
 * File di altri programmi: il contorno di una scheda Gerber (`.GKO`, `.GM1`, `.GML` o un `.GBR` che si dichiara profilo) e un disegno DXF si aprono come lavori di fresatura; i cerchi e gli archi dei file di tracciato (`CI`, `AA`, `AR`) sono tagliati in corde secondo l'angolo di corda della configurazione.
 * Un lavoro che non sta sul piano viene rifiutato prima di partire; la finestra Apri elenca gli ultimi file aperti; la finestra degli utensili conta i fori di ogni punta sulla scheda e in tutti i lavori, con un pulsante che azzera i contatori.
+* La larghezza e la profondità della scheda si scambiano con un tocco (un pulsante nella finestra delle schede e un'icona nella vista 2D che ruota la scheda da sola, con il disegno dove si trova), perché una scheda che non entra nella macchina spesso entra ruotata; gli utensili della barra dei modelli ATC sono disegnati tondi in 3D; un errore dentro un lavoro ferma la macchina e viene mostrato, e ogni chiusura imprevista è registrata anche in `eh3d-crash.log` nella cartella di configurazione.
 * La finestra degli utensili si apre su un file che apri (dalla finestra Apri, dai recenti o trascinandolo), come i programmi classici mostrano gli utensili di un file dopo averlo caricato; una casella nelle impostazioni la disattiva.
 * Menu a tendina dove una scelta ha molti valori: il tema, la lingua, il modello della macchina e il suono di ogni evento si scelgono da un elenco che scorre, invece di file di pulsanti. La fine del lavoro e la richiesta di un utensile hanno ciascuno il proprio elenco di 60 suoni, dai più acuti ai più gravi (scampanii, note che salgono e scendono, fanfare, bip, allarmi, colpi, sirene), il tono standard, nessuno o un file proprio; scegliendone uno lo si ascolta.
 * **Luce e controllo qualità con la telecamera della testa:** la finestra del nodo accende e spegne l'anello di LED, e la finestra Controllo qualità guarda la scheda dopo il lavoro: giudica i fori del lavoro (presenti, rotondi, della misura giusta, al loro posto), i canali fresati (larghi quanto l'utensile, regolari, senza restringimenti) e la foto stessa, segna ogni foro sull'immagine, mostra un verdetto grande come un cartello (CONFORME, NON CONFORME o non valutabile) e fa dire lo stesso all'anello a colori. I profili (standard, passo fine, prototipo), le tolleranze, la scala e la sua calibrazione con un foro noto sono conservati in un file e consegnati al server. Il risultato può anche essere detto a voce: due suoni in più nelle impostazioni, per un controllo corretto e uno che non lo è, ciascuno spento, un segnale acustico, un suono del catalogo, un tuo file o una voce che dice che il controllo visivo della scheda è corretto o non è corretto, come gli altri suoni.

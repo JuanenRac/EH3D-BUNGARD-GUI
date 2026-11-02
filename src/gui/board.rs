@@ -1019,10 +1019,10 @@ impl App {
                 Act::Edit(EditTarget::BoardSize(width), rx + 272.0, yy + 2.0, 96.0),
             ));
         }
-        // width and depth change places with one touch: the board that does not go into the machine often does turned
+        // width and depth change places with one touch, under the two fields: the board that does not go into the machine often does turned
         cv.chip(
-            rx + 520.0,
-            ry + 23.0 - 19.0,
+            rx + 130.0,
+            ry + 2.0 * 46.0 + 4.0,
             240.0,
             38.0,
             self.tr(Text::BoardSwap),
@@ -1030,7 +1030,7 @@ impl App {
             Act::BoardSwap,
         );
         // a board that is bigger than the table of the active machine (turned 90 degrees too) is warned about; the choice is not stopped
-        self.paint_fit_warning(cv, rx, ry + 2.0 * 46.0 + 24.0);
+        self.paint_fit_warning(cv, rx, ry + 2.0 * 46.0 + 4.0 + 38.0 + 24.0);
         cv.chip(
             x + w - 200.0,
             y + h - 60.0,

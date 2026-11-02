@@ -374,6 +374,8 @@ pub(crate) enum Icon {
     Plug,
     Nodes,
     Info,
+    /// A circular arrow with an arrow pointing down inside it: the window of the updates.
+    Update,
 }
 
 impl Cv<'_> {
@@ -573,13 +575,36 @@ mod tests {
         use extra::Modal::*;
         assert_eq!(
             order,
-            [Open, Board, Tools, Panel, Settings, Connection, Fleet, About]
+            [Open, Board, Tools, Panel, Settings, Connection, Fleet, About, Update]
         );
         for w in bar.windows(2) {
             assert!(w[1].0 - w[0].1 >= 3.0, "{:?} touches {:?}", w[0], w[1]);
         }
-        // the theme and the language are at the right: nothing of the bar goes over them
-        assert!(bar.last().unwrap().1 < DESIGN_W - 230.0, "{:?}", bar.last());
+        // the theme and the language are at the right: nothing of the bar goes over them, in any language and theme
+        for lang in [Lang::En, Lang::De, Lang::Ru, Lang::Fi, Lang::Ja] {
+            for id in ThemeId::ALL {
+                a.set_lang(lang);
+                a.set_theme(id);
+                clipped_on(&mut a, &ctx);
+                clipped_on(&mut a, &ctx);
+                let end = a
+                    .hits
+                    .iter()
+                    .filter(|(r, act)| r.min.y < 64.0 && matches!(act, Act::Show(_)))
+                    .map(|(r, _)| r.max.x)
+                    .fold(0.0_f32, f32::max);
+                let labels = a
+                    .hits
+                    .iter()
+                    .filter(|(_, act)| matches!(act, Act::NextTheme | Act::NextLang))
+                    .map(|(r, _)| r.min.x)
+                    .fold(f32::MAX, f32::min);
+                assert!(
+                    end < labels,
+                    "{lang:?} {id:?}: the bar ends at {end}, the labels start at {labels}"
+                );
+            }
+        }
         let launcher = {
             a.screen = Screen::Launcher;
             clipped_on(&mut a, &ctx);
@@ -591,8 +616,8 @@ mod tests {
                 .count()
         };
         assert_eq!(
-            launcher, 1,
-            "the launcher has the button of the program only"
+            launcher, 2,
+            "the launcher has the buttons of the program only (about and update)"
         );
     }
 
@@ -616,6 +641,7 @@ mod tests {
             ];
             for m in [
                 extra::Modal::About,
+                extra::Modal::Update,
                 extra::Modal::Open,
                 extra::Modal::Panel,
                 extra::Modal::Settings,
@@ -786,6 +812,7 @@ mod tests {
         a.animate = false;
         for m in [
             extra::Modal::About,
+            extra::Modal::Update,
             extra::Modal::Open,
             extra::Modal::Panel,
             extra::Modal::Settings,
@@ -2181,5 +2208,129 @@ EOF
         a.combo_open(ComboId::Model);
         a.combo_pick(999);
         assert_eq!(a.model(), models - 1);
+    }
+
+    fn has_act(a: &App, f: impl Fn(&Act) -> bool) -> bool {
+        a.hits.iter().any(|(_, act)| f(act))
+    }
+
+    #[test]
+    fn the_update_window_offers_only_what_can_be_done_and_never_installs_alone() {
+        let ctx = egui::Context::default();
+        install_fonts(&ctx);
+        let mut a = app();
+        a.animate = false;
+        a.screen = Screen::Viewer;
+        // the defaults are careful: updates allowed, never looked for at the start
+        assert!(a.settings.updates_enabled && !a.settings.updates_at_start);
+        a.show_modal(extra::Modal::Update);
+        clipped_on(&mut a, &ctx);
+        clipped_on(&mut a, &ctx);
+        // before any look: one can look, but there is nothing to install, to undo or to restart
+        assert!(has_act(&a, |x| matches!(x, Act::UpdCheck)));
+        assert!(!has_act(&a, |x| matches!(
+            x,
+            Act::UpdInstall | Act::UpdUndo | Act::UpdRestart
+        )));
+        assert!(has_act(&a, |x| matches!(x, Act::UpdAllow)));
+        assert!(has_act(&a, |x| matches!(x, Act::UpdAtStart)));
+        // the install and the undo asked for anyway do nothing
+        a.act(Act::UpdInstall);
+        a.act(Act::UpdUndo);
+        a.act(Act::UpdRestart);
+        let v = a.upd.lock().unwrap().clone();
+        assert!(!v.busy && v.steps.is_empty() && !v.restart_needed);
+        // switched off, the program does not even look
+        a.act(Act::UpdAllow);
+        assert!(!a.settings.updates_enabled);
+        a.act(Act::UpdCheck);
+        assert!(!a.upd.lock().unwrap().busy);
+        clipped_on(&mut a, &ctx);
+        clipped_on(&mut a, &ctx);
+        assert!(!has_act(&a, |x| matches!(x, Act::UpdCheck)));
+        // and the switches are kept
+        let back = Settings::load(&a.settings_path);
+        assert!(!back.updates_enabled);
+        a.act(Act::UpdAllow);
+        a.act(Act::UpdAtStart);
+        let back = Settings::load(&a.settings_path);
+        assert!(back.updates_enabled && back.updates_at_start);
+    }
+
+    #[test]
+    fn a_look_at_a_server_that_does_not_answer_is_told_and_remembered() {
+        let ctx = egui::Context::default();
+        install_fonts(&ctx);
+        let mut a = app();
+        a.animate = false;
+        a.screen = Screen::Viewer;
+        // an address of this computer where nobody listens (the tests never reach the network)
+        let port = {
+            let l = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+            l.local_addr().unwrap().port()
+        };
+        a.settings.updates_api_url = format!("http://127.0.0.1:{port}/latest");
+        a.settings.updates_timeout_s = 2;
+        a.show_modal(extra::Modal::Update);
+        a.act(Act::UpdCheck);
+        for _ in 0..2400 {
+            if !a.upd.lock().unwrap().busy {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(25));
+        }
+        let v = a.upd.lock().unwrap().clone();
+        assert!(v.checked && v.error.is_some() && v.release.is_none());
+        // the end of the look is written down, so that the next start waits for the interval
+        assert_eq!(a.settings.updates_last_check, 0);
+        a.upd_poll();
+        assert!(a.settings.updates_last_check > 0);
+        assert!(Settings::load(&a.settings_path).updates_last_check > 0);
+        // the window says what happened and still offers a new look
+        clipped_on(&mut a, &ctx);
+        clipped_on(&mut a, &ctx);
+        assert!(has_act(&a, |x| matches!(x, Act::UpdCheck)));
+        assert!(!has_act(&a, |x| matches!(x, Act::UpdInstall)));
+    }
+
+    #[test]
+    fn the_start_looks_for_a_new_version_only_when_asked_and_when_the_interval_has_passed() {
+        let mut a = app();
+        let port = {
+            let l = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+            l.local_addr().unwrap().port()
+        };
+        a.settings.updates_api_url = format!("http://127.0.0.1:{port}/latest");
+        a.settings.updates_timeout_s = 2;
+        // not asked: nothing
+        a.upd_start();
+        let (busy, checked) = {
+            let v = a.upd.lock().unwrap();
+            (v.busy, v.checked)
+        };
+        assert!(!busy && !checked);
+        // asked, and never looked before: it looks
+        a.settings.updates_at_start = true;
+        a.upd_start();
+        let waits = |a: &App| {
+            for _ in 0..2400 {
+                if !a.upd.lock().unwrap().busy {
+                    break;
+                }
+                std::thread::sleep(Duration::from_millis(25));
+            }
+        };
+        waits(&a);
+        let checked = a.upd.lock().unwrap().checked;
+        assert!(checked);
+        // looked a moment ago: it does not look again before the interval
+        a.upd.lock().unwrap().checked = false;
+        a.settings.updates_last_check = crate::updates::now();
+        a.upd_start();
+        let (busy, checked) = {
+            let v = a.upd.lock().unwrap();
+            (v.busy, v.checked)
+        };
+        assert!(!busy && !checked);
     }
 }

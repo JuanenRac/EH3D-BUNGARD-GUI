@@ -180,6 +180,76 @@ pub enum Fit {
     Incompatible(Why),
 }
 
+/// The sizes of the original spindle as the 3D view draws it (a 174 mm long, 33 mm round chrome body with an O20 nose that has an O27 collar), from its drawing.
+/// They are kept in the settings file (`spindle_drawing`, eight numbers in mm separated by commas); what is not a valid number keeps the value of the drawing.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct HeadDims {
+    pub total_mm: f64,
+    pub nose_mm: f64,
+    pub nose_d: f64,
+    pub collar_d: f64,
+    pub collar_mm: f64,
+    pub body_mm: f64,
+    pub body_d: f64,
+    /// Height over the axis of the connector at the rear, in mm (the overall height of the drawing).
+    pub connector_h: f64,
+}
+
+impl Default for HeadDims {
+    fn default() -> HeadDims {
+        HeadDims {
+            total_mm: 174.0,
+            nose_mm: 33.0,
+            nose_d: 20.0,
+            collar_d: 27.0,
+            collar_mm: 14.0,
+            body_mm: 88.0,
+            body_d: 33.0,
+            connector_h: 59.0,
+        }
+    }
+}
+
+impl HeadDims {
+    /// The line of the settings file: the eight sizes in the order of the fields.
+    pub fn to_text(&self) -> String {
+        format!(
+            "{},{},{},{},{},{},{},{}",
+            self.total_mm,
+            self.nose_mm,
+            self.nose_d,
+            self.collar_d,
+            self.collar_mm,
+            self.body_mm,
+            self.body_d,
+            self.connector_h
+        )
+    }
+
+    /// The sizes of a line of the settings file. A number that is missing, is not a number or is not a sensible size (zero, negative, over 1000 mm)
+    /// keeps the size of the drawing; the collar cannot be longer than the nose.
+    pub fn from_text(v: &str) -> HeadDims {
+        let mut d = HeadDims::default();
+        let f: Vec<&str> = v.split(',').map(str::trim).collect();
+        let num = |i: usize, keep: f64| {
+            f.get(i)
+                .and_then(|x| x.parse::<f64>().ok())
+                .filter(|n| n.is_finite() && *n > 0.0 && *n <= 1000.0)
+                .unwrap_or(keep)
+        };
+        d.total_mm = num(0, d.total_mm);
+        d.nose_mm = num(1, d.nose_mm);
+        d.nose_d = num(2, d.nose_d);
+        d.collar_d = num(3, d.collar_d);
+        d.collar_mm = num(4, d.collar_mm);
+        d.body_mm = num(5, d.body_mm);
+        d.body_d = num(6, d.body_d);
+        d.connector_h = num(7, d.connector_h);
+        d.collar_mm = d.collar_mm.min(d.nose_mm);
+        d
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -348,5 +418,20 @@ mod tests {
             Fit::Adjusted { bit, .. } => assert_eq!(bit.rpm, vfd.min_rpm),
             other => panic!("{other:?}"),
         }
+    }
+
+    #[test]
+    fn the_drawing_sizes_round_trip_and_bad_numbers_keep_the_drawing() {
+        let d = HeadDims::default();
+        assert_eq!(HeadDims::from_text(&d.to_text()), d);
+        let odd = HeadDims::from_text("200, x, -3, 0, 99, 88, 40");
+        assert_eq!(odd.total_mm, 200.0);
+        assert_eq!(odd.nose_mm, d.nose_mm);
+        assert_eq!(odd.nose_d, d.nose_d);
+        assert_eq!(odd.collar_d, d.collar_d);
+        // the collar is cut to the nose
+        assert_eq!(odd.collar_mm, 33.0);
+        assert_eq!(odd.body_d, 40.0);
+        assert_eq!(odd.connector_h, d.connector_h);
     }
 }

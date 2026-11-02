@@ -121,6 +121,17 @@ pub struct Settings {
     /// The spindle the machine carries now, and the limits of each one: the catalogue and the tools warn when a bit asks for more than it can give.
     pub spindle: SpindleId,
     pub spindles: [Spindle; 2],
+    /// The sizes the 3D view draws the original spindle with (from its data sheet unless the settings file says otherwise).
+    pub head_dims: crate::spindle::HeadDims,
+    /// The updates from GitHub: the master switch (off, the program never asks the network), whether it looks for a new version when it starts, the hours
+    /// between two such looks, the address of the API that answers with the latest release, and when it last looked (seconds since 1970).
+    pub updates_enabled: bool,
+    pub updates_at_start: bool,
+    pub updates_interval_h: u32,
+    pub updates_api_url: String,
+    pub updates_last_check: u64,
+    /// Seconds a connection to GitHub may wait before the update gives up.
+    pub updates_timeout_s: u64,
     /// How many holes each drill (by its tool number) has drilled in all the jobs, has drilled in all the jobs of this window, kept between runs.
     pub holes_drilled: std::collections::BTreeMap<u8, u64>,
     /// The files opened last, the newest first (at most [`RECENT_MAX`]).
@@ -133,6 +144,10 @@ pub struct Settings {
     pub pane_left: f32,
     pub pane_right: f32,
 }
+
+/// Where the latest release of this program is asked for (the API of GitHub); the settings file can point it elsewhere.
+pub const DEFAULT_UPDATES_API: &str =
+    "https://api.github.com/repos/JuanenRac/EH3D-BUNGARD-GUI/releases/latest";
 
 /// How many recent files are kept.
 pub const RECENT_MAX: usize = 6;
@@ -157,6 +172,13 @@ impl Default for Settings {
                 Spindle::default_for(SpindleId::Original),
                 Spindle::default_for(SpindleId::Vfd),
             ],
+            head_dims: crate::spindle::HeadDims::default(),
+            updates_enabled: true,
+            updates_at_start: false,
+            updates_interval_h: 24,
+            updates_api_url: DEFAULT_UPDATES_API.to_string(),
+            updates_last_check: 0,
+            updates_timeout_s: 30,
             holes_drilled: std::collections::BTreeMap::new(),
             recent: Vec::new(),
             fullscreen: false,
@@ -242,6 +264,34 @@ impl Settings {
                         s.pane_right = r;
                     }
                 }
+                "updates" => s.updates_enabled = !matches!(v.trim(), "no" | "off" | "false" | "0"),
+                "updates_at_start" => {
+                    s.updates_at_start = matches!(v.trim(), "yes" | "on" | "true" | "1")
+                }
+                "updates_interval_hours" => {
+                    s.updates_interval_h = v
+                        .trim()
+                        .parse()
+                        .ok()
+                        .filter(|h: &u32| (1..=24 * 90).contains(h))
+                        .unwrap_or(s.updates_interval_h)
+                }
+                "updates_api_url" => {
+                    let u = v.trim();
+                    if !u.is_empty() {
+                        s.updates_api_url = u.to_string();
+                    }
+                }
+                "updates_timeout_seconds" => {
+                    s.updates_timeout_s = v
+                        .trim()
+                        .parse()
+                        .ok()
+                        .filter(|n: &u64| (2..=300).contains(n))
+                        .unwrap_or(s.updates_timeout_s)
+                }
+                "updates_last_check" => s.updates_last_check = v.trim().parse().unwrap_or(0),
+                "spindle_drawing" => s.head_dims = crate::spindle::HeadDims::from_text(v),
                 "spindle" => s.spindle = SpindleId::from_code(v).unwrap_or(s.spindle),
                 k if k.starts_with("spindle_") => {
                     if let Some(id) = SpindleId::from_code(&k["spindle_".len()..]) {
@@ -257,7 +307,7 @@ impl Settings {
 
     pub fn to_text(&self) -> String {
         format!(
-            "choice = {}\nlang = {}\ntheme = {}\nboard = {}\nask_operator = {}\ntools_on_open = {}\nopen_preview = {}\nsim_speed = {}\nmodel = {}\nemergency = {}\nestop_pos = {},{}\ndisplay_units = {}\nspindle = {}\nspindle_original = {}\nspindle_vfd = {}\nholes_drilled = {}\nrecent = {}\nfullscreen = {}\nall_makers = {}\npanes = {},{}\n",
+            "choice = {}\nlang = {}\ntheme = {}\nboard = {}\nask_operator = {}\ntools_on_open = {}\nopen_preview = {}\nsim_speed = {}\nmodel = {}\nemergency = {}\nestop_pos = {},{}\ndisplay_units = {}\nspindle = {}\nspindle_original = {}\nspindle_vfd = {}\nspindle_drawing = {}\nupdates = {}\nupdates_at_start = {}\nupdates_interval_hours = {}\nupdates_api_url = {}\nupdates_last_check = {}\nupdates_timeout_seconds = {}\nholes_drilled = {}\nrecent = {}\nfullscreen = {}\nall_makers = {}\npanes = {},{}\n",
             self.choice.map_or("ask", |c| c.key()),
             self.lang.code(),
             self.theme.key(),
@@ -274,6 +324,13 @@ impl Settings {
             self.spindle.code(),
             self.spindles[0].to_text(),
             self.spindles[1].to_text(),
+            self.head_dims.to_text(),
+            if self.updates_enabled { "yes" } else { "no" },
+            if self.updates_at_start { "yes" } else { "no" },
+            self.updates_interval_h,
+            self.updates_api_url,
+            self.updates_last_check,
+            self.updates_timeout_s,
             self.holes_drilled
                 .iter()
                 .map(|(t, n)| format!("{t}:{n}"))
@@ -417,12 +474,55 @@ mod tests {
             all_makers: true,
             pane_left: 300.0,
             pane_right: 500.0,
+            head_dims: crate::spindle::HeadDims {
+                body_mm: 90.0,
+                ..crate::spindle::HeadDims::default()
+            },
+            updates_enabled: false,
+            updates_at_start: true,
+            updates_interval_h: 12,
+            updates_api_url: "http://127.0.0.1:9/latest".to_string(),
+            updates_last_check: 99,
+            updates_timeout_s: 8,
         };
         s.save(&path).unwrap();
         assert_eq!(Settings::load(&path), s);
         let ask = Settings::default();
         assert!(ask.to_text().contains("choice = ask"));
         assert_eq!(Settings::parse(&ask.to_text()), ask);
+    }
+
+    #[test]
+    fn the_updates_and_the_drawing_of_the_spindle_are_kept_and_start_careful() {
+        let d = Settings::default();
+        assert!(d.updates_enabled && !d.updates_at_start);
+        assert_eq!(d.updates_api_url, DEFAULT_UPDATES_API);
+        assert_eq!(d.head_dims, crate::spindle::HeadDims::default());
+        let s = Settings {
+            updates_enabled: false,
+            updates_at_start: true,
+            updates_interval_h: 48,
+            updates_api_url: "http://127.0.0.1:1/latest".to_string(),
+            updates_last_check: 1234,
+            head_dims: crate::spindle::HeadDims {
+                total_mm: 180.0,
+                ..crate::spindle::HeadDims::default()
+            },
+            ..Settings::default()
+        };
+        let back = Settings::parse(&s.to_text());
+        assert!(!back.updates_enabled);
+        assert!(back.updates_at_start);
+        assert_eq!(back.updates_interval_h, 48);
+        assert_eq!(back.updates_api_url, "http://127.0.0.1:1/latest");
+        assert_eq!(back.updates_last_check, 1234);
+        assert_eq!(back.updates_timeout_s, 30);
+        assert_eq!(back.head_dims.total_mm, 180.0);
+        // an interval out of range keeps the default
+        assert_eq!(
+            Settings::parse("updates_interval_hours = 0").updates_interval_h,
+            24
+        );
     }
 
     #[test]

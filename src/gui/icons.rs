@@ -493,6 +493,39 @@ impl Cv<'_> {
                     .circle_filled(self.pt(cx, cy - h * 0.45), 1.9 * self.u, c);
                 self.line((cx, cy - h * 0.1), (cx, cy + h * 0.55), 2.6, c);
             }
+            Icon::Update => {
+                // a circle drawn nearly all the way round with the head of an arrow at its end, and a short arrow pointing down inside
+                let ring: Vec<(f32, f32)> = (0..=16)
+                    .map(|i| {
+                        let a = (-60.0_f32 + i as f32 * 300.0 / 16.0).to_radians();
+                        (cx + h * 0.9 * a.cos(), cy + h * 0.9 * a.sin())
+                    })
+                    .collect();
+                self.polyline(&ring, 2.2, c, false);
+                let (ex, ey) = (
+                    cx + h * 0.9 * (-60.0_f32).to_radians().cos(),
+                    cy + h * 0.9 * (-60.0_f32).to_radians().sin(),
+                );
+                self.poly(
+                    &[
+                        (ex + h * 0.1, ey - h * 0.5),
+                        (ex + h * 0.62, ey + h * 0.18),
+                        (ex - h * 0.5, ey + h * 0.2),
+                    ],
+                    c,
+                    Stroke::NONE,
+                );
+                self.line((cx, cy - h * 0.4), (cx, cy + h * 0.25), 2.4, c);
+                self.poly(
+                    &[
+                        (cx - h * 0.34, cy + h * 0.1),
+                        (cx + h * 0.34, cy + h * 0.1),
+                        (cx, cy + h * 0.5),
+                    ],
+                    c,
+                    Stroke::NONE,
+                );
+            }
             Icon::Play | Icon::Pause | Icon::Stop | Icon::Alert => {}
         }
     }
@@ -519,15 +552,15 @@ impl Cv<'_> {
             col(self.t.text)
         };
         let dy = if down { 1.8 } else { 0.0 };
-        self.draw_icon(x + 17.0, y + h / 2.0 + dy, 20.0, icon, ink);
+        self.draw_icon(x + 15.0, y + h / 2.0 + dy, 20.0, icon, ink);
         self.text_fit(
-            x + 32.0,
+            x + 28.0,
             y + h / 2.0 + 5.0 + dy,
             Align2::LEFT_BOTTOM,
             label,
             14.0,
             ink,
-            w - 38.0,
+            w - 32.0,
         );
     }
 

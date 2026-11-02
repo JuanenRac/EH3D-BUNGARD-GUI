@@ -51,6 +51,13 @@ pub(crate) fn bar_bounds(slots: &[AtcSlot]) -> Option<(f64, f64, f64, f64)> {
     ))
 }
 
+/// Whether a point of the table (mm) is at the bar: in the rectangle of its places with 20 mm round it. The head is there while it takes or leaves a tool.
+pub(crate) fn at_bar(slots: &[AtcSlot], p: (f64, f64)) -> bool {
+    bar_bounds(slots).is_some_and(|(x0, y0, x1, y1)| {
+        p.0 >= x0 - 20.0 && p.0 <= x1 + 20.0 && p.1 >= y0 - 20.0 && p.1 <= y1 + 20.0
+    })
+}
+
 /// The distance between two neighbouring places, in mm (20 when the bar has one place only).
 pub(crate) fn bar_pitch(slots: &[AtcSlot]) -> f64 {
     let mut s: Vec<&AtcSlot> = slots.iter().collect();
@@ -216,6 +223,11 @@ impl App {
             Some(k) => (Some(k), Some(if k < count { k + 1 } else { 0 })),
             None if count > 0 => (Some(0), Some(1)),
             None => (None, None),
+        };
+        // while a job runs the two tags are shown during the change only: when the head is at the bar
+        let (leave, take) = match (self.running, self.running_head_mm()) {
+            (Some(_), Some(h)) if !at_bar(&view.slots, (h.0, h.1)) => (None, None),
+            _ => (leave, take),
         };
         let tools = loaded
             .iter()
@@ -898,6 +910,66 @@ mod tests {
         // before the job the head holds the test tool: it is left in the place 0 and the first tool is taken
         assert_eq!((d.leave, d.take, d.head), (Some(0), Some(1), None));
         assert_eq!(d.tools.len(), loaded.len());
+    }
+
+    #[test]
+    fn the_point_is_at_the_bar_when_it_is_in_its_rectangle_with_a_margin() {
+        let mut a = app();
+        a.apply_model_with(machines::Model::from_name("CCD/2 ATC").unwrap(), false);
+        let v = a.bar_view().unwrap();
+        let (x0, y0, x1, y1) = bar_bounds(&v.slots).unwrap();
+        assert!(at_bar(&v.slots, ((x0 + x1) / 2.0, (y0 + y1) / 2.0)));
+        assert!(at_bar(&v.slots, (x0 - 19.0, y0 - 19.0)));
+        assert!(!at_bar(&v.slots, (x0 - 25.0, y0)));
+        assert!(!at_bar(&v.slots, (x1 + 25.0, y1)));
+        assert!(!at_bar(&[], (0.0, 0.0)));
+    }
+
+    #[test]
+    fn the_simulated_head_is_the_head_of_the_plan_and_the_exchange_tags_show_while_it_is_at_the_bar(
+    ) {
+        let mut a = app();
+        a.apply_model_with(machines::Model::from_name("CCD/2 ATC").unwrap(), false);
+        a.auto_ok = true;
+        a.fixed_dt = Some(0.05);
+        a.act(Act::Start);
+        // the window of the rack comes first on these models
+        if a.modal == Some(Modal::Rack) {
+            a.act(Act::RackGo);
+        }
+        let slots = a.bar_view().unwrap().slots;
+        let (mut at, mut away) = (0, 0);
+        for _ in 0..600_000 {
+            a.tick();
+            if a.modal == Some(Modal::Rack) {
+                a.act(Act::RackGo);
+            }
+            if a.running.is_none() && a.modal.is_none() {
+                break;
+            }
+            let Some(h) = a.running_head_mm() else {
+                continue;
+            };
+            // the marker of the plan view is the head of the steps, not the hole that is next
+            assert_eq!(a.head(), Some((h.0, h.1)));
+            let d = a.bar_draw().unwrap();
+            if at_bar(&slots, (h.0, h.1)) {
+                at += 1;
+                assert!(d.take.is_some() || d.leave.is_some(), "no tag at the bar");
+            } else {
+                away += 1;
+                assert!(
+                    d.take.is_none() && d.leave.is_none(),
+                    "a tag away from the bar"
+                );
+            }
+            if at > 0 && away > 0 && a.m3d.phase() == super::super::machine3d::Phase::Working {
+                break;
+            }
+        }
+        assert!(at > 0, "the head went to the bar");
+        assert!(away > 0, "the head went away from the bar");
+        a.act(Act::Stop);
     }
 
     #[test]

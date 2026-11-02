@@ -71,6 +71,8 @@ pub(crate) enum Modal {
     Rack,
     /// The bar of the tool changer: where its first and its last tool are.
     Bar,
+    /// The update of the program from the releases of GitHub.
+    Update,
 }
 
 /// A text box of the Connection window.
@@ -902,6 +904,7 @@ impl App {
             Modal::Head => self.paint_head(cv),
             Modal::Inspect => self.paint_inspect(cv),
             Modal::InspectTune => self.paint_inspect_tune(cv),
+            Modal::Update => self.paint_update(cv),
             Modal::About => {
                 let (x, y) = self.modal_card(cv, self.tr(Text::About), 420.0);
                 cv.text(

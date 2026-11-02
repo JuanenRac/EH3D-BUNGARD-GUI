@@ -19,35 +19,8 @@ pub(super) struct Ring {
     pub shiny: bool,
 }
 
-/// The sizes of the original spindle (a 174 mm long, 33 mm round chrome body with an O20 nose that has an O27 collar), from its drawing, as the parameters of
-/// the drawing of the head. They can be overridden in the configuration of the program (`spindle.*` of the settings): see [`Dims`].
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub(super) struct Dims {
-    pub total_mm: f64,
-    pub nose_mm: f64,
-    pub nose_d: f64,
-    pub collar_d: f64,
-    pub collar_mm: f64,
-    pub body_mm: f64,
-    pub body_d: f64,
-    /// Height over the axis of the connector at the rear, in mm (the overall height of the drawing).
-    pub connector_h: f64,
-}
-
-impl Default for Dims {
-    fn default() -> Dims {
-        Dims {
-            total_mm: 174.0,
-            nose_mm: 33.0,
-            nose_d: 20.0,
-            collar_d: 27.0,
-            collar_mm: 14.0,
-            body_mm: 88.0,
-            body_d: 33.0,
-            connector_h: 59.0,
-        }
-    }
-}
+/// The sizes of the drawing of the head: the data sheet of the original spindle, or what the settings file says.
+pub(super) type Dims = crate::spindle::HeadDims;
 
 /// A point in the space of the drawing (X, Y, Z in mm) and a colour.
 type Point = (f64, f64, f64);
@@ -64,7 +37,7 @@ const DARK: (u8, u8, u8) = (74, 76, 70);
 impl Dims {
     /// The parts of revolution from the face of the nose upwards: the nose, the collar over it, the body and the cap behind it that ends the
     /// length. Height 0 is where the tool comes out of the nose.
-    pub fn rings(&self) -> Vec<Ring> {
+    pub(super) fn rings(&self) -> Vec<Ring> {
         let (rn, rc, rb) = (self.nose_d / 2.0, self.collar_d / 2.0, self.body_d / 2.0);
         let nose_top = self.nose_mm;
         let collar_from = (nose_top - self.collar_mm).max(0.0);
@@ -108,7 +81,7 @@ impl Dims {
     }
 
     /// The tool: a thin shaft of the diameter of the drill or the router that comes out of the nose (`out_mm` is how far).
-    pub fn tool(&self, diameter_mm: f64, out_mm: f64) -> Ring {
+    pub(super) fn tool(&self, diameter_mm: f64, out_mm: f64) -> Ring {
         Ring {
             z0: -out_mm,
             z1: 0.0,
@@ -121,7 +94,7 @@ impl Dims {
 
     /// The cable connector: a dark body that leaves the rear of the spindle at an angle (from the axis at the rear to a point `connector_h` over it and a little
     /// to the side), as the first and the last point of its axis with the radius of its two ends, and the round plug that stands at the end of it.
-    pub fn connector(&self) -> [Part; 2] {
+    pub(super) fn connector(&self) -> [Part; 2] {
         let z_base = self.total_mm - 30.0;
         let reach = self.connector_h - self.body_d / 2.0;
         let elbow = (self.body_d / 2.0 + reach * 0.35, 0.0, z_base + 22.0);
@@ -312,7 +285,7 @@ impl App {
         tip: (f64, f64, f64),
         tool_d: f64,
     ) {
-        let facets = spindle_facets(&Dims::default(), tip, tool_d, 9.0);
+        let facets = spindle_facets(&self.settings.head_dims, tip, tool_d, 9.0);
         for (pts, color) in visible(&facets, iso, project) {
             cv.poly(&pts, color, Stroke::new(0.5 * cv.u, shade(color, 0.72)));
         }

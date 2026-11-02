@@ -9,7 +9,9 @@ readme = "README.md"
 
 [features]
 default = []
-gui = ["dep:eframe", "dep:png", "dep:jpeg-decoder", "dep:arboard"]
+gui = ["dep:eframe", "dep:png", "dep:jpeg-decoder", "dep:arboard", "updates"]
+# the update from the releases of GitHub: its own TLS (rustls with the ring provider and the roots of webpki, no system library), SHA-256 and the two archive formats
+updates = ["dep:ureq", "dep:sha2", "dep:flate2", "dep:tar", "dep:zip"]
 
 [dependencies]
 eh3d-view = { path = "../EH3D-COMMON/crates/view" }
@@ -27,6 +29,12 @@ png = { version = "0.17", optional = true }
 jpeg-decoder = { version = "0.3", default-features = false, optional = true }
 # only to know whether the clipboard holds text (the menu of the right button greys Paste out when it does not)
 arboard = { version = "3", default-features = false, optional = true }
+
+ureq = { version = "2", default-features = false, features = ["tls"], optional = true }
+sha2 = { version = "0.10", optional = true }
+flate2 = { version = "1", optional = true }
+tar = { version = "0.4", default-features = false, optional = true }
+zip = { version = "2", default-features = false, features = ["deflate"], optional = true }
 
 # the window of Linux needs a windowing system chosen at build time (X11 and Wayland); Windows and macOS have their own
 [target.'cfg(target_os = "linux")'.dependencies]

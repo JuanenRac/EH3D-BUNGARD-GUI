@@ -16,6 +16,8 @@ pub mod machines;
 pub mod panes;
 pub mod recovery;
 pub mod spindle;
+#[cfg(feature = "updates")]
+pub mod updates;
 
 #[cfg(feature = "gui")]
 pub mod gui;

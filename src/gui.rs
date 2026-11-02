@@ -45,6 +45,7 @@ mod opener;
 mod rack;
 mod resume;
 mod spindle3d;
+mod update;
 mod view2d;
 use board::BoardPick;
 use combo::{Combo, ComboId};
@@ -58,10 +59,12 @@ use std::sync::mpsc::Receiver;
 const DESIGN_W: f32 = 1600.0;
 const DESIGN_H: f32 = 900.0;
 /// The buttons of the top bar: where they start along the bar and how wide each is.
-const TOP_BAR_FROM: f32 = 300.0;
-const TOP_BUTTON_W: f32 = 118.0;
+const TOP_BAR_FROM: f32 = 280.0;
+const TOP_BUTTON_W: f32 = 112.0;
 /// The button of the nodes and stations has the longest word in most languages.
-const TOP_BUTTON_WIDE: f32 = 156.0;
+const TOP_BUTTON_WIDE: f32 = 150.0;
+/// The button of the updates is a picture with its name in a note: the bar has no room left for another word.
+const TOP_BUTTON_ICON: f32 = 40.0;
 
 fn col(c: Rgb) -> Color32 {
     Color32::from_rgb(c.0, c.1, c.2)
@@ -132,6 +135,13 @@ enum Act {
     ResetHoles,
     SetSpeed(f32),
     ToggleAsk,
+    /// The window of the updates: look for a new version, install it, put the earlier one back, restart, and the two switches.
+    UpdCheck,
+    UpdInstall,
+    UpdUndo,
+    UpdRestart,
+    UpdAllow,
+    UpdAtStart,
     /// The node of the drill head: how it is reached, its camera and a measure of the table.
     HeadMode(eh3d_drillpro::protocol::connection::HeadNode),
     HeadCamera,
@@ -356,6 +366,12 @@ pub struct App {
     rotation: u8,
     plan_scale: std::cell::Cell<f64>,
     settings_tab: u8,
+    /// The update from GitHub: what its thread shows, the program it would replace, the file of its history, and whether the end of a look was told to the settings.
+    upd: crate::updates::State,
+    upd_cancel: Arc<AtomicBool>,
+    upd_exe: Option<PathBuf>,
+    upd_history: PathBuf,
+    upd_seen: bool,
     visuals_theme: Option<ThemeId>,
     /// The files of the job as they were opened (they are read again when the unit of the coordinates changes).
     drill_path: Option<PathBuf>,
@@ -488,6 +504,7 @@ impl App {
                 .position(|m| *m == board.material().maker)
                 .map_or(0, |i| i + 1)
         };
+        let upd_history = settings_path.with_file_name("updates-history.log");
         let mut app = App {
             screen: o.screen.unwrap_or(match settings.choice {
                 Some(Choice::Modern) => Screen::Viewer,
@@ -567,6 +584,11 @@ impl App {
             rotation: 0,
             plan_scale: std::cell::Cell::new(1.0),
             settings_tab: 0,
+            upd: Arc::default(),
+            upd_cancel: Arc::new(AtomicBool::new(false)),
+            upd_exe: update::program_to_replace(),
+            upd_history,
+            upd_seen: false,
             visuals_theme: None,
             drill_path: None,
             route_path: None,
@@ -708,6 +730,7 @@ impl App {
         }
         match o.modal.as_deref() {
             Some("about") => app.show_modal(Modal::About),
+            Some("update") => app.show_modal(Modal::Update),
             Some("open") => app.show_modal(Modal::Open),
             Some("panel") => app.show_modal(Modal::Panel),
             Some("settings") => app.show_modal(Modal::Settings),
@@ -765,6 +788,9 @@ impl App {
             && o.modal.is_none();
         if nothing_asked {
             app.offer_resume();
+        }
+        if o.shot.is_none() {
+            app.upd_start();
         }
         app
     }
@@ -1532,6 +1558,12 @@ impl App {
                 self.remember_settings();
             }
             Act::ToggleAsk => self.toggle_ask(),
+            Act::UpdCheck => self.upd_check(),
+            Act::UpdInstall => self.upd_install(),
+            Act::UpdUndo => self.upd_undo(),
+            Act::UpdRestart => self.upd_restart(),
+            Act::UpdAllow => self.upd_toggle_allow(),
+            Act::UpdAtStart => self.upd_toggle_start(),
             Act::HeadMode(m) => {
                 self.conn.head_node = m;
                 self.head.status = None;
@@ -2371,7 +2403,10 @@ impl App {
                 (Icon::Plug, Text::Connection, Modal::Connection),
                 (Icon::Nodes, Text::FleetTitle, Modal::Fleet),
             ],
-            &[(Icon::Info, Text::About, Modal::About)],
+            &[
+                (Icon::Info, Text::About, Modal::About),
+                (Icon::Update, Text::UpdButton, Modal::Update),
+            ],
         ];
         let (bw, bh, gap, sep) = (TOP_BUTTON_W, 40.0, 4.0, 14.0);
         let mut x = TOP_BAR_FROM;
@@ -2387,12 +2422,23 @@ impl App {
                 );
             }
             for &(icon, text, modal) in group.iter() {
-                let w = if modal == Modal::Fleet {
-                    TOP_BUTTON_WIDE
-                } else {
-                    bw
+                let w = match modal {
+                    Modal::Fleet => TOP_BUTTON_WIDE,
+                    Modal::Update => TOP_BUTTON_ICON,
+                    _ => bw,
                 };
-                if shown {
+                if shown && modal == Modal::Update {
+                    cv.icon_chip(
+                        x,
+                        12.0,
+                        w,
+                        bh,
+                        icon,
+                        self.modal == Some(modal),
+                        self.tr(text),
+                        Act::Show(modal),
+                    );
+                } else if shown {
                     cv.top_button(
                         x,
                         12.0,
@@ -3389,7 +3435,19 @@ impl App {
     }
 
     /// Where the head is: the running job says it; otherwise the next hole to drill.
+    /// Where the head of the running job is along the steps of its plan (X, Y, Z in mm), the trips to the tool bar included.
+    fn running_head_mm(&self) -> Option<(f64, f64, f64)> {
+        match self.running? {
+            Program::Drill => self.drill.engine.head_mm(),
+            Program::Route => self.route.engine.head_mm(),
+        }
+    }
+
     fn head(&self) -> Option<(f64, f64)> {
+        // the simulated head: the plan view and the bar follow it to the bar and back, as the 3D view does
+        if let Some(h) = self.running_head_mm() {
+            return Some((h.0, h.1));
+        }
         if let Some(v) = self.running_view() {
             return Some((v.x_mm, v.y_mm));
         }
@@ -3881,6 +3939,7 @@ impl eframe::App for App {
                 ctx.send_viewport_cmd(egui::ViewportCommand::Close);
             }
         }
+        self.upd_poll();
         if self.close {
             ctx.send_viewport_cmd(egui::ViewportCommand::Close);
         }

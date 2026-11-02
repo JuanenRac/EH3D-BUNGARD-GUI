@@ -3,6 +3,8 @@
 All notable changes to this project are documented here.
 
 ## [Unreleased]
+
+## [0.2.0] - ATC without asking for tools, a drawn spindle, a tidier bar, updates from GitHub and a queue-safe open window
 - **On the ATC models the operator is never asked to change a tool:** the head goes to the place of the tool in the bar, takes it (leaving the one it held in its own place), comes back to the board and works with it, in drilling and in routing (a routing job used to ask for each cutter); the manual models still ask.
 - **A machine file with no places for the bar is planned with the places the bar is drawn in** when the machine is simulated, so the ATC models run in the demo without a machine file that has the `RACK_` lines; on a real connection a bar nobody has measured is not driven to, and the tools are asked for.
 - **The routing of an ATC model takes the bar of the drilling file,** since the bar is one for both programs.

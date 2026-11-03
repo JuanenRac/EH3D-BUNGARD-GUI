@@ -183,8 +183,20 @@ impl App {
             return;
         }
         let before = self.board();
+        let apart = self.files_apart();
         self.rotation = (self.rotation as i8 + quarters).rem_euclid(4) as u8;
         self.reload_jobs();
+        // both files turn as one: the vector from the middle of the drilling to the middle of the routing turns with them and does not change in length. Whatever
+        // moved one of them against the other (the offsets of the two machine files, the roundings of two units) is taken back to the routing, so the copper and the
+        // holes of a board never drift apart however many times it is turned
+        if let (Some(a0), Some(a1)) = (apart, self.files_apart()) {
+            let q = (quarters as i32).rem_euclid(4) as u8;
+            let want = turn(a0, q, (0.0, 0.0));
+            let (ex, ey) = (a1.0 - want.0, a1.1 - want.1);
+            if ex.abs() > 0.03 || ey.abs() > 0.03 {
+                self.shift_one_side(Program::Route, -ex, -ey);
+            }
+        }
         if let (Some(b0), Some(b1)) = (before, self.board()) {
             let c0 = ((b0.0 + b0.2) / 2.0, (b0.1 + b0.3) / 2.0);
             let c1 = ((b1.0 + b1.2) / 2.0, (b1.1 + b1.3) / 2.0);
@@ -209,6 +221,45 @@ impl App {
         }
         // a board that stayed where it was (the move of the design alone) does not turn: only the design does
         self.view2d.focus = None;
+    }
+
+    /// The vector from the middle of the holes to the middle of the paths, when the job has both.
+    pub(crate) fn files_apart(&self) -> Option<(f64, f64)> {
+        let middle = |b: (f64, f64, f64, f64)| ((b.0 + b.2) / 2.0, (b.1 + b.3) / 2.0);
+        let d = self.drill.base.bounds().map(middle)?;
+        let r = self.route.base.bounds().map(middle)?;
+        Some((r.0 - d.0, r.1 - d.1))
+    }
+
+    /// One of the two programs goes by this much on its own (the amount is cut to the 0.01 mm of the offset).
+    fn shift_one_side(&mut self, p: Program, dx: f64, dy: f64) {
+        let (dx, dy) = ((dx * 100.0).round() / 100.0, (dy * 100.0).round() / 100.0);
+        if dx == 0.0 && dy == 0.0 {
+            return;
+        }
+        let side = match p {
+            Program::Drill => &mut self.drill,
+            Program::Route => &mut self.route,
+        };
+        if let Some(s) = side.engine.settings_mut() {
+            s.offset_mm = (
+                ((s.offset_mm.0 + dx) * 100.0).round() / 100.0,
+                ((s.offset_mm.1 + dy) * 100.0).round() / 100.0,
+            );
+        }
+        side.engine.settings_changed();
+        side.offset = (side.offset.0 + dx, side.offset.1 + dy);
+        for h in &mut side.base.holes {
+            h.x_mm += dx;
+            h.y_mm += dy;
+        }
+        for q in &mut side.base.paths {
+            for pt in &mut q.points {
+                pt.0 += dx;
+                pt.1 += dy;
+            }
+        }
+        self.apply_panel();
     }
 
     /// Moves the board on the table by this much (mm): the offset of the machine changes, and so does what the views show.
@@ -539,5 +590,30 @@ mod tests {
         assert!(a.follow);
         a.act(Act::ToggleBig);
         assert!(a.plan_big);
+    }
+
+    #[test]
+    fn the_holes_and_the_paths_of_a_board_stay_on_one_another_through_every_turn_and_after_a_move()
+    {
+        for (moved, step) in [(false, 1i8), (true, 1), (false, -1), (true, -1)] {
+            let mut a = app();
+            if moved {
+                a.shift_board(7.3, -4.1);
+            }
+            let d0 = a.files_apart().unwrap();
+            let mut want = d0;
+            for k in 1..=8 {
+                a.rotate_work(step);
+                want = turn(want, step.rem_euclid(4) as u8, (0.0, 0.0));
+                let got = a.files_apart().unwrap();
+                assert!(
+                    (got.0 - want.0).abs() < 0.06 && (got.1 - want.1).abs() < 0.06,
+                    "moved {moved}, step {step}, turn {k}: {got:?} is not {want:?}"
+                );
+            }
+            // two whole turns: the files are where they were against each other
+            let back = a.files_apart().unwrap();
+            assert!((back.0 - d0.0).abs() < 0.06 && (back.1 - d0.1).abs() < 0.06);
+        }
     }
 }

@@ -1008,7 +1008,7 @@ mod tests {
                     if let Some(m) = modal {
                         a.show_modal(m);
                     }
-                    let rect = Rect::from_min_size(Pos2::ZERO, Vec2::new(DESIGN_W, DESIGN_H));
+                    let rect = Rect::from_min_size(Pos2::ZERO, Vec2::new(design_w(), DESIGN_H));
                     let mut out = ctx.run_ui(
                         egui::RawInput {
                             screen_rect: Some(rect),

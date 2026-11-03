@@ -2,12 +2,41 @@
 //! The three widths are in the units of the drawing board of the window (the same at every window size); the middle one is what the other two leave.
 //! Every pane keeps a least width so that none of them disappears and what is drawn inside never overlaps.
 
-/// The width of the drawing board the window is drawn on.
+/// The least width of the drawing board the window is drawn on, and the most it grows to on a wide window.
 pub const BOARD_W: f32 = 1600.0;
+pub const BOARD_W_MAX: f32 = 2000.0;
+/// The height of the drawing board.
+pub const BOARD_H: f32 = 900.0;
 /// What the margins and the gaps between the panes take: 20 + 16 + 16 + 20.
 pub const FRAME: f32 = 72.0;
+
+thread_local! {
+    static WIDTH: std::cell::Cell<f32> = const { std::cell::Cell::new(BOARD_W) };
+}
+
+/// The width of the board for a window of this size: as wide as the window is (so the work area fills a wide window to the right and to the left),
+/// never narrower than `BOARD_W` (a smaller or squarer window keeps the old fit: the board is scaled down and centred).
+pub fn board_width_for(win_w: f32, win_h: f32) -> f32 {
+    if !(win_w.is_finite() && win_h.is_finite()) || win_w <= 0.0 || win_h <= 0.0 {
+        return BOARD_W;
+    }
+    (win_w / win_h * BOARD_H).clamp(BOARD_W, BOARD_W_MAX)
+}
+
+/// Sets the width the board has for the window being drawn.
+pub fn set_board_width(w: f32) {
+    WIDTH.with(|c| c.set(w.clamp(BOARD_W, BOARD_W_MAX)));
+}
+
+/// The width of the board now.
+pub fn board_width() -> f32 {
+    WIDTH.with(|c| c.get())
+}
+
 /// What the three panes share.
-pub const TOTAL: f32 = BOARD_W - FRAME;
+pub fn total() -> f32 {
+    board_width() - FRAME
+}
 /// The least width of the left, the middle and the right pane.
 pub const MIN: [f32; 3] = [220.0, 560.0, 380.0];
 /// The width the left pane has when nothing was dragged, and the one of the right pane.
@@ -16,16 +45,17 @@ pub const DEFAULT_RIGHT: f32 = 608.0;
 
 /// The three widths for the wanted left and right ones: each is brought inside its limits and the middle one is the rest.
 pub fn split(left: f32, right: f32) -> (f32, f32, f32) {
-    let left_max = TOTAL - MIN[1] - MIN[2];
+    let total = total();
+    let left_max = total - MIN[1] - MIN[2];
     let left = if left.is_finite() { left } else { DEFAULT_LEFT }.clamp(MIN[0], left_max);
-    let right_max = TOTAL - left - MIN[1];
+    let right_max = total - left - MIN[1];
     let right = if right.is_finite() {
         right
     } else {
         DEFAULT_RIGHT
     }
     .clamp(MIN[2], right_max);
-    (left, TOTAL - left - right, right)
+    (left, total - left - right, right)
 }
 
 /// The bar between the left and the middle pane is dragged by `delta`: the left pane grows or shrinks, the right one stays.
@@ -68,7 +98,7 @@ mod tests {
     fn the_three_widths_always_fill_the_room() {
         for (l, r) in [(0.0, 0.0), (1000.0, 1000.0), (300.0, 900.0), (-5.0, 5000.0)] {
             let (a, b, c) = split(l, r);
-            assert!((a + b + c - TOTAL).abs() < 1e-3);
+            assert!((a + b + c - total()).abs() < 1e-3);
             assert!(a >= MIN[0] && b >= MIN[1] - 1e-3 && c >= MIN[2]);
         }
     }
@@ -77,10 +107,10 @@ mod tests {
     fn no_pane_goes_under_its_least_width() {
         assert_eq!(drag_left(280.0, 608.0, -1000.0).0, MIN[0]);
         let (l, r) = drag_left(280.0, 608.0, 5000.0);
-        assert!((TOTAL - l - r - MIN[1]).abs() < 1e-3);
+        assert!((total() - l - r - MIN[1]).abs() < 1e-3);
         assert_eq!(drag_right(280.0, 608.0, 5000.0).1, MIN[2]);
         let (l, r) = drag_right(280.0, 608.0, -5000.0);
-        assert!((TOTAL - l - r - MIN[1]).abs() < 1e-3);
+        assert!((total() - l - r - MIN[1]).abs() < 1e-3);
     }
 
     #[test]
@@ -95,7 +125,7 @@ mod tests {
     fn a_left_pane_that_grows_pushes_the_right_one_before_the_middle_gets_too_small() {
         let (l, m, r) = split(900.0, 608.0);
         assert_eq!(m, MIN[1]);
-        assert!(r >= MIN[2] && l + r + m - TOTAL < 1e-3);
+        assert!(r >= MIN[2] && l + r + m - total() < 1e-3);
     }
 
     #[test]

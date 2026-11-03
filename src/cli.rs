@@ -59,6 +59,8 @@ pub struct Options {
     pub select: bool,
     /// The widths of the left and the right pane of the main screen (`--panes LEFT,RIGHT`, in the units of its drawing board): for the pictures.
     pub panes: Option<(f32, f32)>,
+    /// The size of the window of a picture (`--size WIDTHxHEIGHT`, 1600x900 when not given): for the pictures.
+    pub size: Option<(f32, f32)>,
     /// The model of the machine to show (`--machine "CCD/2 ATC"`), without remembering it: for the pictures.
     pub machine: Option<String>,
 }
@@ -141,6 +143,16 @@ impl Options {
                 "--panes" => {
                     let v = value("--panes")?;
                     o.panes = Some(crate::panes::parse(&v).ok_or("--panes needs LEFT,RIGHT")?);
+                }
+                "--size" => {
+                    let v = value("--size")?;
+                    let size = v.split_once('x').and_then(|(w, h)| {
+                        Some((w.trim().parse::<f32>().ok()?, h.trim().parse::<f32>().ok()?))
+                    });
+                    o.size = Some(
+                        size.filter(|(w, h)| *w >= 400.0 && *h >= 300.0)
+                            .ok_or("--size needs WIDTHxHEIGHT")?,
+                    );
                 }
                 other if !other.starts_with("--") => o.open.push(PathBuf::from(other)),
                 other => return Err(format!("unknown option '{other}'")),

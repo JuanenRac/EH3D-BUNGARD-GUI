@@ -602,7 +602,7 @@ impl Cv<'_> {
             );
             let size = galley.size() + Vec2::new(16.0 * self.u, 10.0 * self.u);
             let mut at = Pos2::new(rect.center().x - size.x / 2.0, rect.max.y + 8.0 * self.u);
-            let right = self.o.x + DESIGN_W * self.u - 6.0;
+            let right = self.o.x + design_w() * self.u - 6.0;
             if at.x + size.x > right {
                 at.x = right - size.x;
             }

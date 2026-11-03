@@ -58,7 +58,9 @@ use opener::Browser;
 use std::sync::mpsc::Receiver;
 
 /// The design size of the canvas; everything is laid out in these units and scaled to the window.
-const DESIGN_W: f32 = 1600.0;
+fn design_w() -> f32 {
+    crate::panes::board_width()
+}
 const DESIGN_H: f32 = 900.0;
 /// The buttons of the top bar: where they start along the bar and how wide each is.
 const TOP_BAR_FROM: f32 = 280.0;
@@ -2247,10 +2249,12 @@ fn draw_boxes(
 
 impl App {
     fn paint(&mut self, p: &egui::Painter, rect: Rect) {
-        let u = (rect.width() / DESIGN_W).min(rect.height() / DESIGN_H);
+        // a wide window gets a wider board (more work area to both sides); a small or squarer one keeps the board of 1600 and scales it down
+        crate::panes::set_board_width(crate::panes::board_width_for(rect.width(), rect.height()));
+        let u = (rect.width() / design_w()).min(rect.height() / DESIGN_H);
         // the design area is centred; the background covers the whole window
         let o = Pos2::new(
-            rect.min.x + (rect.width() - DESIGN_W * u) / 2.0,
+            rect.min.x + (rect.width() - design_w() * u) / 2.0,
             rect.min.y + (rect.height() - DESIGN_H * u) / 2.0,
         );
         let t = self.theme.clone();
@@ -2351,7 +2355,7 @@ impl App {
         self.paint_combo(&mut cv);
         if let Some(m) = &self.message {
             cv.text(
-                DESIGN_W / 2.0,
+                design_w() / 2.0,
                 DESIGN_H - 24.0,
                 Align2::CENTER_BOTTOM,
                 m,
@@ -2385,7 +2389,12 @@ impl App {
             0.0,
             alpha(col(t.panel), 235),
         );
-        cv.line((0.0, 64.0), (DESIGN_W, 64.0), 1.0, alpha(col(t.line), 150));
+        cv.line(
+            (0.0, 64.0),
+            (design_w(), 64.0),
+            1.0,
+            alpha(col(t.line), 150),
+        );
         let x = if back { 70.0 } else { 28.0 };
         if back {
             cv.icon_chip(
@@ -2412,7 +2421,7 @@ impl App {
         let name = t.id.text();
         let theme_label = format!("{}: {}", self.tr(Text::ThemeLabel), self.tr(name));
         let r = cv.text(
-            DESIGN_W - 28.0,
+            design_w() - 28.0,
             28.0,
             Align2::RIGHT_BOTTOM,
             &theme_label,
@@ -2426,7 +2435,7 @@ impl App {
             self.lang.code().to_uppercase()
         );
         let r = cv.text(
-            DESIGN_W - 28.0,
+            design_w() - 28.0,
             50.0,
             Align2::RIGHT_BOTTOM,
             &lang_label,
@@ -2489,7 +2498,7 @@ impl App {
         let t = cv.t.clone();
         self.top_bar(cv, false);
         cv.text(
-            DESIGN_W / 2.0,
+            design_w() / 2.0,
             160.0,
             Align2::CENTER_BOTTOM,
             "EH3D-BUNGARD",
@@ -2497,7 +2506,7 @@ impl App {
             col(t.text),
         );
         cv.text(
-            DESIGN_W / 2.0,
+            design_w() / 2.0,
             200.0,
             Align2::CENTER_BOTTOM,
             &self.tr(Text::LauncherAsk).to_uppercase(),
@@ -2612,7 +2621,7 @@ impl App {
         }
         // remember
         let on = self.remember;
-        let (bx, by) = (DESIGN_W / 2.0 - 140.0, 730.0);
+        let (bx, by) = (design_w() / 2.0 - 140.0, 730.0);
         let box_rect = cv.rect(bx, by, 22.0, 22.0);
         let (hover, down) = cv.touch(cv.rect(bx - 6.0, by - 6.0, 300.0, 34.0));
         cv.check_box_small(box_rect, on, hover, down);
@@ -3118,7 +3127,7 @@ impl App {
 
         // ---- right: the machine
         if !self.plan_big {
-            let rx = DESIGN_W - 20.0 - right_w;
+            let rx = design_w() - 20.0 - right_w;
             cv.card(rx, top, right_w, card_h, false, None);
             cv.title(rx + 18.0, top + 32.0, self.tr(Text::ViewMachine));
             if self.layers[2] {
@@ -3186,7 +3195,7 @@ impl App {
         }
 
         // ---- bottom: the numbers and the buttons
-        cv.card(20.0, hud_y, DESIGN_W - 40.0, 176.0, false, None);
+        cv.card(20.0, hud_y, design_w() - 40.0, 176.0, false, None);
         let view = self.running_view();
         let vals = [
             (
@@ -4294,7 +4303,8 @@ pub fn run(o: &Options) -> eframe::Result {
     let app = App::new(o);
     let fullscreen = o.shot.is_none() && app.settings.fullscreen;
     let size = if o.shot.is_some() {
-        Vec2::new(1600.0, 900.0)
+        o.size
+            .map_or(Vec2::new(1600.0, 900.0), |(w, h)| Vec2::new(w, h))
     } else {
         Vec2::new(1400.0, 820.0)
     };

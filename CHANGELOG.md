@@ -3,6 +3,7 @@
 All notable changes to this project are documented here.
 
 ## [Unreleased]
+- **The work area of the main screen is wider on a wide window:** the drawing board grows with the width of the window (up to 2000 units for 900 high), so a maximised 1920x1080 window uses its width to the left and to the right; the middle pane takes the extra room. A smaller or squarer window (1366x768, 1024x600, a window dragged smaller) keeps the board of 1600 and scales it down as before, with a test of the sizes and a picture option for the size of the window (`--size WIDTHxHEIGHT`).
 - **The application icon and the logos of the program:** `images/brand/` holds the icon (SVG, PNG sizes, `.ico` and `.icns`), the horizontal and vertical logos in a light and a dark version and the social preview image.
 - **Release builds are checked and attested:** `release-binaries.yml` takes the owner's go-ahead only (a manual start from main, the commit must be part of main), builds the same packages as before, writes `SHA256SUMS` and a build manifest, attests their provenance, verifies the artifact as a stranger would, prepares a draft release of unsigned files only after the owner approves it (a dry run is the default) and opens an issue `build-failed` when anything does not finish.
 - **Shared checks updated:** the validator also compares the badge and the Version row of the README with the manifest, fails when one of its checks cannot run, and the CHANGELOG step of the workflow reads the base branch from the environment.

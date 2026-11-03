@@ -538,8 +538,13 @@ mod tests {
 
     /// Paints a screen of the app in a language with no window and gives back the texts that did not fit their room, even made smaller.
     fn clipped_on(a: &mut App, ctx: &egui::Context) -> Vec<String> {
+        clipped_in(a, ctx, Vec2::new(design_w(), DESIGN_H))
+    }
+
+    /// The same, for a window of the given size in pixels.
+    fn clipped_in(a: &mut App, ctx: &egui::Context, size: Vec2) -> Vec<String> {
         CLIPPED.with(|c| c.borrow_mut().clear());
-        let rect = Rect::from_min_size(Pos2::ZERO, Vec2::new(DESIGN_W, DESIGN_H));
+        let rect = Rect::from_min_size(Pos2::ZERO, size);
         let input = egui::RawInput {
             screen_rect: Some(rect),
             ..Default::default()
@@ -550,6 +555,55 @@ mod tests {
         });
         out.textures_delta.clear();
         CLIPPED.with(|c| std::mem::take(&mut *c.borrow_mut()))
+    }
+
+    #[test]
+    fn the_work_area_widens_on_a_wide_window_and_still_fits_a_small_one() {
+        let ctx = egui::Context::default();
+        install_fonts(&ctx);
+        let mut a = app();
+        a.animate = false;
+        a.screen = Screen::Viewer;
+        // (window, the board is wider than 1600 or not)
+        for (w, h, wide) in [
+            (1920.0, 1080.0, false),
+            (1920.0, 1040.0, true),
+            (2560.0, 1080.0, true),
+            (1366.0, 768.0, false),
+            (1024.0, 600.0, false),
+            (900.0, 560.0, false),
+            (1100.0, 900.0, false),
+        ] {
+            for _ in 0..2 {
+                let clipped = clipped_in(&mut a, &ctx, Vec2::new(w, h));
+                assert!(clipped.is_empty(), "{w}x{h}: {clipped:?}");
+            }
+            let bw = design_w();
+            assert!(
+                bw >= 1600.0 - 1e-3 && bw <= crate::panes::BOARD_W_MAX,
+                "{w}x{h}"
+            );
+            assert_eq!(bw > 1600.0 + 1e-3, wide, "{w}x{h}: {bw}");
+            // the board always fits the window: nothing is drawn past its edge
+            let u = (w / bw).min(h / DESIGN_H);
+            assert!(bw * u <= w + 1e-3 && DESIGN_H * u <= h + 1e-3);
+            // the three panes share the board exactly, none under its least width, and the cards do not overlap
+            let (l, m, r) = crate::panes::split(a.panes.0, a.panes.1);
+            assert!((l + m + r + crate::panes::FRAME - bw).abs() < 1e-3);
+            assert!(
+                l >= crate::panes::MIN[0] && m >= crate::panes::MIN[1] && r >= crate::panes::MIN[2]
+            );
+            let (bl, br) = crate::panes::bars(a.panes.0, a.panes.1);
+            assert!(bl < br && br < bw - 20.0 - r + 16.0);
+            // every control is inside the board
+            for (rect, _) in &a.hits {
+                assert!(
+                    rect.max.x <= bw + 1.0 && rect.min.x >= -1.0,
+                    "{w}x{h}: {rect:?}"
+                );
+            }
+        }
+        crate::panes::set_board_width(crate::panes::BOARD_W);
     }
 
     #[test]
@@ -1517,8 +1571,8 @@ EOF
         assert_eq!(a.modal_off, (100.0, 50.0));
         // never out of the canvas: a hand of it stays in view
         a.drag(Zone::ModalMove, (50_000.0, 50_000.0), false);
-        assert!(a.modal_off.0 < DESIGN_W && a.modal_off.1 < DESIGN_H);
-        assert!(430.0 + a.modal_off.0 <= DESIGN_W - 160.0 + 1e-3);
+        assert!(a.modal_off.0 < design_w() && a.modal_off.1 < DESIGN_H);
+        assert!(430.0 + a.modal_off.0 <= design_w() - 160.0 + 1e-3);
         a.drag(Zone::ModalMove, (-90_000.0, -90_000.0), false);
         assert!(
             430.0 + 740.0 + a.modal_off.0 >= 160.0 - 1e-3 && 130.0 + a.modal_off.1 >= 70.0 - 1e-3
@@ -1584,7 +1638,7 @@ EOF
             "the stop at y = {y} reaches the bar at {hud_top}"
         );
         // and it is inside the canvas, on the right side where the 3D view is
-        assert!(x > DESIGN_W / 2.0 && x + 60.0 < DESIGN_W);
+        assert!(x > design_w() / 2.0 && x + 60.0 < design_w());
         assert_eq!((x, y), crate::launcher::DEFAULT_ESTOP);
     }
 

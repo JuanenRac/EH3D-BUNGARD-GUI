@@ -790,7 +790,8 @@ impl App {
             Zone::ModalMove => {
                 // the window stays on the canvas: at least a hand of it is always in view
                 if let Some((x, y, w, _)) = self.modal_card {
-                    let nx = (self.modal_off.0 + d.0).clamp(-(x + w - 160.0), DESIGN_W - 160.0 - x);
+                    let nx =
+                        (self.modal_off.0 + d.0).clamp(-(x + w - 160.0), design_w() - 160.0 - x);
                     let ny = (self.modal_off.1 + d.1).clamp(-y + 70.0, DESIGN_H - 70.0 - y);
                     self.modal_off = (nx, ny);
                 }

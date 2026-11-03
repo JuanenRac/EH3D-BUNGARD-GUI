@@ -295,7 +295,7 @@ impl App {
         let t = cv.t.clone();
         cv.modal_from = cv.hits.len();
         cv.hits
-            .push((cv.rect(0.0, 0.0, DESIGN_W, DESIGN_H), Act::ComboClose));
+            .push((cv.rect(0.0, 0.0, design_w(), DESIGN_H), Act::ComboClose));
         cv.p.rect_filled(
             cv.rect(ax, y, w, h).translate(Vec2::new(0.0, 4.0 * cv.u)),
             4.0 * cv.u,

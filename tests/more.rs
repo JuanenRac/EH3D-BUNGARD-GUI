@@ -5,8 +5,8 @@ use eh3d_bungard_gui::jobs::{read_latin1, table_from_config, tool_diameter, DEFA
 use eh3d_bungard_gui::launcher::Settings;
 use eh3d_bungard_gui::link::update;
 use eh3d_bungard_gui::panes::{
-    bars, drag_left, drag_right, parse, split, BOARD_W, DEFAULT_LEFT, DEFAULT_RIGHT, FRAME, MIN,
-    TOTAL,
+    bars, drag_left, drag_right, parse, split, total, BOARD_W, DEFAULT_LEFT, DEFAULT_RIGHT, FRAME,
+    MIN,
 };
 use eh3d_bungard_gui::recovery::{fingerprint, Recovery};
 use std::path::{Path, PathBuf};
@@ -44,14 +44,14 @@ fn whatever_is_asked_the_three_panes_fill_the_room_and_keep_their_least_width() 
     for &l in &wanted {
         for &r in &wanted {
             let (a, b, c) = split(l, r);
-            assert!(near(a + b + c, TOTAL), "{l} {r}: {a} {b} {c}");
+            assert!(near(a + b + c, total()), "{l} {r}: {a} {b} {c}");
             assert!(
                 a >= MIN[0] - 1e-3 && b >= MIN[1] - 1e-3 && c >= MIN[2] - 1e-3,
                 "{l} {r}: {a} {b} {c}"
             );
         }
     }
-    assert!(near(BOARD_W - FRAME, TOTAL));
+    assert!(near(BOARD_W - FRAME, total()));
 }
 
 #[test]

@@ -580,7 +580,7 @@ mod tests {
             }
             let bw = design_w();
             assert!(
-                bw >= 1600.0 - 1e-3 && bw <= crate::panes::BOARD_W_MAX,
+                (1600.0 - 1e-3..=crate::panes::BOARD_W_MAX).contains(&bw),
                 "{w}x{h}"
             );
             assert_eq!(bw > 1600.0 + 1e-3, wide, "{w}x{h}: {bw}");

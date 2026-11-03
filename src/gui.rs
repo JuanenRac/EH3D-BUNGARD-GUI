@@ -3627,9 +3627,23 @@ impl App {
                     alu,
                 ),
                 (fx0 - 38.0, fy0 - rail_w, 0.0, 4.0, rail_w, rail_h, black),
-                (fx1 + 34.0, fy0 - rail_w, 0.0, 4.0, rail_w, rail_h, black),
             ],
         );
+        // the mouths of the slots along the rail and its section at the end: the profile, not a tube
+        let dims = self.settings.profile;
+        let back = self::frame::extrude(
+            &dims,
+            self::frame::Axis::X,
+            (fx0 - 34.0, fy0 - rail_w, 0.0),
+            flen + 68.0,
+        );
+        let strips: Vec<_> = back
+            .strips
+            .iter()
+            .map(|s| (s.0, s.1, s.2, s.3, s.4, s.5, black))
+            .collect();
+        boxes(cv, &strips);
+        self::frame::paint_cap(cv, &p, &back.cap, alu, black, edge);
         // the cable chain along the rail
         boxes(
             cv,
@@ -3699,9 +3713,21 @@ impl App {
                 (fx1 - 36.0, fy1 + 8.0, -18.0, 26.0, 26.0, 18.0, black),
                 (fx0 - 34.0, fy1, 0.0, flen + 68.0, rail_w, rail_h, alu),
                 (fx0 - 38.0, fy1, 0.0, 4.0, rail_w, rail_h, black),
-                (fx1 + 34.0, fy1, 0.0, 4.0, rail_w, rail_h, black),
             ],
         );
+        let front = self::frame::extrude(
+            &dims,
+            self::frame::Axis::X,
+            (fx0 - 34.0, fy1, 0.0),
+            flen + 68.0,
+        );
+        let strips: Vec<_> = front
+            .strips
+            .iter()
+            .map(|s| (s.0, s.1, s.2, s.3, s.4, s.5, black))
+            .collect();
+        boxes(cv, &strips);
+        self::frame::paint_cap(cv, &p, &front.cap, alu, black, edge);
         // the board and the work on it
         // the same board as the plan view shows: the size chosen, or the one that stayed where it was while the design moved alone
         if let Some((x0b, y0b, x1b, y1b)) = self.panel_rect() {
@@ -3791,6 +3817,20 @@ impl App {
                 ),
             ],
         );
+        // the beam is the same profile lying the same way: the mouths of its slots along it and its section at the end
+        let beam = self::frame::extrude(
+            &dims,
+            self::frame::Axis::Y,
+            (hx - self::frame::BEAM_BEHIND, fy0 - rail_w, 102.0 - beam_h),
+            frame.beam_len(),
+        );
+        let strips: Vec<_> = beam
+            .strips
+            .iter()
+            .map(|s| (s.0, s.1, s.2, s.3, s.4, s.5, black))
+            .collect();
+        boxes(cv, &strips);
+        self::frame::paint_cap(cv, &p, &beam.cap, alu, black, edge);
         // the spindle of the original machine at its real size, with the tool in its collet
         let tool_d = self.head_tool_diameter();
         self.paint_spindle(

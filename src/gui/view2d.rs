@@ -179,6 +179,9 @@ impl App {
     /// Turns the work a quarter turn (both files together) and reads it again.
     /// The work turns on its own middle, wherever it has been moved to (not on the corner it started from), and stays on the table.
     pub(crate) fn rotate_work(&mut self, quarters: i8) {
+        if self.design_locked() {
+            return;
+        }
         let before = self.board();
         self.rotation = (self.rotation as i8 + quarters).rem_euclid(4) as u8;
         self.reload_jobs();
@@ -210,6 +213,9 @@ impl App {
 
     /// Moves the board on the table by this much (mm): the offset of the machine changes, and so does what the views show.
     pub(crate) fn shift_board(&mut self, dx: f64, dy: f64) {
+        if self.design_locked() {
+            return;
+        }
         // the board goes with its design, by what the offset of the machine really takes
         let (dx, dy) = self.quantize_move(dx, dy);
         if let Some(r) = self.board_frozen.as_mut() {
@@ -240,6 +246,9 @@ impl App {
 
     /// The design (the holes and the paths) goes `dx` and `dy` millimetres on its own: the board and the table stay.
     pub(crate) fn shift_design(&mut self, dx: f64, dy: f64) {
+        if self.design_locked() {
+            return;
+        }
         let (dx, dy) = self.quantize_move(dx, dy);
         self.shift_design_exact(dx, dy);
     }

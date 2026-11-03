@@ -121,6 +121,14 @@ pub struct Settings {
     /// The spindle the machine carries now, and the limits of each one: the catalogue and the tools warn when a bit asks for more than it can give.
     pub spindle: SpindleId,
     pub spindles: [Spindle; 2],
+    /// The name the operator gives to the machine and its make and model, as free text (empty: the model chosen in the list is the name).
+    pub machine_name: String,
+    /// The measures of the aluminium profile of the X and Y axes (the plan view and the 3D view are drawn from them).
+    pub profile: crate::profile::ProfileDims,
+    pub machine_make: String,
+    /// The spindle limits of the models that are not the one in use. Each model has its own copy (a copy of the CCD MTC until there are official data for it), so changing one
+    /// never touches another; the ones of the model in use are in `spindles`.
+    pub machine_spindles: std::collections::BTreeMap<String, [Spindle; 2]>,
     /// The sizes the 3D view draws the original spindle with (from its data sheet unless the settings file says otherwise).
     pub head_dims: crate::spindle::HeadDims,
     /// The updates from GitHub: the master switch (off, the program never asks the network), whether it looks for a new version when it starts, the hours
@@ -172,6 +180,10 @@ impl Default for Settings {
                 Spindle::default_for(SpindleId::Original),
                 Spindle::default_for(SpindleId::Vfd),
             ],
+            machine_name: String::new(),
+            profile: crate::profile::ProfileDims::default(),
+            machine_make: String::new(),
+            machine_spindles: std::collections::BTreeMap::new(),
             head_dims: crate::spindle::HeadDims::default(),
             updates_enabled: true,
             updates_at_start: false,
@@ -194,7 +206,46 @@ fn one_line(v: &str) -> String {
     v.replace(['\r', '\n'], " ")
 }
 
+/// The key of a model in the settings file: its name in lower case with every other character turned into an underscore (`CCD/2 ATC` is `ccd_2_atc`).
+pub fn model_key(model: &str) -> String {
+    let mut k = String::new();
+    for c in model.trim().chars() {
+        k.push(if c.is_ascii_alphanumeric() {
+            c.to_ascii_lowercase()
+        } else if k.ends_with('_') {
+            continue;
+        } else {
+            '_'
+        });
+    }
+    k.trim_matches('_').to_string()
+}
+
 impl Settings {
+    /// The model in use changes: the spindle limits of the one that goes are kept apart under its name and the ones of the new model are taken (a model that never had any gets
+    /// a copy of the starting values of the CCD MTC, which it keeps on its own from then on).
+    pub fn switch_model(&mut self, new_model: &str) {
+        if model_key(&self.model) == model_key(new_model) {
+            self.model = new_model.to_string();
+            return;
+        }
+        self.machine_spindles
+            .insert(model_key(&self.model), self.spindles);
+        self.spindles = self
+            .machine_spindles
+            .remove(&model_key(new_model))
+            .unwrap_or([
+                Spindle::default_for(SpindleId::Original),
+                Spindle::default_for(SpindleId::Vfd),
+            ]);
+        self.model = new_model.to_string();
+    }
+
+    /// Whether the spindle limits of the model in use are the provisional copy of the CCD MTC (every model but the CCD MTC itself, until official data come).
+    pub fn spindle_is_provisional(&self) -> bool {
+        model_key(&self.model) != model_key("CCD MTC")
+    }
+
     /// The spindle the machine carries now.
     pub fn current_spindle(&self) -> Spindle {
         self.spindles[self.spindle as usize]
@@ -298,6 +349,21 @@ impl Settings {
                 "updates_last_check" => s.updates_last_check = v.trim().parse().unwrap_or(0),
                 "spindle_drawing" => s.head_dims = crate::spindle::HeadDims::from_text(v),
                 "spindle" => s.spindle = SpindleId::from_code(v).unwrap_or(s.spindle),
+                "profile_aluminium" => s.profile = crate::profile::ProfileDims::from_text(v),
+                "machine_name" => s.machine_name = one_line(v.trim()),
+                "machine_make" => s.machine_make = one_line(v.trim()),
+                k if k.starts_with("machine_spindle_") => {
+                    // `machine_spindle_<model>_<original|vfd>`: the limits of a model that is not in use
+                    if let Some((model, code)) = k["machine_spindle_".len()..].rsplit_once('_') {
+                        if let Some(id) = SpindleId::from_code(code) {
+                            let e = s.machine_spindles.entry(model.to_string()).or_insert([
+                                Spindle::default_for(SpindleId::Original),
+                                Spindle::default_for(SpindleId::Vfd),
+                            ]);
+                            e[id as usize] = Spindle::from_text(id, v);
+                        }
+                    }
+                }
                 k if k.starts_with("spindle_") => {
                     if let Some(id) = SpindleId::from_code(&k["spindle_".len()..]) {
                         s.spindles[id as usize] = Spindle::from_text(id, v);
@@ -307,10 +373,37 @@ impl Settings {
                 _ => {}
             }
         }
+        // the model in use keeps its limits in `spindles`
+        let own = model_key(&s.model);
+        s.machine_spindles.remove(&own);
         s
     }
 
     pub fn to_text(&self) -> String {
+        let mut out = self.main_text();
+        // the name of the machine, and the limits of the spindles of each model that is not in use, one line each
+        out.push_str(&format!(
+            "machine_name = {}\nmachine_make = {}\nprofile_aluminium = {}\n",
+            one_line(&self.machine_name),
+            one_line(&self.machine_make),
+            self.profile.to_text()
+        ));
+        for (model, pair) in &self.machine_spindles {
+            if *model == model_key(&self.model) || model.is_empty() {
+                continue;
+            }
+            for id in SpindleId::ALL {
+                out.push_str(&format!(
+                    "machine_spindle_{model}_{} = {}\n",
+                    id.code(),
+                    pair[id as usize].to_text()
+                ));
+            }
+        }
+        out
+    }
+
+    fn main_text(&self) -> String {
         format!(
             "choice = {}\nlang = {}\ntheme = {}\nboard = {}\nask_operator = {}\ntools_on_open = {}\nopen_preview = {}\nsim_speed = {}\nmodel = {}\nemergency = {}\nestop_pos = {},{}\ndisplay_units = {}\nspindle = {}\nspindle_original = {}\nspindle_vfd = {}\nspindle_drawing = {}\nupdates = {}\nupdates_at_start = {}\nupdates_interval_hours = {}\nupdates_api_url = {}\nupdates_last_check = {}\nupdates_timeout_seconds = {}\nholes_drilled = {}\nrecent = {}\nfullscreen = {}\nall_makers = {}\npanes = {},{}\n",
             self.choice.map_or("ask", |c| c.key()),
@@ -473,6 +566,24 @@ mod tests {
                     ..Spindle::default_for(SpindleId::Vfd)
                 },
             ],
+            profile: crate::profile::ProfileDims {
+                width_mm: 90.0,
+                ..crate::profile::ProfileDims::default()
+            },
+            machine_name: "Workshop 1".to_string(),
+            machine_make: "Bungard CCD/2 ATC".to_string(),
+            machine_spindles: [(
+                "ccd_mtc".to_string(),
+                [
+                    Spindle {
+                        max_rpm: 40_000,
+                        ..Spindle::default_for(SpindleId::Original)
+                    },
+                    Spindle::default_for(SpindleId::Vfd),
+                ],
+            )]
+            .into_iter()
+            .collect(),
             holes_drilled: [(1u8, 9172u64), (3, 40)].into_iter().collect(),
             recent: vec!["C:/jobs/a.ncd".to_string(), "C:/jobs/b.zip".to_string()],
             fullscreen: true,
@@ -495,6 +606,61 @@ mod tests {
         let ask = Settings::default();
         assert!(ask.to_text().contains("choice = ask"));
         assert_eq!(Settings::parse(&ask.to_text()), ask);
+    }
+
+    #[test]
+    fn every_model_keeps_its_own_copy_of_the_spindle_of_the_mtc_and_changing_one_leaves_the_others()
+    {
+        let start = Spindle::default_for(SpindleId::Original);
+        let mut s = Settings::default();
+        assert!(!s.spindle_is_provisional());
+        s.spindles[0].max_rpm = 50_000;
+        s.switch_model("CCD/2 ATC");
+        assert!(s.spindle_is_provisional());
+        // a model that never had its own limits starts from the values of the MTC, not from what the MTC was tuned to
+        assert_eq!(s.spindles[0], start);
+        s.spindles[0].max_rpm = 30_000;
+        s.switch_model("CCD XL MTC");
+        assert_eq!(s.spindles[0], start);
+        s.switch_model("CCD MTC");
+        assert_eq!(s.spindles[0].max_rpm, 50_000);
+        s.switch_model("CCD/2 ATC");
+        assert_eq!(s.spindles[0].max_rpm, 30_000);
+        // the same name again changes nothing
+        s.switch_model("CCD/2 ATC");
+        assert_eq!(s.spindles[0].max_rpm, 30_000);
+        // each model has its own lines in the file and they come back
+        let text = s.to_text();
+        assert!(
+            text.contains("machine_spindle_ccd_mtc_original = "),
+            "{text}"
+        );
+        assert!(text.contains("machine_spindle_ccd_xl_mtc_vfd = "), "{text}");
+        assert!(
+            !text.contains("machine_spindle_ccd_2_atc"),
+            "the model in use is in spindle_original"
+        );
+        let back = Settings::parse(&text);
+        assert_eq!(back, s);
+        let mut back = back;
+        back.switch_model("CCD MTC");
+        assert_eq!(back.spindles[0].max_rpm, 50_000);
+    }
+
+    #[test]
+    fn the_name_and_the_model_of_the_machine_are_kept_on_one_line_each() {
+        let s = Settings {
+            machine_name: "Workshop\nmodel = CCD XL ATC".to_string(),
+            machine_make: "Bungard\r\nspindle = vfd".to_string(),
+            ..Settings::default()
+        };
+        let back = Settings::parse(&s.to_text());
+        assert_eq!(back.model, Settings::default().model);
+        assert_eq!(back.spindle, Settings::default().spindle);
+        assert_eq!(back.machine_name, "Workshop model = CCD XL ATC");
+        assert_eq!(back.machine_make, "Bungard  spindle = vfd");
+        assert_eq!(model_key("CCD/2 ATC"), "ccd_2_atc");
+        assert_eq!(model_key(" CCD  Premium MTC "), "ccd_premium_mtc");
     }
 
     #[test]

@@ -300,6 +300,9 @@ impl App {
     }
 
     pub(crate) fn undo_edit(&mut self) {
+        if self.design_locked() {
+            return;
+        }
         if let Some(s) = self.undo.pop() {
             let now = self.snapshot();
             self.redo.push(now);
@@ -308,6 +311,9 @@ impl App {
     }
 
     pub(crate) fn redo_edit(&mut self) {
+        if self.design_locked() {
+            return;
+        }
         if let Some(s) = self.redo.pop() {
             let now = self.snapshot();
             self.undo.push(now);
@@ -317,6 +323,9 @@ impl App {
 
     /// Moves what is chosen by this much (mm): the holes and paths change place in the file; the choice stays.
     pub(crate) fn move_selection(&mut self, dx: f64, dy: f64) {
+        if self.design_locked() {
+            return;
+        }
         let (holes, paths) = self.file_sets();
         if holes.is_empty() && paths.is_empty() {
             return;
@@ -380,6 +389,9 @@ impl App {
     }
 
     pub(crate) fn cut_selection(&mut self) {
+        if self.design_locked() {
+            return;
+        }
         self.copy_selection();
         self.delete_selection();
     }
@@ -500,6 +512,9 @@ impl App {
     }
 
     pub(crate) fn delete_selection(&mut self) {
+        if self.design_locked() {
+            return;
+        }
         let (holes, paths) = self.file_sets();
         if holes.is_empty() && paths.is_empty() {
             return;
@@ -532,6 +547,9 @@ impl App {
 
     /// Takes a whole tool out of the job: its holes or its paths go from the file, the views and the panel.
     pub(crate) fn remove_tool(&mut self, prog: Program, tool: u8) {
+        if self.design_locked() {
+            return;
+        }
         self.push_undo();
         let changed = match prog {
             Program::Drill => self.edit_drill(|f, _, _| {
@@ -551,6 +569,9 @@ impl App {
 
     /// Pastes the copy a few millimetres from where it was (each paste a step further), and chooses the new ones.
     pub(crate) fn paste_clip(&mut self) {
+        if self.design_locked() {
+            return;
+        }
         let clip = self.clip.clone();
         if clip.holes.is_empty() && clip.paths.is_empty() {
             return;
@@ -700,6 +721,48 @@ mod tests {
             .tool_lines()
             .iter()
             .all(|l| !(l.prog == Program::Drill && l.tool == tool)));
+    }
+
+    #[test]
+    fn while_the_machine_works_the_design_cannot_be_changed_and_it_can_again_when_it_stops() {
+        use super::super::extra::Field;
+        let mut a = app();
+        let holes = a.drill.scene.holes.clone();
+        let paths = a.route.scene.paths.clone();
+        let rect = a.board_rect();
+        a.sel_holes.insert(0);
+        a.running = Some(Program::Drill);
+        assert!(a.design_locked());
+        a.move_selection(3.0, 3.0);
+        a.shift_board(5.0, 5.0);
+        a.shift_design(5.0, 5.0);
+        a.rotate_work(1);
+        a.act(Act::Rotate(1));
+        a.act(Act::BoardSwap);
+        a.adjust(Field::Columns, 1.0);
+        a.adjust(Field::Rows, 1.0);
+        a.act(Act::ToggleTabs);
+        a.board_adjust(true, 10.0);
+        a.delete_selection();
+        a.cut_selection();
+        a.paste_clip();
+        a.undo_edit();
+        a.remove_tool(Program::Drill, holes[0].tool);
+        assert_eq!(a.drill.scene.holes, holes);
+        assert_eq!(a.route.scene.paths, paths);
+        assert_eq!(a.board_rect(), rect);
+        assert_eq!(a.panel_applied, None);
+        // the view is not the design: the zoom still works
+        let z = a.view2d.zoom;
+        a.zoom(Zone::Plan, 100.0);
+        assert!(a.view2d.zoom != z);
+        // stopped: the same edits work
+        a.running = None;
+        assert!(!a.design_locked());
+        a.move_selection(3.0, 3.0);
+        assert_ne!(a.drill.scene.holes, holes);
+        a.adjust(Field::Columns, 1.0);
+        assert!(a.panel_applied.is_some());
     }
 
     #[test]

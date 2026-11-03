@@ -9,11 +9,13 @@ pub mod catalogue;
 pub mod cli;
 pub mod defaults;
 pub mod inspection;
+pub mod jobinfo;
 pub mod jobs;
 pub mod launcher;
 pub mod link;
 pub mod machines;
 pub mod panes;
+pub mod profile;
 pub mod recovery;
 pub mod spindle;
 #[cfg(feature = "updates")]

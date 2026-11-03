@@ -483,10 +483,23 @@ impl App {
             .or_else(|| self.board_rect().map(|(a, b, c, e)| (c - a, e - b)))
     }
 
+    /// The size of what the table has to hold: the board, or all the copies of it when the work is a panel (so a panel that is too big warns instead of going over the edge).
+    pub(crate) fn work_size_now(&self) -> Option<(f64, f64)> {
+        match self.panel_applied {
+            Some(_) => self.panel_rect().map(|(a, b, c, e)| (c - a, e - b)),
+            None => self.board_size_now(),
+        }
+    }
+
+    /// The design cannot be changed while the machine works (a job or its simulation runs): the views can still be moved and zoomed.
+    pub(crate) fn design_locked(&self) -> bool {
+        self.running.is_some()
+    }
+
     /// Does the board in use fit the table of the active machine (turned 90 degrees too)?
     pub(crate) fn board_fit(&self) -> boards::Fit {
         boards::fit_on_table(
-            self.board_size_now(),
+            self.work_size_now(),
             Some((self.table.width_mm, self.table.depth_mm)),
         )
     }
@@ -497,7 +510,7 @@ impl App {
         let boards::Fit::TooBig { over_w, over_d } = self.board_fit() else {
             return None;
         };
-        let (bw, bd) = self.board_size_now()?;
+        let (bw, bd) = self.work_size_now()?;
         let u = self.len_unit();
         let mut detail = format!(
             "{} {} x {} {u}  |  {} {} x {} {u}",
@@ -653,6 +666,9 @@ impl App {
     /// Turns the board a quarter on the table: its width and its depth change places and the design stays where it is. A board that is the size of the files has no
     /// size of its own yet, so it takes the one it shows. A board that stayed where it was keeps its middle.
     pub(crate) fn board_swap(&mut self) {
+        if self.design_locked() {
+            return;
+        }
         let Some((w, d)) = self.board_size_now() else {
             return;
         };
@@ -668,6 +684,9 @@ impl App {
     }
 
     pub(crate) fn board_adjust(&mut self, width: bool, d: f32) {
+        if self.design_locked() {
+            return;
+        }
         let d = self.len_from_display(d as f64) as f32;
         let (w, h) = self.board.size_mm.unwrap_or_else(|| {
             self.board_rect()
@@ -1505,18 +1524,67 @@ impl App {
                 cv.combo(
                     x + 30.0,
                     top + 20.0,
-                    380.0,
+                    230.0,
                     ComboId::Model,
                     &models[self.model().min(models.len() - 1)].name(),
                     self.combo.is_some_and(|c| c.id == ComboId::Model),
                 );
+                // the name and the make and model that the operator gives to this machine (free text, kept in the settings file)
+                for (i, (label, value, target)) in [
+                    (
+                        Text::MachineNameLbl,
+                        &self.settings.machine_name,
+                        EditTarget::MachineName,
+                    ),
+                    (
+                        Text::MachineMakeLbl,
+                        &self.settings.machine_make,
+                        EditTarget::MachineMake,
+                    ),
+                ]
+                .into_iter()
+                .enumerate()
+                {
+                    let fx = x + 280.0 + i as f32 * 270.0;
+                    cv.text_fit(
+                        fx,
+                        top + 8.0,
+                        Align2::LEFT_BOTTOM,
+                        &self.tr(label).to_uppercase(),
+                        12.0,
+                        col(t.dim),
+                        250.0,
+                    );
+                    let r = cv.rect(fx, top + 20.0, 250.0, 38.0);
+                    cv.p.rect_stroke(
+                        r,
+                        6.0 * cv.u,
+                        Stroke::new(1.0 * cv.u, alpha(col(t.line), 140)),
+                        StrokeKind::Inside,
+                    );
+                    cv.text_fit(
+                        fx + 10.0,
+                        top + 46.0,
+                        Align2::LEFT_BOTTOM,
+                        if value.is_empty() { "-" } else { value },
+                        15.0,
+                        if value.is_empty() {
+                            col(t.dim)
+                        } else {
+                            col(t.text)
+                        },
+                        230.0,
+                    );
+                    cv.hits
+                        .push((r, Act::Edit(target, fx + 2.0, top + 22.0, 246.0)));
+                }
                 let m = models[self.model().min(models.len() - 1)];
                 let pr = m.profile();
                 // the bar of the tool changer: where its first and its last tool are
                 if m.change == crate::machines::ToolChange::Automatic {
                     cv.chip(
                         x + 430.0,
-                        top + 20.0,
+                        top + 66.0,
                         280.0,
                         38.0,
                         self.tr(Text::RackSetupTitle),
@@ -1679,6 +1747,24 @@ impl App {
                         13.0,
                         col(t.dim),
                     );
+                }
+                // every model but the CCD MTC has its own provisional copy of the limits of the MTC
+                if self.settings.spindle_is_provisional() {
+                    let per_line = if self.wide_script() { 48 } else { 100 };
+                    for (i, l) in wrap(self.tr(Text::SpindleCopyNote), per_line)
+                        .iter()
+                        .take(4)
+                        .enumerate()
+                    {
+                        cv.text(
+                            x + 30.0,
+                            fy + 276.0 + i as f32 * 16.0,
+                            Align2::LEFT_BOTTOM,
+                            l,
+                            13.0,
+                            col(t.warn),
+                        );
+                    }
                 }
             }
             3 => self.paint_levelling(cv, x, top),
@@ -1850,7 +1936,8 @@ impl App {
             }
             side.engine.settings_changed();
         }
-        self.settings.model = m.name();
+        // each model has its own spindle limits: the ones of the model that goes are kept and the ones of the new model are taken
+        self.settings.switch_model(&m.name());
         self.table = Table::new(w, d);
         self.drill.scene.table = self.table;
         self.route.scene.table = self.table;

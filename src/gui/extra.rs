@@ -481,7 +481,12 @@ impl App {
     /// The columns, the rows and the distance between copies, as the mode and the spacing say.
     pub(crate) fn panel_plan(&self) -> (u32, u32, (f64, f64)) {
         let c = self.panel;
-        let (x0, y0, x1, y1) = self.board().unwrap_or((0.0, 0.0, 0.0, 0.0));
+        // a copy is a whole board (the size chosen, or the design with its margin): the copies are a board and the gap apart, so the panel is as wide as the boards
+        // and the gaps it is made of, and the board that the views draw for one copy never overlaps the next
+        let (x0, y0, x1, y1) = self
+            .board_rect()
+            .or_else(|| self.board())
+            .unwrap_or((0.0, 0.0, 0.0, 0.0));
         let size = (x1 - x0, y1 - y0);
         match c.mode {
             PanelMode::Pitch => (c.columns, c.rows, c.spacing),
@@ -561,6 +566,19 @@ impl App {
     }
 
     pub(crate) fn adjust(&mut self, f: Field, d: f32) {
+        if self.design_locked()
+            && matches!(
+                f,
+                Field::Columns
+                    | Field::Rows
+                    | Field::SpacingX
+                    | Field::SpacingY
+                    | Field::TabCount
+                    | Field::TabWidth
+            )
+        {
+            return;
+        }
         let d = d as f64;
         // the steps are in the units on the screen
         let dl = self.len_from_display(d);
@@ -1549,6 +1567,66 @@ mod tests {
             assert!(bx1 - bx0 < x1 - x0 || c == 1.0);
             assert!(by1 - by0 < y1 - y0 || r == 1.0);
         }
+    }
+
+    #[test]
+    fn a_panel_of_boards_that_fit_is_as_big_as_the_boards_and_the_gaps_and_stays_on_the_table() {
+        let mut a = app();
+        a.open_path(&testdata().join("05_small_board.ncd"));
+        a.open_path(&testdata().join("05_board_outline.plt"));
+        // a board that is a standard size, as big as the table is allowed to take twice with a gap
+        let (tw, td) = (a.table.width_mm, a.table.depth_mm);
+        a.board.size_mm = Some(((tw - 10.0) / 2.0, (td - 10.0) / 2.0));
+        a.board_frozen = None;
+        let (bx0, by0, bx1, by1) = a.board_rect().unwrap();
+        let (bw, bd) = (bx1 - bx0, by1 - by0);
+        assert!(matches!(a.board_fit(), crate::boards::Fit::Fits));
+        a.adjust(Field::Columns, 1.0);
+        a.adjust(Field::Rows, 1.0);
+        let (gx, gy) = a.panel.spacing;
+        let (x0, y0, x1, y1) = a.panel_rect().unwrap();
+        // the panel is the sum of its boards and the gaps, from where the first one starts
+        assert!(
+            ((x1 - x0) - (2.0 * bw + gx)).abs() < 1e-9,
+            "{} {}",
+            x1 - x0,
+            2.0 * bw + gx
+        );
+        assert!(((y1 - y0) - (2.0 * bd + gy)).abs() < 1e-9);
+        assert_eq!((x0, y0), (bx0, by0));
+        // and it is inside the table, so the views draw it there and nothing warns
+        assert!(x1 - x0 <= tw && y1 - y0 <= td);
+        assert!(matches!(
+            a.work_size_now().map(|(w, d)| (w <= tw, d <= td)),
+            Some((true, true))
+        ));
+        assert!(matches!(a.board_fit(), crate::boards::Fit::Fits));
+        assert!(a.board_fit_warning().is_none());
+        // the boards do not overlap: the copy that is the farthest is a board and a gap from the first
+        let (_, pitch) = (
+            a.panel_applied.map(|p| (p.0, p.1)),
+            a.panel_applied.unwrap().2,
+        );
+        assert!((pitch.0 - (bw + gx)).abs() < 1e-9 && (pitch.1 - (bd + gy)).abs() < 1e-9);
+    }
+
+    #[test]
+    fn a_panel_that_does_not_fit_the_table_is_warned_about_and_not_drawn_over_the_edge_in_silence()
+    {
+        let mut a = app();
+        a.open_path(&testdata().join("05_small_board.ncd"));
+        a.open_path(&testdata().join("05_board_outline.plt"));
+        let (tw, td) = (a.table.width_mm, a.table.depth_mm);
+        a.board.size_mm = Some((tw * 0.6, td * 0.6));
+        a.board_frozen = None;
+        assert!(a.board_fit_warning().is_none());
+        a.adjust(Field::Columns, 1.0);
+        let (head, detail) = a
+            .board_fit_warning()
+            .expect("a panel wider than the table must warn");
+        assert!(!head.is_empty() && !detail.is_empty());
+        let (x0, _, x1, _) = a.panel_rect().unwrap();
+        assert!(x1 - x0 > tw);
     }
 
     #[test]

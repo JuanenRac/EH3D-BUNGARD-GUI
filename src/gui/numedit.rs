@@ -14,6 +14,9 @@ pub(crate) enum EditTarget {
     ToolCell(Program, usize, usize),
     /// The width (true) or the depth (false) of the board.
     BoardSize(bool),
+    /// The name that the operator gives to the machine, and its make and model (free text, not numbers).
+    MachineName,
+    MachineMake,
 }
 
 /// The box that is being typed in: where it is on the canvas (design units), how wide and what it holds.
@@ -60,6 +63,7 @@ impl App {
                 .trim()
                 .parse()
                 .ok()?,
+            EditTarget::MachineName | EditTarget::MachineMake => return None,
             EditTarget::BoardSize(width) => {
                 let (w, d) = self
                     .board
@@ -73,6 +77,20 @@ impl App {
     /// Opens the box over a value, with its text selected.
     pub(crate) fn start_edit(&mut self, target: EditTarget, x: f32, y: f32, w: f32) {
         self.commit_edit();
+        if matches!(target, EditTarget::MachineName | EditTarget::MachineMake) {
+            let text = match target {
+                EditTarget::MachineName => self.settings.machine_name.clone(),
+                _ => self.settings.machine_make.clone(),
+            };
+            self.edit = Some(NumEdit {
+                target,
+                text,
+                pos: (x, y),
+                w,
+                fresh: true,
+            });
+            return;
+        }
         let Some(v) = self.edit_value(target) else {
             return;
         };
@@ -95,6 +113,22 @@ impl App {
         let Some(ed) = self.edit.take() else {
             return;
         };
+        if matches!(ed.target, EditTarget::MachineName | EditTarget::MachineMake) {
+            // free text on one line, at most forty letters
+            let text: String = ed
+                .text
+                .replace(['\r', '\n'], " ")
+                .trim()
+                .chars()
+                .take(40)
+                .collect();
+            match ed.target {
+                EditTarget::MachineName => self.settings.machine_name = text,
+                _ => self.settings.machine_make = text,
+            }
+            self.remember_settings();
+            return;
+        }
         let Ok(v) = ed.text.trim().replace(',', ".").parse::<f64>() else {
             return;
         };
@@ -111,6 +145,7 @@ impl App {
                 let now = self.edit_value(ed.target).unwrap_or(v);
                 self.board_adjust(width, (v - now) as f32);
             }
+            EditTarget::MachineName | EditTarget::MachineMake => {}
         }
     }
 

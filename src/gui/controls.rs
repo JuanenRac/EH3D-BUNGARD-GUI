@@ -1531,6 +1531,49 @@ EOF
         assert_eq!(a.modal_off, (0.0, 0.0));
     }
 
+    #[test]
+    fn nothing_of_the_catalogue_is_drawn_or_clicked_under_the_foot_with_the_close_button_in_any_language(
+    ) {
+        let ctx = egui::Context::default();
+        install_fonts(&ctx);
+        let mut a = app();
+        a.animate = false;
+        a.screen = Screen::Viewer;
+        for lang in [Lang::En, Lang::De, Lang::Ru, Lang::Fi, Lang::Ja, Lang::Zh] {
+            a.lang = lang;
+            a.show_modal(Modal::Catalogue);
+            let n = a.cat_bits().len();
+            for pick in [0, n / 2, n - 1] {
+                a.act(Act::CatSelect(pick));
+                a.cat_target = Some((Program::Drill, 0));
+                clipped_on(&mut a, &ctx);
+                clipped_on(&mut a, &ctx);
+                // the description stops above the foot of the window: Close and the note on the spindle have their own room
+                let foot_top = a.ui_origin.y + (50.0 + 800.0 - 80.0) * a.ui_scale;
+                let area = a.cat_detail_area.get();
+                assert!(
+                    area.max.y <= foot_top + 0.5,
+                    "{lang:?} {pick}: {area:?} reaches {foot_top}"
+                );
+                // what is clicked there is inside the area that is drawn
+                for (r, act) in a.hits.iter() {
+                    if matches!(act, Act::CatUse) {
+                        assert!(
+                            r.max.y <= area.max.y + 0.5 && r.min.y >= area.min.y - 0.5,
+                            "{lang:?} {pick}: {r:?} {area:?}"
+                        );
+                    }
+                }
+                // what does not fit is reached by scrolling, and no further than its end
+                a.cat_detail_scroll_by(1.0e6);
+                assert!(a.cat_detail_scroll <= a.cat_detail_max.get() + 1e-3);
+                clipped_on(&mut a, &ctx);
+                a.cat_detail_scroll_by(-1.0e6);
+                assert_eq!(a.cat_detail_scroll, 0.0);
+            }
+        }
+    }
+
     fn app_with_both() -> App {
         let mut a = app();
         a.open_path(&Path::new(env!("CARGO_MANIFEST_DIR")).join("testdata/05_board_outline.plt"));

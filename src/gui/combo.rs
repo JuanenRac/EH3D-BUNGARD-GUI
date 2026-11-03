@@ -245,6 +245,7 @@ impl App {
                 self.cat_kind = row;
                 self.cat_scroll = 0;
                 self.cat_sel = None;
+                self.cat_detail_scroll = 0.0;
             }
             ComboId::Thickness => self.board_pick(BoardPick::Thickness(row)),
             ComboId::BoardSize => self.board_pick(BoardPick::Size(row.checked_sub(1))),

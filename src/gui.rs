@@ -34,7 +34,9 @@ mod controls;
 mod edit;
 mod extra;
 mod fleet;
+mod frame;
 mod head;
+mod hudinfo;
 mod icons;
 mod inspect;
 mod levelling;
@@ -405,6 +407,12 @@ pub struct App {
     cat_kind: usize,
     cat_scroll: usize,
     cat_sel: Option<usize>,
+    /// How far the description of the bit is scrolled (in units of the canvas), and what the last drawing found: how far it can go and where it is on the screen.
+    cat_detail_scroll: f32,
+    /// When the job that runs now began (for the time left).
+    job_started: Option<std::time::Instant>,
+    cat_detail_max: std::cell::Cell<f32>,
+    cat_detail_area: std::cell::Cell<Rect>,
     /// The tool of the window of tools that the catalogue is picking a bit for.
     cat_target: Option<(Program, usize)>,
     /// The bit of the catalogue that each tool of the job took its numbers from (kept to warn when it is not suitable for the board).
@@ -611,6 +619,10 @@ impl App {
             cat_kind: 0,
             cat_scroll: 0,
             cat_sel: None,
+            cat_detail_scroll: 0.0,
+            job_started: None,
+            cat_detail_max: std::cell::Cell::new(0.0),
+            cat_detail_area: std::cell::Cell::new(Rect::NOTHING),
             cat_target: None,
             tool_bits: Vec::new(),
             key_mods: (false, false),
@@ -1246,6 +1258,7 @@ impl App {
             }
             self.m3d_first = first;
             self.running = Some(p);
+            self.job_started = Some(std::time::Instant::now());
             self.m3d.begin(self.m3d_first);
             self.paused = false;
             self.resume_skip = skip;
@@ -1478,6 +1491,26 @@ impl App {
     }
 
     fn act(&mut self, a: Act) {
+        // the design is locked while the machine works: what would change it is refused (the views still move and zoom)
+        if self.design_locked()
+            && matches!(
+                a,
+                Act::ToggleTabs
+                    | Act::PanelMode(_)
+                    | Act::BoardSwap
+                    | Act::Rotate(_)
+                    | Act::BoardAdj(..)
+                    | Act::Board(_)
+                    | Act::CutSel
+                    | Act::PasteSel
+                    | Act::DeleteSel
+                    | Act::UndoEdit
+                    | Act::RedoEdit
+                    | Act::RemoveTool(..)
+            )
+        {
+            return;
+        }
         match a {
             Act::Choose(c) => self.choose(c),
             Act::Remember => self.remember = !self.remember,
@@ -1584,13 +1617,17 @@ impl App {
             | Act::InspScale(_)
             | Act::InspSave
             | Act::InspTune(..) => self.insp_act(a),
-            Act::CatSelect(i) => self.cat_sel = Some(i),
+            Act::CatSelect(i) => {
+                self.cat_sel = Some(i);
+                self.cat_detail_scroll = 0.0;
+            }
             Act::CatSpindle(d) => self.cat_spindle_by(d),
             Act::SetSpindle(s) => self.set_spindle(s),
             Act::ToolFromCat(p, row) => {
                 self.show_modal(Modal::Catalogue);
                 self.cat_target = Some((p, row));
                 self.cat_sel = None;
+                self.cat_detail_scroll = 0.0;
             }
             Act::CatUse => self.cat_use(),
             Act::JobPart(p) => self.toggle_job_part(p),
@@ -2819,6 +2856,8 @@ impl App {
                 Stroke::new(1.2 * cv.u, alpha(col(t.line), 140)),
                 StrokeKind::Inside,
             );
+            // the aluminium profiles of the axes, where the 3D view has them
+            self.paint_plan_axes(cv, &screen, self.head3d().map_or(0.0, |h| h.0));
             if let Some((x0, y0, x1, y1)) = self.panel_rect() {
                 let (a, b) = screen(x0, y1);
                 let (c, d) = screen(x1, y0);
@@ -2971,6 +3010,25 @@ impl App {
         cv.zones.push((cv.rect(vx, vy, vw, vh), Zone::Plan));
         // the board does not fit the table of the active machine, even turned: the warning lies over the plan
         self.paint_fit_warning(cv, vx + 12.0, vy + 22.0);
+        if self.design_locked() {
+            // while the machine works the design cannot be dragged, turned or changed: the view only moves and zooms
+            let label = self.tr(Text::DesignLocked);
+            let r = cv.text_fit(
+                vx + 12.0,
+                vy + vh - 14.0,
+                Align2::LEFT_BOTTOM,
+                label,
+                14.0,
+                col(t.warn),
+                vw - 24.0,
+            );
+            cv.p.rect_stroke(
+                r.expand(4.0 * cv.u),
+                4.0 * cv.u,
+                Stroke::new(1.2 * cv.u, col(t.warn)),
+                StrokeKind::Outside,
+            );
+        }
         let ix = cx + cw - 52.0;
         cv.icon_chip(
             ix,
@@ -3213,6 +3271,18 @@ impl App {
             18.0,
             col(t.text),
         );
+        // what is being done: the tool, its steps, the next one, the tools finished, the time left and the state (smaller when long, cut when still too long)
+        if let Some(line) = self.hud_info_line() {
+            cv.text_fit(
+                44.0,
+                hud_y + 168.0,
+                Align2::LEFT_BOTTOM,
+                &line,
+                14.0,
+                col(t.text),
+                1020.0,
+            );
+        }
         // the buttons of the job: Start goes out when the job runs and comes back with Pause or Stop; Pause and Stop work only while it runs
         let (can_start, can_pause, can_stop) = self.job_buttons();
         // bright colours that mean the same in every theme: green to go, blue to hold (brighter while it holds), red to stop
@@ -3473,6 +3543,7 @@ impl App {
         };
         let (wx, wy) = (profile.work_mm.0.max(tw), profile.work_mm.1.max(td));
         let (px_m, py_m) = profile.plate_margins((tw, td));
+        let frame = self.machine_frame();
         // the view holds the whole frame: the plate, the rails, the motor and the rack
         let shift = (px_m + 60.0, py_m + 60.0);
         let mut iso = Iso::fit(
@@ -3523,9 +3594,12 @@ impl App {
         let hy = td - hy;
         let board_z = 30.0;
         // the frame: the plate goes from -px_m to wx + px_m along the rails and from -py_m to wy + py_m across them
-        let (fx0, fx1) = (-px_m, wx + px_m);
-        let (fy0, fy1) = (-py_m, wy + py_m);
+        let (fx0, fx1) = (frame.fx0, frame.fx1);
+        let (fy0, fy1) = (frame.fy0, frame.fy1);
         let flen = fx1 - fx0;
+        // the aluminium profiles of the axes (the plan view draws the same ones)
+        let (rail_w, rail_h) = (frame.rail_across, frame.rail_tall);
+        let (beam_w, beam_h) = (frame.beam_across, frame.beam_tall);
 
         // the rail at the back and its feet
         boxes(
@@ -3533,9 +3607,17 @@ impl App {
             &[
                 (fx0 + 10.0, fy0 - 34.0, -18.0, 26.0, 26.0, 18.0, black),
                 (fx1 - 36.0, fy0 - 34.0, -18.0, 26.0, 26.0, 18.0, black),
-                (fx0 - 34.0, fy0 - 40.0, 0.0, flen + 68.0, 40.0, 40.0, alu),
-                (fx0 - 38.0, fy0 - 40.0, 0.0, 4.0, 40.0, 40.0, black),
-                (fx1 + 34.0, fy0 - 40.0, 0.0, 4.0, 40.0, 40.0, black),
+                (
+                    fx0 - 34.0,
+                    fy0 - rail_w,
+                    0.0,
+                    flen + 68.0,
+                    rail_w,
+                    rail_h,
+                    alu,
+                ),
+                (fx0 - 38.0, fy0 - rail_w, 0.0, 4.0, rail_w, rail_h, black),
+                (fx1 + 34.0, fy0 - rail_w, 0.0, 4.0, rail_w, rail_h, black),
             ],
         );
         // the cable chain along the rail
@@ -3605,9 +3687,9 @@ impl App {
             &[
                 (fx0 + 10.0, fy1 + 8.0, -18.0, 26.0, 26.0, 18.0, black),
                 (fx1 - 36.0, fy1 + 8.0, -18.0, 26.0, 26.0, 18.0, black),
-                (fx0 - 34.0, fy1, 0.0, flen + 68.0, 40.0, 40.0, alu),
-                (fx0 - 38.0, fy1, 0.0, 4.0, 40.0, 40.0, black),
-                (fx1 + 34.0, fy1, 0.0, 4.0, 40.0, 40.0, black),
+                (fx0 - 34.0, fy1, 0.0, flen + 68.0, rail_w, rail_h, alu),
+                (fx0 - 38.0, fy1, 0.0, 4.0, rail_w, rail_h, black),
+                (fx1 + 34.0, fy1, 0.0, 4.0, rail_w, rail_h, black),
             ],
         );
         // the board and the work on it
@@ -3675,18 +3757,18 @@ impl App {
         boxes(
             cv,
             &[
-                (hx - 34.0, fy0 - 40.0, 40.0, 64.0, 40.0, 26.0, alu),
-                (hx - 34.0, fy1, 40.0, 64.0, 40.0, 26.0, alu),
+                (hx - 34.0, fy0 - rail_w, rail_h, 64.0, rail_w, 26.0, alu),
+                (hx - 34.0, fy1, rail_h, 64.0, rail_w, 26.0, alu),
                 (
-                    hx - 64.0,
-                    fy0 - 40.0,
-                    66.0,
-                    36.0,
-                    fy1 - fy0 + 80.0,
-                    36.0,
+                    hx - self::frame::BEAM_BEHIND,
+                    fy0 - rail_w,
+                    102.0 - beam_h,
+                    beam_w,
+                    frame.beam_len(),
+                    beam_h,
                     alu,
                 ),
-                (hx - 64.0, fy1 + 40.0, 62.0, 44.0, 44.0, 44.0, motor),
+                (hx - 64.0, fy1 + rail_w, 62.0, 44.0, 44.0, 44.0, motor),
                 // the slide that carries the spindle, beside it (the spindle itself is drawn below, with its own sizes)
                 (
                     hx - 32.0,
@@ -4065,7 +4147,14 @@ impl eframe::App for App {
             if self.combo.is_some() {
                 self.combo_scroll(if scroll > 0.0 { -2 } else { 2 });
             } else if self.modal == Some(Modal::Catalogue) {
-                self.cat_scroll_by(if scroll > 0.0 { -3 } else { 3 });
+                let over_detail = ctx
+                    .input(|i| i.pointer.hover_pos())
+                    .is_some_and(|p| self.cat_detail_area.get().contains(p));
+                if over_detail {
+                    self.cat_detail_scroll_by(if scroll > 0.0 { -60.0 } else { 60.0 });
+                } else {
+                    self.cat_scroll_by(if scroll > 0.0 { -3 } else { 3 });
+                }
             } else if self.modal == Some(Modal::Open) {
                 self.browse_scroll(if scroll > 0.0 { -2 } else { 2 });
             } else if self.modal == Some(Modal::Board) {

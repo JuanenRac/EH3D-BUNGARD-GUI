@@ -29,6 +29,8 @@ const SHOWN: usize = 12;
 const ROW_H: f32 = 40.0;
 /// The width of the list, and where the drawing of the bit begins.
 const LIST_W: f32 = 930.0;
+/// The room kept at the foot of the window for the note on the spindle and the Close button: nothing above is drawn into it.
+const FOOT_H: f32 = 80.0;
 impl App {
     /// The bits that the kind chosen shows.
     pub(crate) fn cat_bits(&self) -> Vec<data::Bit> {
@@ -43,6 +45,17 @@ impl App {
     pub(crate) fn cat_scroll_by(&mut self, delta: i32) {
         let max = self.cat_bits().len().saturating_sub(SHOWN);
         self.cat_scroll = (self.cat_scroll as i64 + delta as i64).clamp(0, max as i64) as usize;
+    }
+
+    /// Whether the language is written with wide letters (fewer to a line).
+    pub(crate) fn wide_script(&self) -> bool {
+        matches!(self.lang, Lang::Zh | Lang::Ja)
+    }
+
+    /// Scrolls the description of the bit (what the last drawing found it can go).
+    pub(crate) fn cat_detail_scroll_by(&mut self, delta: f32) {
+        self.cat_detail_scroll =
+            (self.cat_detail_scroll + delta).clamp(0.0, self.cat_detail_max.get());
     }
 
     /// The spindle the numbers of the catalogue are worked out for: the next one or the one before.
@@ -385,16 +398,50 @@ impl App {
                     );
                 }
             }
-            Some(b) => self.paint_bit_detail(cv, b, px, py, pw),
+            Some(b) => {
+                // the description is cut above the foot of the window (the note and the Close button have their own room) and scrolls with the wheel
+                let (clip_x, clip_y) = (px - 10.0, py - 6.0);
+                let (clip_w, clip_h) = (pw + 20.0, (y + h - FOOT_H) - clip_y);
+                let area = cv.rect(clip_x, clip_y, clip_w, clip_h);
+                self.cat_detail_area.set(area);
+                let scroll = self.cat_detail_scroll.min(self.cat_detail_max.get());
+                let clip = cv.p.with_clip_rect(area);
+                let mut inner = cv.with_painter(&clip);
+                let bottom = self.paint_bit_detail(&mut inner, b, px, py - scroll, pw);
+                let content = bottom - (py - scroll) + 8.0;
+                self.cat_detail_max
+                    .set((content - (clip_h - 12.0)).max(0.0));
+                // only what is seen can be clicked
+                for (r, a) in inner.hits.drain(..) {
+                    let r = r.intersect(area);
+                    if r.is_positive() {
+                        cv.hits.push((r, a));
+                    }
+                }
+                if self.cat_detail_max.get() > 0.0 {
+                    let (tx, tw) = (px + pw + 4.0, 6.0);
+                    let track = clip_h - 16.0;
+                    let thumb = (track * (clip_h - 12.0) / content).clamp(24.0, track);
+                    let top = clip_y + 8.0 + scroll / self.cat_detail_max.get() * (track - thumb);
+                    cv.p.rect_filled(
+                        cv.rect(tx, clip_y + 8.0, tw, track),
+                        3.0 * cv.u,
+                        alpha(col(t.panel_raised), 255),
+                    );
+                    cv.p.rect_filled(cv.rect(tx, top, tw, thumb), 3.0 * cv.u, col(t.accent));
+                }
+            }
         }
-        for (i, l) in wrap(self.tr(Text::CatSpindle), 150)
+        // the note on the spindle has the foot of the window to the left of the Close button, in as many lines as it needs (a wide script has fewer letters to a line)
+        let per_line = if self.wide_script() { 70 } else { 135 };
+        for (i, l) in wrap(self.tr(Text::CatSpindle), per_line)
             .iter()
-            .take(3)
+            .take(4)
             .enumerate()
         {
             cv.text(
                 x + 30.0,
-                y + h - 58.0 + i as f32 * 18.0,
+                y + h - 62.0 + i as f32 * 16.0,
                 Align2::LEFT_BOTTOM,
                 l,
                 13.0,
@@ -413,7 +460,7 @@ impl App {
     }
 
     /// The name, the drawing, the measures and the speeds of one bit.
-    fn paint_bit_detail(&self, cv: &mut Cv, b: &data::Bit, x: f32, y: f32, w: f32) {
+    fn paint_bit_detail(&self, cv: &mut Cv, b: &data::Bit, x: f32, y: f32, w: f32) -> f32 {
         let t = cv.t.clone();
         let name = if b.series.is_empty() {
             self.kind_name(b.kind).to_string()
@@ -598,6 +645,7 @@ impl App {
             12.0,
             col(t.dim),
         );
+        ly + 4.0
     }
 }
 

@@ -129,7 +129,73 @@ pub(crate) fn rack_occupancy(
         .collect()
 }
 
+/// How near the head has to come to the spot of a place of the bar to take a tool from it or leave one in it, in mm.
+const GRIP_MM: f64 = 1.5;
+
+/// The tool the head holds after it went in a straight line from `from` to `to`. `spots` are the places of the bar with the tool that belongs in each,
+/// `wanted` is the tool the job works with (or is about to). The head leaves the tool it holds at its own place when the job wants another one, and
+/// takes the tool the job wants at the place that has it; it does neither by passing near a place of another tool.
+pub(crate) fn carried_after(
+    held: Option<(Program, u8)>,
+    spots: &[(f64, f64, Program, u8)],
+    from: (f64, f64),
+    to: (f64, f64),
+    wanted: Option<(Program, u8)>,
+) -> Option<(Program, u8)> {
+    let (dx, dy) = (to.0 - from.0, to.1 - from.1);
+    let len2 = dx * dx + dy * dy;
+    // the places the segment passes within reach of, in the order the head reaches them
+    let mut near: Vec<(f64, (Program, u8))> = spots
+        .iter()
+        .filter_map(|&(x, y, p, t)| {
+            let k = if len2 > 1e-12 {
+                (((x - from.0) * dx + (y - from.1) * dy) / len2).clamp(0.0, 1.0)
+            } else {
+                0.0
+            };
+            let d = (from.0 + k * dx - x).hypot(from.1 + k * dy - y);
+            (d <= GRIP_MM).then_some((k, (p, t)))
+        })
+        .collect();
+    near.sort_by(|a, b| a.0.total_cmp(&b.0));
+    let mut held = held;
+    for (_, place) in near {
+        if held == Some(place) && wanted != held {
+            held = None;
+        } else if held.is_none() && wanted == Some(place) {
+            held = Some(place);
+        }
+    }
+    held
+}
+
 impl App {
+    /// Follows the head along the bar: which tool it holds now, from the places it went to (not from the tool the job names, which changes before the head
+    /// gets to the bar). The plan view and the 3D view draw the bar from this.
+    pub(crate) fn carry_follow(&mut self) {
+        let (Some(p), Some(h)) = (self.running, self.running_head_mm()) else {
+            self.rack_carried = None;
+            self.rack_head_prev = None;
+            return;
+        };
+        let here = (h.0, h.1);
+        let from = self.rack_head_prev.replace(here).unwrap_or(here);
+        let Some(view) = self.bar_view() else {
+            self.rack_carried = None;
+            return;
+        };
+        let wanted = self.running_view().and_then(|v| v.tool).map(|t| (p, t));
+        let spots: Vec<(f64, f64, Program, u8)> = self
+            .rack_slot_tools()
+            .iter()
+            .filter_map(|&(i, lp, lt)| {
+                let s = view.slots.iter().find(|s| s.index == i)?;
+                Some((s.x_mm, s.y_mm, lp, lt))
+            })
+            .collect();
+        self.rack_carried = carried_after(self.rack_carried, &spots, from, here, wanted);
+    }
+
     /// The machine in the settings has a tool changer (an ATC model) and so a bar.
     pub(crate) fn bar_shown(&self) -> bool {
         self.has_changer() && self.layers[2]
@@ -242,7 +308,7 @@ impl App {
             _ => (leave, take),
         };
         // what is in each place comes from the tool in the head alone: the one the head holds is not in its place, and every other is
-        let held = working.filter(|_| at.is_some());
+        let held = self.rack_carried.filter(|_| self.running.is_some());
         let tools = rack_occupancy(&loaded, held)
             .into_iter()
             .filter_map(|(s, t)| {
@@ -254,12 +320,7 @@ impl App {
                 Some((s, t, color(p, t)))
             })
             .collect();
-        let head = at.and_then(|s| {
-            loaded
-                .iter()
-                .find(|(i, _, _)| *i == s)
-                .map(|(_, p, t)| (*t, color(*p, *t)))
-        });
+        let head = held.map(|(p, t)| (t, color(p, t)));
         Some(BarDraw {
             view,
             tools,
@@ -1058,5 +1119,87 @@ mod tests {
             1
         );
         assert_eq!(at(None).iter().filter(|s| s.1.is_none()).count(), 0);
+    }
+
+    #[test]
+    fn a_tool_leaves_its_place_when_the_head_gets_to_it_and_not_when_the_job_names_it() {
+        let mut a = app();
+        // a job of two tools, on the changer model
+        let dir = std::env::temp_dir().join(format!("eh3d-bg-carry-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        let file = dir.join("two.ncd");
+        std::fs::write(
+            &file,
+            "%
+T06
+X669Y2953
+X1063Y2953
+T08
+X1181Y984
+X1481Y984
+",
+        )
+        .unwrap();
+        a.apply_model_with(machines::Model::from_name("CCD/2 ATC").unwrap(), false);
+        a.open_path(&file);
+        a.auto_ok = true;
+        a.fixed_dt = Some(0.02);
+        let loaded = a.rack_slot_tools();
+        let all = loaded.len();
+        assert!(all >= 2, "{loaded:?}");
+        a.act(Act::Start);
+        assert_eq!(a.running, Some(Program::Drill));
+        let (mut takes, mut leaves) = (0, 0);
+        let mut named_before_taken = false;
+        let mut prev = None;
+        for _ in 0..200_000 {
+            if a.running.is_none() {
+                break;
+            }
+            a.tick();
+            let carried = a.rack_carried;
+            let draw = a.bar_draw().unwrap();
+            // one place is empty exactly while the head holds a tool
+            assert_eq!(
+                draw.tools.len(),
+                all - usize::from(carried.is_some() && a.running.is_some()),
+                "{carried:?}"
+            );
+            assert_eq!(draw.head.map(|h| h.0), carried.map(|c| c.1));
+            if carried != prev {
+                // the head holds a tool only where it is at the place of that tool
+                let head = a.running_head_mm().unwrap_or_default();
+                let view = a.bar_view().unwrap();
+                let place = carried.or(prev).unwrap();
+                let slot = loaded
+                    .iter()
+                    .find(|(_, p, t)| (*p, *t) == place)
+                    .map(|l| l.0)
+                    .unwrap();
+                let spot = view.slots.iter().find(|s| s.index == slot).unwrap();
+                assert!(
+                    (head.0 - spot.x_mm).hypot(head.1 - spot.y_mm) < 6.0,
+                    "{carried:?} {prev:?} head {head:?} place {spot:?}"
+                );
+                if carried.is_some() {
+                    takes += 1;
+                } else {
+                    leaves += 1;
+                }
+                prev = carried;
+            }
+            // the job names the second tool while the head still holds the first one
+            if let (Some(c), Some(v)) = (carried, a.running_view()) {
+                if v.tool.is_some_and(|t| t != c.1) {
+                    named_before_taken = true;
+                    assert!(draw.tools.iter().all(|t| t.0 != 0));
+                }
+            }
+        }
+        assert!(takes >= 2 && leaves >= 1, "takes {takes} leaves {leaves}");
+        assert!(
+            named_before_taken,
+            "the job named the next tool before the head left the first"
+        );
     }
 }

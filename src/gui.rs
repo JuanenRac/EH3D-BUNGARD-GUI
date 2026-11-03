@@ -444,6 +444,9 @@ pub struct App {
     rack_loads: Vec<Vec<(Program, Vec<u8>)>>,
     rack_show: Vec<(Program, Vec<u8>)>,
     rack_pieces: Vec<(Program, Vec<u8>)>,
+    /// The tool the head holds now at the tool bar, worked out from where the head goes (see `carry_follow`), and where the head was at the last look.
+    rack_carried: Option<(Program, u8)>,
+    rack_head_prev: Option<(f64, f64)>,
     rack_only: Option<(Program, Vec<u8>)>,
     rack_active: bool,
     rack_skip: usize,
@@ -651,6 +654,8 @@ impl App {
             rack_loads: Vec::new(),
             rack_show: Vec::new(),
             rack_pieces: Vec::new(),
+            rack_carried: None,
+            rack_head_prev: None,
             rack_only: None,
             rack_active: false,
             rack_skip: 0,
@@ -1308,6 +1313,7 @@ impl App {
 
     /// Advances the engine and takes from it what the views show.
     fn tick(&mut self) {
+        self.carry_follow();
         self.fleet_tick();
         if let Some(r) = self.conn_rx.as_ref().and_then(|rx| rx.try_recv().ok()) {
             self.conn_result = Some(r);

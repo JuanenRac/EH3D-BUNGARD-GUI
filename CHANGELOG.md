@@ -3,6 +3,8 @@
 All notable changes to this project are documented here.
 
 ## [Unreleased]
+
+## [0.2.1] - Catalogue, panel and machine fixes, locked design, aluminium profile and the job line on the bar
 - **The Update button moved into the About window:** the top bar keeps its four groups (the file; the job; the machine; the program, which is now About alone), and About has an Update button with its picture and its word that opens the same window of updates.
 - **More tests:** the sharing of the width of the main screen, what is saved to go on after a crash, the file of the connection that the window rewrites, the diameters of the tools and what is remembered between runs.
 - **A file name with a line break can no longer add a line to the settings file** (the address of the updates among them): the recent files and that address are written on one line each.

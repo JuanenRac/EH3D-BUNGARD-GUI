@@ -35,6 +35,24 @@ pub(crate) const RAIL_OVERHANG: f64 = 34.0;
 /// How far behind the head the beam begins, along the rails.
 pub(crate) const BEAM_BEHIND: f64 = 64.0;
 
+impl AxisStrip {
+    /// The rectangles of the strip that are to be drawn in the plan view: a rail is whole (it lies outside the table); the beam of the Y axis goes across the table, over the work, and
+    /// only its two ends that stick out of the table (the parts with y below 0 and above `table_depth`) are drawn.
+    pub fn visible_parts(&self, table_depth: f64) -> Vec<(f64, f64, f64, f64)> {
+        if self.axis != 'Y' {
+            return vec![(self.x0, self.y0, self.x1, self.y1)];
+        }
+        let mut out = Vec::new();
+        if self.y0 < 0.0 {
+            out.push((self.x0, self.y0, self.x1, self.y1.min(0.0)));
+        }
+        if self.y1 > table_depth {
+            out.push((self.x0, self.y0.max(table_depth), self.x1, self.y1));
+        }
+        out
+    }
+}
+
 impl Frame {
     /// The length of a rail, end to end.
     pub fn rail_len(&self) -> f64 {
@@ -199,16 +217,19 @@ impl App {
         let fill = alpha(col(t.dim), 46);
         let line = alpha(col(t.dim), 150);
         for s in strips {
-            let (a, b) = screen(s.x0, s.y1);
-            let (c, d) = screen(s.x1, s.y0);
-            let r = cv.rect(a, b, c - a, d - b);
-            cv.p.rect_filled(r, 2.0 * cv.u, fill);
-            cv.p.rect_stroke(
-                r,
-                2.0 * cv.u,
-                Stroke::new(1.0 * cv.u, line),
-                StrokeKind::Inside,
-            );
+            // the beam of the Y axis crosses over the work area: only what is outside the table is drawn, so no rectangle covers the work
+            for (x0, y0, x1, y1) in s.visible_parts(self.table.depth_mm) {
+                let (a, b) = screen(x0, y1);
+                let (c, d) = screen(x1, y0);
+                let r = cv.rect(a, b, c - a, d - b);
+                cv.p.rect_filled(r, 2.0 * cv.u, fill);
+                cv.p.rect_stroke(
+                    r,
+                    2.0 * cv.u,
+                    Stroke::new(1.0 * cv.u, line),
+                    StrokeKind::Inside,
+                );
+            }
         }
         // the section of the profile of each axis, beside the end of the axis: the rail as it lies, the beam on its edge
         let section = self.settings.profile.section();
@@ -441,5 +462,26 @@ mod tests {
         assert_eq!((f.rail_across, f.rail_tall), (d.width_mm, d.height_mm));
         assert_eq!((f.beam_across, f.beam_tall), (d.width_mm, d.height_mm));
         assert_eq!((f.rail_across, f.rail_tall), (80.0, 40.0));
+    }
+
+    #[test]
+    fn with_the_work_going_on_no_rectangle_of_the_y_axis_covers_the_work_area() {
+        let a = app();
+        let f = a.machine_frame();
+        let td = a.table.depth_mm;
+        // the head is anywhere along the table: the beam goes with it
+        for hx in [0.0, 120.0, 250.0, a.table.width_mm] {
+            for strip in f.strips(td, hx) {
+                for (_, y0, _, y1) in strip.visible_parts(td) {
+                    if strip.axis == 'Y' {
+                        assert!(y1 <= 0.0 + 1e-9 || y0 >= td - 1e-9, "a piece of the beam covers the work: y {y0}..{y1} on a table {td} deep");
+                    }
+                }
+            }
+        }
+        // the rails stay whole and the beam keeps its two ends out of the table
+        let s = f.strips(td, 100.0);
+        assert_eq!(s[0].visible_parts(td).len(), 1);
+        assert_eq!(s[2].visible_parts(td).len(), 2);
     }
 }

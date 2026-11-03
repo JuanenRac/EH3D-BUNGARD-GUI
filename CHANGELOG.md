@@ -9,6 +9,7 @@ All notable changes to this project are documented here.
 - **A picture option for the zoom of the plan view (`--zoom`),** to show the aluminium profiles of the axes that lie outside the table.
 - **The profiles of the axes in the 3D view are the real section:** the rails and the beam lie with their 80 mm side flat (80 mm wide, 40 mm high) and show the mouths of the slots along them and the whole section at the end, with the slots, the two bores and the hollow of the core, the same polygons the plan view draws, and no longer a hollow rectangular tube; the beam no longer stands on its edge.
 - **Turning the work no longer pulls the holes and the paths of a board apart:** both files turn as one, and whatever moved one of them against the other (the offsets of the two machine files, the roundings of two units) is taken back after each turn, so the copper and the holes stay on one another however many times the work is turned or after a move.
+- **No rectangle of the Y axis over the work:** in the plan view the beam is drawn only where it sticks out of the table, so it does not cover the design when the head moves.
 
 ## [0.2.1] - Catalogue, panel and machine fixes, locked design, aluminium profile and the job line on the bar
 - **The Update button moved into the About window:** the top bar keeps its four groups (the file; the job; the machine; the program, which is now About alone), and About has an Update button with its picture and its word that opens the same window of updates.

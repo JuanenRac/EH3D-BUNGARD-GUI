@@ -37,7 +37,7 @@ impl App {
         if s.diameter_mm > 0.0 {
             let d = format!("{:.2}", s.diameter_mm);
             out.push_str(&format!(
-                " \u{2300}{}",
+                " \u{d8}{}",
                 d.trim_end_matches('0').trim_end_matches('.')
             ));
         }

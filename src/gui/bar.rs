@@ -117,6 +117,18 @@ fn cylinder(
     cv.poly(&ellipse(top, rx, ry), lit, Stroke::new(1.0 * cv.u, edge));
 }
 
+/// What is in each place of the bar: `loaded` is the tool that belongs in each place (the place, the program and the tool), `held` the tool the head holds now (if any).
+/// The place of the tool the head holds is empty; when the head leaves it, its place has it again. The plan view and the 3D view read this one state.
+pub(crate) fn rack_occupancy(
+    loaded: &[(u8, Program, u8)],
+    held: Option<(Program, u8)>,
+) -> Vec<(u8, Option<u8>)> {
+    loaded
+        .iter()
+        .map(|&(slot, p, t)| (slot, if held == Some((p, t)) { None } else { Some(t) }))
+        .collect()
+}
+
 impl App {
     /// The machine in the settings has a tool changer (an ATC model) and so a bar.
     pub(crate) fn bar_shown(&self) -> bool {
@@ -229,10 +241,18 @@ impl App {
             (Some(_), Some(h)) if !at_bar(&view.slots, (h.0, h.1)) => (None, None),
             _ => (leave, take),
         };
-        let tools = loaded
-            .iter()
-            .filter(|(s, _, _)| Some(*s) != at)
-            .map(|(s, p, t)| (*s, *t, color(*p, *t)))
+        // what is in each place comes from the tool in the head alone: the one the head holds is not in its place, and every other is
+        let held = working.filter(|_| at.is_some());
+        let tools = rack_occupancy(&loaded, held)
+            .into_iter()
+            .filter_map(|(s, t)| {
+                let t = t?;
+                let p = loaded
+                    .iter()
+                    .find(|(i, _, _)| *i == s)
+                    .map(|(_, p, _)| *p)?;
+                Some((s, t, color(p, t)))
+            })
             .collect();
         let head = at.and_then(|s| {
             loaded
@@ -1003,5 +1023,40 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn a_tool_leaves_its_place_when_the_head_takes_it_and_is_back_when_it_is_left() {
+        let loaded = [
+            (1u8, Program::Drill, 1u8),
+            (2, Program::Drill, 3),
+            (3, Program::Drill, 5),
+        ];
+        let at = |held: Option<(Program, u8)>| rack_occupancy(&loaded, held);
+        // nothing held: every place has its tool
+        assert_eq!(at(None), vec![(1, Some(1)), (2, Some(3)), (3, Some(5))]);
+        // T3 taken: its place is empty and the others are not
+        assert_eq!(
+            at(Some((Program::Drill, 3))),
+            vec![(1, Some(1)), (2, None), (3, Some(5))]
+        );
+        // T3 left: the place has it again and the head holds nothing
+        assert_eq!(at(None)[1], (2, Some(3)));
+        // a change from T3 to T5: T3 is back and T5 is out
+        assert_eq!(
+            at(Some((Program::Drill, 5))),
+            vec![(1, Some(1)), (2, Some(3)), (3, None)]
+        );
+        // a tool of the other program with the same number is not the one in the head
+        assert_eq!(at(Some((Program::Route, 3)))[1], (2, Some(3)));
+        // exactly one place is empty while the head holds one of the tools, and none otherwise
+        assert_eq!(
+            at(Some((Program::Drill, 1)))
+                .iter()
+                .filter(|s| s.1.is_none())
+                .count(),
+            1
+        );
+        assert_eq!(at(None).iter().filter(|s| s.1.is_none()).count(), 0);
     }
 }

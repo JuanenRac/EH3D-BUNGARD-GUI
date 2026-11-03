@@ -700,6 +700,9 @@ impl App {
             app.panel.tab_count = n.clamp(1, 20);
             app.apply_panel();
         }
+        if let Some(z) = o.zoom {
+            app.view2d.zoom = z.clamp(0.3, 20.0);
+        }
         if let Some(y) = o.yaw {
             app.view3d.yaw = y.clamp(-40.0, 40.0);
         }
@@ -1780,6 +1783,12 @@ struct Cv<'a> {
 thread_local! {
     /// The texts that did not fit their room even when made smaller, in the order they were drawn (the test of the widths reads them).
     static CLIPPED: std::cell::RefCell<Vec<String>> = const { std::cell::RefCell::new(Vec::new()) };
+}
+
+/// Where the note "design locked" is drawn in the plan view: its right end, at the top right (the corner of the board and the origin are at the bottom left, where the
+/// design is, and the warning of a board that does not fit is at the top left).
+pub(crate) fn lock_label_anchor(vx: f32, vy: f32, vw: f32) -> (f32, f32) {
+    (vx + vw - 14.0, vy + 28.0)
 }
 
 /// A slow ease: fast at first, calm at the end (0 to 1).
@@ -3013,14 +3022,15 @@ impl App {
         if self.design_locked() {
             // while the machine works the design cannot be dragged, turned or changed: the view only moves and zooms
             let label = self.tr(Text::DesignLocked);
+            let (lx, ly) = lock_label_anchor(vx, vy, vw);
             let r = cv.text_fit(
-                vx + 12.0,
-                vy + vh - 14.0,
-                Align2::LEFT_BOTTOM,
+                lx,
+                ly,
+                Align2::RIGHT_BOTTOM,
                 label,
                 14.0,
                 col(t.warn),
-                vw - 24.0,
+                vw * 0.5,
             );
             cv.p.rect_stroke(
                 r.expand(4.0 * cv.u),

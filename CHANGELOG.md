@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 - **Shared checks updated:** the validator also compares the badge and the Version row of the README with the manifest, fails when one of its checks cannot run, and the CHANGELOG step of the workflow reads the base branch from the environment.
+- **The note of the locked design moved to the top right of the plan view,** clear of the origin and of the design, and the emergency stop starts at the top right of the 3D view, clear of the bar of numbers and of the percent.
+- **A picture option for the zoom of the plan view (`--zoom`),** to show the aluminium profiles of the axes that lie outside the table.
 
 ## [0.2.1] - Catalogue, panel and machine fixes, locked design, aluminium profile and the job line on the bar
 - **The Update button moved into the About window:** the top bar keeps its four groups (the file; the job; the machine; the program, which is now About alone), and About has an Update button with its picture and its word that opens the same window of updates.

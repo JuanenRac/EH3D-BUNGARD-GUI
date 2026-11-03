@@ -1574,6 +1574,30 @@ EOF
         }
     }
 
+    #[test]
+    fn the_emergency_stop_starts_clear_of_the_bar_of_numbers_and_of_the_buttons_of_the_job() {
+        let (x, y) = crate::launcher::Settings::default().estop_pos;
+        // the button is about a hundred wide; the bar of numbers begins at DESIGN_H - 196 and the buttons of the job are in it
+        let hud_top = DESIGN_H - 196.0;
+        assert!(
+            y + 60.0 < hud_top,
+            "the stop at y = {y} reaches the bar at {hud_top}"
+        );
+        // and it is inside the canvas, on the right side where the 3D view is
+        assert!(x > DESIGN_W / 2.0 && x + 60.0 < DESIGN_W);
+        assert_eq!((x, y), crate::launcher::DEFAULT_ESTOP);
+    }
+
+    #[test]
+    fn the_note_of_the_locked_design_is_at_the_top_right_of_the_plan_and_not_at_the_origin() {
+        let (vx, vy, vw) = (330.0, 130.0, 600.0);
+        let (lx, ly) = lock_label_anchor(vx, vy, vw);
+        assert!(lx > vx + vw / 2.0 && lx <= vx + vw);
+        assert!(ly < vy + 60.0);
+        // the origin and the board are at the bottom left of the view
+        assert!(ly < vy + 100.0 && lx > vx + 100.0);
+    }
+
     fn app_with_both() -> App {
         let mut a = app();
         a.open_path(&Path::new(env!("CARGO_MANIFEST_DIR")).join("testdata/05_board_outline.plt"));

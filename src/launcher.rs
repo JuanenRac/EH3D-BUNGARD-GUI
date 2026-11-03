@@ -157,6 +157,9 @@ pub struct Settings {
 pub const DEFAULT_UPDATES_API: &str =
     "https://api.github.com/repos/JuanenRac/EH3D-BUNGARD-GUI/releases/latest";
 
+/// Where the emergency stop starts: at the top right of the 3D view, clear of the bar of numbers and of the buttons of the job under the views.
+pub const DEFAULT_ESTOP: (f32, f32) = (1474.0, 204.0);
+
 /// How many recent files are kept.
 pub const RECENT_MAX: usize = 6;
 
@@ -173,7 +176,7 @@ impl Default for Settings {
             sim_speed: 1.0,
             model: "CCD MTC".to_string(),
             emergency: true,
-            estop_pos: (1020.0, 770.0),
+            estop_pos: DEFAULT_ESTOP,
             display_mil: false,
             spindle: SpindleId::Original,
             spindles: [

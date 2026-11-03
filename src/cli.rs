@@ -35,6 +35,8 @@ pub struct Options {
     /// The table is measured at the start with the simulated probe (`--measure`): for the pictures.
     pub measure: bool,
     pub yaw: Option<f32>,
+    /// The zoom of the plan view (`--zoom FACTOR`, 1 is the fit): below 1 the aluminium profiles of the axes, outside the table, come into view; for the pictures.
+    pub zoom: Option<f32>,
     /// The tab of the settings window to show (`--tab 0|1|2`).
     pub tab: Option<u8>,
     /// The folder of the machine and tool files (`--data DIR`).
@@ -116,6 +118,10 @@ impl Options {
                     let v = value("--tabs")?;
                     o.tabs = Some(v.parse().map_err(|_| "--tabs needs a number")?);
                 }
+                "--zoom" => {
+                    let v = value("--zoom")?;
+                    o.zoom = Some(v.parse().map_err(|_| "--zoom needs a number")?);
+                }
                 "--yaw" => {
                     let v = value("--yaw")?;
                     o.yaw = Some(v.parse().map_err(|_| "--yaw needs a number")?);
@@ -150,6 +156,15 @@ mod tests {
 
     fn parse(s: &str) -> Result<Options, String> {
         Options::parse(s.split_whitespace().map(String::from))
+    }
+
+    #[test]
+    fn the_zoom_of_the_plan_is_read_and_a_word_that_is_not_a_number_is_refused() {
+        assert_eq!(parse("--zoom 0.5").unwrap().zoom, Some(0.5));
+        assert_eq!(parse("--zoom 2 --yaw 10").unwrap().zoom, Some(2.0));
+        assert_eq!(parse("--yaw 10").unwrap().zoom, None);
+        assert!(parse("--zoom big").unwrap_err().contains("--zoom"));
+        assert!(parse("--zoom").is_err());
     }
 
     #[test]

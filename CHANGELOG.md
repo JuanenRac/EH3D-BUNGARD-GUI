@@ -3,6 +3,9 @@
 All notable changes to this project are documented here.
 
 ## [Unreleased]
+- **The Update button moved into the About window:** the top bar keeps its four groups (the file; the job; the machine; the program, which is now About alone), and About has an Update button with its picture and its word that opens the same window of updates.
+- **More tests:** the sharing of the width of the main screen, what is saved to go on after a crash, the file of the connection that the window rewrites, the diameters of the tools and what is remembered between runs.
+- **A file name with a line break can no longer add a line to the settings file** (the address of the updates among them): the recent files and that address are written on one line each.
 
 ## [0.2.0] - ATC without asking for tools, a drawn spindle, a tidier bar, updates from GitHub and a queue-safe open window
 - **On the ATC models the operator is never asked to change a tool:** the head goes to the place of the tool in the bar, takes it (leaving the one it held in its own place), comes back to the board and works with it, in drilling and in routing (a routing job used to ask for each cutter); the manual models still ask.

@@ -189,6 +189,11 @@ impl Default for Settings {
     }
 }
 
+/// A value on one line: a line break in it could add keys to the file (the address the updates come from among them).
+fn one_line(v: &str) -> String {
+    v.replace(['\r', '\n'], " ")
+}
+
 impl Settings {
     /// The spindle the machine carries now.
     pub fn current_spindle(&self) -> Spindle {
@@ -328,7 +333,7 @@ impl Settings {
             if self.updates_enabled { "yes" } else { "no" },
             if self.updates_at_start { "yes" } else { "no" },
             self.updates_interval_h,
-            self.updates_api_url,
+            one_line(&self.updates_api_url),
             self.updates_last_check,
             self.updates_timeout_s,
             self.holes_drilled
@@ -336,7 +341,7 @@ impl Settings {
                 .map(|(t, n)| format!("{t}:{n}"))
                 .collect::<Vec<_>>()
                 .join(","),
-            self.recent.join("|"),
+            self.recent.iter().map(|p| one_line(p)).collect::<Vec<_>>().join("|"),
             if self.fullscreen { "yes" } else { "no" },
             if self.all_makers { "yes" } else { "no" },
             self.pane_left,

@@ -957,6 +957,17 @@ impl App {
                     16.0,
                     col(t.dim),
                 );
+                // the window of the updates is opened from here, with its picture and its name
+                cv.top_button(
+                    x + 320.0,
+                    y + 350.0,
+                    200.0,
+                    44.0,
+                    Icon::Update,
+                    self.tr(Text::UpdButton),
+                    false,
+                    Act::Show(Modal::Update),
+                );
                 cv.chip(
                     x + 540.0,
                     y + 350.0,

@@ -63,8 +63,6 @@ const TOP_BAR_FROM: f32 = 280.0;
 const TOP_BUTTON_W: f32 = 112.0;
 /// The button of the nodes and stations has the longest word in most languages.
 const TOP_BUTTON_WIDE: f32 = 150.0;
-/// The button of the updates is a picture with its name in a note: the bar has no room left for another word.
-const TOP_BUTTON_ICON: f32 = 40.0;
 
 fn col(c: Rgb) -> Color32 {
     Color32::from_rgb(c.0, c.1, c.2)
@@ -2403,10 +2401,7 @@ impl App {
                 (Icon::Plug, Text::Connection, Modal::Connection),
                 (Icon::Nodes, Text::FleetTitle, Modal::Fleet),
             ],
-            &[
-                (Icon::Info, Text::About, Modal::About),
-                (Icon::Update, Text::UpdButton, Modal::Update),
-            ],
+            &[(Icon::Info, Text::About, Modal::About)],
         ];
         let (bw, bh, gap, sep) = (TOP_BUTTON_W, 40.0, 4.0, 14.0);
         let mut x = TOP_BAR_FROM;
@@ -2424,21 +2419,9 @@ impl App {
             for &(icon, text, modal) in group.iter() {
                 let w = match modal {
                     Modal::Fleet => TOP_BUTTON_WIDE,
-                    Modal::Update => TOP_BUTTON_ICON,
                     _ => bw,
                 };
-                if shown && modal == Modal::Update {
-                    cv.icon_chip(
-                        x,
-                        12.0,
-                        w,
-                        bh,
-                        icon,
-                        self.modal == Some(modal),
-                        self.tr(text),
-                        Act::Show(modal),
-                    );
-                } else if shown {
+                if shown {
                     cv.top_button(
                         x,
                         12.0,

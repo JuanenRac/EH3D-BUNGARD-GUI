@@ -575,7 +575,7 @@ mod tests {
         use extra::Modal::*;
         assert_eq!(
             order,
-            [Open, Board, Tools, Panel, Settings, Connection, Fleet, About, Update]
+            [Open, Board, Tools, Panel, Settings, Connection, Fleet, About]
         );
         for w in bar.windows(2) {
             assert!(w[1].0 - w[0].1 >= 3.0, "{:?} touches {:?}", w[0], w[1]);
@@ -616,9 +616,26 @@ mod tests {
                 .count()
         };
         assert_eq!(
-            launcher, 2,
-            "the launcher has the buttons of the program only (about and update)"
+            launcher, 1,
+            "the launcher has the button of the program only (about)"
         );
+        // the update button lives inside the About window, not in the bar
+        a.screen = Screen::Viewer;
+        a.show_modal(extra::Modal::About);
+        clipped_on(&mut a, &ctx);
+        clipped_on(&mut a, &ctx);
+        let (cx, cy, cw, _) = a.modal_card.expect("the About window has a card");
+        let inside = a
+            .hits
+            .iter()
+            .filter(|(r, act)| {
+                matches!(act, Act::Show(extra::Modal::Update))
+                    && r.min.y > a.ui_origin.y + cy * a.ui_scale
+                    && r.min.x > a.ui_origin.x + cx * a.ui_scale
+                    && r.max.x < a.ui_origin.x + (cx + cw) * a.ui_scale
+            })
+            .count();
+        assert_eq!(inside, 1, "About has one button that opens the updates");
     }
 
     #[test]

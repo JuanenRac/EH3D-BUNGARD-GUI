@@ -595,12 +595,11 @@ mod tests {
             );
             let (bl, br) = crate::panes::bars(a.panes.0, a.panes.1);
             assert!(bl < br && br < bw - 20.0 - r + 16.0);
-            // every control is inside the board
+            // every control is inside the board (the hits are in pixels of the window: they are taken back to the units of the board)
+            let ox = (w - bw * u) / 2.0;
             for (rect, _) in &a.hits {
-                assert!(
-                    rect.max.x <= bw + 1.0 && rect.min.x >= -1.0,
-                    "{w}x{h}: {rect:?}"
-                );
+                let (x0, x1) = ((rect.min.x - ox) / u, (rect.max.x - ox) / u);
+                assert!(x1 <= bw + 1.0 && x0 >= -1.0, "{w}x{h}: {rect:?}");
             }
         }
         crate::panes::set_board_width(crate::panes::BOARD_W);

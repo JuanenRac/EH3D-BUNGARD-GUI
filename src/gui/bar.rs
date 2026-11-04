@@ -1148,6 +1148,10 @@ X1481Y984
         let all = loaded.len();
         assert!(all >= 2, "{loaded:?}");
         a.act(Act::Start);
+        // the changer models ask for the rack to be loaded first
+        if a.modal == Some(Modal::Rack) {
+            a.act(Act::RackGo);
+        }
         assert_eq!(a.running, Some(Program::Drill));
         let (mut takes, mut leaves) = (0, 0);
         let mut named_before_taken = false;

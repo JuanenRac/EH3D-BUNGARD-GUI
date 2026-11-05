@@ -3099,7 +3099,8 @@ fn joined(c: &Material, d: &DbMaterial) -> Material {
     let s = d.bungard_summary();
     let mut m = *c;
     m.id = leak_str(d.id.clone());
-    m.kind = WORKABLE.contains(&d.kind).then_some(d.kind);
+    // the kind of the database stays as it is even where it is not a board of the table (a flexible laminate the hand-written list names)
+    m.kind = Some(d.kind);
     m.tg_c = s.tg_c.or(m.tg_c);
     m.dk = s.dk.or(m.dk);
     m.df = s.df.or(m.df);
@@ -3123,6 +3124,34 @@ fn joined(c: &Material, d: &DbMaterial) -> Material {
     m
 }
 
+/// What a laminate of the database is made of, from the resin and the reinforcement its data sheet names (glass and epoxy, FR-4, when they
+/// say nothing else): paper with phenolic is FR-2, paper with epoxy FR-3, a paper core with glass faces CEM-1, CEM-3 where the sheet names it
+/// and a polyimide resin polyimide.
+fn laminate_core(d: &DbMaterial) -> Core {
+    let resin = d.resin.as_deref().unwrap_or_default().to_lowercase();
+    let reinforcement = d
+        .reinforcement
+        .as_deref()
+        .unwrap_or_default()
+        .to_lowercase();
+    let paper = reinforcement.contains("paper");
+    if resin.contains("cem-1") || (paper && reinforcement.contains("glass")) {
+        Core::Cem1
+    } else if resin.contains("cem-3") {
+        Core::Cem3
+    } else if paper {
+        if resin.contains("epoxy") {
+            Core::Fr3
+        } else {
+            Core::Fr2
+        }
+    } else if resin.contains("polyimide") && !resin.contains("epoxy") {
+        Core::Polyimide
+    } else {
+        Core::Fr4
+    }
+}
+
 /// A material of the database that this library does not have, ready to list. `None` when a machine for boards cannot work it.
 fn entry_of(d: &DbMaterial) -> Option<Material> {
     if !WORKABLE.contains(&d.kind) || d.name.trim().is_empty() || d.name.contains(['|', '\n', '\r'])
@@ -3134,7 +3163,7 @@ fn entry_of(d: &DbMaterial) -> Option<Material> {
         Kind::Ptfe => Core::Ptfe,
         Kind::CeramicFilled => Core::Hydrocarbon,
         Kind::MetalCore => Core::Aluminium,
-        _ => Core::Fr4,
+        _ => laminate_core(d),
     };
     let mut note = s.notes.clone().unwrap_or_default();
     let range = s
@@ -3738,6 +3767,33 @@ mod tests {
         assert!(!all
             .iter()
             .any(|m| m.curated && m.id.is_empty() && m.kind.is_some()));
+    }
+
+    #[test]
+    fn a_laminate_of_the_database_is_made_of_what_its_sheet_says() {
+        let db = Database::embedded().unwrap();
+        let core = |id: &str| laminate_core(db.get(id).unwrap());
+        assert_eq!(core("kingboard/kb-5150"), Core::Cem1);
+        assert_eq!(core("kingboard/kb-2150"), Core::Fr2);
+        assert_eq!(core("shengyi/s3110"), Core::Cem1);
+        assert_eq!(core("shengyi/st210g"), Core::Cem3);
+        assert_eq!(core("ventec/vt-901"), Core::Polyimide);
+        // a polyimide-modified epoxy on glass is still an FR-4 to drill
+        assert_eq!(core("isola/is620i"), Core::Fr4);
+        // and the ones that say nothing keep the glass and epoxy
+        let silent = materials()
+            .iter()
+            .filter(|m| !m.curated && m.kind == Some(Kind::Laminate) && m.core == Core::Fr4)
+            .count();
+        assert!(silent > 50, "{silent} FR-4 laminates");
+    }
+
+    #[test]
+    fn a_hand_written_material_keeps_the_kind_the_database_gives_it() {
+        let db = Database::embedded().unwrap();
+        for m in materials().iter().filter(|m| m.curated && !m.id.is_empty()) {
+            assert_eq!(m.kind, Some(db.get(m.id).unwrap().kind), "{}", m.name);
+        }
     }
 
     #[test]

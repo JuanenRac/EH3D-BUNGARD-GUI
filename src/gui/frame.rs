@@ -19,17 +19,10 @@ pub(crate) struct Frame {
     pub beam_tall: f64,
 }
 
-/// How far the rails go past the plate at each end (the end caps are outside that).
-pub(crate) const RAIL_OVERHANG: f64 = 34.0;
 /// How far behind the head the beam begins, along the rails.
 pub(crate) const BEAM_BEHIND: f64 = 64.0;
 
 impl Frame {
-    /// The length of a rail, end to end.
-    pub fn rail_len(&self) -> f64 {
-        (self.fx1 - self.fx0) + 2.0 * RAIL_OVERHANG
-    }
-
     /// The length of the beam across the machine, from the outside of one rail to the outside of the other.
     pub fn beam_len(&self) -> f64 {
         (self.fy1 - self.fy0) + 2.0 * self.rail_across

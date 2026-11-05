@@ -997,7 +997,9 @@ impl App {
     fn remember_settings(&mut self) {
         self.settings.lang = self.lang;
         self.settings.theme = self.theme.id;
-        let _ = self.settings.save(&self.settings_path);
+        if let Err(e) = self.settings.save(&self.settings_path) {
+            self.message = Some(format!("{}: {e}", self.settings_path.display()));
+        }
     }
 
     /// The sizes of the holes of both files, from the smallest.

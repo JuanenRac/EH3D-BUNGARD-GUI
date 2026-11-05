@@ -644,7 +644,10 @@ impl App {
                 self.board_set_value(false, v);
                 return;
             }
-            BoardPick::Material(i) => self.board = self.board.with_material(i),
+            BoardPick::Material(i) => {
+                self.board = self.board.with_material(i);
+                self.recall_material_values();
+            }
             BoardPick::Thickness(i) => {
                 if let Some(&v) = m.thickness_mm.get(i) {
                     self.board.thickness_mm = v;
@@ -711,7 +714,29 @@ impl App {
         } else {
             self.board.copper_um = v.clamp(1.0, 500.0).round();
         }
+        let m = self.board.material();
+        if m.no_data() {
+            self.settings.remember_material_values(
+                m.maker,
+                m.name,
+                self.board.thickness_mm,
+                self.board.copper_um,
+            );
+        }
         self.apply_board();
+    }
+
+    /// A material whose maker gives no thickness or no copper takes back what the person typed for it the last time.
+    fn recall_material_values(&mut self) {
+        let m = self.board.material();
+        if let Some((t, c)) = self.settings.material_values_of(m.maker, m.name) {
+            if m.needs_thickness() {
+                self.board.thickness_mm = t;
+            }
+            if m.needs_copper() {
+                self.board.copper_um = c;
+            }
+        }
     }
 
     /// The maker whose materials the list shows (`None`: all the makers mixed). The first entry of the list of makers is "all makers".

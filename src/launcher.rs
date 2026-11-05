@@ -129,6 +129,8 @@ pub struct Settings {
     /// The spindle limits of the models that are not the one in use. Each model has its own copy (a copy of the CCD MTC until there are official data for it), so changing one
     /// never touches another; the ones of the model in use are in `spindles`.
     pub machine_spindles: std::collections::BTreeMap<String, [Spindle; 2]>,
+    /// The thickness (mm) and the copper (um) the person typed for each material whose maker gives none, by `maker|name`, so the next time the material is chosen they come back.
+    pub material_values: std::collections::BTreeMap<String, (f64, f64)>,
     /// The sizes the 3D view draws the original spindle with (from its data sheet unless the settings file says otherwise).
     pub head_dims: crate::spindle::HeadDims,
     /// The updates from GitHub: the master switch (off, the program never asks the network), whether it looks for a new version when it starts, the hours
@@ -187,6 +189,7 @@ impl Default for Settings {
             profile: crate::profile::ProfileDims::default(),
             machine_make: String::new(),
             machine_spindles: std::collections::BTreeMap::new(),
+            material_values: std::collections::BTreeMap::new(),
             head_dims: crate::spindle::HeadDims::default(),
             updates_enabled: true,
             updates_at_start: false,
@@ -373,6 +376,17 @@ impl Settings {
                     }
                 }
                 "board" => s.board = crate::boards::from_text(v).unwrap_or(s.board),
+                "material_values" => {
+                    // `maker|name|thickness|copper`, one line for each material
+                    let p: Vec<&str> = v.trim().split('|').collect();
+                    if let [maker, name, t, c] = p[..] {
+                        if let (Ok(t), Ok(c)) = (t.parse::<f64>(), c.parse::<f64>()) {
+                            if t.is_finite() && c.is_finite() && !maker.is_empty() {
+                                s.remember_material_values(maker, name, t, c);
+                            }
+                        }
+                    }
+                }
                 _ => {}
             }
         }
@@ -391,6 +405,9 @@ impl Settings {
             one_line(&self.machine_make),
             self.profile.to_text()
         ));
+        for (key, (t, c)) in &self.material_values {
+            out.push_str(&format!("material_values = {}|{t}|{c}\n", one_line(key)));
+        }
         for (model, pair) in &self.machine_spindles {
             if *model == model_key(&self.model) || model.is_empty() {
                 continue;
@@ -458,11 +475,38 @@ impl Settings {
             .unwrap_or_default()
     }
 
+    /// Keeps the thickness and the copper the person typed for a material whose maker gives none.
+    pub fn remember_material_values(
+        &mut self,
+        maker: &str,
+        name: &str,
+        thickness_mm: f64,
+        copper_um: f64,
+    ) {
+        self.material_values
+            .insert(format!("{maker}|{name}"), (thickness_mm, copper_um));
+    }
+
+    /// What the person typed the last time for this material, if anything.
+    pub fn material_values_of(&self, maker: &str, name: &str) -> Option<(f64, f64)> {
+        self.material_values
+            .get(&format!("{maker}|{name}"))
+            .copied()
+    }
+
     pub fn save(&self, path: &Path) -> std::io::Result<()> {
         if let Some(dir) = path.parent() {
             std::fs::create_dir_all(dir)?;
         }
-        std::fs::write(path, self.to_text())
+        // written whole to a side file and renamed over the other, so a crash or a full disk in the middle never leaves half a file
+        let tmp = path.with_extension("tmp");
+        if let Err(e) = std::fs::write(&tmp, self.to_text()) {
+            let _ = std::fs::remove_file(&tmp);
+            return Err(e);
+        }
+        std::fs::rename(&tmp, path).inspect_err(|_| {
+            let _ = std::fs::remove_file(&tmp);
+        })
     }
 }
 
@@ -587,6 +631,9 @@ mod tests {
             )]
             .into_iter()
             .collect(),
+            material_values: [("Acme|Plain laminate".to_string(), (1.6, 35.0))]
+                .into_iter()
+                .collect(),
             holes_drilled: [(1u8, 9172u64), (3, 40)].into_iter().collect(),
             recent: vec!["C:/jobs/a.ncd".to_string(), "C:/jobs/b.zip".to_string()],
             fullscreen: true,
@@ -733,6 +780,40 @@ mod tests {
         assert_eq!(s.recent[0], "C:/jobs/7.ncd");
         assert_eq!(s.recent.iter().filter(|p| p.ends_with("/7.ncd")).count(), 1);
         assert_eq!(Settings::parse(&s.to_text()).recent, s.recent);
+    }
+
+    #[test]
+    fn saving_the_settings_leaves_no_side_file_and_reports_a_failure() {
+        let d = scratch("save-side");
+        let path = d.join("bungard-gui.cfg");
+        let mut s = Settings::default();
+        s.save(&path).unwrap();
+        s.remember_recent("C:/jobs/a.ncd");
+        s.save(&path).unwrap();
+        assert!(!path.with_extension("tmp").exists());
+        assert_eq!(Settings::load(&path).recent, s.recent);
+        // a path whose folder is a file cannot be written: the error comes back
+        let blocked = path.join("inside.cfg");
+        assert!(s.save(&blocked).is_err());
+    }
+
+    #[test]
+    fn the_values_typed_for_a_material_come_back_by_its_name() {
+        let mut s = Settings::default();
+        assert_eq!(s.material_values_of("Acme", "Plain laminate"), None);
+        s.remember_material_values("Acme", "Plain laminate", 1.2, 18.0);
+        s.remember_material_values("Acme", "Plain laminate", 1.6, 35.0);
+        s.remember_material_values("Acme", "Other", 0.8, 70.0);
+        assert_eq!(
+            s.material_values_of("Acme", "Plain laminate"),
+            Some((1.6, 35.0))
+        );
+        assert_eq!(s.material_values.len(), 2);
+        let back = Settings::parse(&s.to_text());
+        assert_eq!(back.material_values, s.material_values);
+        // a line that is not four parts or not numbers is left out
+        let bad = Settings::parse("material_values = a|b|x|y\nmaterial_values = a|b|1\n");
+        assert!(bad.material_values.is_empty());
     }
 
     #[test]

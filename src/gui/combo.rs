@@ -18,6 +18,8 @@ pub(crate) enum ComboId {
     TabPlace,
     /// The board: the maker of the material, its thickness and its size.
     Maker,
+    /// The type of material the list is narrowed to.
+    MatType,
     Thickness,
     BoardSize,
     /// The kind of bit the catalogue shows.
@@ -75,6 +77,13 @@ impl App {
             ComboId::Model => crate::machines::models().iter().map(|m| m.name()).collect(),
             ComboId::Maker => std::iter::once(self.tr(Text::AllMakers).to_string())
                 .chain(crate::boards::makers().iter().map(|m| self.maker_name(m)))
+                .collect(),
+            ComboId::MatType => std::iter::once(self.tr(Text::MatTypeAll).to_string())
+                .chain(
+                    crate::boards::Family::ALL
+                        .into_iter()
+                        .map(|f| self.tr(self.family_text(f)).to_string()),
+                )
                 .collect(),
             ComboId::Thickness => self
                 .board
@@ -166,6 +175,7 @@ impl App {
                 .unwrap_or(0),
             ComboId::Model => self.model(),
             ComboId::Maker => self.maker,
+            ComboId::MatType => self.mat_family,
             ComboId::CatKind => self.cat_kind,
             ComboId::Thickness => self
                 .board
@@ -241,6 +251,7 @@ impl App {
             ComboId::Lang => self.set_lang(lang_names()[row].0),
             ComboId::Model => self.apply_model(row),
             ComboId::Maker => self.board_pick(BoardPick::Maker(row)),
+            ComboId::MatType => self.board_pick(BoardPick::Family(row)),
             ComboId::CatKind => {
                 self.cat_kind = row;
                 self.cat_scroll = 0;

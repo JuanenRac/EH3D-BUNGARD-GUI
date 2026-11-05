@@ -6,6 +6,14 @@
 //! Sources of the nominal values: the formats and the thicknesses of the photosensitive boards of Bungard (ordering codes with the
 //! sizes) as the sellers Rapid Electronics, Buerklin and Conrad list them, the plain boards of Fortex and CIF as RS lists them, the
 //! RF laminates of Rogers, Taconic and Isola from their datasheets, and IPC-4101 for the base materials.
+//!
+//! The list the program shows is this hand-written library joined with the database of materials of the suite (the laminates, PTFE,
+//! ceramic filled and metal core boards that a machine for boards can drill and mill): where both describe the same material the
+//! published values of the database win and the note written here stays; a material of the database that has no thickness or copper
+//! is listed anyway, marked as without data of the manufacturer, and the person types those two values.
+
+use eh3d_materials::{Database, Kind, Material as DbMaterial};
+use std::sync::OnceLock;
 
 /// What the insulating core is made of.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -88,6 +96,12 @@ pub struct Material {
     pub tg_c: Option<f64>,
     /// Coated with a photosensitive resist, ready to be exposed.
     pub photoresist: bool,
+    /// The identifier in the database of materials of the suite; empty for a material that only this library has.
+    pub id: &'static str,
+    /// What the database says the material is, when it describes it and a machine for boards can work it.
+    pub kind: Option<Kind>,
+    /// Written by hand in this library (a material of the database that this library does not have is not).
+    pub curated: bool,
     pub note: &'static str,
 }
 
@@ -233,12 +247,15 @@ const fn m(
         df,
         tg_c,
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note,
     }
 }
 
-/// Every material of the library.
-pub const MATERIALS: &[Material] = &[
+/// The materials written by hand, with the notes taken from the data sheets. The program shows [`materials`], which joins them with the database.
+pub const CURATED: &[Material] = &[
     // ---- Bungard: the boards for the machines of the same maker, with and without photosensitive resist
     Material {
         maker: "Bungard",
@@ -252,6 +269,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.015),
         tg_c: Some(150.0),
         photoresist: true,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Bungard catalogue: FR4 in 0.5 to 2.5 mm (the 1.5 mm is sold as 1.5 or 1.6) with 18, 35 or 70 um copper (105 um at 1.5 mm); standard cuttings and panels of 510 x 570 and 510 x 1150 mm; resist 5 um, sensitive to 350-400 nm; Tg 150 C by DSC and Df 0.015 from the IPC 4101A sheet of the base material (the DIN IEC 249 sheet gives Tg 140 +-5 C), Dk 4.5 at 1 GHz (4.8 at 1 MHz), Td 320 C, thermal conductivity 0.36 W/mK",
     },
     Material {
@@ -266,6 +286,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.015),
         tg_c: Some(150.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "The same boards without resist, cut to any size from 50 x 50 mm (0.1 mm accuracy; boards of 2 mm or more are sawn, 3 mm lost per cut); carrier 1.55 +/- 0.08 mm, copper +/- 5 um at 35 um",
     },
     Material {
@@ -280,6 +303,9 @@ pub const MATERIALS: &[Material] = &[
         df: None,
         tg_c: Some(105.0),
         photoresist: true,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Cheap boards for simple circuits (single or double sided, 35 um); FR2 is the best for isolation milling because the routers last longer; panels of 480 x 1000 mm",
     },
     Material {
@@ -294,6 +320,9 @@ pub const MATERIALS: &[Material] = &[
         df: None,
         tg_c: Some(120.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Large panels to be cut: FR2 480 x 1000 mm (35 um, single or double sided), FR3 510 x 1150 mm (35 um, double sided) and CEM-1 510 x 1150 mm (35 um, single sided)",
     },
     Material {
@@ -308,6 +337,9 @@ pub const MATERIALS: &[Material] = &[
         df: None,
         tg_c: Some(150.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Semiflex base material for multilayers and semiflex use: the standard Bungard FR4 with flexibility, 0.125 and 0.2 mm with 35 um copper; the catalogue gives no figures of its own for it, so the Tg is that of the standard FR4 sheet; the 100 x 160 mm is sold only in units of 35 boards and the 210 x 300 mm in units of 8",
     },
     Material {
@@ -322,6 +354,9 @@ pub const MATERIALS: &[Material] = &[
         df: None,
         tg_c: None,
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Metal core board (Cotherm 1,000, 1,500 and 2,000): 35 um copper, a 100 um FR4 isolation layer and an aluminium layer of 1,000, 1,500 or 2,000 um, with or without photosensitive resist; the isolation layer is very thin, so the aluminium must be completely covered while etching",
     },
     // ---- Plain boards of the electronics shops
@@ -338,6 +373,9 @@ pub const MATERIALS: &[Material] = &[
         df: None,
         tg_c: Some(130.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "1/16 inch; single-sided in 3 x 5, 4 x 6, 6 x 6, 8 x 10 and 12 x 12 inches, double-sided in 3 x 5, 6 x 6 and 12 x 12; copper 1 oz (some listings say 1/2 oz)",
     },
     Material {
@@ -352,6 +390,9 @@ pub const MATERIALS: &[Material] = &[
         df: None,
         tg_c: Some(130.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "1/32 inch with 1/2 oz copper, single sided, 152 x 228 mm (data sheet of the 500 series)",
     },
     Material {
@@ -366,6 +407,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.0175),
         tg_c: Some(137.5),
         photoresist: true,
+        id: "",
+        kind: None,
+        curated: true,
         note: "1 oz copper with positive photoresist, translucent FR4, UL 94 V-0; 1.6 mm double sided 152 x 230 mm, 0.8 mm single or double sided 150 x 230 mm; Tg 130-145 C, Dk 4.2-4.7 and Df 0.015-0.020 at 1 MHz (data sheet of the 600 series; the figures are the middle of the typical ranges)",
     },
     Material {
@@ -380,6 +424,9 @@ pub const MATERIALS: &[Material] = &[
         df: None,
         tg_c: Some(130.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Single-sided (35 / 0 um) or double-sided (35 / 35 um), in the seven sizes of the maker; other sizes and thicknesses on request",
     },
     Material {
@@ -394,6 +441,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.027),
         tg_c: Some(135.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Double-sided FR-4 for prototypes to IPC-4101/21, UL 94 V-0, Tg 135 C by DSC, comparative tracking index 230 V typical; Dk and Df at 1 MHz; copper 18, 35 and 70 um; sheets of 927 x 1232 and 1082 x 1232 mm and cut panels; the data sheet gives its figures for a 1.6 mm board",
     },
     Material {
@@ -408,6 +458,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.02),
         tg_c: Some(135.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "The usual rigid board; 1.6 mm is the standard thickness (tolerance about 0.15 mm)",
     },
     Material {
@@ -422,6 +475,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.018),
         tg_c: Some(170.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "For lead-free soldering and many layers",
     },
     Material {
@@ -436,6 +492,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.025),
         tg_c: Some(120.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Cheap single-sided boards; no plated holes",
     },
     Material {
@@ -450,6 +509,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.02),
         tg_c: Some(125.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "A cheaper stand-in for FR-4 in boards of one or two layers",
     },
     Material {
@@ -464,6 +526,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.03),
         tg_c: Some(105.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Paper and phenolic; punched, not drilled, in volume",
     },
     // ---- High-speed and high-temperature epoxy
@@ -479,6 +544,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.021),
         tg_c: Some(180.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Lead-free high-Tg FR-4 to IPC-4101/98/99/101/126, Td 340 C, CAF resistant, EN 45545-2 certified; 0.05 to 3.2 mm as a range (the steps shown are the usual ones); 1/2, 1 and 2 oz copper; the data sheet gives no sheet sizes",
     },
     Material {
@@ -493,6 +561,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.02),
         tg_c: Some(180.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Lead-free FR-4 epoxy to IPC-4101/21/24/26/121/124/129, Td 350 C, 6 x 288 C solder float, EN 45545-2 certified; 0.05 to 3.2 mm as a range (the steps shown are the usual ones); 1/2, 1 and 2 oz copper; the data sheet gives no sheet sizes",
     },
     Material {
@@ -507,6 +578,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.013),
         tg_c: Some(180.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "BT-epoxy (bismaleimide/triazine) to IPC-4101/30, Td 325 C, CAF resistant, for large high layer count boards; 0.05 to 3.2 mm as a range (the steps shown are the usual ones); 1/2, 1 and 2 oz copper; the data sheet gives no sheet sizes",
     },
     Material {
@@ -521,6 +595,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.0095),
         tg_c: Some(190.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Low-loss epoxy for fast digital boards",
     },
     Material {
@@ -535,6 +612,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.004),
         tg_c: Some(185.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Ultra low loss multilayer material (laminate R-5775, prepreg R-5670), UL 94 V-0; Tg 185 C by DSC (210 C by DMA), Td 410 C, T288 above 120 min; Dk 3.61 and Df 0.004 at 10 GHz on the 0.75 mm core (3.71 and 0.002 at 1 GHz; the low Dk glass cloth R-5775N gives 3.34 and 0.0037 at 13 GHz); core thicknesses of the data sheet, 1 oz H-VLP copper; the sheet lists no sheet sizes",
     },
     Material {
@@ -549,6 +629,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.013),
         tg_c: Some(180.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Lead-free FR-4, UL 94 V-0; Tg 180 C by DSC (185 C by DMA), Td 345 C, T260 60 min, T288 20 min; Dk and Df at 1 MHz; the sheet gives the thickness as 0.002 to 0.125 in (0.5 to 3.2 mm in its text) and the copper from 3/8 to 3 oz (12 to 105 um) as ranges, so the steps shown are the usual ones; sheets of 36 x 48, 40 x 48 and 42 x 48 in",
     },
     Material {
@@ -563,6 +646,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.015),
         tg_c: Some(175.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "High-Tg low-CTE epoxy to IPC-4101C/99/101/126, UL 94 V-0, Tg 175 C by DSC (170 C minimum), Td 345 C, T260 above 60 min, T288 above 30 min, CAF resistant; Dk and Df at 1 MHz; the data sheet lists no thicknesses, copper weights or sheet sizes (the ones shown are the usual of FR-4)",
     },
     Material {
@@ -577,6 +663,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.016),
         tg_c: Some(180.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "High-Tg FR-4",
     },
     Material {
@@ -591,6 +680,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.009),
         tg_c: Some(210.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Low-loss epoxy",
     },
     Material {
@@ -605,6 +697,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.01),
         tg_c: Some(250.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Polyimide laminate and prepreg for high temperature to IPC-4101/40 and /41, halogen-free; Tg above 250 C by TMA, Td 407 C, T260, T288 and T300 above 60 min, z expansion 1.2 % from 50 to 260 C; Dk and Df at 1 MHz; the data sheet lists no laminate thicknesses, copper weights or sheet sizes (the ones shown are the usual)",
     },
     // ---- Radio-frequency laminates
@@ -620,6 +715,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.0027),
         tg_c: Some(280.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Hydrocarbon ceramic; drills like FR-4 but wears the tools faster",
     },
     Material {
@@ -634,6 +732,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.0037),
         tg_c: Some(280.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Flame retardant (UL 94 V-0) RF laminate, drop-in for RO4003C; Dk 3.48 +/- 0.05 and Df 0.0037 at 10 GHz, Td 390 C; the 0.101 mm material only in panels up to 24 x 18 in; LoPro foil in 1/2 and 1 oz for PIM-sensitive uses",
     },
     Material {
@@ -648,6 +749,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.0013),
         tg_c: None,
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Ceramic filled PTFE for millimetre waves up to 77 GHz; Dk 3.00 +/- 0.04 and Df 0.0013 at 10 GHz, Td 500 C, UL 94 V-0; soft, needs sharp tools; panels of 12 x 18 and 24 x 18 in",
     },
     Material {
@@ -662,6 +766,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.0022),
         tg_c: None,
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "High dielectric constant for small circuits; Dk 10.2 +/- 0.30 and Df 0.0022 at 10 GHz, Td 500 C, UL 94 V-0; panels of 12 x 18 and 24 x 18 in",
     },
     Material {
@@ -676,6 +783,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.0009),
         tg_c: None,
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Glass microfibre PTFE, the lowest loss",
     },
     Material {
@@ -690,6 +800,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.0012),
         tg_c: None,
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Ceramic filled PTFE, stable over temperature",
     },
     Material {
@@ -704,6 +817,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.0009),
         tg_c: None,
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Woven glass PTFE",
     },
     Material {
@@ -718,6 +834,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.0018),
         tg_c: Some(315.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Ceramic filled PTFE on woven glass (ORCER), UL 94 V-0, Tg above 315 C; Dk 3.50 and Df 0.0018 at 1.9 GHz; 0.010, 0.020, 0.030 and 0.060 in; 1/2, 1 and 2 oz copper; standard sheet 36 x 48 in",
     },
     // ---- Special bases
@@ -733,6 +852,9 @@ pub const MATERIALS: &[Material] = &[
         df: None,
         tg_c: None,
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Aluminium core for LED and power boards; carbide tools",
     },
     Material {
@@ -747,6 +869,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.002),
         tg_c: Some(220.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "All-polyimide adhesiveless laminate, UL 94 V-0, IPC-4204/11, 180 C maximum operating temperature; dielectric of 1 to 6 mil, copper 9 to 70 um (rolled or electrodeposited); Dk 3.4 and Df 0.002 at 1 MHz (0.003 at 1 mil)",
     },
     // ---- more makers and more kinds of base material
@@ -978,6 +1103,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.021),
         tg_c: Some(170.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "High performance FR-4 to IPC-4101/98/99/101, Td 350 C, T260 60 min, T288 above 15 min, UV blocking and AOI fluorescence; 0.05 to 2.4 mm as a range (the steps shown are the usual ones); 1/2, 1 and 2 oz copper",
     },
     m(
@@ -1040,6 +1168,9 @@ pub const MATERIALS: &[Material] = &[
         df: None,
         tg_c: Some(148.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Halogen-free FR-4 (laminate R-1566, prepreg R-1551), Tg 148 C by DSC, Td 350 C, CTI 600 V, T288 3 min (the S grade has Tg 175 C and Td 355 C; the WN grade T288 10 min); the data sheet lists no Dk, Df, thicknesses, copper weights or sheet sizes (those shown are the usual)",
     },
     Material {
@@ -1054,6 +1185,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.0074),
         tg_c: Some(176.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Low loss material (laminate R-5725, prepreg R-5620); Tg 176 C by DSC, T288 30 min; Dk 3.68 and Df 0.0074 at 13 GHz on a 0.8 mm sample; the data sheet lists no thicknesses, copper weights or sheet sizes (the ones shown are the usual)",
     },
     Material {
@@ -1068,6 +1202,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.0023),
         tg_c: Some(200.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Ultra low loss material (laminate R-5785, prepreg R-5680); Tg 200 C by DSC, T288 above 120 min; Dk 3.31 and Df 0.0023 at 14 GHz with the low Dk glass cloth (3.60 and 0.0034 at 13 GHz with normal glass) on a 0.75 mm sample; the data sheet lists no thicknesses, copper weights or sheet sizes (the ones shown are the usual)",
     },
     Material {
@@ -1082,6 +1219,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.015),
         tg_c: Some(140.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "UL ANSI FR-4 with UV blocking, UL 94 V-0, Tg 140 C by DSC (the specification asks 130 C), Td 310 C, CTI PLC 3, not for anti-CAF use; Dk and Df at 1 MHz; 0.05 to 3.2 mm and 12 to 105 um as ranges (the steps shown are the usual ones); UL-recognised boards from 0.38 mm; sheets of 36 x 48, 40 x 48 and 42 x 48 in",
     },
     m(
@@ -1120,6 +1260,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.016),
         tg_c: Some(155.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Medium-Tg filled epoxy to IPC-4101C/99, UL 94 V-0, Tg 155 C typical by DSC (150 C minimum), Td 345 C, T260 above 60 min, T288 above 30 min, CAF resistant; Dk and Df at 1 MHz; the data sheet lists no thicknesses, copper weights or sheet sizes (the ones shown are the usual of FR-4)",
     },
     m(
@@ -1290,6 +1433,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.002),
         tg_c: None,
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Ceramic filled PTFE with a high dielectric constant; Dk 6.15 +/- 0.15 and Df 0.0020 at 10 GHz, Td 500 C, UL 94 V-0; panels of 12 x 18 and 24 x 18 in",
     },
     m(
@@ -1436,6 +1582,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.0019),
         tg_c: None,
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "PTFE woven glass, UL 94 V-0; Dk 2.55 +/- 0.04 and Df about 0.0019 at 10 GHz; the sheet lists 0.005 to 0.019 in (0.13 to 0.48 mm), 0.020 to 0.030 in (0.50 to 0.76 mm) and 0.031 in (0.78 mm); 1/2, 1 and 2 oz copper; standard sheet 36 x 48 in",
     },
     Material {
@@ -1450,6 +1599,9 @@ pub const MATERIALS: &[Material] = &[
         df: None,
         tg_c: None,
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Low cost RF substrate on PTFE woven glass, UL 94 V-0; Dk 3.00 +/- 0.05 nominal; 0.020 in and 0.030 to 0.062 in; 1/2, 1 and 2 oz copper; the table of the sheet lists 0.37, 0.50, 0.78 to 1.5 and 0.78 mm for the three types TLC-27, TLC-30 and TLC-32",
     },
     m(
@@ -1681,6 +1833,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.018),
         tg_c: Some(180.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "UL ANSI FR-4.0, anti-CAF, lead-free; Tg 180 C by DSC (185 C by DMA), Td 355 C, T260 above 60 min, T288 30 min, T300 15 min, CTI PLC 3, UL 94 V-0; Dk and Df at 1 GHz on a 1.6 mm sample; 0.05 to 3.2 mm and 12 to 105 um as ranges (the steps shown are the usual ones)",
     },
     Material {
@@ -1695,6 +1850,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.003),
         tg_c: Some(280.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Hydrocarbon woven glass ceramic, UL 94 V-0, made with the FR-4 processes; Dk 3.42 +/- 0.05 (process) and 3.61 (design) and Df 0.0030 at 10 GHz; Tg above 280 C by DSC, Td 390 C; 0.010, 0.020, 0.030 and 0.060 in; 1/2 and 1 oz copper; sheets of 36 x 48, 40 x 48 and 42 x 48 in",
     },
     Material {
@@ -1709,6 +1867,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.0009),
         tg_c: None,
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "PTFE woven glass, UL 94 V-0; Dk 2.20 +/- 0.02 and Df 0.0009 at 10 GHz; 0.010, 0.020, 0.030 and 0.060 in; 1/2 and 1 oz copper; sheets of 36 x 48 and 40 x 48 in",
     },
     Material {
@@ -1723,6 +1884,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.0014),
         tg_c: None,
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "PTFE woven glass, UL 94 V-0; Dk 2.55 +/- 0.04 and Df 0.0014 at 10 GHz; 0.010, 0.020, 0.030 and 0.060 in; 1/2 and 1 oz copper; sheets of 36 x 48 and 40 x 48 in",
     },
     Material {
@@ -1737,6 +1901,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.0017),
         tg_c: None,
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "PTFE woven glass, UL 94 V-0; Dk 2.65 +/- 0.04 and Df 0.0017 at 10 GHz; 0.010, 0.020, 0.030 and 0.060 in; 1/2 and 1 oz copper; sheets of 36 x 48 and 40 x 48 in",
     },
     Material {
@@ -1751,6 +1918,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.0023),
         tg_c: None,
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "PTFE woven glass, UL 94 V-0; Dk 3.00 +/- 0.04 and Df 0.0023 at 10 GHz; 0.010, 0.020, 0.030 and 0.060 in; 1/2 and 1 oz copper; sheets of 36 x 48 and 40 x 48 in",
     },
     Material {
@@ -1765,6 +1935,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.0031),
         tg_c: Some(200.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Thermoset low loss RF laminate, UL 94 V-0; Dk 3.0 +/- 0.05 (design 2.98) and Df 0.0031 at 10 GHz; Tg 200 C by DMA, Td 400 C; 0.005 to 0.060 in; HVLP low profile copper (the sheet gives the peel strength for 1 oz and lists no weights); sheets of 36 x 48, 40 x 48 and 42 x 48 in",
     },
     Material {
@@ -1779,6 +1952,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.001),
         tg_c: None,
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "UL 94 V-0; Dk 3.0 +/- 0.04 and Df 0.0010 at 10 GHz, stable from 1 to 100 GHz, Td 538 C by TGA; 0.005 to 0.030 in; 1/2 and 1 oz HVLP copper; sheets of 18 x 24 and 21 x 24 in; the sheet does not name the resin",
     },
     Material {
@@ -1793,6 +1969,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.002),
         tg_c: Some(190.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "PPE woven glass, UL 94 V-0; Dk 3.00 +/- 0.05 (design 3.064) and Df 0.002 at 10 GHz; Tg 190 C by TMA, Td 400 C; 0.005 to 0.060 in; 1/2 and 1 oz HVLP copper and 2 oz RTF; sheets of 18 x 12, 18 x 24, 36 x 48 and 42 x 48 in",
     },
     Material {
@@ -1807,6 +1986,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.03),
         tg_c: None,
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Halogen-free three-layer flexible copper clad laminate, UL 94 V-0; polyimide film of 12.5, 25 and 50 um with 13 or 20 um adhesive; copper 12, 18 and 35 um, rolled or electrodeposited, single or double sided; Dk 3.6 and Df 0.030 at 1 MHz; rolls 250 or 500 mm wide",
     },
     Material {
@@ -1821,6 +2003,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.022),
         tg_c: Some(150.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Temperature resistant epoxy to IPC-4101/97/98/99/101, Td 330 C, T260 above 60 min, T288 above 10 min, CAF resistant, EN 45545-2 and NF F 16-101 rail classes; Dk and Df at 500 MHz; 0.05 to 2.4 mm as a range (the steps shown are the usual ones); 1/2 to 2 oz copper",
     },
     Material {
@@ -1835,6 +2020,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.006),
         tg_c: Some(225.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Low loss epoxy for 2 to 15 GHz to IPC-4101/135, Td 364 C, T260 60 min, T288 above 20 min; 0.05 to 1.5 mm as a range (the steps shown are the usual ones); 1/2, 1 and 2 oz copper",
     },
     Material {
@@ -1849,6 +2037,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.022),
         tg_c: Some(135.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Duraver FR-4 to IPC-4101/21, Td 315 C, T260 12 min, CAF resistant, EN 45545-2 certified; 0.05 to 2.4 mm as a range (the steps shown are the usual ones); 1/2 to 2 oz copper",
     },
     Material {
@@ -1863,6 +2054,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.022),
         tg_c: Some(135.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Track resistant FR-4 (CTI 400) to IPC-4101/21, UL 94 V-0, Td 315 C; Dk and Df at 1 MHz; 0.05 to 2.4 mm as a range (the steps shown are the usual ones); 1/2 to 2 oz copper",
     },
     Material {
@@ -1877,6 +2071,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.02),
         tg_c: Some(155.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Halogen-free FR-4 to IPC-4101/94, UL 94 V-0 without antimony, Td 390 C, T260 60 min, T288 above 10 min; 0.05 to 1.5 mm as a range (the steps shown are the usual ones); 1/2 to 2 oz copper",
     },
     Material {
@@ -1891,6 +2088,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.015),
         tg_c: Some(130.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Aluminium base laminate, dielectric of 75 to 200 um, thermal conductivity 1.6 W/mK, Td 380 C, CTI 600 V, UL 94 V-0, halogen-free; Dk and Df at 1 MHz; aluminium 0.6 to 3.0 mm, copper 1/2 to 10 oz; sheets of 18, 20 and 21 x 24 and 48 in",
     },
     Material {
@@ -1905,6 +2105,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.014),
         tg_c: Some(130.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Aluminium base laminate, dielectric of 75 to 200 um, thermal conductivity 2.2 W/mK, Td 380 C, CTI 600 V, UL 94 V-0, halogen-free; Dk and Df at 1 MHz; aluminium 0.6 to 3.0 mm, copper 1/2 to 10 oz; sheets of 18, 20 and 21 x 24 and 48 in",
     },
     Material {
@@ -1919,6 +2122,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.014),
         tg_c: Some(130.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Aluminium base laminate, dielectric of 75 to 200 um, thermal conductivity 2.2 W/mK, Td 380 C, CTI 600 V, UL 94 V-0, halogen-free; Dk and Df at 1 MHz; aluminium 0.6 to 3.0 mm, copper 1/2 to 10 oz; sheets of 18, 20 and 21 x 24 and 48 in",
     },
     Material {
@@ -1933,6 +2139,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.016),
         tg_c: Some(100.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Aluminium base laminate for bending (3D lighting), ceramic filled dielectric of 50 to 100 um, thermal conductivity 1.0 W/mK, Td 380 C, CTI 600 V, UL 94 V-0, halogen-free; Dk and Df at 1 MHz; aluminium 0.6 to 1.5 mm, copper 1/2 to 2 oz",
     },
     Material {
@@ -1947,6 +2156,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.016),
         tg_c: Some(130.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Aluminium base laminate, ceramic filled dielectric of 50 to 230 um, thermal conductivity 3.0 W/mK, Td 380 C, CTI 600 V, UL 94 V-0, halogen-free; Dk and Df at 1 MHz; aluminium 0.6 to 3.0 mm, copper 1/3 to 6 oz",
     },
     Material {
@@ -1961,6 +2173,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.018),
         tg_c: None,
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Aluminium copper clad, thermal conductivity 2.05 W/mK typical, CTI 600 V, UL 94 V-0, halogen- and sulphur-free; Dk at 1 MHz and Df at most 0.018; the thickness is 0.2 to 6.0 mm and the copper 1/3 to 6 oz as ranges (the steps shown are the usual ones)",
     },
     Material {
@@ -1975,6 +2190,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.018),
         tg_c: None,
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Aluminium copper clad, thermal conductivity 3.01 W/mK typical, CTI 600 V, UL 94 V-0, halogen- and sulphur-free; Dk at 1 MHz and Df at most 0.018; the thickness is 0.2 to 6.0 mm and the copper 1/3 to 6 oz as ranges (the steps shown are the usual ones)",
     },
     Material {
@@ -1989,6 +2207,9 @@ pub const MATERIALS: &[Material] = &[
         df: None,
         tg_c: Some(100.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Insulated metal substrate, aluminium alloy 5052 H34 or 1100 H24, dielectric of 75 to 200 um, thermal conductivity 2.0 W/mK, dielectric strength 5 kV, UL 94 V-0, CTI PLC 0; Dk at 1 MHz; aluminium 0.5 to 3.0 mm, copper 18 to 210 um",
     },
     Material {
@@ -2003,6 +2224,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.01),
         tg_c: None,
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Adhesiveless double-sided flexible laminate, halogen-free, polyimide film of 0.5 mil with 1/2 oz electrodeposited copper on both sides, UL 94 V-0; Dk and Df at 1 GHz; sheets 250 or 500 mm wide and 400 to 700 mm long",
     },
     Material {
@@ -2017,6 +2241,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.002),
         tg_c: Some(343.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Adhesiveless double-sided flexible laminate, all polyimide, halogen- and antimony-free, UL 94 V-0, 160 C UL operating temperature, IPC-4204/11; Dk and Df at 1 MHz; film of 0.0005 to 0.004 in with rolled copper of 1/4, 1/3, 1/2, 1 or 2 oz depending on the film",
     },
     Material {
@@ -2031,6 +2258,9 @@ pub const MATERIALS: &[Material] = &[
         df: None,
         tg_c: None,
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Low cost RF substrate on PTFE woven glass, UL 94 V-0; Dk 2.75 +/- 0.05 nominal; 0.0145 in; 1/2, 1 and 2 oz copper; the table of the sheet lists 0.37, 0.50, 0.78 to 1.5 and 0.78 mm for the three types TLC-27, TLC-30 and TLC-32",
     },
     Material {
@@ -2045,6 +2275,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.003),
         tg_c: None,
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Low cost RF substrate on PTFE woven glass, UL 94 V-0; Dk 3.20 +/- 0.05 and Df 0.0030 at 10 GHz; 0.030 in; 1/2, 1 and 2 oz copper",
     },
     Material {
@@ -2059,6 +2292,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.0019),
         tg_c: None,
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "PTFE woven glass, UL 94 V-0; Dk 2.50 +/- 0.04 and Df 0.0019 at 10 GHz; the sheet lists 0.005 to 0.019 in (0.13 to 0.48 mm), 0.020 to 0.030 in (0.50 to 0.76 mm) and 0.031 in (0.78 mm); 1/2, 1 and 2 oz copper; standard sheet 36 x 48 in",
     },
     Material {
@@ -2073,6 +2309,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.0012),
         tg_c: Some(220.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Ultra low loss material (laminate R-579Y, prepreg R-569Y); Tg 220 C by DMA, T288 above 120 min; Dk 3.08 and Df 0.0012 at 14 GHz with the ultra-low Df glass cloth (R-579Y(U); the low Dk glass cloth type R-579Y(N) has 3.13 and 0.0016, and the S types 3.19 and 0.0012 or 3.22 and 0.0015) on a 0.75 mm sample; the data sheet lists only that sample and 1 oz H-VLP3 copper",
     },
     Material {
@@ -2087,6 +2326,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.013),
         tg_c: Some(170.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Halogen-free low loss, lead-free soldering (laminate R-1577, prepreg R-1570); Tg 170 C by DSC, T288 25 min; Dk and Df at 10 GHz; the data sheet lists only the 0.8 mm sample and 1 oz copper",
     },
     Material {
@@ -2101,6 +2343,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.016),
         tg_c: Some(173.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Highly heat resistant low CTE FR-4 (laminate R-1755V), Tg 173 C by DSC, UL 94 V-0 class FR-4; Dk 4.4 and Df 0.016 at 1 GHz; T288 20 min; the data sheet lists only the 0.8 mm sample and 1 oz copper",
     },
     Material {
@@ -2115,6 +2360,9 @@ pub const MATERIALS: &[Material] = &[
         df: None,
         tg_c: Some(163.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Highly heat resistant low CTE FR-4 (laminate R-1755D), Tg 163 C by DSC, Td 345 C, UL 94 V-0 class FR-4; the data sheet lists only the 0.8 mm sample and 1 oz copper",
     },
     Material {
@@ -2129,6 +2377,9 @@ pub const MATERIALS: &[Material] = &[
         df: None,
         tg_c: Some(153.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Highly heat resistant low CTE FR-4 (laminate R-1755M), Tg 153 C by DSC, Td 355 C, UL 94 V-0 class FR-4; the data sheet lists only the 0.8 mm sample and 1 oz copper",
     },
     Material {
@@ -2143,6 +2394,9 @@ pub const MATERIALS: &[Material] = &[
         df: None,
         tg_c: Some(133.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Highly heat resistant low CTE FR-4 (laminate R-1755E), Tg 133 C by DSC, Td 370 C, UL 94 V-0 class FR-4; the data sheet lists only the 0.8 mm sample and 1 oz copper",
     },
     Material {
@@ -2157,6 +2411,9 @@ pub const MATERIALS: &[Material] = &[
         df: None,
         tg_c: Some(150.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "High reliability CEM-3 glass composite, double sided, CTI 600 V, Tg 150 C by TMA; better solder joint life and CAF resistance than usual CEM-3; the data sheet gives results for 1.6 mm (0.8 mm in brackets) boards with 35 um copper",
     },
     Material {
@@ -2171,6 +2428,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.007),
         tg_c: Some(140.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Glass composite (R-1786 double sided, R-1781 single sided), CTI 600 V, UL 94 V-0, Tg 140 C; Dk 4.0 and Df 0.007 at 1 GHz (4.2 and 0.011 at 1 MHz); 18 and 35 um copper, and the thick 70 um copper type for high currents; the data sheets give results for 1.6 mm (0.8 mm in brackets) boards",
     },
     Material {
@@ -2185,6 +2445,9 @@ pub const MATERIALS: &[Material] = &[
         df: None,
         tg_c: Some(140.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "High thermal conductivity glass composite (CEM-3 grade) for LED boards, double sided, thermal conductivity 1.10 W/mK, CTI 600 V, Tg 140 C by TMA; the data sheet gives results for 1.6 mm boards with 1 oz copper",
     },
     Material {
@@ -2199,6 +2462,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.004),
         tg_c: Some(185.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Low Dk glass cloth version of Megtron 6 (laminate R-5775(N), prepreg R-5670(N)); Tg 185 C by DSC (210 C by DMA), Td 410 C, T288 above 120 min; Dk 3.35 and Df 0.004 at 12 GHz (3.40 and 0.002 at 1 GHz) on a 0.75 mm sample; the 16 core thicknesses of the data sheet and 1 oz H-VLP copper",
     },
     Material {
@@ -2213,6 +2479,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.003),
         tg_c: Some(250.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Halogen-free ultra low loss material between Megtron 6 and Megtron 7 (laminate R-5375(N) with low Dk glass cloth, prepreg R-5370(N); the E glass type R-5375(E) has Dk 3.7 and Df 0.004); Tg 250 C by DMA, T288 and T320 above 120 min; Dk and Df at 12 GHz on a 0.75 mm sample; the data sheet lists only that sample and 1 oz H-VLP2 copper",
     },
     Material {
@@ -2227,6 +2496,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.007),
         tg_c: Some(200.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Low loss, highly heat resistant material (laminate R-5725S, prepreg R-5620S); Tg 200 C by DSC, T288 50 min; Dk 3.8 and Df 0.007 at 10 GHz on a 0.8 mm sample; the data sheet lists only that sample and 1 oz copper",
     },
     Material {
@@ -2241,6 +2513,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.0087),
         tg_c: Some(195.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Low loss, highly heat resistant material (laminate R-5735, prepreg R-5630); Tg 195 C by DSC, T288 35 min; Dk 3.75 and Df 0.0087 at 13 GHz on a 0.8 mm sample; the data sheet lists only that sample and 1 oz copper",
     },
     Material {
@@ -2255,6 +2530,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.0021),
         tg_c: Some(200.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Halogen-free ultra low transmission loss material (laminate R-5515 and R-5515X, prepreg R-5410); Tg 200 C by DMA, T288 above 120 min; Dk 3.06 and Df 0.0021 at 14 GHz on a 0.13 mm sample; the data sheet lists only that sample and 1/2 oz H-VLP2 copper",
     },
     Material {
@@ -2269,6 +2547,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.0045),
         tg_c: Some(245.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Halogen-free material with a thermal conductivity of 0.6 W/mK and low transmission loss (laminate R-5575 and R-5575X, prepreg R-5470); Tg 245 C by DMA, T288 above 120 min; Dk 3.60 and Df 0.0045 at 13 GHz on a 0.5 mm sample; the data sheet lists only that sample and 1 oz RT copper",
     },
     Material {
@@ -2283,6 +2564,9 @@ pub const MATERIALS: &[Material] = &[
         df: None,
         tg_c: Some(175.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Highly heat resistant halogen-free FR-4 (laminate R-1566S, prepreg R-1551S), Tg 175 C by DSC (170 C by TMA), Td 355 C, T288 10 min; the data sheet lists no Dk or Df and only the 0.8 mm sample with 1 oz copper",
     },
     Material {
@@ -2297,6 +2581,9 @@ pub const MATERIALS: &[Material] = &[
         df: None,
         tg_c: Some(175.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "Halogen-free FR-4 with a CTI of 600 V and a relative thermal index of 150 C (laminate R-356AD, prepreg R-355AD; the R-356YD grade shares the sheet); Tg 175 C by DSC (170 C by TMA), Td 355 C, T288 10 min; the data sheet lists no Dk or Df and only the 0.8 mm sample with 1 oz copper",
     },
     Material {
@@ -2311,6 +2598,9 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.016),
         tg_c: Some(140.0),
         photoresist: false,
+        id: "",
+        kind: None,
+        curated: true,
         note: "General purpose FR-4.0 double sided glass epoxy core (laminate R-1766, prepreg R-1661) with little resin smear; Dk 4.3 and Df 0.016 at 1 GHz (4.7 and 0.015 at 1 MHz), Td 315 C, T288 1 min; Tg is the one printed for it in the comparison column of the HIPER data sheets; thickness tolerance +-0.03 mm (0.1 mm) to +-0.13 mm (1.6 mm)",
     },
     // ---- sheet and plate without copper, to mill and to drill
@@ -2616,6 +2906,306 @@ fn sort_parts(name: &str) -> Vec<SortPart> {
     parts
 }
 
+/// The kinds of the database of materials that a machine for boards can drill and mill. Prepregs, bonding films, flexible laminates,
+/// coverlays, copper foils and the rest are not boards to put on the table.
+pub const WORKABLE: [Kind; 4] = [
+    Kind::Laminate,
+    Kind::Ptfe,
+    Kind::CeramicFilled,
+    Kind::MetalCore,
+];
+
+/// The sort of material the list can be narrowed to.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Family {
+    /// Glass or paper laminates (FR-4 and the like, polyimide, flex written by hand).
+    Laminate,
+    /// PTFE and RF materials.
+    Rf,
+    /// Ceramic filled laminates and ceramic substrates.
+    Ceramic,
+    /// Metal core laminates (aluminium, copper).
+    MetalCore,
+    /// Plain sheets with no copper (metal, wood, plastic).
+    Sheet,
+}
+
+impl Family {
+    /// Every family, in the order the list of types shows them.
+    pub const ALL: [Family; 5] = [
+        Family::Laminate,
+        Family::Rf,
+        Family::Ceramic,
+        Family::MetalCore,
+        Family::Sheet,
+    ];
+
+    fn of_kind(kind: Kind) -> Option<Family> {
+        match kind {
+            Kind::Laminate => Some(Family::Laminate),
+            Kind::Ptfe => Some(Family::Rf),
+            Kind::CeramicFilled => Some(Family::Ceramic),
+            Kind::MetalCore => Some(Family::MetalCore),
+            _ => None,
+        }
+    }
+
+    fn of_core(core: Core) -> Family {
+        match core {
+            Core::Fr2
+            | Core::Fr3
+            | Core::Cem1
+            | Core::Cem3
+            | Core::Fr4
+            | Core::Polyimide
+            | Core::Flex => Family::Laminate,
+            Core::Ptfe => Family::Rf,
+            Core::Hydrocarbon | Core::Ceramic => Family::Ceramic,
+            Core::Aluminium => Family::MetalCore,
+            Core::Metal | Core::Copper | Core::Wood | Core::Plastic | Core::SoftPlastic => {
+                Family::Sheet
+            }
+        }
+    }
+}
+
+impl Material {
+    /// The sort of material: what the database says, or - for a material only this library has - what it is made of.
+    pub fn family(&self) -> Family {
+        self.kind
+            .and_then(Family::of_kind)
+            .unwrap_or_else(|| Family::of_core(self.core))
+    }
+
+    /// The maker gives no thickness for this material: the person types it.
+    pub fn needs_thickness(&self) -> bool {
+        self.thickness_mm.is_empty()
+    }
+
+    /// The maker gives no copper for this material, which has copper: the person types it.
+    pub fn needs_copper(&self) -> bool {
+        self.copper_um.is_empty() && self.sides != Sides::NoCopper
+    }
+
+    /// Thickness or copper (or both) are not in the data of the maker.
+    pub fn no_data(&self) -> bool {
+        self.needs_thickness() || self.needs_copper()
+    }
+}
+
+/// Makers that the database writes another way.
+const MAKER_NAMES: &[(&str, &str)] = &[
+    ("Nelco", "AGC Nelco"),
+    ("KB", "Kingboard"),
+    ("MSC", "MSC Polymer"),
+];
+
+/// Materials that the database lists under another name or under the maker that bought the line: (maker here, name here, identifier there).
+const SAME_MATERIAL: &[(&str, &str, &str)] = &[
+    ("Nelco", "N4000-13EP", "agc-nelco/n4000-13-ep"),
+    ("Taconic", "TLY-5", "agc-nelco/tly-5"),
+    ("Taconic", "TLX-8", "agc-nelco/tlx-8"),
+    ("Arlon", "AD250C", "rogers/ad250c"),
+    ("Arlon", "AD300D", "rogers/ad300d"),
+    ("Arlon", "AD350A", "rogers/ad350a"),
+    ("Arlon", "DiClad 880", "rogers/diclad-880"),
+    ("Arlon", "DiClad 527", "rogers/diclad-527"),
+    ("Arlon", "CuClad 217", "rogers/cuclad-217"),
+    ("Arlon", "CLTE-XT", "rogers/clte-xt"),
+    ("Panasonic", "R-1755V", "panasonic/hiper-r-1755v"),
+    ("Panasonic", "R-1755D", "panasonic/hiper-r-1755d"),
+    ("Panasonic", "R-1755M", "panasonic/hiper-r-1755m"),
+    ("Panasonic", "R-1755E", "panasonic/hiper-r-1755e"),
+    (
+        "MSC",
+        "Polytherm TC-Lam 2.0",
+        "msc-polymer/polytherm-tc-lam-2-0",
+    ),
+];
+
+fn leak<T>(v: Vec<T>) -> &'static [T] {
+    Box::leak(v.into_boxed_slice())
+}
+
+fn leak_str(s: String) -> &'static str {
+    Box::leak(s.into_boxed_str())
+}
+
+/// The text as it is compared when searching: lower case and without accents.
+fn fold(s: &str) -> String {
+    s.chars()
+        .flat_map(char::to_lowercase)
+        .map(plain_letter)
+        .collect()
+}
+
+/// A name for matching two lists: letters and digits only.
+fn key(s: &str) -> String {
+    fold(s).chars().filter(|c| c.is_alphanumeric()).collect()
+}
+
+/// The values of a list, from the smallest, each once.
+fn sorted_unique(mut v: Vec<f64>) -> Vec<f64> {
+    v.sort_by(f64::total_cmp);
+    v.dedup_by(|a, b| (*a - *b).abs() < 1e-9);
+    v
+}
+
+/// The copper of the database in micrometres: the thickness where the sheet gives it, else the weight (1 oz is 35 um, 1/2 oz is 18 um).
+fn copper_um(list: &[eh3d_materials::model::Copper]) -> Vec<f64> {
+    let v: Vec<f64> = list
+        .iter()
+        .filter_map(|c| {
+            c.thickness_um.or_else(|| {
+                c.weight_oz.map(|oz| {
+                    if (oz - 0.5).abs() < 1e-9 {
+                        18.0
+                    } else {
+                        (oz * 35.0).round()
+                    }
+                })
+            })
+        })
+        .filter(|um| um.is_finite() && *um > 0.0)
+        .collect();
+    sorted_unique(v)
+}
+
+/// The panel sizes of the database as (width, depth).
+fn panels(list: &[eh3d_materials::model::PanelSize]) -> Vec<(f64, f64)> {
+    list.iter().map(|p| (p.width_mm, p.height_mm)).collect()
+}
+
+/// The material of the database that is the same as one written by hand.
+fn same_in_database<'a>(db: &'a Database, m: &Material) -> Option<&'a DbMaterial> {
+    if let Some(&(_, _, id)) = SAME_MATERIAL
+        .iter()
+        .find(|(maker, name, _)| *maker == m.maker && *name == m.name)
+    {
+        return db.get(id);
+    }
+    let maker = MAKER_NAMES
+        .iter()
+        .find(|(from, _)| *from == m.maker)
+        .map_or(m.maker, |(_, to)| *to);
+    let (maker_key, name_key) = (key(maker), key(m.name));
+    db.materials()
+        .iter()
+        .find(|d| key(&d.manufacturer) == maker_key && key(&d.name) == name_key)
+}
+
+/// A material written by hand with the values the database publishes for it: those win where the database has them, and the note stays.
+fn joined(c: &Material, d: &DbMaterial) -> Material {
+    let s = d.bungard_summary();
+    let mut m = *c;
+    m.id = leak_str(d.id.clone());
+    m.kind = WORKABLE.contains(&d.kind).then_some(d.kind);
+    m.tg_c = s.tg_c.or(m.tg_c);
+    m.dk = s.dk.or(m.dk);
+    m.df = s.df.or(m.df);
+    if !s.thicknesses_mm.is_empty() {
+        m.thickness_mm = leak(sorted_unique(s.thicknesses_mm.clone()));
+    }
+    let copper = copper_um(&s.copper);
+    if !copper.is_empty() && m.sides != Sides::NoCopper {
+        m.copper_um = leak(copper);
+    }
+    let mut formats = panels(&s.panel_sizes);
+    if !formats.is_empty() {
+        // the cuttings of the maker that the sheet does not list stay after its panels
+        for f in c.formats_mm {
+            if !formats.contains(f) {
+                formats.push(*f);
+            }
+        }
+        m.formats_mm = leak(formats);
+    }
+    m
+}
+
+/// A material of the database that this library does not have, ready to list. `None` when a machine for boards cannot work it.
+fn entry_of(d: &DbMaterial) -> Option<Material> {
+    if !WORKABLE.contains(&d.kind) || d.name.trim().is_empty() || d.name.contains(['|', '\n', '\r'])
+    {
+        return None;
+    }
+    let s = d.bungard_summary();
+    let core = match d.kind {
+        Kind::Ptfe => Core::Ptfe,
+        Kind::CeramicFilled => Core::Hydrocarbon,
+        Kind::MetalCore => Core::Aluminium,
+        _ => Core::Fr4,
+    };
+    let mut note = s.notes.clone().unwrap_or_default();
+    let range = s
+        .thickness_range
+        .as_ref()
+        .filter(|_| s.thicknesses_mm.is_empty())
+        .and_then(|r| r.min_mm.zip(r.max_mm));
+    if let Some((lo, hi)) = range {
+        if !note.is_empty() {
+            note.push(' ');
+        }
+        note.push_str(&format!(
+            "The sheet gives a thickness range of {lo} to {hi} mm."
+        ));
+    }
+    Some(Material {
+        maker: leak_str(d.manufacturer.clone()),
+        name: leak_str(d.name.clone()),
+        core,
+        thickness_mm: leak(sorted_unique(s.thicknesses_mm.clone())),
+        copper_um: leak(copper_um(&s.copper)),
+        sides: Sides::Either,
+        formats_mm: leak(panels(&s.panel_sizes)),
+        dk: s.dk,
+        df: s.df,
+        tg_c: s.tg_c,
+        photoresist: false,
+        id: leak_str(d.id.clone()),
+        kind: Some(d.kind),
+        curated: false,
+        note: leak_str(note),
+    })
+}
+
+/// The library joined with the database: the hand-written materials first, in their own order (their places do not change), each with the
+/// published values of the database where it has them, and then the materials only the database has, by identifier.
+fn build() -> Vec<Material> {
+    let Ok(db) = Database::embedded() else {
+        return CURATED.to_vec();
+    };
+    let mut all: Vec<Material> = Vec::with_capacity(CURATED.len() + db.len());
+    let mut used: Vec<&str> = Vec::new();
+    for c in CURATED {
+        match same_in_database(&db, c) {
+            Some(d) => {
+                used.push(&d.id);
+                all.push(joined(c, d));
+            }
+            None => all.push(*c),
+        }
+    }
+    let mut rest: Vec<&DbMaterial> = db
+        .materials()
+        .iter()
+        .filter(|d| !used.contains(&d.id.as_str()))
+        .collect();
+    rest.sort_by(|a, b| a.id.cmp(&b.id));
+    for m in rest.into_iter().filter_map(entry_of) {
+        if !all.iter().any(|x| x.maker == m.maker && x.name == m.name) {
+            all.push(m);
+        }
+    }
+    all
+}
+
+/// Every material the program lists: the library joined with the database of materials of the suite (built once).
+pub fn materials() -> &'static [Material] {
+    static ALL: OnceLock<Vec<Material>> = OnceLock::new();
+    ALL.get_or_init(build).as_slice()
+}
+
 /// The order of the lists of makers and of materials: alphabetical without regard to capitals or accents, numbers by their value.
 pub fn natural_cmp(a: &str, b: &str) -> std::cmp::Ordering {
     sort_parts(a).cmp(&sort_parts(b)).then_with(|| a.cmp(b))
@@ -2624,7 +3214,7 @@ pub fn natural_cmp(a: &str, b: &str) -> std::cmp::Ordering {
 /// The makers, in alphabetical order (the data of the library keeps its own order).
 pub fn makers() -> Vec<&'static str> {
     let mut v: Vec<&'static str> = Vec::new();
-    for m in MATERIALS {
+    for m in materials() {
         if !v.contains(&m.maker) {
             v.push(m.maker);
         }
@@ -2633,26 +3223,60 @@ pub fn makers() -> Vec<&'static str> {
     v
 }
 
-/// The materials the list shows: those of one maker, or (`None`) those of all the makers mixed, in alphabetical order of the name
-/// that `name_of` gives them (the maker breaks a tie). Each comes with its place in [`MATERIALS`].
+/// What the narrowed list shows: one maker or all, one family or all, and the words the person typed (each has to be somewhere in the maker,
+/// the name or the identifier; capitals and accents do not count).
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Filter<'a> {
+    pub maker: Option<&'a str>,
+    pub family: Option<Family>,
+    pub text: &'a str,
+}
+
+impl<'a> Filter<'a> {
+    /// The filter of one maker, with every family and no words.
+    pub fn of_maker(maker: &'a str) -> Filter<'a> {
+        Filter {
+            maker: Some(maker),
+            ..Filter::default()
+        }
+    }
+
+    /// Whether a material passes; `name` is the name the person reads (the translated one, where the name has words).
+    pub fn accepts(&self, m: &Material, name: &str) -> bool {
+        if self.maker.is_some_and(|k| m.maker != k) || self.family.is_some_and(|f| m.family() != f)
+        {
+            return false;
+        }
+        let words = fold(self.text);
+        if words.trim().is_empty() {
+            return true;
+        }
+        let hay = fold(&format!("{} {} {} {}", m.maker, m.name, name, m.id));
+        words.split_whitespace().all(|w| hay.contains(w))
+    }
+}
+
+/// The materials the list shows: those that pass the filter, in alphabetical order of the name that `name_of` gives them (the maker breaks a
+/// tie). Each comes with its place in [`materials`].
 pub fn materials_view(
-    maker: Option<&str>,
+    filter: &Filter,
     name_of: &dyn Fn(&Material) -> String,
 ) -> Vec<(usize, &'static Material)> {
-    let mut v: Vec<(usize, &'static Material)> = MATERIALS
+    let mut v: Vec<(usize, &'static Material)> = materials()
         .iter()
         .enumerate()
-        .filter(|(_, m)| maker.is_none_or(|k| m.maker == k))
+        .filter(|(_, m)| filter.accepts(m, &name_of(m)))
         .collect();
-    v.sort_by(|(_, a), (_, b)| {
-        natural_cmp(&name_of(a), &name_of(b)).then_with(|| natural_cmp(a.maker, b.maker))
+    v.sort_by_cached_key(|(_, m)| {
+        let name = name_of(m);
+        (sort_parts(&name), name, sort_parts(m.maker), m.maker)
     });
     v
 }
 
 /// The materials of one maker.
 pub fn of_maker(maker: &str) -> Vec<&'static Material> {
-    MATERIALS.iter().filter(|m| m.maker == maker).collect()
+    materials().iter().filter(|m| m.maker == maker).collect()
 }
 
 /// The board as it is chosen: the material, its thickness and copper, the copper sides and the size.
@@ -2670,7 +3294,7 @@ pub struct Board {
 impl Board {
     /// The usual board: FR-4 of 1.6 mm with 35 um copper on both sides.
     pub fn standard() -> Board {
-        let material = MATERIALS
+        let material = materials()
             .iter()
             .position(|m| m.maker == "Generic" && m.name.starts_with("FR-4 (IPC"))
             .unwrap_or(0);
@@ -2684,12 +3308,15 @@ impl Board {
     }
 
     pub fn material(&self) -> &'static Material {
-        &MATERIALS[self.material.min(MATERIALS.len() - 1)]
+        let all = materials();
+        &all[self.material.min(all.len() - 1)]
     }
 
     /// Takes another material: the thickness and the copper go to the nearest the new one offers, and the sides to what it can have.
     pub fn with_material(self, index: usize) -> Board {
-        let m = &MATERIALS[index.min(MATERIALS.len() - 1)];
+        let all = materials();
+        let index = index.min(all.len() - 1);
+        let m = &all[index];
         let near = |list: &[f64], v: f64| {
             list.iter()
                 .copied()
@@ -2697,11 +3324,19 @@ impl Board {
                 .unwrap_or(v)
         };
         Board {
-            material: index.min(MATERIALS.len() - 1),
+            material: index,
+            // a material with no thickness of the maker keeps the one the board had
             thickness_mm: near(m.thickness_mm, self.thickness_mm),
-            // a sheet without copper has none (0), and the layers stay as they were for when a copper board is chosen again
-            copper_um: if m.copper_um.is_empty() {
+            // a sheet without copper has none (0), and the layers stay as they were for when a copper board is chosen again;
+            // a board with copper whose maker gives none keeps the copper it had (or the usual 35 um after a sheet)
+            copper_um: if m.sides == Sides::NoCopper {
                 0.0
+            } else if m.copper_um.is_empty() {
+                if self.copper_um > 0.0 {
+                    self.copper_um
+                } else {
+                    35.0
+                }
             } else {
                 near(m.copper_um, self.copper_um)
             },
@@ -2759,7 +3394,7 @@ pub fn from_text(t: &str) -> Option<Board> {
     if p.len() != 6 {
         return None;
     }
-    let material = MATERIALS
+    let material = materials()
         .iter()
         .position(|m| m.maker == p[0] && m.name == p[1])?;
     let size_mm = match p[5] {
@@ -2784,8 +3419,8 @@ mod tests {
 
     #[test]
     fn every_material_is_complete() {
-        assert!(MATERIALS.len() >= 174);
-        for m in MATERIALS {
+        assert!(CURATED.len() >= 174);
+        for m in CURATED {
             // a material has a thickness; it has copper unless it is a plain sheet (and then it has none at all)
             assert!(!m.thickness_mm.is_empty(), "{}", m.name);
             assert_eq!(
@@ -2833,8 +3468,8 @@ mod tests {
 
     #[test]
     fn a_material_is_listed_once() {
-        for (i, a) in MATERIALS.iter().enumerate() {
-            for b in &MATERIALS[i + 1..] {
+        for (i, a) in CURATED.iter().enumerate() {
+            for b in &CURATED[i + 1..] {
                 assert!(
                     !(a.maker == b.maker && a.name == b.name),
                     "{} {}",
@@ -2850,7 +3485,7 @@ mod tests {
     #[test]
     fn the_materials_of_the_data_sheets_are_in_the_library() {
         let find = |maker: &str, name: &str| {
-            MATERIALS
+            CURATED
                 .iter()
                 .find(|m| m.maker == maker && m.name == name)
                 .unwrap_or_else(|| panic!("{maker} {name}"))
@@ -2885,7 +3520,7 @@ mod tests {
         assert_eq!(find("Panasonic", "R-1785").sides, Sides::Two);
         assert_eq!(find("Yuxinda", "AL-200").sides, Sides::One);
         // no note carries a year
-        for m in MATERIALS {
+        for m in CURATED {
             assert!(
                 !m.note
                     .split(|c: char| !c.is_ascii_digit())
@@ -2897,7 +3532,7 @@ mod tests {
     }
 
     fn sheet(name: &str) -> &'static Material {
-        MATERIALS
+        CURATED
             .iter()
             .find(|m| m.maker == "Generic" && m.name == name && m.sides == Sides::NoCopper)
             .unwrap_or_else(|| panic!("{name}"))
@@ -2914,7 +3549,7 @@ mod tests {
         assert_eq!(sheet("Copper sheet (C110)").core, Core::Copper);
         assert_eq!(sheet("PTFE sheet").core, Core::Ptfe);
         // the woods: every one inside 0.5 to 5 mm, and between them they reach both ends
-        let woods: Vec<&Material> = MATERIALS.iter().filter(|m| m.core == Core::Wood).collect();
+        let woods: Vec<&Material> = CURATED.iter().filter(|m| m.core == Core::Wood).collect();
         assert!(woods.len() >= 4);
         for w in &woods {
             let (lo, hi) = range(w);
@@ -2944,7 +3579,7 @@ mod tests {
         }
         assert_eq!(sheet("G10 (FR4 without copper)").core, Core::Fr4);
         assert_eq!(sheet("Phenolic paper (Pertinax)").core, Core::Fr2);
-        for m in MATERIALS.iter().filter(|m| m.sides == Sides::NoCopper) {
+        for m in CURATED.iter().filter(|m| m.sides == Sides::NoCopper) {
             // no copper, no invented electrical figures, and the note says the thicknesses are the usual ones
             assert!(m.copper_um.is_empty() && !m.photoresist, "{}", m.name);
             assert!(
@@ -2960,7 +3595,7 @@ mod tests {
             );
         }
         assert!(
-            MATERIALS
+            CURATED
                 .iter()
                 .filter(|m| m.sides == Sides::NoCopper)
                 .count()
@@ -2972,7 +3607,7 @@ mod tests {
     fn a_sheet_without_copper_has_copper_zero_and_comes_back_from_its_text() {
         let b = Board::standard();
         assert!(!b.has_no_copper());
-        let idx = MATERIALS
+        let idx = CURATED
             .iter()
             .position(|m| m.name == "Copper sheet (C110)")
             .unwrap();
@@ -3014,11 +3649,21 @@ mod tests {
     #[test]
     fn a_new_material_keeps_the_nearest_thickness_and_copper() {
         let b = Board::standard();
-        let rogers = MATERIALS.iter().position(|m| m.name == "RO4003C").unwrap();
+        let rogers = materials()
+            .iter()
+            .position(|m| m.name == "RO4003C")
+            .unwrap();
         let r = b.with_material(rogers);
-        assert!((r.thickness_mm - 1.524).abs() < 1e-9);
-        assert_eq!(r.copper_um, 35.0);
-        let cem1 = MATERIALS.iter().position(|m| m.name == "CEM-1").unwrap();
+        let m = &materials()[rogers];
+        let nearest = |list: &[f64], v: f64| {
+            list.iter()
+                .copied()
+                .min_by(|a, c| (a - v).abs().total_cmp(&(c - v).abs()))
+                .unwrap()
+        };
+        assert_eq!(r.thickness_mm, nearest(m.thickness_mm, b.thickness_mm));
+        assert_eq!(r.copper_um, nearest(m.copper_um, b.copper_um));
+        let cem1 = CURATED.iter().position(|m| m.name == "CEM-1").unwrap();
         assert_eq!(b.with_material(cem1).layers, 1);
     }
 
@@ -3030,6 +3675,221 @@ mod tests {
         assert_eq!(from_text("x|y|1|2|3|"), None);
         assert_eq!(from_text(""), None);
         assert!(b.describe().contains("FR-4"));
+    }
+
+    #[test]
+    fn the_catalogue_keeps_the_hand_written_materials_in_their_places_with_their_notes() {
+        let all = materials();
+        assert!(all.len() > CURATED.len() + 300, "{} materials", all.len());
+        for (i, c) in CURATED.iter().enumerate() {
+            assert_eq!((all[i].maker, all[i].name), (c.maker, c.name));
+            assert_eq!(all[i].note, c.note, "{}", c.name);
+            assert!(all[i].curated, "{}", c.name);
+            assert_eq!(all[i].photoresist, c.photoresist, "{}", c.name);
+            assert_eq!(all[i].sides, c.sides, "{}", c.name);
+        }
+        assert!(all[CURATED.len()..].iter().all(|m| !m.curated));
+    }
+
+    #[test]
+    fn a_material_of_the_catalogue_is_listed_once() {
+        let all = materials();
+        let mut seen = std::collections::HashSet::new();
+        for m in all {
+            assert!(seen.insert((m.maker, m.name)), "{} {}", m.maker, m.name);
+            assert!(!m.name.contains('|'), "{}", m.name);
+        }
+        let mut ids = std::collections::HashSet::new();
+        for m in all.iter().filter(|m| !m.id.is_empty()) {
+            assert!(ids.insert(m.id), "{}", m.id);
+        }
+    }
+
+    #[test]
+    fn only_the_boards_a_machine_can_work_come_from_the_database() {
+        let db = Database::embedded().unwrap();
+        let all = materials();
+        for m in all.iter().filter(|m| !m.curated) {
+            let kind = m.kind.expect("a material of the database has its kind");
+            assert!(WORKABLE.contains(&kind), "{}", m.id);
+            assert_eq!(db.get(m.id).unwrap().kind, kind, "{}", m.id);
+        }
+        for d in db.materials() {
+            let other = matches!(
+                d.kind,
+                Kind::Prepreg
+                    | Kind::BondingFilm
+                    | Kind::FlexLaminate
+                    | Kind::Coverlay
+                    | Kind::CopperFoil
+                    | Kind::Other
+            );
+            let own = all.iter().any(|m| !m.curated && m.id == d.id);
+            if other {
+                assert!(!own, "{} is not a board", d.id);
+            } else {
+                let listed = all.iter().any(|m| m.id == d.id)
+                    || all
+                        .iter()
+                        .any(|m| m.maker == d.manufacturer && m.name == d.name);
+                assert!(listed || d.name.contains('|'), "{} is missing", d.id);
+            }
+        }
+        assert!(!all
+            .iter()
+            .any(|m| m.curated && m.id.is_empty() && m.kind.is_some()));
+    }
+
+    #[test]
+    fn the_published_values_of_the_database_win_over_the_hand_written_ones() {
+        let db = Database::embedded().unwrap();
+        let joined: Vec<&Material> = materials()
+            .iter()
+            .filter(|m| m.curated && !m.id.is_empty())
+            .collect();
+        assert!(joined.len() >= 70, "{} joined", joined.len());
+        for m in joined {
+            let s = db.get(m.id).unwrap().bungard_summary();
+            if let Some(t) = s.tg_c {
+                assert_eq!(m.tg_c, Some(t), "{}", m.name);
+            }
+            if let Some(v) = s.dk {
+                assert_eq!(m.dk, Some(v), "{}", m.name);
+            }
+            if let Some(v) = s.df {
+                assert_eq!(m.df, Some(v), "{}", m.name);
+            }
+            if !s.thicknesses_mm.is_empty() {
+                assert_eq!(
+                    m.thickness_mm,
+                    sorted_unique(s.thicknesses_mm.clone()).as_slice(),
+                    "{}",
+                    m.name
+                );
+            }
+            // the list is sorted and each size appears once
+            assert!(m.thickness_mm.windows(2).all(|w| w[0] < w[1]), "{}", m.name);
+            assert!(m.copper_um.windows(2).all(|w| w[0] < w[1]), "{}", m.name);
+        }
+    }
+
+    #[test]
+    fn the_materials_without_data_of_the_maker_are_listed_and_marked() {
+        let db = Database::embedded().unwrap();
+        let all = materials();
+        let without: Vec<(usize, &Material)> = all
+            .iter()
+            .enumerate()
+            .filter(|(_, m)| m.no_data())
+            .collect();
+        assert!(!without.is_empty());
+        for (_, m) in &without {
+            // none of the hand-written ones lacks data, and what is missing is exactly what the database does not give
+            assert!(!m.curated, "{}", m.name);
+            let s = db.get(m.id).unwrap().bungard_summary();
+            assert_eq!(m.needs_thickness(), s.thicknesses_mm.is_empty(), "{}", m.id);
+            assert_eq!(
+                m.needs_copper(),
+                copper_um(&s.copper).is_empty(),
+                "{}",
+                m.id
+            );
+        }
+        for m in all.iter().filter(|m| !m.curated && !m.no_data()) {
+            assert!(
+                !m.thickness_mm.is_empty() && !m.copper_um.is_empty(),
+                "{}",
+                m.id
+            );
+        }
+        // choosing one keeps the thickness and the copper the board had (the person types them) and the board comes back from its text
+        let b = Board::standard();
+        for &(i, m) in &without {
+            let c = b.with_material(i);
+            if m.needs_thickness() {
+                assert_eq!(c.thickness_mm, b.thickness_mm, "{}", m.id);
+            }
+            if m.needs_copper() {
+                assert_eq!(c.copper_um, b.copper_um, "{}", m.id);
+            }
+            assert_eq!(c.material, i);
+            assert_eq!(from_text(&to_text(&c)), Some(c), "{}", m.id);
+        }
+        // after a sheet without copper (copper 0) a material with no copper data takes the usual 35 um
+        let sheet_board = b.with_material(
+            CURATED
+                .iter()
+                .position(|m| m.sides == Sides::NoCopper)
+                .unwrap(),
+        );
+        assert_eq!(sheet_board.copper_um, 0.0);
+        if let Some(&(i, m)) = without.iter().find(|(_, m)| m.needs_copper()) {
+            assert!(m.sides != Sides::NoCopper);
+            assert_eq!(sheet_board.with_material(i).copper_um, 35.0);
+        }
+    }
+
+    #[test]
+    fn every_material_is_of_one_of_the_five_families() {
+        let name = |m: &Material| m.name.to_string();
+        let total = materials_view(&Filter::default(), &name).len();
+        assert_eq!(total, materials().len());
+        let mut sum = 0;
+        for f in Family::ALL {
+            let v = materials_view(
+                &Filter {
+                    family: Some(f),
+                    ..Filter::default()
+                },
+                &name,
+            );
+            assert!(!v.is_empty(), "{f:?}");
+            assert!(v.iter().all(|(_, m)| m.family() == f));
+            sum += v.len();
+        }
+        assert_eq!(sum, total);
+        // the plain sheets are the ones with no copper at all
+        assert!(materials()
+            .iter()
+            .all(|m| m.family() != Family::Sheet || m.sides == Sides::NoCopper));
+    }
+
+    #[test]
+    fn the_list_is_narrowed_by_maker_family_and_words() {
+        let name = |m: &Material| m.name.to_string();
+        let by = |maker: Option<&str>, family: Option<Family>, text: &str| {
+            materials_view(
+                &Filter {
+                    maker,
+                    family,
+                    text,
+                },
+                &name,
+            )
+        };
+        // by words: capitals, accents and the order of the words do not count, and the maker counts
+        let plain = by(None, None, "ro4350");
+        assert!(plain.iter().any(|(_, m)| m.name == "RO4350B"));
+        assert!(plain.len() < materials().len());
+        assert_eq!(by(None, None, "  R\u{d3}4350 ").len(), plain.len());
+        let with_maker = by(None, None, "4350 rogers");
+        assert!(with_maker.iter().any(|(_, m)| m.name == "RO4350B"));
+        assert!(with_maker
+            .iter()
+            .all(|(_, m)| fold(m.maker).contains("rogers")
+                || fold(m.name).contains("rogers")
+                || fold(m.id).contains("rogers")));
+        assert!(by(None, None, "no such material anywhere").is_empty());
+        // by maker and by family together
+        let rogers = by(Some("Rogers"), Some(Family::Ceramic), "");
+        assert!(!rogers.is_empty());
+        assert!(rogers
+            .iter()
+            .all(|(_, m)| m.maker == "Rogers" && m.family() == Family::Ceramic));
+        // the result of a filter is always inside the result without it
+        let all_rogers = by(Some("Rogers"), None, "");
+        assert!(rogers.len() <= all_rogers.len());
+        assert!(all_rogers.len() >= of_maker("Rogers").len());
     }
 }
 
@@ -3161,7 +4021,7 @@ mod order_tests {
     fn the_materials_of_a_maker_are_in_order_and_are_the_makers() {
         let name = |m: &Material| m.name.to_string();
         for maker in makers() {
-            let v = materials_view(Some(maker), &name);
+            let v = materials_view(&Filter::of_maker(maker), &name);
             assert_eq!(v.len(), of_maker(maker).len());
             assert!(v.iter().all(|(_, m)| m.maker == maker));
             for w in v.windows(2) {
@@ -3173,18 +4033,21 @@ mod order_tests {
     #[test]
     fn the_view_of_all_makers_has_every_material_once_in_order_of_name() {
         let name = |m: &Material| m.name.to_string();
-        let all = materials_view(None, &name);
-        assert_eq!(all.len(), MATERIALS.len());
+        let all = materials_view(&Filter::default(), &name);
+        assert_eq!(all.len(), materials().len());
         let mut places: Vec<usize> = all.iter().map(|(i, _)| *i).collect();
         places.sort_unstable();
         places.dedup();
-        assert_eq!(places.len(), MATERIALS.len());
+        assert_eq!(places.len(), materials().len());
         for w in all.windows(2) {
             assert_ne!(natural_cmp(w[0].1.name, w[1].1.name), Ordering::Greater);
         }
         // each one is the material of that place, so choosing it from this view gives the same board as from the view of its maker
         for (i, m) in &all {
-            assert_eq!((m.maker, m.name), (MATERIALS[*i].maker, MATERIALS[*i].name));
+            assert_eq!(
+                (m.maker, m.name),
+                (materials()[*i].maker, materials()[*i].name)
+            );
         }
     }
 }

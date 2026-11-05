@@ -6,17 +6,24 @@ use super::*;
 use crate::boards::{self, Sides};
 use eh3d_drillpro::protocol::sound::Cue;
 
-/// The materials of a maker that the Board window shows at once.
-pub(super) const MAT_ROWS: usize = 16;
+/// The materials of the list that the Board window shows at once.
+pub(super) const MAT_ROWS: usize = 14;
 use eh3d_drillpro::classic::engine::{Kind as EngineKind, ToolRow};
 
 /// A choice in the window of the board.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum BoardPick {
     Maker(usize),
+    /// The type the list is narrowed to (0: all types).
+    Family(usize),
+    /// Clears the words typed to search the list.
+    ClearSearch,
     Material(usize),
     Thickness(usize),
     Copper(usize),
+    /// A thickness (mm) or a copper (um) written by the person, for a material whose maker gives none.
+    ThicknessValue(f64),
+    CopperValue(f64),
     Layers(u8),
     /// A standard format of the material (by its place), or the size of the files of the job (`None`).
     Size(Option<usize>),
@@ -613,6 +620,30 @@ impl App {
                 self.remember_settings();
                 return;
             }
+            BoardPick::Family(i) => {
+                self.mat_family = i;
+                self.mat_scroll = 0;
+                return;
+            }
+            BoardPick::ClearSearch => {
+                if self
+                    .edit
+                    .as_ref()
+                    .is_some_and(|e| e.target == EditTarget::MaterialSearch)
+                {
+                    self.edit = None;
+                }
+                self.set_mat_query("");
+                return;
+            }
+            BoardPick::ThicknessValue(v) => {
+                self.board_set_value(true, v);
+                return;
+            }
+            BoardPick::CopperValue(v) => {
+                self.board_set_value(false, v);
+                return;
+            }
             BoardPick::Material(i) => self.board = self.board.with_material(i),
             BoardPick::Thickness(i) => {
                 if let Some(&v) = m.thickness_mm.get(i) {
@@ -643,6 +674,46 @@ impl App {
         self.apply_board();
     }
 
+    /// The text of a family in the list of types.
+    pub(crate) fn family_text(&self, f: boards::Family) -> Text {
+        match f {
+            boards::Family::Laminate => Text::MatTypeLaminate,
+            boards::Family::Rf => Text::MatTypeRf,
+            boards::Family::Ceramic => Text::MatTypeCeramic,
+            boards::Family::MetalCore => Text::MatTypeMetal,
+            boards::Family::Sheet => Text::MatTypeSheet,
+        }
+    }
+
+    /// The family the list is narrowed to (`None`: every type).
+    pub(crate) fn shown_family(&self) -> Option<boards::Family> {
+        self.mat_family
+            .checked_sub(1)
+            .and_then(|i| boards::Family::ALL.get(i).copied())
+    }
+
+    /// Takes the words typed to search the list (one line, at most sixty letters); the list starts again from its first row.
+    pub(crate) fn set_mat_query(&mut self, text: &str) {
+        let t: String = text.replace(['\r', '\n'], " ").chars().take(60).collect();
+        if t != self.mat_query {
+            self.mat_query = t;
+            self.mat_scroll = 0;
+        }
+    }
+
+    /// The thickness (mm) or the copper (um) of the board, written by the person for a material whose maker gives none.
+    pub(crate) fn board_set_value(&mut self, thickness: bool, v: f64) {
+        if self.design_locked() || !v.is_finite() {
+            return;
+        }
+        if thickness {
+            self.board.thickness_mm = (v.clamp(0.05, 10.0) * 1000.0).round() / 1000.0;
+        } else {
+            self.board.copper_um = v.clamp(1.0, 500.0).round();
+        }
+        self.apply_board();
+    }
+
     /// The maker whose materials the list shows (`None`: all the makers mixed). The first entry of the list of makers is "all makers".
     pub(crate) fn shown_maker(&self) -> Option<&'static str> {
         let makers = boards::makers();
@@ -652,9 +723,14 @@ impl App {
         }
     }
 
-    /// The materials the list shows now, in alphabetical order of the names in the language of the interface.
+    /// The materials the list shows now (the maker, the type and the words that narrow it), in alphabetical order of the names in the language of the interface.
     pub(crate) fn materials_shown(&self) -> Vec<(usize, &'static boards::Material)> {
-        boards::materials_view(self.shown_maker(), &|m| self.material_name(m))
+        let filter = boards::Filter {
+            maker: self.shown_maker(),
+            family: self.shown_family(),
+            text: &self.mat_query,
+        };
+        boards::materials_view(&filter, &|m| self.material_name(m))
     }
 
     pub(crate) fn mat_scroll_by(&mut self, delta: i32) {
@@ -757,7 +833,7 @@ impl App {
         cv.title(x + 30.0, y + 44.0, self.tr(Text::BoardTitle));
         let b = self.board;
         let m = b.material();
-        // the makers
+        // the makers and the types
         cv.text(
             x + 30.0,
             y + 74.0,
@@ -769,21 +845,82 @@ impl App {
         cv.combo(
             x + 30.0,
             y + 82.0,
-            556.0,
+            270.0,
             ComboId::Maker,
             &self.shown_maker_name(),
             self.combo.is_some_and(|c| c.id == ComboId::Maker),
         );
-        // the materials of the maker
+        cv.text(
+            x + 316.0,
+            y + 74.0,
+            Align2::LEFT_BOTTOM,
+            &self.tr(Text::ColType).to_uppercase(),
+            12.0,
+            col(t.dim),
+        );
+        let types = self.combo_items(ComboId::MatType);
+        cv.combo(
+            x + 316.0,
+            y + 82.0,
+            270.0,
+            ComboId::MatType,
+            &types[self.mat_family.min(types.len() - 1)],
+            self.combo.is_some_and(|c| c.id == ComboId::MatType),
+        );
+        // the words to search: the box is written in with the keyboard and the list follows every letter
+        let sy = y + 130.0;
+        let searching = !self.mat_query.is_empty();
+        let sw = if searching { 470.0 } else { 556.0 };
+        let rs = cv.rect(x + 30.0, sy, sw, 38.0);
+        cv.p.rect_stroke(
+            rs,
+            6.0 * cv.u,
+            Stroke::new(cv.u, alpha(col(t.line), 70)),
+            StrokeKind::Inside,
+        );
+        if !self
+            .edit
+            .as_ref()
+            .is_some_and(|e| e.target == EditTarget::MaterialSearch)
+        {
+            cv.text(
+                x + 44.0,
+                sy + 27.0,
+                Align2::LEFT_BOTTOM,
+                if searching {
+                    self.mat_query.as_str()
+                } else {
+                    self.tr(Text::MatSearch)
+                },
+                16.0,
+                if searching { col(t.text) } else { col(t.dim) },
+            );
+        }
+        cv.hits.push((
+            rs,
+            Act::Edit(EditTarget::MaterialSearch, x + 32.0, sy + 2.0, sw - 4.0),
+        ));
+        if searching {
+            cv.chip(
+                x + 508.0,
+                sy,
+                78.0,
+                38.0,
+                "x",
+                false,
+                Act::Board(BoardPick::ClearSearch),
+            );
+        }
+        // the materials of the list
         let all_makers = self.shown_maker().is_none();
-        let mut ly = y + 82.0 + 38.0 + 14.0;
+        let mut ly = sy + 38.0 + 12.0;
         let of_maker = self.materials_shown();
         let shown = self.mat_scroll.min(of_maker.len().saturating_sub(MAT_ROWS));
         if of_maker.len() > MAT_ROWS {
             cv.icon_chip(
-                x + 596.0,
+                x + 592.0,
                 ly,
-                36.0,
+                44.0,
                 36.0,
                 Icon::Up,
                 false,
@@ -791,18 +928,37 @@ impl App {
                 Act::MatScroll(-3),
             );
             cv.icon_chip(
-                x + 596.0,
+                x + 592.0,
                 ly + 42.0,
-                36.0,
+                44.0,
                 36.0,
                 Icon::Down,
                 false,
                 "",
                 Act::MatScroll(3),
             );
+            // a page at a time, for a list of hundreds
+            cv.chip(
+                x + 592.0,
+                ly + 84.0,
+                44.0,
+                36.0,
+                &format!("-{MAT_ROWS}"),
+                false,
+                Act::MatScroll(-(MAT_ROWS as i32)),
+            );
+            cv.chip(
+                x + 592.0,
+                ly + 126.0,
+                44.0,
+                36.0,
+                &format!("+{MAT_ROWS}"),
+                false,
+                Act::MatScroll(MAT_ROWS as i32),
+            );
             cv.text(
-                x + 600.0,
-                ly + 110.0,
+                x + 592.0,
+                ly + 190.0,
                 Align2::LEFT_BOTTOM,
                 &format!(
                     "{}/{}",
@@ -810,6 +966,16 @@ impl App {
                     of_maker.len()
                 ),
                 12.0,
+                col(t.dim),
+            );
+        }
+        if of_maker.is_empty() {
+            cv.text(
+                x + 44.0,
+                ly + 24.0,
+                Align2::LEFT_BOTTOM,
+                self.tr(Text::MatNoMatch),
+                15.0,
                 col(t.dim),
             );
         }
@@ -838,11 +1004,19 @@ impl App {
                         String::new()
                     },
                     self.material_name(mat),
-                    mat.core.name(),
-                    mat.dk.map_or(String::new(), |d| format!("  Dk {d}"))
+                    self.material_kind_text(mat),
+                    if mat.no_data() {
+                        format!("  -  {}", self.tr(Text::MatNoData))
+                    } else {
+                        mat.dk.map_or(String::new(), |d| format!("  Dk {d}"))
+                    }
                 ),
                 15.0,
-                col(t.text),
+                if mat.no_data() {
+                    col(t.warn)
+                } else {
+                    col(t.text)
+                },
             );
             cv.hits.push((r, Act::Board(BoardPick::Material(i))));
             ly += 38.0;
@@ -863,9 +1037,9 @@ impl App {
             "{}{}{}{}",
             // the name of the material says what a plain sheet is made of; only the laminates show their core
             if m.sides == Sides::NoCopper {
-                ""
+                String::new()
             } else {
-                m.core.name()
+                self.material_kind_text(m)
             },
             m.tg_c
                 .map_or(String::new(), |g| format!("  -  Tg {g:.0} C")),
@@ -874,6 +1048,16 @@ impl App {
         );
         cv.text(rx, ry + 14.0, Align2::LEFT_BOTTOM, &facts, 14.0, col(t.dim));
         ry += 22.0;
+        if m.no_data() {
+            // the maker gives no thickness or no copper for this one: the window says so and asks for them
+            for l in wrap(self.tr(Text::MatNoData), 70)
+                .into_iter()
+                .chain(wrap(self.tr(Text::MatAskValues), 70))
+            {
+                cv.text(rx, ry + 14.0, Align2::LEFT_BOTTOM, &l, 13.0, col(t.warn));
+                ry += 18.0;
+            }
+        }
         for l in wrap(m.note, 70) {
             cv.text(rx, ry + 14.0, Align2::LEFT_BOTTOM, &l, 13.0, col(t.dim));
             ry += 18.0;
@@ -898,16 +1082,48 @@ impl App {
             12.0,
             col(t.dim),
         );
+        if m.needs_thickness() {
+            cv.text(
+                rx + 140.0,
+                ry + 14.0,
+                Align2::LEFT_BOTTOM,
+                self.tr(Text::MatUsual),
+                12.0,
+                col(t.dim),
+            );
+        }
         ry += 20.0;
-        let thick = self.combo_items(ComboId::Thickness);
-        cv.combo(
-            rx,
-            ry,
-            280.0,
-            ComboId::Thickness,
-            &thick[self.combo_current(ComboId::Thickness).min(thick.len() - 1)],
-            self.combo.is_some_and(|c| c.id == ComboId::Thickness),
-        );
+        if m.needs_thickness() {
+            // no thickness of the maker: a box to write it in, and the usual ones to start from
+            self.paint_typed_value(
+                cv,
+                rx,
+                ry,
+                &format!("{:.2} mm", b.thickness_mm),
+                EditTarget::BoardThickness,
+            );
+            for (i, v) in [0.8f64, 1.0, 1.6, 2.0].into_iter().enumerate() {
+                cv.chip(
+                    rx + 150.0 + i as f32 * 76.0,
+                    ry,
+                    68.0,
+                    38.0,
+                    &format!("{v}"),
+                    (b.thickness_mm - v).abs() < 1e-9,
+                    Act::Board(BoardPick::ThicknessValue(v)),
+                );
+            }
+        } else {
+            let thick = self.combo_items(ComboId::Thickness);
+            cv.combo(
+                rx,
+                ry,
+                280.0,
+                ComboId::Thickness,
+                &thick[self.combo_current(ComboId::Thickness).min(thick.len() - 1)],
+                self.combo.is_some_and(|c| c.id == ComboId::Thickness),
+            );
+        }
         ry += 38.0 + 14.0;
         cv.text(
             rx,
@@ -917,7 +1133,37 @@ impl App {
             12.0,
             col(t.dim),
         );
+        if m.needs_copper() {
+            cv.text(
+                rx + 140.0,
+                ry + 14.0,
+                Align2::LEFT_BOTTOM,
+                self.tr(Text::MatUsual),
+                12.0,
+                col(t.dim),
+            );
+        }
         ry += 20.0;
+        if m.needs_copper() {
+            self.paint_typed_value(
+                cv,
+                rx,
+                ry,
+                &format!("{:.0} um", b.copper_um),
+                EditTarget::BoardCopper,
+            );
+            for (i, v) in [18.0f64, 35.0, 70.0, 105.0].into_iter().enumerate() {
+                cv.chip(
+                    rx + 150.0 + i as f32 * 76.0,
+                    ry,
+                    68.0,
+                    38.0,
+                    &format!("{v}"),
+                    (b.copper_um - v).abs() < 1e-9,
+                    Act::Board(BoardPick::CopperValue(v)),
+                );
+            }
+        }
         for (i, v) in m.copper_um.iter().enumerate() {
             cv.chip(
                 rx + i as f32 * 92.0,
@@ -1059,6 +1305,40 @@ impl App {
             true,
             Act::CloseModal,
         );
+    }
+
+    /// The name of what the material is made of in the list and over it: the core of a material written by hand, the type of one that only the
+    /// database has.
+    pub(crate) fn material_kind_text(&self, m: &boards::Material) -> String {
+        if m.curated {
+            m.core.name().to_string()
+        } else {
+            self.tr(self.family_text(m.family())).to_string()
+        }
+    }
+
+    /// A box with a value that is written with the keyboard (a click opens it).
+    fn paint_typed_value(&self, cv: &mut Cv, x: f32, y: f32, shown: &str, target: EditTarget) {
+        let t = cv.t.clone();
+        let r = cv.rect(x, y, 140.0, 38.0);
+        cv.p.rect_stroke(
+            r,
+            6.0 * cv.u,
+            Stroke::new(cv.u, alpha(col(t.warn), 160)),
+            StrokeKind::Inside,
+        );
+        if !self.edit.as_ref().is_some_and(|e| e.target == target) {
+            cv.text(
+                x + 70.0,
+                y + 27.0,
+                Align2::CENTER_BOTTOM,
+                shown,
+                18.0,
+                col(t.text),
+            );
+        }
+        cv.hits
+            .push((r, Act::Edit(target, x + 2.0, y + 2.0, 136.0)));
     }
 
     pub(super) fn paint_tools_modal(&self, cv: &mut Cv) {

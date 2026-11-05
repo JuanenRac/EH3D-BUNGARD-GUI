@@ -760,7 +760,7 @@ mod tests {
         a.animate = false;
         a.screen = Screen::Viewer;
         // one of each kind of sheet without copper (empty copper list, no formats) and, between them, a laminate with copper
-        let picks: Vec<usize> = crate::boards::MATERIALS
+        let picks: Vec<usize> = crate::boards::materials()
             .iter()
             .enumerate()
             .filter(|(_, m)| m.sides == crate::boards::Sides::NoCopper)
@@ -1114,7 +1114,7 @@ mod tests {
     }
 
     fn board_of(core: crate::boards::Core) -> usize {
-        crate::boards::MATERIALS
+        crate::boards::materials()
             .iter()
             .position(|m| m.core == core)
             .expect("a material of the core")
@@ -2078,9 +2078,9 @@ EOF
     #[test]
     fn the_library_is_big_and_the_list_of_a_maker_scrolls() {
         assert!(
-            crate::boards::MATERIALS.len() >= 100,
+            crate::boards::materials().len() >= 500,
             "{} materials",
-            crate::boards::MATERIALS.len()
+            crate::boards::materials().len()
         );
         assert!(crate::boards::makers().len() >= 18);
         let mut a = app();
@@ -2107,7 +2107,7 @@ EOF
         a.board_pick(BoardPick::Maker(0));
         assert!(a.settings.all_makers);
         let all = a.materials_shown();
-        assert_eq!(all.len(), crate::boards::MATERIALS.len());
+        assert_eq!(all.len(), crate::boards::materials().len());
         // the same board comes out of the view of all the makers as out of the view of its maker
         let (place, m) = all[all.len() / 2];
         a.board_pick(BoardPick::Material(place));
@@ -2121,6 +2121,109 @@ EOF
         assert!(a.materials_shown().iter().any(|(i, _)| *i == place));
         a.board_pick(BoardPick::Material(place));
         assert_eq!(a.board, from_all);
+    }
+
+    #[test]
+    fn the_list_of_materials_is_narrowed_by_type_and_by_words() {
+        use super::super::board::BoardPick;
+        use super::super::combo::ComboId;
+        let mut a = app();
+        a.board_pick(BoardPick::Maker(0));
+        let all = a.materials_shown().len();
+        // the list of types starts with all of them and has the four families of boards and the plain sheets
+        let items = a.combo_items(ComboId::MatType);
+        assert_eq!(items.len(), crate::boards::Family::ALL.len() + 1);
+        assert_eq!(items[0], a.tr(Text::MatTypeAll));
+        let mut sum = 0;
+        for (k, f) in crate::boards::Family::ALL.into_iter().enumerate() {
+            a.mat_scroll = 7;
+            a.board_pick(BoardPick::Family(k + 1));
+            assert_eq!(a.mat_scroll, 0);
+            assert_eq!(a.shown_family(), Some(f));
+            let v = a.materials_shown();
+            assert!(!v.is_empty() && v.iter().all(|(_, m)| m.family() == f));
+            sum += v.len();
+        }
+        assert_eq!(sum, all);
+        a.board_pick(BoardPick::Family(0));
+        assert_eq!(a.materials_shown().len(), all);
+        // the words typed narrow the list at every letter, with a click on the box and with the keyboard
+        a.start_edit(EditTarget::MaterialSearch, 0.0, 0.0, 100.0);
+        a.edit.as_mut().unwrap().text = "ro4350".into();
+        a.commit_edit();
+        assert_eq!(a.mat_query, "ro4350");
+        let v = a.materials_shown();
+        assert!(!v.is_empty() && v.len() < all);
+        assert!(v.iter().any(|(_, m)| m.name == "RO4350B"));
+        // a type and a maker narrow it further, and a search with no result says so
+        a.board_pick(BoardPick::Family(crate::boards::Family::ALL.len()));
+        assert!(a.materials_shown().is_empty());
+        a.board_pick(BoardPick::ClearSearch);
+        assert!(a.mat_query.is_empty());
+        assert!(!a.materials_shown().is_empty());
+        a.board_pick(BoardPick::Family(0));
+        assert_eq!(a.materials_shown().len(), all);
+    }
+
+    #[test]
+    fn a_material_with_no_data_of_the_maker_asks_for_the_thickness_and_the_copper() {
+        use super::super::board::BoardPick;
+        let ctx = egui::Context::default();
+        install_fonts(&ctx);
+        let mut a = app();
+        a.animate = false;
+        a.screen = Screen::Viewer;
+        let both = crate::boards::materials()
+            .iter()
+            .position(|m| m.needs_thickness() && m.needs_copper())
+            .expect("a material of the database with neither thickness nor copper");
+        a.board_pick(BoardPick::Material(both));
+        assert!(a.board.material().no_data());
+        // the board keeps what it had until the person writes the values
+        assert_eq!((a.board.thickness_mm, a.board.copper_um), (1.6, 35.0));
+        a.start_edit(EditTarget::BoardThickness, 0.0, 0.0, 100.0);
+        a.edit.as_mut().unwrap().text = "2,4".into();
+        a.commit_edit();
+        assert_eq!(a.board.thickness_mm, 2.4);
+        a.start_edit(EditTarget::BoardCopper, 0.0, 0.0, 100.0);
+        a.edit.as_mut().unwrap().text = "70".into();
+        a.commit_edit();
+        assert_eq!(a.board.copper_um, 70.0);
+        // the usual values are a start, and the board comes back from its text with what was written
+        a.board_pick(BoardPick::ThicknessValue(0.8));
+        a.board_pick(BoardPick::CopperValue(18.0));
+        assert_eq!((a.board.thickness_mm, a.board.copper_um), (0.8, 18.0));
+        assert_eq!(
+            crate::boards::from_text(&crate::boards::to_text(&a.board)),
+            Some(a.board)
+        );
+        // a number that makes no sense is refused, and the window is painted in every language without cutting a text
+        a.start_edit(EditTarget::BoardThickness, 0.0, 0.0, 100.0);
+        a.edit.as_mut().unwrap().text = "abc".into();
+        a.commit_edit();
+        assert_eq!(a.board.thickness_mm, 0.8);
+        let mut found: Vec<String> = Vec::new();
+        for lang in Lang::ALL {
+            a.set_lang(lang);
+            a.show_modal(extra::Modal::Board);
+            clipped_on(&mut a, &ctx);
+            for t in clipped_on(&mut a, &ctx) {
+                found.push(format!("{}: {t}", lang.code()));
+            }
+            a.modal = None;
+        }
+        found.sort();
+        found.dedup();
+        assert!(
+            found.is_empty(),
+            "{} texts are cut:
+{}",
+            found.len(),
+            found.join(
+                "
+"
+            )
+        );
     }
 
     #[test]

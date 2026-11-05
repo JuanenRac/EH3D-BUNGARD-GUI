@@ -335,8 +335,11 @@ pub struct App {
     edit: Option<NumEdit>,
     /// The emergency stop is on: nothing starts until the button is pressed again.
     estop: bool,
-    /// The first material of the maker that the Board window shows.
+    /// The first material of the list that the Board window shows.
     mat_scroll: usize,
+    /// The type the list of materials is narrowed to (0: all types, then the families in order), and the words typed to search it.
+    mat_family: usize,
+    mat_query: String,
     /// The plan view follows the tool that works; a drag in it moves the board instead of the view; it takes the room of the 3D view;
     /// the work is turned by this many quarter turns.
     follow: bool,
@@ -573,6 +576,8 @@ impl App {
             edit: None,
             estop: false,
             mat_scroll: 0,
+            mat_family: 0,
+            mat_query: String::new(),
             follow: false,
             move_board: false,
             move_design: false,
@@ -725,6 +730,7 @@ impl App {
                 "finish" => Some(ComboId::Sound(Cue::Finished)),
                 "tool" => Some(ComboId::Sound(Cue::ToolChange)),
                 "maker" => Some(ComboId::Maker),
+                "type" => Some(ComboId::MatType),
                 "thickness" => Some(ComboId::Thickness),
                 "size" => Some(ComboId::BoardSize),
                 "tabs" => Some(ComboId::TabPlace),

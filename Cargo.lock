@@ -684,6 +684,7 @@ dependencies = [
  "eh3d-fleet",
  "eh3d-inspect",
  "eh3d-levelling",
+ "eh3d-materials",
  "eh3d-routepro",
  "eh3d-view",
  "flate2",
@@ -771,6 +772,15 @@ dependencies = [
 [[package]]
 name = "eh3d-levelling"
 version = "0.0.1"
+
+[[package]]
+name = "eh3d-materials"
+version = "0.0.1"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+]
 
 [[package]]
 name = "eh3d-routepro"

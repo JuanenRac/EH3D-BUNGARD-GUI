@@ -17,6 +17,11 @@ pub(crate) enum EditTarget {
     /// The name that the operator gives to the machine, and its make and model (free text, not numbers).
     MachineName,
     MachineMake,
+    /// The words typed to search the list of materials (free text, the list follows every letter).
+    MaterialSearch,
+    /// The thickness (mm) and the copper (um) of a board whose material gives none: the person types them.
+    BoardThickness,
+    BoardCopper,
 }
 
 /// The box that is being typed in: where it is on the canvas (design units), how wide and what it holds.
@@ -63,7 +68,11 @@ impl App {
                 .trim()
                 .parse()
                 .ok()?,
-            EditTarget::MachineName | EditTarget::MachineMake => return None,
+            EditTarget::MachineName | EditTarget::MachineMake | EditTarget::MaterialSearch => {
+                return None
+            }
+            EditTarget::BoardThickness => self.board.thickness_mm,
+            EditTarget::BoardCopper => self.board.copper_um,
             EditTarget::BoardSize(width) => {
                 let (w, d) = self
                     .board
@@ -77,9 +86,13 @@ impl App {
     /// Opens the box over a value, with its text selected.
     pub(crate) fn start_edit(&mut self, target: EditTarget, x: f32, y: f32, w: f32) {
         self.commit_edit();
-        if matches!(target, EditTarget::MachineName | EditTarget::MachineMake) {
+        if matches!(
+            target,
+            EditTarget::MachineName | EditTarget::MachineMake | EditTarget::MaterialSearch
+        ) {
             let text = match target {
                 EditTarget::MachineName => self.settings.machine_name.clone(),
+                EditTarget::MaterialSearch => self.mat_query.clone(),
                 _ => self.settings.machine_make.clone(),
             };
             self.edit = Some(NumEdit {
@@ -113,6 +126,10 @@ impl App {
         let Some(ed) = self.edit.take() else {
             return;
         };
+        if ed.target == EditTarget::MaterialSearch {
+            self.set_mat_query(&ed.text);
+            return;
+        }
         if matches!(ed.target, EditTarget::MachineName | EditTarget::MachineMake) {
             // free text on one line, at most forty letters
             let text: String = ed
@@ -145,7 +162,9 @@ impl App {
                 let now = self.edit_value(ed.target).unwrap_or(v);
                 self.board_adjust(width, (v - now) as f32);
             }
-            EditTarget::MachineName | EditTarget::MachineMake => {}
+            EditTarget::BoardThickness => self.board_set_value(true, v),
+            EditTarget::BoardCopper => self.board_set_value(false, v),
+            EditTarget::MachineName | EditTarget::MachineMake | EditTarget::MaterialSearch => {}
         }
     }
 
@@ -187,6 +206,11 @@ impl App {
                     finished = true;
                 }
             });
+        if ed.target == EditTarget::MaterialSearch && !finished {
+            // the list follows every letter
+            let text = ed.text.clone();
+            self.set_mat_query(&text);
+        }
         self.edit = Some(ed);
         if finished {
             self.commit_edit();

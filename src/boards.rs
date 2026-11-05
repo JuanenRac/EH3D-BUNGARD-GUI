@@ -249,10 +249,10 @@ pub const MATERIALS: &[Material] = &[
         sides: Sides::Either,
         formats_mm: STD_BUNGARD,
         dk: Some(4.5),
-        df: None,
-        tg_c: Some(130.0),
+        df: Some(0.015),
+        tg_c: Some(150.0),
         photoresist: true,
-        note: "Bungard catalogue: FR4 in 0.5 to 2.5 mm (the 1.5 mm is sold as 1.5 or 1.6) with 18, 35 or 70 um copper (105 um at 1.5 mm); standard cuttings and panels of 510 x 570 and 510 x 1150 mm; resist 5 um, sensitive to 350-400 nm",
+        note: "Bungard catalogue: FR4 in 0.5 to 2.5 mm (the 1.5 mm is sold as 1.5 or 1.6) with 18, 35 or 70 um copper (105 um at 1.5 mm); standard cuttings and panels of 510 x 570 and 510 x 1150 mm; resist 5 um, sensitive to 350-400 nm; Tg 150 C by DSC and Df 0.015 from the IPC 4101A sheet of the base material (the DIN IEC 249 sheet gives Tg 140 +-5 C), Dk 4.5 at 1 GHz (4.8 at 1 MHz), Td 320 C, thermal conductivity 0.36 W/mK",
     },
     Material {
         maker: "Bungard",
@@ -263,8 +263,8 @@ pub const MATERIALS: &[Material] = &[
         sides: Sides::Either,
         formats_mm: STD_BUNGARD,
         dk: Some(4.5),
-        df: None,
-        tg_c: Some(130.0),
+        df: Some(0.015),
+        tg_c: Some(150.0),
         photoresist: false,
         note: "The same boards without resist, cut to any size from 50 x 50 mm (0.1 mm accuracy; boards of 2 mm or more are sawn, 3 mm lost per cut); carrier 1.55 +/- 0.08 mm, copper +/- 5 um at 35 um",
     },
@@ -295,6 +295,34 @@ pub const MATERIALS: &[Material] = &[
         tg_c: Some(120.0),
         photoresist: false,
         note: "Large panels to be cut: FR2 480 x 1000 mm (35 um, single or double sided), FR3 510 x 1150 mm (35 um, double sided) and CEM-1 510 x 1150 mm (35 um, single sided)",
+    },
+    Material {
+        maker: "Bungard",
+        name: "FR4 thin laminate",
+        core: Core::Fr4,
+        thickness_mm: &[0.125, 0.2],
+        copper_um: &[35.0],
+        sides: Sides::Either,
+        formats_mm: &[(100.0, 160.0), (210.0, 300.0), (510.0, 1150.0)],
+        dk: None,
+        df: None,
+        tg_c: Some(150.0),
+        photoresist: false,
+        note: "Semiflex base material for multilayers and semiflex use: the standard Bungard FR4 with flexibility, 0.125 and 0.2 mm with 35 um copper; the catalogue gives no figures of its own for it, so the Tg is that of the standard FR4 sheet; the 100 x 160 mm is sold only in units of 35 boards and the 210 x 300 mm in units of 8",
+    },
+    Material {
+        maker: "Bungard",
+        name: "Cotherm",
+        core: Core::Aluminium,
+        thickness_mm: &[1.0, 1.5, 2.0],
+        copper_um: &[35.0],
+        sides: Sides::One,
+        formats_mm: &[(530.0, 1150.0)],
+        dk: None,
+        df: None,
+        tg_c: None,
+        photoresist: false,
+        note: "Metal core board (Cotherm 1,000, 1,500 and 2,000): 35 um copper, a 100 um FR4 isolation layer and an aluminium layer of 1,000, 1,500 or 2,000 um, with or without photosensitive resist; the isolation layer is very thin, so the aluminium must be completely covered while etching",
     },
     // ---- Plain boards of the electronics shops
     // ---- MG Chemicals: plain boards of the 500 series
@@ -2045,7 +2073,7 @@ pub const MATERIALS: &[Material] = &[
         df: Some(0.0012),
         tg_c: Some(220.0),
         photoresist: false,
-        note: "Ultra low loss material (laminate R-579Y, prepreg R-569Y); Tg 220 C by DMA, T288 above 120 min; Dk 3.08 and Df 0.0012 at 14 GHz with the low Dk glass cloth on a 0.75 mm sample; the data sheet lists only that sample and 1 oz H-VLP3 copper",
+        note: "Ultra low loss material (laminate R-579Y, prepreg R-569Y); Tg 220 C by DMA, T288 above 120 min; Dk 3.08 and Df 0.0012 at 14 GHz with the ultra-low Df glass cloth (R-579Y(U); the low Dk glass cloth type R-579Y(N) has 3.13 and 0.0016, and the S types 3.19 and 0.0012 or 3.22 and 0.0015) on a 0.75 mm sample; the data sheet lists only that sample and 1 oz H-VLP3 copper",
     },
     Material {
         maker: "Panasonic",
@@ -2158,6 +2186,132 @@ pub const MATERIALS: &[Material] = &[
         tg_c: Some(140.0),
         photoresist: false,
         note: "High thermal conductivity glass composite (CEM-3 grade) for LED boards, double sided, thermal conductivity 1.10 W/mK, CTI 600 V, Tg 140 C by TMA; the data sheet gives results for 1.6 mm boards with 1 oz copper",
+    },
+    Material {
+        maker: "Panasonic",
+        name: "Megtron 6 (R-5775N)",
+        core: Core::Fr4,
+        thickness_mm: &[0.05, 0.065, 0.075, 0.09, 0.1, 0.125, 0.127, 0.146, 0.178, 0.2, 0.25, 0.3, 0.4, 0.5, 0.625, 0.75],
+        copper_um: &[35.0],
+        sides: Sides::Either,
+        formats_mm: &[],
+        dk: Some(3.35),
+        df: Some(0.004),
+        tg_c: Some(185.0),
+        photoresist: false,
+        note: "Low Dk glass cloth version of Megtron 6 (laminate R-5775(N), prepreg R-5670(N)); Tg 185 C by DSC (210 C by DMA), Td 410 C, T288 above 120 min; Dk 3.35 and Df 0.004 at 12 GHz (3.40 and 0.002 at 1 GHz) on a 0.75 mm sample; the 16 core thicknesses of the data sheet and 1 oz H-VLP copper",
+    },
+    Material {
+        maker: "Panasonic",
+        name: "Megtron 6 HF (R-5375N)",
+        core: Core::Fr4,
+        thickness_mm: &[0.75],
+        copper_um: &[35.0],
+        sides: Sides::Either,
+        formats_mm: &[],
+        dk: Some(3.4),
+        df: Some(0.003),
+        tg_c: Some(250.0),
+        photoresist: false,
+        note: "Halogen-free ultra low loss material between Megtron 6 and Megtron 7 (laminate R-5375(N) with low Dk glass cloth, prepreg R-5370(N); the E glass type R-5375(E) has Dk 3.7 and Df 0.004); Tg 250 C by DMA, T288 and T320 above 120 min; Dk and Df at 12 GHz on a 0.75 mm sample; the data sheet lists only that sample and 1 oz H-VLP2 copper",
+    },
+    Material {
+        maker: "Panasonic",
+        name: "Megtron 4S (R-5725S)",
+        core: Core::Fr4,
+        thickness_mm: &[0.8],
+        copper_um: &[35.0],
+        sides: Sides::Either,
+        formats_mm: &[],
+        dk: Some(3.8),
+        df: Some(0.007),
+        tg_c: Some(200.0),
+        photoresist: false,
+        note: "Low loss, highly heat resistant material (laminate R-5725S, prepreg R-5620S); Tg 200 C by DSC, T288 50 min; Dk 3.8 and Df 0.007 at 10 GHz on a 0.8 mm sample; the data sheet lists only that sample and 1 oz copper",
+    },
+    Material {
+        maker: "Panasonic",
+        name: "Megtron 4 (R-5735)",
+        core: Core::Fr4,
+        thickness_mm: &[0.8],
+        copper_um: &[35.0],
+        sides: Sides::Either,
+        formats_mm: &[],
+        dk: Some(3.75),
+        df: Some(0.0087),
+        tg_c: Some(195.0),
+        photoresist: false,
+        note: "Low loss, highly heat resistant material (laminate R-5735, prepreg R-5630); Tg 195 C by DSC, T288 35 min; Dk 3.75 and Df 0.0087 at 13 GHz on a 0.8 mm sample; the data sheet lists only that sample and 1 oz copper",
+    },
+    Material {
+        maker: "Panasonic",
+        name: "Xpedion 1 (R-5515)",
+        core: Core::Fr4,
+        thickness_mm: &[0.13],
+        copper_um: &[18.0],
+        sides: Sides::Either,
+        formats_mm: &[],
+        dk: Some(3.06),
+        df: Some(0.0021),
+        tg_c: Some(200.0),
+        photoresist: false,
+        note: "Halogen-free ultra low transmission loss material (laminate R-5515 and R-5515X, prepreg R-5410); Tg 200 C by DMA, T288 above 120 min; Dk 3.06 and Df 0.0021 at 14 GHz on a 0.13 mm sample; the data sheet lists only that sample and 1/2 oz H-VLP2 copper",
+    },
+    Material {
+        maker: "Panasonic",
+        name: "Xpedion T1 (R-5575)",
+        core: Core::Fr4,
+        thickness_mm: &[0.5],
+        copper_um: &[35.0],
+        sides: Sides::Either,
+        formats_mm: &[],
+        dk: Some(3.6),
+        df: Some(0.0045),
+        tg_c: Some(245.0),
+        photoresist: false,
+        note: "Halogen-free material with a thermal conductivity of 0.6 W/mK and low transmission loss (laminate R-5575 and R-5575X, prepreg R-5470); Tg 245 C by DMA, T288 above 120 min; Dk 3.60 and Df 0.0045 at 13 GHz on a 0.5 mm sample; the data sheet lists only that sample and 1 oz RT copper",
+    },
+    Material {
+        maker: "Panasonic",
+        name: "R-1566S",
+        core: Core::Fr4,
+        thickness_mm: &[0.8],
+        copper_um: &[35.0],
+        sides: Sides::Either,
+        formats_mm: &[],
+        dk: None,
+        df: None,
+        tg_c: Some(175.0),
+        photoresist: false,
+        note: "Highly heat resistant halogen-free FR-4 (laminate R-1566S, prepreg R-1551S), Tg 175 C by DSC (170 C by TMA), Td 355 C, T288 10 min; the data sheet lists no Dk or Df and only the 0.8 mm sample with 1 oz copper",
+    },
+    Material {
+        maker: "Panasonic",
+        name: "R-356AD",
+        core: Core::Fr4,
+        thickness_mm: &[0.8],
+        copper_um: &[35.0],
+        sides: Sides::Either,
+        formats_mm: &[],
+        dk: None,
+        df: None,
+        tg_c: Some(175.0),
+        photoresist: false,
+        note: "Halogen-free FR-4 with a CTI of 600 V and a relative thermal index of 150 C (laminate R-356AD, prepreg R-355AD; the R-356YD grade shares the sheet); Tg 175 C by DSC (170 C by TMA), Td 355 C, T288 10 min; the data sheet lists no Dk or Df and only the 0.8 mm sample with 1 oz copper",
+    },
+    Material {
+        maker: "Panasonic",
+        name: "R-1766",
+        core: Core::Fr4,
+        thickness_mm: &[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0, 1.2, 1.6],
+        copper_um: &[12.0, 18.0, 35.0, 70.0],
+        sides: Sides::Two,
+        formats_mm: &[],
+        dk: Some(4.3),
+        df: Some(0.016),
+        tg_c: Some(140.0),
+        photoresist: false,
+        note: "General purpose FR-4.0 double sided glass epoxy core (laminate R-1766, prepreg R-1661) with little resin smear; Dk 4.3 and Df 0.016 at 1 GHz (4.7 and 0.015 at 1 MHz), Td 315 C, T288 1 min; Tg is the one printed for it in the comparison column of the HIPER data sheets; thickness tolerance +-0.03 mm (0.1 mm) to +-0.13 mm (1.6 mm)",
     },
     // ---- sheet and plate without copper, to mill and to drill
     m(
@@ -2630,7 +2784,7 @@ mod tests {
 
     #[test]
     fn every_material_is_complete() {
-        assert!(MATERIALS.len() >= 160);
+        assert!(MATERIALS.len() >= 174);
         for m in MATERIALS {
             // a material has a thickness; it has copper unless it is a plain sheet (and then it has none at all)
             assert!(!m.thickness_mm.is_empty(), "{}", m.name);
@@ -2715,6 +2869,12 @@ mod tests {
         assert_eq!(m6.thickness_mm.first(), Some(&0.05));
         assert_eq!(m6.thickness_mm.last(), Some(&0.925));
         assert_eq!(m6.copper_um, &[35.0]);
+        // the base material sheets of Bungard give the Tg and the Df of the FR4 boards, and the new sheets are in the library
+        let fr4 = find("Bungard", "FR4 epoxy, positive photoresist");
+        assert_eq!((fr4.tg_c, fr4.df), (Some(150.0), Some(0.015)));
+        assert_eq!(find("Bungard", "Cotherm").core, Core::Aluminium);
+        assert_eq!(find("Panasonic", "R-1766").thickness_mm.len(), 10);
+        assert_eq!(find("Panasonic", "Xpedion T1 (R-5575)").tg_c, Some(245.0));
         // the RO4350B has the two thicknesses that the older sheets did not list
         let r = find("Rogers", "RO4350B");
         assert!(r.thickness_mm.contains(&0.101) && r.thickness_mm.contains(&0.422));

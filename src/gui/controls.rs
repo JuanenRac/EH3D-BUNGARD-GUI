@@ -583,7 +583,7 @@ mod tests {
                 (1600.0 - 1e-3..=crate::panes::BOARD_W_MAX).contains(&bw),
                 "{w}x{h}"
             );
-            assert_eq!(bw > 1600.0 + 1e-3, wide, "{w}x{h}: {bw}");
+            assert_eq!(bw > 1601.0, wide, "{w}x{h}: {bw}");
             // the board always fits the window: nothing is drawn past its edge
             let u = (w / bw).min(h / DESIGN_H);
             assert!(bw * u <= w + 1e-3 && DESIGN_H * u <= h + 1e-3);

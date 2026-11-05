@@ -1166,7 +1166,10 @@ X1481Y984
             // one place is empty exactly while the head holds a tool
             assert_eq!(
                 draw.tools.len(),
-                all - usize::from(carried.is_some() && a.running.is_some()),
+                all - loaded
+                    .iter()
+                    .filter(|(_, p, t)| a.running.is_some() && carried == Some((*p, *t)))
+                    .count(),
                 "{carried:?}"
             );
             assert_eq!(draw.head.map(|h| h.0), carried.map(|c| c.1));

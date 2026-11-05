@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The copies of a panel are placed again when the board is a sheet:** a board that cannot be put twice on the table (a sheet of 457.2 x 304.8 mm on a table of 495 x 325 mm) is the sheet the panel is cut from, so the copies are the design with its margin and the gap apart, inside the sheet, and the mode that fills the table counts the designs that fit; before, the copies were a whole sheet apart, far off the table, and the window of the panel showed no copies. A board that can be repeated is still the copy, and the panel is as big as the sheet or as the copies, whichever is bigger. With tests of the window of the panel on such a sheet.
+- **Holes and paths of a board land on one another when the folder has no machine files:** the routing program now starts from the machine file that comes with it, as the drilling program does, so both read the same offset of 2.5 mm; before, the paths were drawn and routed 2.5 mm below and to the left of the holes. With a test on the first example board.
 - **The profiles of the X and Y axes stand up in the 3D view:** the two rails and the beam show the section on its long side (40 mm across, 80 mm up) instead of lying flat, and the beam rides on the carriages at its new height.
 - **The plan view no longer draws the aluminium profiles of the axes** (their strips and their sections), only the table, the board and the work.
 - **A failure to save the settings is told:** the settings file is written whole to a side file and renamed over the other (as the file that lets a job go on after a crash already was), and when it cannot be written the window shows the error instead of dropping it.

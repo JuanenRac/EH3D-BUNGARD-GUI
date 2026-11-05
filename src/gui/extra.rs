@@ -487,7 +487,22 @@ impl App {
             .board_rect()
             .or_else(|| self.board())
             .unwrap_or((0.0, 0.0, 0.0, 0.0));
-        let size = (x1 - x0, y1 - y0);
+        // a board that cannot be put twice on the table along an axis is the sheet that the panel is cut from, not the piece that repeats: its copies are the design
+        // (with its margin) and the gap apart, inside the sheet; a board that can be repeated is the copy
+        let design = self
+            .design_rect()
+            .map_or((x1 - x0, y1 - y0), |d| (d.2 - d.0, d.3 - d.1));
+        let repeats = |board: f64, own: f64, gap: f64, room: f64| {
+            if board > own && 2.0 * board + gap > room {
+                own
+            } else {
+                board
+            }
+        };
+        let size = (
+            repeats(x1 - x0, design.0, c.spacing.0, self.table.width_mm),
+            repeats(y1 - y0, design.1, c.spacing.1, self.table.depth_mm),
+        );
         match c.mode {
             PanelMode::Pitch => (c.columns, c.rows, c.spacing),
             PanelMode::Gap => (
@@ -1618,10 +1633,11 @@ mod tests {
         a.open_path(&testdata().join("05_small_board.ncd"));
         a.open_path(&testdata().join("05_board_outline.plt"));
         let (tw, td) = (a.table.width_mm, a.table.depth_mm);
+        // the board is as big as the sheet it is cut from: one copy of the design fits, and ten of them (a design and a gap of 111 mm each) do not
         a.board.size_mm = Some((tw * 0.6, td * 0.6));
         a.board_frozen = None;
         assert!(a.board_fit_warning().is_none());
-        a.adjust(Field::Columns, 1.0);
+        a.adjust(Field::Columns, 9.0);
         let (head, detail) = a
             .board_fit_warning()
             .expect("a panel wider than the table must warn");
@@ -1645,6 +1661,114 @@ mod tests {
         let (c, r, _) = a.panel_plan();
         assert!(c * r >= 1);
         assert_eq!(a.drill.scene.holes.len(), one * (c * r) as usize);
+    }
+
+    #[test]
+    fn a_panel_on_a_board_as_big_as_a_sheet_puts_the_copies_of_the_design_inside_the_sheet() {
+        // the board of the person: a sheet of 457.2 x 304.8 mm on a table of 495 x 325 mm, where two sheets never fit
+        let mut a = app();
+        a.open_path(&testdata().join("05_small_board.ncd"));
+        a.open_path(&testdata().join("05_board_outline.plt"));
+        a.board.size_mm = Some((457.2, 304.8));
+        a.board_frozen = None;
+        let one = a.drill.scene.holes.len();
+        let paths = a.route.scene.paths.len();
+        assert_eq!((a.table.width_mm, a.table.depth_mm), (495.0, 325.0));
+        // the design: the holes and the outline (5 to 105 and 5 to 85 mm) moved by the offset of 2.5 mm, with 3 mm round it, 106 x 86 mm
+        let (dx0, dy0, dx1, dy1) = a.design_rect().unwrap();
+        assert!((dx0 - 4.5).abs() < 1e-6 && (dy0 - 4.5).abs() < 1e-6);
+        assert!((dx1 - 110.5).abs() < 1e-6 && (dy1 - 90.5).abs() < 1e-6);
+        // the window of the panel: the columns and the rows go up by their steps and the copies appear
+        a.show_modal(Modal::Panel);
+        a.act(Act::Adjust(Field::Columns, 1.0));
+        a.act(Act::Adjust(Field::Rows, 1.0));
+        let (c, r, pitch) = a.panel_applied.expect("two by two copies are applied");
+        assert_eq!((c, r), (2, 2));
+        // a design and the gap of 5 mm apart: 106 + 5 and 86 + 5
+        assert!((pitch.0 - 111.0).abs() < 1e-6 && (pitch.1 - 91.0).abs() < 1e-6);
+        assert_eq!(a.drill.scene.holes.len(), one * 4);
+        assert_eq!(a.route.scene.paths.len(), paths * 4);
+        // every copy is on the table, and the panel is the sheet, which fits: nothing warns
+        for h in &a.drill.scene.holes {
+            assert!(a.table.contains(h.x_mm, h.y_mm), "{h:?}");
+        }
+        let (x0, y0, x1, y1) = a.panel_rect().unwrap();
+        assert!((x1 - x0 - 457.2).abs() < 1e-6 && (y1 - y0 - 304.8).abs() < 1e-6);
+        assert!(a.board_fit_warning().is_none());
+        // the second column is the first one moved by the pitch
+        let first = a.drill.scene.holes[0].clone();
+        let moved = a.drill.scene.holes[one].clone();
+        assert!(
+            (moved.x_mm - first.x_mm - 111.0).abs() < 1e-6
+                && (moved.y_mm - first.y_mm).abs() < 1e-6
+        );
+        // the mode that fills the table: 4 columns (4.5 + 3 x 111 + 106 = 443.5 of 495) and 3 rows (4.5 + 2 x 91 + 86 = 272.5 of 325)
+        a.act(Act::PanelMode(PanelMode::Fit));
+        assert_eq!(a.panel_applied.map(|p| (p.0, p.1)), Some((4, 3)));
+        assert_eq!(a.drill.scene.holes.len(), one * 12);
+        // and back to one copy: the files as they were
+        a.panel.mode = PanelMode::Gap;
+        a.adjust(Field::Columns, -9.0);
+        a.adjust(Field::Rows, -9.0);
+        assert_eq!(a.panel_applied, None);
+        assert_eq!(a.drill.scene.holes.len(), one);
+    }
+
+    #[test]
+    fn a_board_that_can_be_repeated_is_still_the_copy_of_the_panel() {
+        // half the table less the gap: two of them fit along each axis, so the board is the piece that repeats and the pitch is the board and the gap
+        let mut a = app();
+        a.open_path(&testdata().join("05_small_board.ncd"));
+        a.open_path(&testdata().join("05_board_outline.plt"));
+        a.board.size_mm = Some((200.0, 100.0));
+        a.board_frozen = None;
+        a.adjust(Field::Columns, 1.0);
+        a.adjust(Field::Rows, 1.0);
+        let (_, _, pitch) = a.panel_applied.unwrap();
+        assert!((pitch.0 - 205.0).abs() < 1e-6 && (pitch.1 - 105.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn a_folder_with_no_machine_files_puts_the_holes_and_the_paths_of_a_board_on_one_another() {
+        // no DRILLPRO.DCF and no ROUTEPRO.RCF: both programs start from the file that comes with them, with the same offset
+        let dir = std::env::temp_dir().join(format!("eh3d-bg-nomachine-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let mut a = App::new(&Options {
+            data: Some(dir),
+            screen: Some(Screen::Viewer),
+            ..Default::default()
+        });
+        a.open_path(&testdata().join("05_small_board.ncd"));
+        a.open_path(&testdata().join("05_board_tracks.plt"));
+        let (d, r) = (
+            a.drill.engine.settings().expect("the drilling settings"),
+            a.route.engine.settings().expect("the routing settings"),
+        );
+        assert_eq!(d.offset_mm, r.offset_mm);
+        assert_eq!(a.drill.offset, a.route.offset);
+        // the row of eight holes of the tool 6 (669 to 3425 mil, 2953 mil high) is the middle of the first track of the file (644 to 3516, 2964 to 3036 steps of 0.025 mm)
+        let row: Vec<_> = a.drill.scene.holes.iter().filter(|h| h.tool == 6).collect();
+        assert_eq!(row.len(), 8);
+        let (hx, hy) = (
+            (row.iter().map(|h| h.x_mm).fold(f64::MAX, f64::min)
+                + row.iter().map(|h| h.x_mm).fold(f64::MIN, f64::max))
+                / 2.0,
+            row[0].y_mm,
+        );
+        let first = &a.route.scene.paths[0].points;
+        let (tx0, tx1) = (
+            first.iter().map(|p| p.0).fold(f64::MAX, f64::min),
+            first.iter().map(|p| p.0).fold(f64::MIN, f64::max),
+        );
+        let (ty0, ty1) = (
+            first.iter().map(|p| p.1).fold(f64::MAX, f64::min),
+            first.iter().map(|p| p.1).fold(f64::MIN, f64::max),
+        );
+        // 52.0 + 2.5 and 75.0 + 2.5 mm, to a hundredth of a millimetre and not 2.5 mm away
+        assert!((hx - (tx0 + tx1) / 2.0).abs() < 0.02, "{hx} {tx0} {tx1}");
+        assert!((hy - (ty0 + ty1) / 2.0).abs() < 0.02, "{hy} {ty0} {ty1}");
+        assert!((hx - 54.494).abs() < 0.01 && (hy - 77.506).abs() < 0.01);
     }
 
     #[test]

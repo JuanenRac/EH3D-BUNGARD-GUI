@@ -555,14 +555,27 @@ impl App {
     pub(crate) fn panel_rect(&self) -> Option<(f64, f64, f64, f64)> {
         let (x0, y0, x1, y1) = self.board_rect()?;
         Some(match self.panel_applied {
-            Some((c, r, (px, py))) => (
-                x0,
-                y0,
-                x1 + c.saturating_sub(1) as f64 * px,
-                y1 + r.saturating_sub(1) as f64 * py,
-            ),
+            Some((c, r, (px, py))) => {
+                // the last copy ends where the design of the first one ends, a pitch for each copy; when the copies are a board apart that is the board
+                // moved by the pitch, and when a bigger board (a sheet) holds them the sheet stays and the copies are inside it
+                let (dx1, dy1) = self.design_rect().map_or((x1, y1), |d| (d.2, d.3));
+                (
+                    x0,
+                    y0,
+                    x1.max(dx1 + c.saturating_sub(1) as f64 * px),
+                    y1.max(dy1 + r.saturating_sub(1) as f64 * py),
+                )
+            }
             None => (x0, y0, x1, y1),
         })
+    }
+
+    /// The design of the files with the three millimetres of margin round it, whatever the size of the board is.
+    pub(crate) fn design_rect(&self) -> Option<(f64, f64, f64, f64)> {
+        let mut all = self.drill.base.clone();
+        all.overlay(&self.route.base);
+        let (x0, y0, x1, y1) = all.bounds()?;
+        Some((x0 - 3.0, y0 - 3.0, x1 + 3.0, y1 + 3.0))
     }
 
     /// The board as the files and the chosen size make it: it starts three millimetres before the work.

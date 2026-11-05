@@ -1,6 +1,7 @@
 {
   "repo": "EH3D-BUNGARD-GUI",
   "exempt": [
+    "build.rs",
     "test.bat",
     "test.sh"
   ],

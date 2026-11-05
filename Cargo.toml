@@ -52,3 +52,7 @@ debug = "line-tables-only"
 [dev-dependencies]
 # the test draws a board and sends it as the camera of the node would
 jpeg-encoder = "0.6"
+
+# the icon and the version information of the Windows executable (build.rs; nothing on other systems)
+[target.'cfg(windows)'.build-dependencies]
+winresource = "0.1.34"

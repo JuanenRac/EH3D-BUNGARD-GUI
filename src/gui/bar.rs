@@ -1163,13 +1163,16 @@ X1481Y984
             a.tick();
             let carried = a.rack_carried;
             let draw = a.bar_draw().unwrap();
+            // the places that hold a tool are the ones of the rack as it is now
+            let now = a.rack_slot_tools();
             // one place is empty exactly while the head holds a tool
             assert_eq!(
                 draw.tools.len(),
-                all - loaded
-                    .iter()
-                    .filter(|(_, p, t)| a.running.is_some() && carried == Some((*p, *t)))
-                    .count(),
+                now.len()
+                    - now
+                        .iter()
+                        .filter(|(_, p, t)| a.running.is_some() && carried == Some((*p, *t)))
+                        .count(),
                 "{carried:?}"
             );
             assert_eq!(draw.head.map(|h| h.0), carried.map(|c| c.1));

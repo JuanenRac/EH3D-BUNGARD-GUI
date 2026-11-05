@@ -9,6 +9,7 @@ pub mod catalogue;
 pub mod cli;
 pub mod defaults;
 pub mod inspection;
+pub mod jobflow;
 pub mod jobinfo;
 pub mod jobs;
 pub mod launcher;

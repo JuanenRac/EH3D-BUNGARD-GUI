@@ -98,29 +98,9 @@ impl App {
     }
 
     fn rack_plan_for(&self, programs: &[Program], cap: usize) -> Vec<Vec<(Program, Vec<u8>)>> {
-        let pieces: Vec<(Program, Vec<u8>)> = programs
-            .iter()
-            .flat_map(|&p| {
-                self.tools_to_do(p)
-                    .chunks(cap)
-                    .map(|c| (p, c.to_vec()))
-                    .collect::<Vec<_>>()
-            })
-            .collect();
-        let mut loads: Vec<Vec<(Program, Vec<u8>)>> = Vec::new();
-        let (mut cur, mut n): (Vec<(Program, Vec<u8>)>, usize) = (Vec::new(), 0);
-        for piece in pieces {
-            if n + piece.1.len() > cap && !cur.is_empty() {
-                loads.push(std::mem::take(&mut cur));
-                n = 0;
-            }
-            n += piece.1.len();
-            cur.push(piece);
-        }
-        if !cur.is_empty() {
-            loads.push(cur);
-        }
-        loads
+        let tools: Vec<crate::jobflow::Piece> =
+            programs.iter().map(|&p| (p, self.tools_to_do(p))).collect();
+        crate::jobflow::plan_loads(&tools, cap)
     }
 
     /// The tool of each slot of the first load of the job (slot 1 holds the first tool the job uses): the slot, the program and the tool.
@@ -145,12 +125,7 @@ impl App {
                 .next()
                 .unwrap_or_default()
         });
-        pieces
-            .iter()
-            .flat_map(|(p, ts)| ts.iter().map(move |&t| (*p, t)))
-            .enumerate()
-            .map(|(i, (p, t))| ((i + 1) as u8, p, t))
-            .collect()
+        crate::jobflow::slot_tools(&pieces)
     }
 
     /// Shows the next load of the rack and waits for the operator.
@@ -497,6 +472,27 @@ mod tests {
             );
             assert!(a.drill.scene.holes.iter().all(|h| h.done), "moved: {moved}");
         }
+    }
+
+    #[test]
+    fn a_mixed_job_with_the_changer_drills_and_then_routes_taking_every_tool_from_the_bar() {
+        let mut a = app();
+        a.apply_model(crate::machines::Model::from_name("CCD/2 ATC").unwrap());
+        assert_eq!(a.job_programs(), vec![Program::Drill, Program::Route]);
+        assert!(!a.tools_to_do(Program::Route).is_empty());
+        let (asked, max_x) = play_whole_job(&mut a);
+        // nobody was asked for a tool, the head went to the bar, and both files are done at the end
+        assert!(!asked);
+        assert!(max_x > a.table.width_mm);
+        assert!(a.drill.scene.holes.iter().all(|h| h.done));
+        assert!(!a.route.scene.paths.is_empty());
+        assert!(a
+            .route
+            .scene
+            .paths
+            .iter()
+            .all(|q| q.reached == q.points.len()));
+        assert!(a.running.is_none() && a.rack_loads.is_empty());
     }
 
     #[test]

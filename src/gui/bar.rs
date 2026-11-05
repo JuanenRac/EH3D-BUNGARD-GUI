@@ -1188,8 +1188,9 @@ X1481Y984
                     .map(|l| l.0)
                     .unwrap();
                 let spot = view.slots.iter().find(|s| s.index == slot).unwrap();
+                // once the job is over the head is no longer followed
                 assert!(
-                    (head.0 - spot.x_mm).hypot(head.1 - spot.y_mm) < 6.0,
+                    a.running.is_none() || (head.0 - spot.x_mm).hypot(head.1 - spot.y_mm) < 6.0,
                     "{carried:?} {prev:?} head {head:?} place {spot:?}"
                 );
                 if carried.is_some() {

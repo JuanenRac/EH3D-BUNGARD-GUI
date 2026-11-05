@@ -3,6 +3,9 @@
 All notable changes to this project are documented here.
 
 ## [Unreleased]
+
+## [0.2.2] - Material catalogue from the shared database, wider work area, tools bar, real 3D profiles and the program icon
+
 - **The board library reads the database of materials of the suite:** the hand-written materials keep their notes and their places and take the published values of the database where it describes the same material, and the laminates, PTFE and RF, ceramic filled and metal core boards of the database that a machine for boards can drill and mill (more than 650 in all) are listed too, narrowed by maker, by type and by the words typed in a search box; a material whose maker gives no thickness or no copper is listed and marked as without data of the manufacturer, and the window asks for those two values.
 - **The Windows executable carries the icon of the program:** the file shows it in the explorer and the taskbar, together with the name, the description and the version, embedded by `build.rs`; other systems are not affected.
 - **More boards in the library, and corrections from the data sheets:** Bungard Cotherm (aluminium core) and the thin FR4 laminate; Panasonic Megtron 6 with low Dk glass (R-5775N), Megtron 6 HF, Megtron 4S (R-5725S) and R-5735, Xpedion 1 and T1, R-1566S, R-356AD and R-1766. The Bungard FR4 boards take the Tg (150 C) and the Df (0.015) of the sheet of their base material (they had 130 C and no Df), and the note of Megtron 8 says which glass its Dk and Df belong to. The library has 174 materials; a value the maker does not publish stays empty.

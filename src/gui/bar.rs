@@ -1161,7 +1161,8 @@ X1481Y984
                 break;
             }
             a.tick();
-            let carried = a.rack_carried;
+            // the head holds nothing once the job is over
+            let carried = a.rack_carried.filter(|_| a.running.is_some());
             let draw = a.bar_draw().unwrap();
             // the places that hold a tool are the ones of the rack as it is now
             let now = a.rack_slot_tools();

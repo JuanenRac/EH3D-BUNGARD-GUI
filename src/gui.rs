@@ -2888,8 +2888,6 @@ impl App {
                 Stroke::new(1.2 * cv.u, alpha(col(t.line), 140)),
                 StrokeKind::Inside,
             );
-            // the aluminium profiles of the axes, where the 3D view has them
-            self.paint_plan_axes(cv, &screen, self.head3d().map_or(0.0, |h| h.0));
             if let Some((x0, y0, x1, y1)) = self.panel_rect() {
                 let (a, b) = screen(x0, y1);
                 let (c, d) = screen(x1, y0);
@@ -3821,7 +3819,7 @@ impl App {
                 (
                     hx - self::frame::BEAM_BEHIND,
                     fy0 - rail_w,
-                    102.0 - beam_h,
+                    rail_h + 22.0,
                     beam_w,
                     frame.beam_len(),
                     beam_h,
@@ -3844,7 +3842,7 @@ impl App {
         let beam = self::frame::extrude(
             &dims,
             self::frame::Axis::Y,
-            (hx - self::frame::BEAM_BEHIND, fy0 - rail_w, 102.0 - beam_h),
+            (hx - self::frame::BEAM_BEHIND, fy0 - rail_w, rail_h + 22.0),
             frame.beam_len(),
         );
         let strips: Vec<_> = beam

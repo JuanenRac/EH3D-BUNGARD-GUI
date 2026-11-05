@@ -56,7 +56,7 @@
 <text x="676.71" y="442" font-family="'Segoe UI','Noto Sans','Noto Sans CJK SC','Microsoft YaHei','Yu Gothic','Helvetica Neue',Helvetica,Arial,sans-serif" font-size="12.8" font-weight="400" fill="#8A97A6" text-anchor="start">a drilling or HP-GL file turned into the scene the views draw</text>
 <line x1="392" y1="450" x2="1118" y2="450" stroke="#1A2430" stroke-width="1"/>
 <text x="392" y="469" font-family="'JetBrains Mono','Cascadia Code','SFMono-Regular',Consolas,'Liberation Mono',monospace" font-size="14.5" font-weight="600" fill="#E6EDF3" text-anchor="start">boards.rs</text>
-<text x="676.71" y="469" font-family="'Segoe UI','Noto Sans','Noto Sans CJK SC','Microsoft YaHei','Yu Gothic','Helvetica Neue',Helvetica,Arial,sans-serif" font-size="12.8" font-weight="400" fill="#8A97A6" text-anchor="start">the library of base materials of many makers</text>
+<text x="676.71" y="469" font-family="'Segoe UI','Noto Sans','Noto Sans CJK SC','Microsoft YaHei','Yu Gothic','Helvetica Neue',Helvetica,Arial,sans-serif" font-size="12.8" font-weight="400" fill="#8A97A6" text-anchor="start">the library of base materials, joined with the suite's database</text>
 <line x1="392" y1="477" x2="1118" y2="477" stroke="#1A2430" stroke-width="1"/>
 <text x="392" y="496" font-family="'JetBrains Mono','Cascadia Code','SFMono-Regular',Consolas,'Liberation Mono',monospace" font-size="14.5" font-weight="600" fill="#E6EDF3" text-anchor="start">machines.rs</text>
 <text x="676.71" y="496" font-family="'Segoe UI','Noto Sans','Noto Sans CJK SC','Microsoft YaHei','Yu Gothic','Helvetica Neue',Helvetica,Arial,sans-serif" font-size="12.8" font-weight="400" fill="#8A97A6" text-anchor="start">the Bungard machine profiles and the work area from the table size</text>

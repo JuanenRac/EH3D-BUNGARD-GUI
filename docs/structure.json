@@ -128,14 +128,14 @@
         {
           "name": "boards.rs",
           "desc": {
-            "en": "the library of base materials of many makers",
-            "es": "la biblioteca de materiales base de muchos fabricantes",
-            "de": "die Bibliothek der Basismaterialien vieler Hersteller",
-            "fr": "la bibliothèque des matériaux de base",
-            "it": "la libreria dei materiali di base",
-            "ja": "多くのメーカーの基材ライブラリ",
-            "zh": "众多厂商的基材库",
-            "pt": "a biblioteca de materiais de base"
+            "en": "the library of base materials, joined with the suite's database",
+            "es": "la biblioteca de materiales base, unida a la base de la suite",
+            "de": "die Basismaterialbibliothek, verbunden mit der Datenbank der Suite",
+            "fr": "la bibliothèque des matériaux de base, jointe à la base de la suite",
+            "it": "la libreria dei materiali, unita alla base di dati della suite",
+            "ja": "基材ライブラリとスイートの材料データベースの統合",
+            "zh": "基材库与套件材料数据库的合并",
+            "pt": "a biblioteca de materiais de base, unida à base da suite"
           }
         },
         {

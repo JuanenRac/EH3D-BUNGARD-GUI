@@ -11,14 +11,14 @@
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
-  <img src="https://img.shields.io/badge/Tests-274-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-283-0f6cbd.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.2.1-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
 ---
 
-**Vérification d'honnêteté - ce qui tourne aujourd'hui :** un programme Rust avec une fenêtre et 274 tests qui s'exécutent sur un ordinateur. Le lanceur propose l'interface moderne ou les programmes classiques de perçage et de fraisage pour une machine avec changement d'outil manuel (MTC) ou automatique (ATC). Le visualiseur ouvre des fichiers de perçage, des fichiers de tracé HP-GL et des archives ZIP de travaux (depuis un navigateur de dossiers, par glisser-déposer ou depuis la ligne de commande), dessine la vue en plan avec chaque trou par diamètre de foret et les trajets de fraisage par-dessus, montre la machine en 3D avec la table de la taille choisie dans la configuration, panélise la carte et suit le travail pendant qu'il tourne. Le travail s'exécute dans le **simulateur** des moteurs de EH3D-DRILLPRO et EH3D-ROUTEPRO ; le même fichier de machine qu'ils lisent décide comment on atteint une vraie machine (le RS-232 de l'ordinateur, un adaptateur USB-RS232, ou le EH3D-NODE-BUNGARD directement ou via EH3D-SERVER), et **aucune de ces voies n'a été essayée depuis cette fenêtre**. Les fenêtres de connexion, de réglages et d'outils changent les valeurs qu'elles offrent, les fichiers entiers de machine et d'outils ne sont pas encore modifiables, et la vue 3D ne montre pas la hauteur des trajets.
+**Vérification d'honnêteté - ce qui tourne aujourd'hui :** un programme Rust avec une fenêtre et 283 tests qui s'exécutent sur un ordinateur. Le lanceur propose l'interface moderne ou les programmes classiques de perçage et de fraisage pour une machine avec changement d'outil manuel (MTC) ou automatique (ATC). Le visualiseur ouvre des fichiers de perçage, des fichiers de tracé HP-GL et des archives ZIP de travaux (depuis un navigateur de dossiers, par glisser-déposer ou depuis la ligne de commande), dessine la vue en plan avec chaque trou par diamètre de foret et les trajets de fraisage par-dessus, montre la machine en 3D avec la table de la taille choisie dans la configuration, panélise la carte et suit le travail pendant qu'il tourne. Le travail s'exécute dans le **simulateur** des moteurs de EH3D-DRILLPRO et EH3D-ROUTEPRO ; le même fichier de machine qu'ils lisent décide comment on atteint une vraie machine (le RS-232 de l'ordinateur, un adaptateur USB-RS232, ou le EH3D-NODE-BUNGARD directement ou via EH3D-SERVER), et **aucune de ces voies n'a été essayée depuis cette fenêtre**. Les fenêtres de connexion, de réglages et d'outils changent les valeurs qu'elles offrent, les fichiers entiers de machine et d'outils ne sont pas encore modifiables, et la vue 3D ne montre pas la hauteur des trajets.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Version | `0.2.1` |
 | Maturité | Échafaudage |
-| Tests | 274 |
+| Tests | 283 |
 | Pile technique | Rust |
 | Sur du matériel réel | Non. Il n'a tourné que sur le simulateur et sur un ordinateur ; aucune machine n'a été pilotée depuis cette fenêtre |
 
@@ -49,7 +49,7 @@ Chaque ligne est une partie de ce dépôt et le feu dit où elle en est aujourd'
 | Fichiers et panélisation | 🟡 | Les fichiers de perçage, HP-GL et les archives ZIP s'ouvrent depuis un navigateur, par glisser-déposer ou depuis la ligne de commande ; la carte est répétée en trois modes. Essayé avec les petits fichiers d'exemple de ce dépôt. |
 | Réglages | 🟠 | La largeur et la profondeur utiles de la table se changent et s'enregistrent dans les fichiers de la machine ; le reste des fichiers de machine et d'outils s'édite encore avec les programmes classiques. |
 | Pilotage de la machine | 🔴 | Le travail passe par les moteurs de EH3D-DRILLPRO et EH3D-ROUTEPRO, donc en principe toutes leurs connexions sont là ; il n'a tourné que sur le simulateur. La fenêtre de Connexion choisit la liaison (le RS-232 de l'ordinateur, un adaptateur USB-RS232, le nœud EH3D ou le serveur EH3D), la teste et l'enregistre dans le fichier de la machine, et Pause retient le travail entre deux mouvements. |
-| Tests | 🟡 | 274 tests passent sur un ordinateur (`cargo test --features gui`) : le lanceur, les réglages, la lecture des fichiers vers la scène, les profils de machine, le panneau et la ligne de commande. Aucun ne touche une machine. |
+| Tests | 🟡 | 283 tests passent sur un ordinateur (`cargo test --features gui`) : le lanceur, les réglages, la lecture des fichiers vers la scène, les profils de machine, le panneau et la ligne de commande. Aucun ne touche une machine. |
 | Paquets prêts à l'emploi | 🟠 | Un workflow compile le programme pour Windows (64 et 32 bits), Linux et macOS avec les fichiers d'exemple ; aucune version n'a encore été publiée. |
 
 ## 🎯 Présentation
@@ -60,7 +60,7 @@ Chaque ligne est une partie de ce dépôt et le feu dit où elle en est aujourd'
 * **Ouvrir des fichiers** : un fichier de perçage, un fichier HP-GL ou une archive ZIP contenant un travail, depuis une fenêtre Ouvrir avec navigateur de dossiers et lecteurs, en déposant les fichiers sur la fenêtre, avec `Ctrl+O`, ou donnés en ligne de commande. Un nom dans une archive qui sortirait du dossier de travail n'est pas listé, et aucun fichier n'est lu au-delà d'une limite de taille.
 * **Panélisation** : des copies de la carte en colonnes et en lignes, placées selon l'écart entre cartes, selon la distance de l'une à la suivante, ou autant qu'il en tient sur la table ; les copies sont dessinées et le travail les réalise.
 * Le **travail** : il s'exécute avec les moteurs des programmes classiques et leur fichier de machine (`demo` simulateur, `rs232`, `usb`, `node` ou `server`), montre l'avancement et pose à l'opérateur les questions de la machine (la broche, le changement d'outil).
-* La **carte et les outils** : une bibliothèque de matériaux de base de nombreux fabricants (Bungard, Fortex, CIF, FR-4 générique, CEM et FR-2, Isola, Panasonic, Shengyi, ITEQ, Ventec, Nelco, Arlon, Rogers, Taconic, Bergquist, DuPont, MG Chemicals, MSC, Yuxinda, ThinFlex), avec les valeurs de leurs fiches techniques quand les fabricants les publient (sinon le champ reste vide), choisie par matériau, épaisseur, cuivre, faces cuivrées et taille, et mémorisée ; les outils du travail sont listés en perçage ou fraisage avec leur avance et leur vitesse, celui qui travaille est éclairé, et chaque valeur a des valeurs par défaut (selon le diamètre du foret et le matériau de la carte) ou peut être cliquée et saisie.
+* La **carte et les outils** : une bibliothèque de matériaux de base de nombreux fabricants (Bungard, Fortex, CIF, FR-4 générique, CEM et FR-2, Isola, Panasonic, Shengyi, ITEQ, Ventec, Nelco, Arlon, Rogers, Taconic, Bergquist, DuPont, MG Chemicals, MSC, Yuxinda, ThinFlex), avec les valeurs de leurs fiches techniques quand les fabricants les publient (sinon le champ reste vide), choisie par matériau, épaisseur, cuivre, faces cuivrées et taille, et mémorisée ; les outils du travail sont listés en perçage ou fraisage avec leur avance et leur vitesse, celui qui travaille est éclairé, et chaque valeur a des valeurs par défaut (selon le diamètre du foret et le matériau de la carte) ou peut être cliquée et saisie. La liste réunit les matériaux écrits à la main et la base de matériaux de la suite (les stratifiés, les cartes PTFE et RF, à charge céramique et à âme métallique qu'une machine pour cartes peut percer et fraiser : plus de 650 au total), se restreint par fabricant, par type ou par les mots saisis dans une zone de recherche et suit l'ordre alphabétique ; un matériau dont le fabricant ne donne ni épaisseur ni cuivre figure aussi, marqué comme sans données du fabricant, et la fenêtre demande ces deux valeurs (une zone pour les saisir, avec des valeurs usuelles pour commencer qui ne sont jamais présentées comme des données du fabricant).
 * **Plaques sans cuivre à fraiser et à percer :** en plus des cartes cuivrées, la bibliothèque contient des plaques nues dans leurs épaisseurs habituelles (alliage d'aluminium de 0,2 à 5 mm, cuivre de 0,1 à 5 mm, PTFE de 0,2 à 5 mm, contreplaqué de bouleau, MDF, balsa et tilleul de 0,5 à 5 mm, acrylique, polycarbonate, ABS, POM, nylon, PVC, HDPE, PETG, G10 et papier phénolique). Elles n'ont pas de cuivre (la fenêtre de la carte le dit et masque les faces cuivrées) ni de valeurs électriques que personne ne publie pour elles, et chaque type de matériau a ses propres valeurs de départ de vitesse, d'avance et de profondeur par passe pour le perçage et le fraisage, toujours dans les limites de la broche.
 * Les **réglages** : le thème, la langue, la taille utile de la table, la vitesse de la simulation (un travail dure le temps de la machine, de x0,5 à x50), si le travail demande aux changements d'outil et au démarrage de la broche, et si cette fenêtre s'ouvre directement la prochaine fois. Les boutons s'éclairent sous le pointeur et s'enfoncent quand on les presse.
 * **Ponts pour l'extérieur du panneau :** dans la fenêtre Panélisation l'extérieur peut être détouré avec des ponts qui retiennent les cartes jusqu'à leur séparation : combien par côté, quelle largeur et où (répartis, près des extrémités ou ensemble au milieu) ; la vue du plan montre les trajets coupés. Le fabricant, l'épaisseur et la taille de la carte se choisissent aussi dans des listes déroulantes.
@@ -241,7 +241,7 @@ Comment les parties de ce dépôt s'articulent : qui l'utilise, ce qu'il contien
 * Une fenêtre À propos avec la version, la licence et la connexion utilisée.
 * Réglages en onglets avec tous les modèles Bungard MTC et ATC (table, changeur d'outils, limites) et les unités des pas et des coordonnées (mm ou mil), le tout avec un effet réel sur le travail.
 * Un bouton d'arrêt d'urgence qui peut être affiché, masqué et déplacé ; Start s'éteint pendant le travail et revient avec Pause ou Stop ; la simulation continue en arrière-plan.
-* Une vue 2D qui suit chaque outil, fait tourner ensemble les fichiers de perçage et de fraisage et déplace la carte ; une bibliothèque de plus de cent matériaux de base ; des sons à la fin du travail et au changement d'outil.
+* Une vue 2D qui suit chaque outil, fait tourner ensemble les fichiers de perçage et de fraisage et déplace la carte ; une bibliothèque de plus de 650 matériaux de base ; des sons à la fin du travail et au changement d'outil.
 * Fichiers d'autres programmes : le contour d'une carte Gerber (`.GKO`, `.GM1`, `.GML` ou un `.GBR` qui se déclare profil) et un dessin DXF s'ouvrent comme travaux de fraisage ; les cercles et arcs des fichiers de tracé (`CI`, `AA`, `AR`) sont découpés en cordes selon l'angle de corde de la configuration.
 * Un travail qui ne tient pas sur la table est refusé avant de commencer ; la fenêtre Ouvrir liste les derniers fichiers ouverts ; la fenêtre des outils compte les trous de chaque foret sur la carte et dans tous les travaux, avec un bouton qui remet les compteurs à zéro.
 * La largeur et la profondeur de la carte s'échangent d'un geste (un bouton dans la fenêtre des cartes et une icône dans la vue 2D qui tourne la carte seule, le dessin restant où il est), car une carte qui n'entre pas dans la machine entre souvent tournée ; les outils de la barre des modèles ATC sont dessinés ronds en 3D ; une défaillance dans un travail arrête la machine et s'affiche, et chaque plantage est aussi consigné dans `eh3d-crash.log` dans le dossier de configuration.
@@ -293,7 +293,7 @@ Lancez-le avec `run.bat` (Windows) ou `./run.sh` (Linux et macOS) ; les deux com
 
 ## 🧪 Tests
 
-La suite compte 274 tests (`cargo test --features gui`). Ils vérifient le lanceur et ce qu'il mémorise, les réglages, comment un fichier de perçage ou HP-GL devient la scène, les profils de machine, le panneau et la ligne de commande. Les moteurs qu'il utilise (protocole, mouvement, porte de sécurité) sont testés dans EH3D-DRILLPRO et EH3D-ROUTEPRO. La CI exécute aussi `cargo fmt --check` et `cargo clippy` avec les avertissements en erreurs, et `python -I tools/ci_validate.py` vérifie le manifeste, les versions, le journal des modifications et les huit README.
+La suite compte 283 tests (`cargo test --features gui`). Ils vérifient le lanceur et ce qu'il mémorise, les réglages, comment un fichier de perçage ou HP-GL devient la scène, les profils de machine, le panneau et la ligne de commande. Les moteurs qu'il utilise (protocole, mouvement, porte de sécurité) sont testés dans EH3D-DRILLPRO et EH3D-ROUTEPRO. La CI exécute aussi `cargo fmt --check` et `cargo clippy` avec les avertissements en erreurs, et `python -I tools/ci_validate.py` vérifie le manifeste, les versions, le journal des modifications et les huit README.
 
 ## 🏗️ Compilation et publication
 
@@ -320,7 +320,7 @@ EH3D-BUNGARD-GUI/
 │   ├── gui/machine3d.rs                         la machine de la vue 3D : démarrage, home, premier point, travail
 │   ├── gui/opener.rs  gui/board.rs              fenêtres Ouvrir, carte, outils et réglages
 │   ├── jobs.rs                                  un fichier de perçage ou HP-GL transformé en scène dessinée par les vues
-│   ├── boards.rs                                la bibliothèque des matériaux de base
+│   ├── boards.rs                                la bibliothèque des matériaux de base, jointe à la base de la suite
 │   ├── machines.rs                              les profils des machines Bungard et la zone de travail selon la table
 │   ├── launcher.rs                              les choix du lanceur, les programmes classiques et ce qui est mémorisé
 │   ├── link.rs                                  la liaison du fichier de la machine : les clés écrites

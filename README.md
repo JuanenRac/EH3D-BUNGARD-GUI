@@ -11,14 +11,14 @@
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
-  <img src="https://img.shields.io/badge/Tests-274-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-283-0f6cbd.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.2.1-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
 ---
 
-**Honesty check - what actually runs today:** a Rust program with a window and 274 tests that run on a computer. The launcher offers the modern interface or the classic drilling and routing programs for a machine with manual (MTC) or automatic (ATC) tool change. The viewer opens drilling files, HP-GL plot files and ZIP archives of jobs (from a folder browser, by drag and drop or from the command line), draws the plan view with every hole by drill size and the routing paths over it, shows the machine in 3D with the table of the size chosen in the configuration, panelizes the board and follows the job as it runs. The job runs on the **simulator** of the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO; the same machine file they read decides how a real machine is reached (the computer's RS-232, a USB-RS232 adapter, or the EH3D-NODE-BUNGARD directly or through EH3D-SERVER), and **none of those has been tried from this window**. The windows of the connection, the settings and the tools change the values they offer, the whole machine and tool files cannot be edited yet, and the 3D view does not show the height of the tool paths.
+**Honesty check - what actually runs today:** a Rust program with a window and 283 tests that run on a computer. The launcher offers the modern interface or the classic drilling and routing programs for a machine with manual (MTC) or automatic (ATC) tool change. The viewer opens drilling files, HP-GL plot files and ZIP archives of jobs (from a folder browser, by drag and drop or from the command line), draws the plan view with every hole by drill size and the routing paths over it, shows the machine in 3D with the table of the size chosen in the configuration, panelizes the board and follows the job as it runs. The job runs on the **simulator** of the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO; the same machine file they read decides how a real machine is reached (the computer's RS-232, a USB-RS232 adapter, or the EH3D-NODE-BUNGARD directly or through EH3D-SERVER), and **none of those has been tried from this window**. The windows of the connection, the settings and the tools change the values they offer, the whole machine and tool files cannot be edited yet, and the 3D view does not show the height of the tool paths.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Version | `0.2.1` |
 | Maturity | Scaffolding |
-| Tests | 274 |
+| Tests | 283 |
 | Stack | Rust |
 | On real hardware | No. It has run on the simulator and on a computer only; no machine has been driven from this window |
 
@@ -49,7 +49,7 @@ Each line is one part of this repository and the light says how far it is today.
 | Files and panelization | 🟡 | Drilling files, HP-GL files and ZIP archives are opened from a browser, by drag and drop or from the command line; the board is repeated in three modes. Tried with the small sample files of this repository. |
 | Settings | 🟠 | The usable width and depth of the table are changed and saved to the machine files; the rest of the machine and tool files is still edited with the classic programs. |
 | Machine control | 🔴 | The job goes through the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO, so every connection they have is there in principle; it has run on the simulator only. The Connection window chooses the link (the computer's RS-232, a USB-RS232 adapter, the EH3D node or the EH3D server), tests it and saves it to the machine file, and Pause holds the job between two moves. |
-| Tests | 🟡 | 274 tests pass on a computer (`cargo test --features gui`): the launcher, the settings, the reading of the files into the scene, the machine profiles, the panel and the command line. None of them touches a machine. |
+| Tests | 🟡 | 283 tests pass on a computer (`cargo test --features gui`): the launcher, the settings, the reading of the files into the scene, the machine profiles, the panel and the command line. None of them touches a machine. |
 | Ready-made packages | 🟠 | A workflow builds the program for Windows (64 and 32 bits), Linux and macOS with the sample files; no release has been published yet. |
 
 ## 🎯 Overview
@@ -60,7 +60,7 @@ Each line is one part of this repository and the light says how far it is today.
 * **Opening files**: a drilling file, an HP-GL file or a ZIP archive with a job inside, from an Open window with a folder browser and the drives, by dropping the files on the window, with `Ctrl+O`, or given on the command line. A name in an archive that would leave the work folder is not listed, and no file is read past a size limit.
 * **Panelization**: copies of the board in columns and rows, placed by the gap between boards, by the distance from one to the next, or as many as fit in the table; the copies are drawn and the job makes them.
 * The **job**: it runs on the engines of the classic programs with their machine file (`demo` simulator, `rs232`, `usb`, `node` or `server`), shows the progress as it goes and puts the questions of the machine to the operator (the spindle, the tool change).
-* The **board and the tools**: a library of base materials of many makers (Bungard, Fortex, CIF, generic FR-4, CEM and FR-2, Isola, Panasonic, Shengyi, ITEQ, Ventec, Nelco, Arlon, Rogers, Taconic, Bergquist, DuPont, MG Chemicals, MSC, Yuxinda, ThinFlex), with the figures of their data sheets where the makers publish them (empty where they do not), chosen by material, thickness, copper, copper sides and size, and remembered; the tools of the job are listed as drilling or routing with their feed and speed, the one that works is lit, and every value has default values (from the diameter of the drill and the material of the board) or can be clicked and typed.
+* The **board and the tools**: a library of base materials of many makers (Bungard, Fortex, CIF, generic FR-4, CEM and FR-2, Isola, Panasonic, Shengyi, ITEQ, Ventec, Nelco, Arlon, Rogers, Taconic, Bergquist, DuPont, MG Chemicals, MSC, Yuxinda, ThinFlex), with the figures of their data sheets where the makers publish them (empty where they do not), chosen by material, thickness, copper, copper sides and size, and remembered; the tools of the job are listed as drilling or routing with their feed and speed, the one that works is lit, and every value has default values (from the diameter of the drill and the material of the board) or can be clicked and typed. The list joins the materials written by hand with the database of materials of the suite (the laminates, PTFE and RF, ceramic filled and metal core boards that a machine for boards can drill and mill: more than 650 in all), narrowed by maker, by type or by the words typed in a search box, in alphabetical order; a material whose maker gives no thickness or no copper is listed too, marked as without data of the manufacturer, and the window asks for those two values (a box to write them, with usual values to start from that are never shown as data of the maker).
 * **Sheets without copper to mill and drill:** besides the copper-clad boards, the library has plain sheets in their usual thicknesses (aluminium alloy 0.2 to 5 mm, copper 0.1 to 5 mm, PTFE 0.2 to 5 mm, birch plywood, MDF, balsa and basswood 0.5 to 5 mm, acrylic, polycarbonate, ABS, POM, nylon, PVC, HDPE, PETG, G10 and phenolic paper). They carry no copper (the Board window says so and hides the copper sides) and no electrical figures that nobody publishes for them, and each kind of material has its own starting speed, feed and depth per pass for drilling and routing, always inside the limits of the spindle.
 * The **settings**: the theme, the language, the usable size of the table, the speed of the simulation (a job takes the time of the machine, from x0.5 to x50), whether the job asks at the tool changes and when the spindle starts, and whether this window opens directly the next time. The buttons light up under the pointer and sink when they are pressed.
 * **Tabs for the outside of a panel:** in the Panelization window the outside can be routed with tabs that hold the boards until they are broken out: how many on each side, how wide, and where (spread evenly, near the ends or together in the middle); the plan view shows the cut paths. The maker, the thickness and the size of the board are chosen from drop-down lists too.
@@ -241,7 +241,7 @@ How the parts of this repository fit together: who uses it, what it holds and wh
 * An About window with the version, the licence and the connection in use.
 * Settings in tabs with every Bungard MTC and ATC model (table, tool changer, limits) and the units of the steps and coordinates (mm or mil), all with a real effect on the job.
 * An emergency button that can be shown, hidden and dragged; Start goes out while the job runs and comes back with Pause or Stop; the simulation goes on in the background.
-* A 2D view that follows each tool, turns the drilling and routing files together and moves the board; a library of more than a hundred base materials; sounds at the end of the job and at a tool change.
+* A 2D view that follows each tool, turns the drilling and routing files together and moves the board; a library of more than 650 base materials; sounds at the end of the job and at a tool change.
 * Files of other programs: the outline of a Gerber board (`.GKO`, `.GM1`, `.GML` or a `.GBR` that calls itself the profile) and a DXF drawing open as routing jobs; the circles and arcs of plotter files (`CI`, `AA`, `AR`) are cut into chords by the chord angle of the configuration.
 * A job that does not fit on the table is refused before it starts; the Open window lists the last files opened; the tools window counts the holes of each drill on the board and in all the jobs, with a button that starts the counts again.
 * The width and the depth of the board change places with one touch (a button in the boards window, and an icon in the 2D view that turns the board on its own, the design staying where it is), because a board that does not go into the machine often does turned; the tools of the bar of the ATC models are drawn round in 3D; a failure inside a job stops the machine and is shown, and every crash is also recorded in `eh3d-crash.log` in the configuration folder.
@@ -293,7 +293,7 @@ Run it with `run.bat` (Windows) or `./run.sh` (Linux and macOS); both build the 
 
 ## 🧪 Testing
 
-The suite has 274 tests (`cargo test --features gui`). They check the launcher and what it remembers, the settings, how a drilling or an HP-GL file becomes the scene, the machine profiles, the panel and the command line. The engines it uses (protocol, motion, safety gate) are tested in EH3D-DRILLPRO and EH3D-ROUTEPRO. The CI also runs `cargo fmt --check` and `cargo clippy` with warnings as errors, and `python -I tools/ci_validate.py` checks the manifest, the versions, the changelog and the eight READMEs.
+The suite has 283 tests (`cargo test --features gui`). They check the launcher and what it remembers, the settings, how a drilling or an HP-GL file becomes the scene, the machine profiles, the panel and the command line. The engines it uses (protocol, motion, safety gate) are tested in EH3D-DRILLPRO and EH3D-ROUTEPRO. The CI also runs `cargo fmt --check` and `cargo clippy` with warnings as errors, and `python -I tools/ci_validate.py` checks the manifest, the versions, the changelog and the eight READMEs.
 
 ## 🏗️ Build & Release
 
@@ -320,7 +320,7 @@ EH3D-BUNGARD-GUI/
 │   ├── gui/machine3d.rs                         the machine of the 3D view: start, home, first point, work
 │   ├── gui/opener.rs  gui/board.rs              Open, board, tools and settings windows
 │   ├── jobs.rs                                  a drilling or HP-GL file turned into the scene the views draw
-│   ├── boards.rs                                the library of base materials of many makers
+│   ├── boards.rs                                the library of base materials, joined with the suite's database
 │   ├── machines.rs                              the Bungard machine profiles and the work area from the table size
 │   ├── launcher.rs                              the launcher choices, the classic programs and what is remembered
 │   ├── link.rs                                  the connection of the machine file: which keys it writes

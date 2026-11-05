@@ -11,14 +11,14 @@
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
-  <img src="https://img.shields.io/badge/Tests-274-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-283-0f6cbd.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.2.1-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
 ---
 
-**Verificação de honestidade - o que funciona hoje:** um programa em Rust com uma janela e 274 testes que correm num computador. O lançador oferece a interface moderna ou os programas clássicos de furação e fresagem para uma máquina com troca de ferramenta manual (MTC) ou automática (ATC). O visualizador abre ficheiros de furação, ficheiros de traçado HP-GL e arquivos ZIP de trabalhos (a partir de um explorador de pastas, por arrastar e largar ou pela linha de comandos), desenha a vista em planta com cada furo por diâmetro de broca e os trajetos de fresagem por cima, mostra a máquina em 3D com a mesa do tamanho escolhido na configuração, panelizza a placa e acompanha o trabalho enquanto decorre. O trabalho corre no **simulador** dos motores do EH3D-DRILLPRO e do EH3D-ROUTEPRO; o mesmo ficheiro de máquina que eles leem decide como se chega a uma máquina real (o RS-232 do computador, um adaptador USB-RS232, ou o EH3D-NODE-BUNGARD diretamente ou através do EH3D-SERVER), e **nenhuma dessas vias foi experimentada a partir desta janela**. As janelas de ligação, definições e ferramentas alteram os valores que oferecem, os ficheiros inteiros de máquina e ferramentas ainda não se editam, e a vista 3D não mostra a altura dos trajetos.
+**Verificação de honestidade - o que funciona hoje:** um programa em Rust com uma janela e 283 testes que correm num computador. O lançador oferece a interface moderna ou os programas clássicos de furação e fresagem para uma máquina com troca de ferramenta manual (MTC) ou automática (ATC). O visualizador abre ficheiros de furação, ficheiros de traçado HP-GL e arquivos ZIP de trabalhos (a partir de um explorador de pastas, por arrastar e largar ou pela linha de comandos), desenha a vista em planta com cada furo por diâmetro de broca e os trajetos de fresagem por cima, mostra a máquina em 3D com a mesa do tamanho escolhido na configuração, panelizza a placa e acompanha o trabalho enquanto decorre. O trabalho corre no **simulador** dos motores do EH3D-DRILLPRO e do EH3D-ROUTEPRO; o mesmo ficheiro de máquina que eles leem decide como se chega a uma máquina real (o RS-232 do computador, um adaptador USB-RS232, ou o EH3D-NODE-BUNGARD diretamente ou através do EH3D-SERVER), e **nenhuma dessas vias foi experimentada a partir desta janela**. As janelas de ligação, definições e ferramentas alteram os valores que oferecem, os ficheiros inteiros de máquina e ferramentas ainda não se editam, e a vista 3D não mostra a altura dos trajetos.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Versão | `0.2.1` |
 | Maturidade | Estrutura inicial |
-| Testes | 274 |
+| Testes | 283 |
 | Tecnologias | Rust |
 | Em hardware real | Não. Só correu no simulador e num computador; nenhuma máquina foi comandada a partir desta janela |
 
@@ -49,7 +49,7 @@ Cada linha é uma parte deste repositório e a luz diz até onde chega hoje. É 
 | Ficheiros e panelização | 🟡 | Os ficheiros de furação, HP-GL e os arquivos ZIP abrem-se a partir de um explorador, por arrastar e largar ou pela linha de comandos; a placa repete-se em três modos. Experimentado com os pequenos ficheiros de exemplo deste repositório. |
 | Definições | 🟠 | A largura e a profundidade úteis da mesa alteram-se e guardam-se nos ficheiros da máquina; o resto dos ficheiros de máquina e ferramentas continua a ser editado com os programas clássicos. |
 | Controlo da máquina | 🔴 | O trabalho passa pelos motores do EH3D-DRILLPRO e do EH3D-ROUTEPRO, por isso em princípio estão lá todas as suas ligações; só correu no simulador. A janela de Ligação escolhe a ligação (o RS-232 do computador, um adaptador USB-RS232, o nó EH3D ou o servidor EH3D), experimenta-a e guarda-a no ficheiro da máquina, e Pausa retém o trabalho entre dois movimentos. |
-| Testes | 🟡 | Passam 274 testes num computador (`cargo test --features gui`): o lançador, as definições, a leitura dos ficheiros para a cena, os perfis de máquina, o painel e a linha de comandos. Nenhum toca numa máquina. |
+| Testes | 🟡 | Passam 283 testes num computador (`cargo test --features gui`): o lançador, as definições, a leitura dos ficheiros para a cena, os perfis de máquina, o painel e a linha de comandos. Nenhum toca numa máquina. |
 | Pacotes já compilados | 🟠 | Um fluxo de trabalho compila o programa para Windows (64 e 32 bits), Linux e macOS com os ficheiros de exemplo; ainda não foi publicada nenhuma versão. |
 
 ## 🎯 Visão geral
@@ -60,7 +60,7 @@ Cada linha é uma parte deste repositório e a luz diz até onde chega hoje. É 
 * **Abrir ficheiros**: um ficheiro de furação, um ficheiro HP-GL ou um arquivo ZIP com um trabalho lá dentro, a partir de uma janela Abrir com explorador de pastas e unidades, largando os ficheiros sobre a janela, com `Ctrl+O`, ou indicados na linha de comandos. Um nome num arquivo que sairia da pasta de trabalho não é listado, e nenhum ficheiro é lido acima de um limite de tamanho.
 * **Panelização**: cópias da placa em colunas e linhas, colocadas pelo espaço entre placas, pela distância de uma à seguinte ou tantas quantas caibam na mesa; as cópias são desenhadas e o trabalho executa-as.
 * O **trabalho**: corre com os motores dos programas clássicos e o seu ficheiro de máquina (`demo` simulador, `rs232`, `usb`, `node` ou `server`), mostra o progresso e faz ao operador as perguntas da máquina (o fuso, a troca de ferramenta).
-* A **placa e as ferramentas**: uma biblioteca de materiais de base de muitos fabricantes (Bungard, Fortex, CIF, FR-4 genérico, CEM e FR-2, Isola, Panasonic, Shengyi, ITEQ, Ventec, Nelco, Arlon, Rogers, Taconic, Bergquist, DuPont, MG Chemicals, MSC, Yuxinda, ThinFlex), com os valores das suas folhas de dados quando os fabricantes os publicam (senão, o campo fica vazio), escolhida por material, espessura, cobre, faces de cobre e tamanho, e memorizada; as ferramentas do trabalho são listadas como furação ou fresagem com o seu avanço e a sua velocidade, a que trabalha acende-se, e cada valor tem valores predefinidos (pelo diâmetro da broca e pelo material da placa) ou pode ser clicado e escrito.
+* A **placa e as ferramentas**: uma biblioteca de materiais de base de muitos fabricantes (Bungard, Fortex, CIF, FR-4 genérico, CEM e FR-2, Isola, Panasonic, Shengyi, ITEQ, Ventec, Nelco, Arlon, Rogers, Taconic, Bergquist, DuPont, MG Chemicals, MSC, Yuxinda, ThinFlex), com os valores das suas folhas de dados quando os fabricantes os publicam (senão, o campo fica vazio), escolhida por material, espessura, cobre, faces de cobre e tamanho, e memorizada; as ferramentas do trabalho são listadas como furação ou fresagem com o seu avanço e a sua velocidade, a que trabalha acende-se, e cada valor tem valores predefinidos (pelo diâmetro da broca e pelo material da placa) ou pode ser clicado e escrito. A lista junta os materiais escritos à mão com a base de materiais da suite (os laminados, as placas de PTFE e RF, com carga cerâmica e de núcleo metálico que uma máquina de placas pode furar e fresar: mais de 650 no total), restringe-se por fabricante, por tipo ou pelas palavras escritas numa caixa de pesquisa e segue a ordem alfabética; um material cujo fabricante não indica espessura ou cobre também aparece, marcado como sem dados do fabricante, e a janela pede esses dois valores (uma caixa para os escrever, com valores habituais para começar que nunca se apresentam como dados do fabricante).
 * **Placas sem cobre para fresar e furar:** além das placas com cobre, a biblioteca inclui placas lisas nas suas espessuras habituais (liga de alumínio de 0,2 a 5 mm, cobre de 0,1 a 5 mm, PTFE de 0,2 a 5 mm, contraplacado de bétula, MDF, balsa e tília de 0,5 a 5 mm, acrílico, policarbonato, ABS, POM, nylon, PVC, HDPE, PETG, G10 e papel fenólico). Não têm cobre (a janela da placa di-lo e oculta as faces de cobre) nem valores elétricos que ninguém publica para elas, e cada tipo de material tem os seus próprios valores iniciais de velocidade, avanço e profundidade por passagem para furar e fresar, sempre dentro dos limites do fuso.
 * As **definições**: o tema, o idioma, o tamanho útil da mesa, a velocidade da simulação (um trabalho demora o que a máquina demoraria, de x0,5 a x50), se o trabalho pergunta nas trocas de ferramenta e no arranque do fuso, e se esta janela abre diretamente da próxima vez. Os botões acendem-se sob o ponteiro e afundam-se ao premir.
 * **Pontes no exterior do painel:** na janela Painelização o exterior pode ser cortado com pontes que seguram as placas até serem partidas: quantas por lado, de que largura e onde (repartidas, perto das extremidades ou juntas ao centro); a vista do plano mostra os percursos cortados. O fabricante, a espessura e o tamanho da placa também se escolhem em listas pendentes.
@@ -241,7 +241,7 @@ Como as partes deste repositório se encaixam: quem o usa, o que contém e de qu
 * Uma janela Acerca de com a versão, a licença e a ligação em uso.
 * Definições em separadores com todos os modelos Bungard MTC e ATC (mesa, trocador de ferramentas, limites) e as unidades dos passos e das coordenadas (mm ou mil), tudo com efeito real no trabalho.
 * Um botão de emergência que se pode mostrar, esconder e arrastar; o Start apaga-se enquanto o trabalho corre e volta com Pausa ou Stop; a simulação continua em segundo plano.
-* Uma vista 2D que segue cada ferramenta, roda em conjunto os ficheiros de furação e de fresagem e move a placa; uma biblioteca com mais de cem materiais de base; sons no fim do trabalho e na troca de ferramenta.
+* Uma vista 2D que segue cada ferramenta, roda em conjunto os ficheiros de furação e de fresagem e move a placa; uma biblioteca com mais de 650 materiais de base; sons no fim do trabalho e na troca de ferramenta.
 * Ficheiros de outros programas: o contorno de uma placa Gerber (`.GKO`, `.GM1`, `.GML` ou um `.GBR` que se declara perfil) e um desenho DXF abrem-se como trabalhos de fresagem; os círculos e arcos dos ficheiros de traçado (`CI`, `AA`, `AR`) são cortados em cordas pelo ângulo de corda da configuração.
 * Um trabalho que não cabe na mesa é recusado antes de começar; a janela Abrir lista os últimos ficheiros abertos; a janela das ferramentas conta os furos de cada broca na placa e em todos os trabalhos, com um botão que repõe os contadores a zero.
 * A largura e a profundidade da placa trocam-se com um toque (um botão na janela das placas e um ícone na vista 2D que roda a placa sozinha, ficando o desenho onde está), porque uma placa que não cabe na máquina muitas vezes cabe rodada; as ferramentas da barra dos modelos ATC são desenhadas redondas em 3D; uma falha dentro de um trabalho para a máquina e é mostrada, e cada encerramento inesperado fica também em `eh3d-crash.log` na pasta de configuração.
@@ -293,7 +293,7 @@ Execute-o com `run.bat` (Windows) ou `./run.sh` (Linux e macOS); ambos compilam 
 
 ## 🧪 Testes
 
-A bateria tem 274 testes (`cargo test --features gui`). Verificam o lançador e o que memoriza, as definições, como um ficheiro de furação ou HP-GL se torna a cena, os perfis de máquina, o painel e a linha de comandos. Os motores que usa (protocolo, movimento, porta de segurança) são testados no EH3D-DRILLPRO e no EH3D-ROUTEPRO. A CI também executa `cargo fmt --check` e `cargo clippy` com os avisos como erros, e `python -I tools/ci_validate.py` verifica o manifesto, as versões, o registo de alterações e os oito README.
+A bateria tem 283 testes (`cargo test --features gui`). Verificam o lançador e o que memoriza, as definições, como um ficheiro de furação ou HP-GL se torna a cena, os perfis de máquina, o painel e a linha de comandos. Os motores que usa (protocolo, movimento, porta de segurança) são testados no EH3D-DRILLPRO e no EH3D-ROUTEPRO. A CI também executa `cargo fmt --check` e `cargo clippy` com os avisos como erros, e `python -I tools/ci_validate.py` verifica o manifesto, as versões, o registo de alterações e os oito README.
 
 ## 🏗️ Compilação e publicação
 
@@ -320,7 +320,7 @@ EH3D-BUNGARD-GUI/
 │   ├── gui/machine3d.rs                         a máquina da vista 3D: arranque, home, primeiro ponto, trabalho
 │   ├── gui/opener.rs  gui/board.rs              janelas Abrir, placa, ferramentas e definições
 │   ├── jobs.rs                                  um ficheiro de furação ou HP-GL convertido na cena que as vistas desenham
-│   ├── boards.rs                                a biblioteca de materiais de base
+│   ├── boards.rs                                a biblioteca de materiais de base, unida à base da suite
 │   ├── machines.rs                              os perfis das máquinas Bungard e a área de trabalho a partir da mesa
 │   ├── launcher.rs                              as opções do lançador, os programas clássicos e o que fica memorizado
 │   ├── link.rs                                  a ligação do ficheiro da máquina: que chaves escreve

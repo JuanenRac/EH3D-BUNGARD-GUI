@@ -4,6 +4,11 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **A failure to save the settings is told:** the settings file is written whole to a side file and renamed over the other (as the file that lets a job go on after a crash already was), and when it cannot be written the window shows the error instead of dropping it.
+- **The thickness and the copper typed for a material are remembered by that material:** a board whose maker gives no thickness or no copper takes back the values typed the last time it was chosen, kept in the settings file.
+- **A laminate that only the database lists is made of what its sheet says:** paper with phenolic is FR-2, paper with epoxy FR-3, a paper core with glass faces CEM-1, CEM-3 and polyimide where the resin says so, and glass and epoxy otherwise, instead of FR-4 for all of them; a hand-written material keeps the kind the database gives it, flexible laminates included.
+- **The sharing of the tools in the loads of the rack is a module without a window (`jobflow`),** with tests of a job of drilling and routing, and a test that runs such a job through the changer to the end.
+
 ## [0.2.2] - Material catalogue from the shared database, wider work area, tools bar, real 3D profiles and the program icon
 
 - **The board library reads the database of materials of the suite:** the hand-written materials keep their notes and their places and take the published values of the database where it describes the same material, and the laminates, PTFE and RF, ceramic filled and metal core boards of the database that a machine for boards can drill and mill (more than 650 in all) are listed too, narrowed by maker, by type and by the words typed in a search box; a material whose maker gives no thickness or no copper is listed and marked as without data of the manufacturer, and the window asks for those two values.

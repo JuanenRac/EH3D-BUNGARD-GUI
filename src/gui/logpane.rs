@@ -185,7 +185,12 @@ mod tests {
         let n = N.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
         let dir = std::env::temp_dir().join(format!("eh3d-bg-logpane-{}-{n}", std::process::id()));
         let _ = std::fs::create_dir_all(&dir);
-        for f in ["DRILLPRO.DCF", "DRILLPRO.DTD", "ROUTEPRO.RCF", "ROUTEPRO.RTD"] {
+        for f in [
+            "DRILLPRO.DCF",
+            "DRILLPRO.DTD",
+            "ROUTEPRO.RCF",
+            "ROUTEPRO.RTD",
+        ] {
             std::fs::copy(
                 Path::new(env!("CARGO_MANIFEST_DIR"))
                     .join("testdata")
@@ -202,7 +207,8 @@ mod tests {
     }
 
     #[test]
-    fn the_sizes_of_the_buttons_are_said_in_kilobytes_or_megabytes_and_the_settings_file_accepts_them() {
+    fn the_sizes_of_the_buttons_are_said_in_kilobytes_or_megabytes_and_the_settings_file_accepts_them(
+    ) {
         let said: Vec<String> = LOG_SIZES_KB.iter().map(|k| size_label(*k)).collect();
         assert_eq!(said, ["256 KB", "1 MB", "4 MB", "16 MB"]);
         assert_eq!(size_label(1536), "1536 KB");

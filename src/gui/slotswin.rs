@@ -557,6 +557,8 @@ mod tests {
         worst_mm: f64,
         /// Where the head was (x, y, z in mm) at the look that was the farthest from the design.
         worst_at: (f64, f64, f64),
+        /// The box of the places of the bar as the test took it: x from, x to, y from, y to and the least z.
+        bar_box: Option<(f64, f64, f64, f64, f64)>,
         /// The farthest the head was, while cutting, from the corner of the table along X and along Y.
         reach: (f64, f64),
     }
@@ -594,6 +596,7 @@ mod tests {
             cutting: 0,
             worst_mm: 0.0,
             worst_at: (0.0, 0.0, 0.0),
+            bar_box: bar,
             reach: (0.0, 0.0),
         };
         for _ in 0..400_000 {
@@ -866,9 +869,10 @@ mod tests {
             assert!(played.cutting > 0, "{file}: the router never cut");
             assert!(
                 played.worst_mm < 0.5,
-                "{file}: the head cut {} mm from the design, at {:?}",
+                "{file}: the head cut {} mm from the design, at {:?}; the bar of the test: {:?}",
                 played.worst_mm,
-                played.worst_at
+                played.worst_at,
+                played.bar_box
             );
             assert!(
                 played.reach.0 <= w && played.reach.1 <= d,

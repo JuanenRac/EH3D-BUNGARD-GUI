@@ -1027,11 +1027,16 @@ mod tests {
     fn words_in_literals(src: &str) -> Vec<String> {
         let code = src.split("\n#[cfg(test)]").next().unwrap_or(src);
         let mut found = Vec::new();
-        let mut before = "";
+        let mut in_log_call = false;
         for line in code.lines() {
             let t = line.trim_start();
-            let after_log_call = before.contains("applog::");
-            before = t;
+            // the literals of a call to the log are not for the screen, on the line of the call or on the ones that follow until it ends
+            let after_log_call = in_log_call;
+            if t.contains("applog::") {
+                in_log_call = !t.trim_end().ends_with(';');
+            } else if in_log_call && t.trim_end().ends_with(';') {
+                in_log_call = false;
+            }
             // messages of errors, of the log and of the checks are not for the screen
             if t.starts_with("//")
                 || after_log_call

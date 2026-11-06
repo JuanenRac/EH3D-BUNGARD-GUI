@@ -77,3 +77,8 @@ Visual check, not correct: "The visual check of the board is not correct." (and 
 A voice that has no recording of the check or of the stage notice plays the tone instead, so an older folder of voices still works.
 The recordings of the stage notice (stage.wav) are made with voices/make_stage.py, which needs Piper and the models of the voices of SOURCES.txt (it downloads nothing):
 `python voices/make_stage.py --models FOLDER_OF_THE_MODELS`, one voice after the other. Until a voice has its stage.wav, the tone plays.
+Every voice of SOURCES.txt has its stage.wav (31 of them), except zh/m: the Chinese model (chaowen) needs the Chinese text analysis of Piper
+(unicode-rbnf and g2pw, which brings a heavy machine-learning library), so it was not made; zh/m plays the tone until it is made or recorded by a person.
+To make them again: install Piper in a clean Python environment (`pip install piper-tts`), download only the .onnx and the .onnx.json of each voice
+from https://huggingface.co/rhasspy/piper-voices (path lang/lang_REGION/voice/quality/) into one folder outside the repository, and run
+make_stage.py with `--force`. The speed is the same for all (`--length-scale 1.15`); the files last 2 to 5 seconds.

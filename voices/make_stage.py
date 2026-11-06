@@ -62,7 +62,7 @@ STAGE = {
 # check that the new file lasts as the sentence should against finished.wav and change it with --length-scale if it does not.
 LENGTH_SCALE = 1.15
 
-LINE = re.compile(r"^([A-Za-z-]+)/([fm]): (\S+) - (.*)$")
+LINE = re.compile(r"^([A-Za-z-]+)/([fm]): (\S+)( \([^)]*\))? - (.*)$")
 SPEAKER = re.compile(r"speaker (\d+)")
 
 
@@ -73,8 +73,8 @@ def voices():
         m = LINE.match(raw.strip())
         if not m:
             continue
-        lang, gender, name, rest = m.groups()
-        sp = SPEAKER.search(rest)
+        lang, gender, name, paren, rest = m.groups()
+        sp = SPEAKER.search((paren or "") + " " + rest)
         found.append((lang, gender, name, int(sp.group(1)) if sp else None))
     return found
 

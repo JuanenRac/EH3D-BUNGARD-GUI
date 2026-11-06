@@ -62,6 +62,9 @@ fn design_w() -> f32 {
     crate::panes::board_width()
 }
 const DESIGN_H: f32 = 900.0;
+/// The height of the card of the numbers and the buttons of the job under the views, and the width of each of the four blocks of text in it.
+const HUD_H: f32 = 240.0;
+const HUD_BLOCK_W: f32 = 246.0;
 /// The buttons of the top bar: where they start along the bar and how wide each is.
 const TOP_BAR_FROM: f32 = 280.0;
 const TOP_BUTTON_W: f32 = 112.0;
@@ -454,6 +457,12 @@ pub struct App {
     rack_active: bool,
     rack_skip: usize,
     rack_no: (usize, usize),
+    /// How many places of the load the pieces that already ran take (the next piece takes its tools from the places after them).
+    rack_first: usize,
+    /// The program that ran last in this load left its last tool in the chuck for the next one.
+    rack_chain: bool,
+    /// The drilling is done and the routing waits for the person to accept (the window that follows the process); the pieces still to run wait in the same lists.
+    stage_wait: bool,
     /// The clock of the animations, and when the screen and the window that are on show began to show (in seconds of that clock).
     anim0: Instant,
     anim_screen: (Option<Screen>, f32),
@@ -665,6 +674,9 @@ impl App {
             rack_active: false,
             rack_skip: 0,
             rack_no: (0, 0),
+            rack_first: 0,
+            rack_chain: false,
+            stage_wait: false,
             anim0: Instant::now(),
             anim_screen: (None, 0.0),
             anim_modal: (None, 0.0),
@@ -1210,6 +1222,22 @@ impl App {
         let lent_bar = self
             .bar_for_job(program)
             .map(|line| self.lend_bar(program, &line));
+        // the end of a program that another one follows is not the end of the job: the engine does not sound it (the notice between the parts is the GUI's)
+        let more_follows = self.next_program().is_some();
+        let (rack_first, rack_carry_in, rack_carry_out) = if self.rack_active {
+            (
+                self.rack_first,
+                self.rack_first > 0 && self.rack_chain,
+                // the last tool stays in the chuck only for a program that changes its tools by itself
+                self.rack_pieces
+                    .first()
+                    .is_some_and(|piece| self.program_has_rack(piece.0)),
+            )
+        } else {
+            (0, false, false)
+        };
+        self.rack_chain = rack_carry_out;
+        self.set_end_sound(program, more_follows);
         if !started {
             let side = self.side_mut(program);
             // nothing outside the table of the machine is sent to it: those vectors are left out and counted
@@ -1221,6 +1249,9 @@ impl App {
                 skip_tools,
                 table: levelled,
                 clip_mm: Some((area.width_mm, area.depth_mm)),
+                rack_first,
+                rack_carry_in,
+                rack_carry_out,
                 ..Default::default()
             });
             side.engine.start();
@@ -1286,6 +1317,97 @@ impl App {
         }
     }
 
+    /// The program that runs after the one that runs now, if the job has one: the next piece of the load of the rack, the first of the next load, or the next of
+    /// the queue.
+    pub(crate) fn next_program(&self) -> Option<Program> {
+        if self.rack_active {
+            self.rack_pieces
+                .first()
+                .or_else(|| self.rack_loads.first().and_then(|l| l.first()))
+                .map(|x| x.0)
+        } else {
+            self.job_queue.first().copied()
+        }
+    }
+
+    /// Whether a program of the job is planned with the tool changer: its machine file has the places of the bar and asks for the automatic change, or the places are lent to it.
+    fn program_has_rack(&self, p: Program) -> bool {
+        let side = match p {
+            Program::Drill => &self.drill,
+            Program::Route => &self.route,
+        };
+        self.bar_for_job(p).is_some()
+            || side
+                .engine
+                .settings()
+                .is_some_and(|s| s.auto_change && !s.atc.is_empty())
+    }
+
+    /// Whether the end of this program is a part of the job being done and not the end of the job: the drilling is done and the routing comes next.
+    fn stage_follows(&self, finished: Program) -> bool {
+        finished == Program::Drill && self.next_program() == Some(Program::Route)
+    }
+
+    /// Gives the engine of a program the sounds of the window, but with no sound of the end of the job when another program follows it.
+    fn set_end_sound(&mut self, program: Program, quiet: bool) {
+        let mut conn = self.conn.clone();
+        if quiet {
+            conn.sound_finish = eh3d_drillpro::protocol::sound::SoundSetting::Off;
+        }
+        self.side_mut(program).engine.set_connection(conn);
+    }
+
+    /// Marks the paths the head is cutting at this moment: the ones of the tools that are on, along the stretch the head has reached. The head cuts when the tool is into
+    /// the board by more than the margin of the settings; above that it travels from one path to the next and marks nothing.
+    pub(crate) fn mark_route(&mut self, off: &[u8]) {
+        let cutting = self
+            .route
+            .engine
+            .depth_below_surface_mm()
+            .is_some_and(|d| d >= self.settings.route_mark_min_depth_mm);
+        let Some(head) = self.route.engine.head_mm() else {
+            return;
+        };
+        if !cutting {
+            return;
+        }
+        let tol = self.settings.route_mark_tolerance_mm;
+        for q in self
+            .route
+            .scene
+            .paths
+            .iter_mut()
+            .filter(|q| !off.contains(&q.tool))
+        {
+            crate::jobinfo::advance_reached(q, (head.0, head.1), tol);
+        }
+    }
+
+    /// Advances the routing job by `dt` seconds of machine time in steps of at most the length the settings say, marking after each one the paths the head cuts.
+    fn route_step(&mut self, dt: f64, off: &[u8]) -> bool {
+        let step = self.settings.route_mark_step_s.max(0.005);
+        let mut left = dt;
+        let mut more = true;
+        // a very fast simulation does the rest in one go
+        for _ in 0..400 {
+            if left <= 0.0 || !more {
+                break;
+            }
+            let d = left.min(step);
+            left -= d;
+            more = self.route.engine.tick_for(d);
+            self.mark_route(off);
+            if self.route.engine.question().is_some() {
+                return more;
+            }
+        }
+        if left > 0.0 && more {
+            more = self.route.engine.tick_for(left);
+            self.mark_route(off);
+        }
+        more
+    }
+
     /// Adds the holes of the drilling job that are done to the counts of their drills, which the settings keep.
     fn count_holes(&mut self) {
         let mut any = false;
@@ -1300,6 +1422,7 @@ impl App {
 
     fn stop_job(&mut self) {
         self.paused = false;
+        self.stage_wait = false;
         self.job_queue.clear();
         self.rack_clear();
         self.clear_recovery();
@@ -1359,7 +1482,13 @@ impl App {
             }
             return;
         }
-        let more = side.engine.tick_for(dt);
+        // the routing goes on in short steps, looking at where the head is after each one, so that the paths are marked as they are cut
+        let more = if p == Program::Route {
+            self.route_step(dt, &off)
+        } else {
+            side.engine.tick_for(dt)
+        };
+        let side = self.side_mut(p);
         let done = side.engine.done();
         let view = side.engine.job_view();
         // the head goes where the steps of the plan take it (the trips to the tool bar included); an engine that does not follow them says where the next hole is
@@ -1400,8 +1529,8 @@ impl App {
                 }
                 side.last_done += 1;
             }
-        } else {
-            // a job that went on leaves out the paths that were done: the rest share the percent
+        } else if track.is_none() {
+            // an engine that does not follow the steps of the plan: a job that went on leaves out the paths that were done, and the rest share the percent
             let total: usize = side
                 .scene
                 .paths
@@ -1461,26 +1590,13 @@ impl App {
             if p == Program::Drill {
                 self.count_holes();
             }
-            // the next program of the job (the routing after the drilling) goes on without the machine going home
-            if self.rack_active {
-                if !self.rack_pieces.is_empty() {
-                    let next = self.rack_pieces.remove(0);
-                    self.rack_only = Some(next.clone());
-                    self.begin_program(next.0, 0);
-                } else if !self.rack_loads.is_empty() {
-                    // the rack has to be loaded again
-                    self.rack_only = None;
-                    self.m3d.finish();
-                    self.rack_next();
-                } else {
-                    self.rack_clear();
-                    self.m3d.finish();
-                }
-            } else if self.job_queue.is_empty() {
-                self.m3d.finish();
+            if self.stage_follows(p) {
+                // the drilling is done and the routing comes next: the person is told (by sound and in a window) and goes on when ready
+                self.stage_wait = true;
+                eh3d_drillpro::protocol::sound::play_stage(&self.conn.sound_finish);
+                self.message = Some(self.tr(Text::StageDoneTitle).to_string());
             } else {
-                let next = self.job_queue.remove(0);
-                self.begin_program(next, 0);
+                self.continue_job();
             }
         } else {
             self.save_recovery();
@@ -1490,6 +1606,41 @@ impl App {
         if let Some(h) = head {
             self.m3d.follow(h);
         }
+    }
+
+    /// Goes on with the next program of the job (the routing after the drilling) without the machine going home; when there is none the job is over, and the
+    /// person is told that the board can be taken out.
+    fn continue_job(&mut self) {
+        self.stage_wait = false;
+        if self.rack_active {
+            if !self.rack_pieces.is_empty() {
+                // the next program takes its tools from the places after the ones of the program that ran, and the chuck is handed on to it
+                self.rack_first += self.rack_only.as_ref().map_or(0, |(_, t)| t.len());
+                let next = self.rack_pieces.remove(0);
+                self.rack_only = Some(next.clone());
+                self.begin_program(next.0, 0);
+            } else if !self.rack_loads.is_empty() {
+                // the rack has to be loaded again
+                self.rack_only = None;
+                self.m3d.finish();
+                self.rack_next();
+            } else {
+                self.rack_clear();
+                self.m3d.finish();
+                self.job_over();
+            }
+        } else if self.job_queue.is_empty() {
+            self.m3d.finish();
+            self.job_over();
+        } else {
+            let next = self.job_queue.remove(0);
+            self.begin_program(next, 0);
+        }
+    }
+
+    /// The whole job is done: the text that goes with the sound of the end.
+    fn job_over(&mut self) {
+        self.message = Some(self.tr(Text::JobFinishedRemove).to_string());
     }
 
     fn choose(&mut self, c: Choice) {
@@ -1712,6 +1863,7 @@ impl App {
             Act::BrowseBack => self.browse_back(),
             Act::BrowseOpen => self.browse_open(),
             Act::ResetView(z) => self.reset_view(z),
+            Act::Start if self.stage_wait && !self.estop => self.continue_job(),
             Act::Start => {
                 if self.paused {
                     self.paused = false;
@@ -2711,7 +2863,7 @@ impl App {
         self.top_bar(cv, true);
         let sizes = self.sizes();
         let (left_w, mid_w, right_w) = crate::panes::split(self.panes.0, self.panes.1);
-        let (top, hud_y) = (84.0, DESIGN_H - 196.0);
+        let (top, hud_y) = (84.0, DESIGN_H - HUD_H - 20.0);
         let card_h = hud_y - top - 18.0;
 
         // ---- left: the job
@@ -3207,7 +3359,7 @@ impl App {
         }
 
         // ---- bottom: the numbers and the buttons
-        cv.card(20.0, hud_y, design_w() - 40.0, 176.0, false, None);
+        cv.card(20.0, hud_y, design_w() - 40.0, HUD_H, false, None);
         let view = self.running_view();
         let vals = [
             (
@@ -3302,17 +3454,39 @@ impl App {
             18.0,
             col(t.text),
         );
-        // what is being done: the tool, its steps, the next one, the tools finished, the time left and the state (smaller when long, cut when still too long)
-        if let Some(line) = self.hud_info_line() {
-            cv.text_fit(
-                44.0,
-                hud_y + 168.0,
-                Align2::LEFT_BOTTOM,
-                &line,
-                14.0,
-                col(t.text),
-                1020.0,
-            );
+        // what is being done, in four blocks (small label, big value, line of detail): the tool and its step, the times, the position and the depth, and the counters
+        if let Some(blocks) = self.hud_blocks() {
+            let width = HUD_BLOCK_W;
+            for (i, b) in blocks.iter().enumerate() {
+                let x = 44.0 + i as f32 * (width + 10.0);
+                cv.text_fit(
+                    x,
+                    hud_y + 178.0,
+                    Align2::LEFT_BOTTOM,
+                    &b.label.to_uppercase(),
+                    11.0,
+                    col(t.dim),
+                    width,
+                );
+                cv.text_fit(
+                    x,
+                    hud_y + 206.0,
+                    Align2::LEFT_BOTTOM,
+                    &b.value,
+                    21.0,
+                    col(t.text),
+                    width,
+                );
+                cv.text_fit(
+                    x,
+                    hud_y + 228.0,
+                    Align2::LEFT_BOTTOM,
+                    &b.detail,
+                    14.0,
+                    col(t.dim),
+                    width,
+                );
+            }
         }
         // the buttons of the job: Start goes out when the job runs and comes back with Pause or Stop; Pause and Stop work only while it runs
         let (can_start, can_pause, can_stop) = self.job_buttons();
@@ -3420,6 +3594,42 @@ impl App {
                     Act::Answer(false),
                 );
             }
+        }
+        // ---- the drilling is done and the routing comes next: the person follows the process when ready
+        if self.stage_wait {
+            cv.p.rect_filled(
+                Rect::from_min_size(Pos2::new(0.0, 0.0), Vec2::new(10_000.0, 10_000.0)),
+                0.0,
+                alpha(Color32::BLACK, 150),
+            );
+            cv.card(400.0, 300.0, 800.0, 260.0, true, None);
+            cv.text_fit(
+                800.0,
+                400.0,
+                Align2::CENTER_BOTTOM,
+                self.tr(Text::StageDoneTitle),
+                26.0,
+                col(t.text),
+                740.0,
+            );
+            cv.button(
+                450.0,
+                450.0,
+                460.0,
+                70.0,
+                self.tr(Text::StageFollow),
+                col(t.ok),
+                Act::Start,
+            );
+            cv.button(
+                940.0,
+                450.0,
+                210.0,
+                70.0,
+                self.tr(Text::Abort),
+                col(t.danger),
+                Act::Stop,
+            );
         }
         self.paint_summary(cv);
     }

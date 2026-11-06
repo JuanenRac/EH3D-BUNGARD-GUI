@@ -184,6 +184,23 @@ pub(super) fn is_job(name: &str) -> bool {
 }
 
 /// Breaks a text into lines of about `max` characters (at spaces; a text without spaces, as the Chinese and the Japanese, at any letter).
+/// How far the centre of the emergency button stays from the edges of the window (the plate and its halo are about this wide).
+pub(crate) const ESTOP_MARGIN: f32 = 58.0;
+
+/// The place of the emergency button brought inside the window: any point of the board the window is drawn on, whole button in view, on a narrow
+/// window as on a wide one (the board is wider the wider the window is).
+pub(crate) fn estop_inside(pos: (f32, f32)) -> (f32, f32) {
+    let (w, h) = (design_w(), DESIGN_H);
+    let fit = |v: f32, max: f32| {
+        if v.is_finite() {
+            v.clamp(ESTOP_MARGIN, (max - ESTOP_MARGIN).max(ESTOP_MARGIN))
+        } else {
+            ESTOP_MARGIN
+        }
+    };
+    (fit(pos.0, w), fit(pos.1, h))
+}
+
 pub(crate) fn wrap(s: &str, max: usize) -> Vec<String> {
     let mut lines = Vec::new();
     let mut cur = String::new();
@@ -819,8 +836,7 @@ impl App {
             }
             Zone::Estop => {
                 let (x, y) = self.settings.estop_pos;
-                self.settings.estop_pos =
-                    ((x + d.0).clamp(50.0, 1550.0), (y + d.1).clamp(100.0, 850.0));
+                self.settings.estop_pos = estop_inside((x + d.0, y + d.1));
             }
             Zone::Machine => {
                 if pan {

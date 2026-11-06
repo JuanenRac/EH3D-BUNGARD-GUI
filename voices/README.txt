@@ -70,7 +70,8 @@ that the name of the voice and its pitch say; listen to them before you rely on 
 The sentences
 -------------
 Job ended:  "The job has finished. You may remove the board." (and the same in each language)
+Stage done: "The drilling is done. Now comes the routing."          (LANGUAGE/GENDER/stage.wav; and the same in each language)
 Tool:       "Please change the tool."                          (and the same in each language)
 Visual check, correct:     "The visual check of the board is correct."     (and the same in each language)
 Visual check, not correct: "The visual check of the board is not correct." (and the same in each language)
-A voice that has no recording of the check plays the tone instead, so an older folder of voices still works.
+A voice that has no recording of the check or of the stage notice plays the tone instead, so an older folder of voices still works.

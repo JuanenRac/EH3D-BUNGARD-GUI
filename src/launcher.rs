@@ -153,6 +153,14 @@ pub struct Settings {
     /// The width of the left pane and of the right pane of the main screen, in the units of its drawing board (the middle one is what is left).
     pub pane_left: f32,
     pub pane_right: f32,
+    /// Minutes the local time is from universal time, for the hour the job is expected to end at (the standard library has no time zones).
+    pub clock_utc_offset_min: i32,
+    /// How near the head of a routing job has to pass to a drawn path to mark it as cut, in mm, and the longest stretch of machine time the simulation goes on
+    /// before the head is looked at again, in seconds.
+    pub route_mark_tolerance_mm: f64,
+    pub route_mark_step_s: f64,
+    /// How far into the board (in mm) the tool has to be for the head to count as cutting; above that the head is travelling and marks nothing.
+    pub route_mark_min_depth_mm: f64,
 }
 
 /// Where the latest release of this program is asked for (the API of GitHub); the settings file can point it elsewhere.
@@ -203,6 +211,10 @@ impl Default for Settings {
             all_makers: false,
             pane_left: crate::panes::DEFAULT_LEFT,
             pane_right: crate::panes::DEFAULT_RIGHT,
+            clock_utc_offset_min: 0,
+            route_mark_tolerance_mm: 0.35,
+            route_mark_step_s: 0.05,
+            route_mark_min_depth_mm: 0.02,
         }
     }
 }
@@ -285,7 +297,10 @@ impl Settings {
                 "estop_pos" => {
                     if let Some((x, y)) = v.split_once(',') {
                         if let (Ok(x), Ok(y)) = (x.trim().parse::<f32>(), y.trim().parse::<f32>()) {
-                            s.estop_pos = (x.clamp(0.0, 1600.0), y.clamp(0.0, 900.0));
+                            s.estop_pos = (
+                                x.clamp(0.0, crate::panes::BOARD_W_MAX),
+                                y.clamp(0.0, crate::panes::BOARD_H),
+                            );
                         }
                     }
                 }
@@ -318,6 +333,38 @@ impl Settings {
                     s.open_preview = !matches!(v.trim(), "no" | "off" | "false" | "0")
                 }
                 "fullscreen" => s.fullscreen = matches!(v.trim(), "yes" | "on" | "true" | "1"),
+                "clock_utc_offset_minutes" => {
+                    s.clock_utc_offset_min = v
+                        .trim()
+                        .parse()
+                        .ok()
+                        .filter(|m: &i32| (-14 * 60..=14 * 60).contains(m))
+                        .unwrap_or(s.clock_utc_offset_min)
+                }
+                "route_mark_tolerance_mm" => {
+                    s.route_mark_tolerance_mm = v
+                        .trim()
+                        .parse()
+                        .ok()
+                        .filter(|x: &f64| (0.01..=5.0).contains(x))
+                        .unwrap_or(s.route_mark_tolerance_mm)
+                }
+                "route_mark_min_depth_mm" => {
+                    s.route_mark_min_depth_mm = v
+                        .trim()
+                        .parse()
+                        .ok()
+                        .filter(|x: &f64| (0.0..=5.0).contains(x))
+                        .unwrap_or(s.route_mark_min_depth_mm)
+                }
+                "route_mark_step_s" => {
+                    s.route_mark_step_s = v
+                        .trim()
+                        .parse()
+                        .ok()
+                        .filter(|x: &f64| (0.005..=1.0).contains(x))
+                        .unwrap_or(s.route_mark_step_s)
+                }
                 "all_makers" => s.all_makers = matches!(v.trim(), "yes" | "on" | "true" | "1"),
                 "panes" => {
                     if let Some((l, r)) = crate::panes::parse(v) {
@@ -404,6 +451,13 @@ impl Settings {
             one_line(&self.machine_name),
             one_line(&self.machine_make),
             self.profile.to_text()
+        ));
+        out.push_str(&format!(
+            "clock_utc_offset_minutes = {}\nroute_mark_tolerance_mm = {}\nroute_mark_step_s = {}\nroute_mark_min_depth_mm = {}\n",
+            self.clock_utc_offset_min,
+            self.route_mark_tolerance_mm,
+            self.route_mark_step_s,
+            self.route_mark_min_depth_mm
         ));
         for (key, (t, c)) in &self.material_values {
             out.push_str(&format!("material_values = {}|{t}|{c}\n", one_line(key)));
@@ -650,6 +704,10 @@ mod tests {
             updates_api_url: "http://127.0.0.1:9/latest".to_string(),
             updates_last_check: 99,
             updates_timeout_s: 8,
+            clock_utc_offset_min: 120,
+            route_mark_tolerance_mm: 0.5,
+            route_mark_step_s: 0.1,
+            route_mark_min_depth_mm: 0.05,
         };
         s.save(&path).unwrap();
         assert_eq!(Settings::load(&path), s);
@@ -744,6 +802,34 @@ mod tests {
             Settings::parse("updates_interval_hours = 0").updates_interval_h,
             24
         );
+    }
+
+    #[test]
+    fn the_clock_offset_and_the_marking_of_the_routing_are_settings_with_limits() {
+        let d = Settings::default();
+        assert_eq!(d.clock_utc_offset_min, 0);
+        let s = Settings::parse(
+            "clock_utc_offset_minutes = 60
+route_mark_tolerance_mm = 0.8
+route_mark_step_s = 0.2
+",
+        );
+        assert_eq!(s.clock_utc_offset_min, 60);
+        assert_eq!(s.route_mark_tolerance_mm, 0.8);
+        assert_eq!(s.route_mark_step_s, 0.2);
+        let back = Settings::parse(&s.to_text());
+        assert_eq!(back.clock_utc_offset_min, 60);
+        assert_eq!(back.route_mark_step_s, 0.2);
+        // values out of range keep the default
+        let wild = Settings::parse(
+            "clock_utc_offset_minutes = 5000
+route_mark_tolerance_mm = 0
+route_mark_step_s = 99
+",
+        );
+        assert_eq!(wild.clock_utc_offset_min, 0);
+        assert_eq!(wild.route_mark_tolerance_mm, d.route_mark_tolerance_mm);
+        assert_eq!(wild.route_mark_step_s, d.route_mark_step_s);
     }
 
     #[test]

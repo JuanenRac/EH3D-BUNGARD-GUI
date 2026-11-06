@@ -240,7 +240,7 @@ impl App {
         (
             (!running || self.paused) && !self.estop,
             running && !self.paused,
-            running,
+            running || self.stage_wait,
         )
     }
 
@@ -251,7 +251,8 @@ impl App {
             return;
         }
         let t = cv.t.clone();
-        let (ex, ey) = self.settings.estop_pos;
+        // a place saved on a wider window is brought inside this one
+        let (ex, ey) = super::extra::estop_inside(self.settings.estop_pos);
         let r = 46.0;
         let rect = cv.rect(ex - r, ey - r, r * 2.0, r * 2.0);
         let (hover, down) = cv.touch(rect);
@@ -1630,8 +1631,8 @@ EOF
     #[test]
     fn the_emergency_stop_starts_clear_of_the_bar_of_numbers_and_of_the_buttons_of_the_job() {
         let (x, y) = crate::launcher::Settings::default().estop_pos;
-        // the button is about a hundred wide; the bar of numbers begins at DESIGN_H - 196 and the buttons of the job are in it
-        let hud_top = DESIGN_H - 196.0;
+        // the button is about a hundred wide; the bar of numbers begins at DESIGN_H - HUD_H - 20 and the buttons of the job are in it
+        let hud_top = DESIGN_H - HUD_H - 20.0;
         assert!(
             y + 60.0 < hud_top,
             "the stop at y = {y} reaches the bar at {hud_top}"
@@ -1661,7 +1662,11 @@ EOF
 
     fn run_to_the_end(a: &mut App) {
         for _ in 0..40_000 {
-            if a.running.is_none() && a.job_queue.is_empty() {
+            if a.stage_wait {
+                // the drilling is done: the routing is followed
+                a.act(Act::Start);
+            }
+            if a.running.is_none() && a.job_queue.is_empty() && !a.stage_wait {
                 return;
             }
             a.tick();
@@ -1678,6 +1683,9 @@ EOF
         assert_eq!(a.job_queue, vec![Program::Route]);
         let mut routed_after_drilling = false;
         for _ in 0..40_000 {
+            if a.stage_wait {
+                a.act(Act::Start);
+            }
             if a.running == Some(Program::Route) {
                 routed_after_drilling = a.drill.scene.holes.iter().all(|h| h.done);
                 break;
@@ -1695,6 +1703,147 @@ EOF
             .paths
             .iter()
             .all(|q| q.reached == q.points.len()));
+    }
+
+    #[test]
+    fn when_the_drilling_is_done_the_routing_waits_for_the_person_and_only_the_end_of_the_routing_says_the_board_can_be_taken_out(
+    ) {
+        let mut a = app_with_both();
+        a.settings.holes_drilled.clear();
+        a.act(Act::Start);
+        let mut waited = false;
+        for _ in 0..40_000 {
+            if a.stage_wait {
+                waited = true;
+                break;
+            }
+            a.tick();
+        }
+        assert!(
+            waited,
+            "the drilling ended and nothing said the routing is next"
+        );
+        assert!(a.running.is_none());
+        assert!(a.drill.scene.holes.iter().all(|h| h.done));
+        assert!(a.route.scene.paths.iter().all(|q| q.reached == 0));
+        assert_eq!(a.next_program(), Some(Program::Route));
+        // the text is the one of the stage, not the one of the end of the job
+        assert_eq!(a.message.as_deref(), Some(a.tr(Text::StageDoneTitle)));
+        assert_ne!(a.tr(Text::StageDoneTitle), a.tr(Text::JobFinishedRemove));
+        // nothing moves while it waits, and Stop leaves the routing (and the job) out
+        for _ in 0..50 {
+            a.tick();
+        }
+        assert!(a.stage_wait && a.running.is_none());
+        assert!(a.job_buttons().2, "Stop works while the stage waits");
+        // Start follows the routing
+        a.act(Act::Start);
+        assert!(!a.stage_wait);
+        assert_eq!(a.running, Some(Program::Route));
+        run_to_the_end(&mut a);
+        assert!(a
+            .route
+            .scene
+            .paths
+            .iter()
+            .all(|q| q.reached == q.points.len()));
+        assert_eq!(a.message.as_deref(), Some(a.tr(Text::JobFinishedRemove)));
+    }
+
+    #[test]
+    fn the_head_cuts_along_the_drawn_paths_and_the_paths_are_marked_as_it_goes() {
+        let mut a = app_with_both();
+        a.settings.holes_drilled.clear();
+        // only the routing
+        a.act(Act::JobPart(Program::Drill));
+        a.fixed_dt = Some(0.2);
+        a.act(Act::Start);
+        assert_eq!(a.running, Some(Program::Route));
+        let (mut cutting, mut partial, mut last) = (0usize, false, 0usize);
+        let mut worst = 0.0f64;
+        for _ in 0..400_000 {
+            if a.running.is_none() {
+                break;
+            }
+            a.tick();
+            if let (Some(h), Some(d)) = (
+                a.route.engine.head_mm(),
+                a.route.engine.depth_below_surface_mm(),
+            ) {
+                if d >= a.settings.route_mark_min_depth_mm {
+                    cutting += 1;
+                    // the head is on a segment of what is drawn
+                    let near = a
+                        .route
+                        .scene
+                        .paths
+                        .iter()
+                        .flat_map(|q| q.points.windows(2))
+                        .map(|w| crate::jobinfo::point_segment_dist((h.0, h.1), w[0], w[1]))
+                        .fold(f64::MAX, f64::min);
+                    worst = worst.max(near);
+                }
+            }
+            let total: usize = a.route.scene.paths.iter().map(|q| q.reached).sum();
+            assert!(total >= last, "a mark went back");
+            last = total;
+            partial |= a
+                .route
+                .scene
+                .paths
+                .iter()
+                .any(|q| q.reached > 0 && q.reached < q.points.len());
+        }
+        assert!(a.running.is_none(), "the routing did not end");
+        assert!(cutting > 3, "the head never cut: {cutting}");
+        assert!(
+            worst < 1.0,
+            "the head cut {worst} mm away from the paths that are drawn"
+        );
+        assert!(partial, "no path was marked part by part while it was cut");
+        assert!(a
+            .route
+            .scene
+            .paths
+            .iter()
+            .all(|q| q.reached == q.points.len()));
+    }
+
+    #[test]
+    fn stopping_at_the_stage_leaves_the_routing_undone() {
+        let mut a = app_with_both();
+        a.settings.holes_drilled.clear();
+        a.act(Act::Start);
+        for _ in 0..40_000 {
+            if a.stage_wait {
+                break;
+            }
+            a.tick();
+        }
+        assert!(a.stage_wait);
+        a.act(Act::Stop);
+        assert!(!a.stage_wait && a.running.is_none() && a.job_queue.is_empty());
+        assert!(a.route.scene.paths.iter().all(|q| q.reached == 0));
+    }
+
+    #[test]
+    fn a_drilling_that_nothing_follows_ends_the_job_with_no_stage() {
+        let mut a = app_with_both();
+        a.settings.holes_drilled.clear();
+        a.act(Act::JobPart(Program::Route));
+        a.act(Act::Start);
+        for _ in 0..40_000 {
+            assert!(
+                !a.stage_wait,
+                "a stage was announced with no routing after it"
+            );
+            if a.running.is_none() {
+                break;
+            }
+            a.tick();
+        }
+        assert!(a.running.is_none());
+        assert_eq!(a.message.as_deref(), Some(a.tr(Text::JobFinishedRemove)));
     }
 
     #[test]
@@ -2032,7 +2181,34 @@ EOF
         a.drag(Zone::Estop, (30.0, -20.0), false);
         assert_eq!(a.settings.estop_pos, (x + 30.0, y - 20.0));
         a.drag(Zone::Estop, (50_000.0, 50_000.0), false);
-        assert_eq!(a.settings.estop_pos, (1550.0, 850.0));
+        let m = crate::gui::extra::ESTOP_MARGIN;
+        assert_eq!(a.settings.estop_pos, (design_w() - m, DESIGN_H - m));
+        a.drag(Zone::Estop, (-50_000.0, -50_000.0), false);
+        assert_eq!(a.settings.estop_pos, (m, m));
+    }
+
+    #[test]
+    fn the_emergency_button_can_be_dropped_anywhere_on_the_right_of_a_wide_window() {
+        let mut a = app();
+        let narrow = crate::panes::board_width();
+        crate::panes::set_board_width(crate::panes::BOARD_W_MAX);
+        let m = crate::gui::extra::ESTOP_MARGIN;
+        // the old limit was 1550: the strip to the right of it is reachable now, down to the edge of the window
+        a.settings.estop_pos = (1500.0, 300.0);
+        a.drag(Zone::Estop, (900.0, 0.0), false);
+        assert_eq!(a.settings.estop_pos, (crate::panes::BOARD_W_MAX - m, 300.0));
+        a.drag(Zone::Estop, (0.0, 1000.0), false);
+        assert_eq!(a.settings.estop_pos.1, DESIGN_H - m);
+        // a place saved on the wide window is drawn inside a narrow one
+        crate::panes::set_board_width(crate::panes::BOARD_W);
+        let (x, y) = crate::gui::extra::estop_inside(a.settings.estop_pos);
+        assert!(x <= crate::panes::BOARD_W - m && y <= DESIGN_H - m);
+        // a number that is not a number does not lose the button
+        assert_eq!(
+            crate::gui::extra::estop_inside((f32::NAN, f32::INFINITY)),
+            (m, m)
+        );
+        crate::panes::set_board_width(narrow);
     }
 
     #[test]

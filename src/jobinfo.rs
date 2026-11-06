@@ -110,6 +110,73 @@ pub fn clock(s: u64) -> String {
     }
 }
 
+/// The distance in mm from a point to the segment `a`-`b`.
+pub fn point_segment_dist(p: (f64, f64), a: (f64, f64), b: (f64, f64)) -> f64 {
+    let (dx, dy) = (b.0 - a.0, b.1 - a.1);
+    let len2 = dx * dx + dy * dy;
+    let t = if len2 > 0.0 {
+        (((p.0 - a.0) * dx + (p.1 - a.1) * dy) / len2).clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
+    (p.0 - (a.0 + t * dx)).hypot(p.1 - (a.1 + t * dy))
+}
+
+/// Marks how far a path has been cut when the cutting tool is at `at`: the path advances to the first segment, from the one it has reached, that the tool is within `tol` mm
+/// of. The points before the tool are passed, and the end of the segment only when the tool is at it. It never goes back, and a closed path whose last point is its first is not
+/// finished when the tool is at the start, because the search begins where the path left off.
+pub fn advance_reached(path: &mut Path, at: (f64, f64), tol: f64) {
+    let n = path.points.len();
+    if n == 0 || path.reached >= n {
+        return;
+    }
+    if n == 1 {
+        let p = path.points[0];
+        if (at.0 - p.0).hypot(at.1 - p.1) <= tol {
+            path.reached = 1;
+        }
+        return;
+    }
+    for i in path.reached.saturating_sub(1)..n - 1 {
+        let (a, b) = (path.points[i], path.points[i + 1]);
+        if point_segment_dist(at, a, b) <= tol {
+            let at_end = (at.0 - b.0).hypot(at.1 - b.1) <= tol;
+            let count = if at_end { i + 2 } else { i + 1 };
+            path.reached = path.reached.max(count);
+            return;
+        }
+    }
+}
+
+/// The hour of the day (`HH:MM`) that comes `left_s` seconds after `now_unix_s` (seconds since 1970), on a clock that is `offset_min` minutes from universal time.
+pub fn end_clock(now_unix_s: u64, left_s: u64, offset_min: i32) -> String {
+    let t = now_unix_s.saturating_add(left_s) as i64 + i64::from(offset_min) * 60;
+    let day = t.rem_euclid(86_400);
+    format!("{:02}:{:02}", day / 3600, day % 3600 / 60)
+}
+
+/// The length of the paths in mm, as (cut so far, in all): a segment is cut when the point it ends at has been reached.
+pub fn route_lengths(paths: &[Path]) -> (f64, f64) {
+    let (mut done, mut total) = (0.0, 0.0);
+    for p in paths {
+        let reached = p.reached.min(p.points.len());
+        for (i, w) in p.points.windows(2).enumerate() {
+            let l = (w[1].0 - w[0].0).hypot(w[1].1 - w[0].1);
+            total += l;
+            if i + 1 < reached {
+                done += l;
+            }
+        }
+    }
+    (done, total)
+}
+
+/// The tool changes made so far and in all: every tool that has begun but the first came after a change.
+pub fn tool_changes(stats: &[ToolStat]) -> (usize, usize) {
+    let begun = stats.iter().filter(|s| s.done > 0).count();
+    (begun.saturating_sub(1), stats.len().saturating_sub(1))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -211,5 +278,121 @@ mod tests {
         assert_eq!(clock(65), "1:05");
         assert_eq!(clock(3 * 3600 + 7 * 60 + 9), "3:07:09");
         assert_eq!(clock(0), "0:00");
+    }
+
+    #[test]
+    fn the_hour_the_job_ends_follows_the_time_left_and_the_offset_of_the_clock() {
+        // 1970-01-01 10:00 universal time, an hour and a half left
+        let ten = 10 * 3600;
+        assert_eq!(end_clock(ten, 5400, 0), "11:30");
+        // a clock two hours ahead, and one that is behind midnight
+        assert_eq!(end_clock(ten, 5400, 120), "13:30");
+        assert_eq!(end_clock(ten, 0, -11 * 60), "23:00");
+        // past midnight it starts again
+        assert_eq!(end_clock(23 * 3600 + 50 * 60, 20 * 60, 0), "00:10");
+    }
+
+    #[test]
+    fn the_length_cut_counts_the_segments_whose_end_has_been_reached() {
+        let line = |reached| Path {
+            tool: 1,
+            points: vec![(0.0, 0.0), (3.0, 4.0), (3.0, 10.0)],
+            reached,
+        };
+        assert_eq!(route_lengths(&[line(0)]), (0.0, 11.0));
+        assert_eq!(route_lengths(&[line(1)]), (0.0, 11.0));
+        assert_eq!(route_lengths(&[line(2)]), (5.0, 11.0));
+        assert_eq!(route_lengths(&[line(3)]), (11.0, 11.0));
+        // more points reached than the path has cannot cut more than it has
+        assert_eq!(route_lengths(&[line(9)]), (11.0, 11.0));
+        assert_eq!(route_lengths(&[line(3), line(0)]), (11.0, 22.0));
+        assert_eq!(route_lengths(&[]), (0.0, 0.0));
+    }
+
+    #[test]
+    fn the_tool_changes_are_the_tools_begun_but_the_first_out_of_the_tools_but_the_first() {
+        let holes = [hole(1, 0.8, true), hole(2, 1.0, true), hole(3, 1.2, false)];
+        let s = tool_stats(&holes, &[]);
+        assert_eq!(tool_changes(&s), (1, 2));
+        assert_eq!(tool_changes(&[]), (0, 0));
+        let none = tool_stats(&[hole(1, 0.8, false)], &[]);
+        assert_eq!(tool_changes(&none), (0, 0));
+    }
+
+    #[test]
+    fn the_distance_to_a_segment_is_to_its_nearest_point() {
+        let (a, b) = ((0.0, 0.0), (10.0, 0.0));
+        assert_eq!(point_segment_dist((5.0, 3.0), a, b), 3.0);
+        assert_eq!(point_segment_dist((13.0, 4.0), a, b), 5.0);
+        assert_eq!(point_segment_dist((-3.0, 4.0), a, b), 5.0);
+        // a segment that is a point
+        assert_eq!(point_segment_dist((3.0, 4.0), a, a), 5.0);
+    }
+
+    fn square() -> Path {
+        Path {
+            tool: 1,
+            points: vec![
+                (0.0, 0.0),
+                (10.0, 0.0),
+                (10.0, 10.0),
+                (0.0, 10.0),
+                (0.0, 0.0),
+            ],
+            reached: 0,
+        }
+    }
+
+    #[test]
+    fn a_path_is_marked_as_the_cutting_tool_goes_along_it_and_a_closed_one_is_not_done_at_its_start(
+    ) {
+        let mut q = square();
+        // the tool plunges at the start: the first point is reached, and a closed path is not finished by it
+        advance_reached(&mut q, (0.0, 0.0), 0.3);
+        assert_eq!(q.reached, 1);
+        advance_reached(&mut q, (5.0, 0.1), 0.3);
+        assert_eq!(q.reached, 1);
+        advance_reached(&mut q, (10.0, 0.0), 0.3);
+        assert_eq!(q.reached, 2);
+        advance_reached(&mut q, (10.0, 6.0), 0.3);
+        assert_eq!(q.reached, 2);
+        advance_reached(&mut q, (10.0, 10.0), 0.3);
+        assert_eq!(q.reached, 3);
+        // the same position again marks nothing new, and the search goes on from the segment the path is at
+        advance_reached(&mut q, (10.0, 10.0), 0.3);
+        assert_eq!(q.reached, 3);
+        advance_reached(&mut q, (0.0, 5.0), 0.3);
+        assert_eq!(q.reached, 4);
+        advance_reached(&mut q, (0.0, 0.0), 0.3);
+        assert_eq!(q.reached, 5);
+        // done: nothing changes
+        advance_reached(&mut q, (10.0, 0.0), 0.3);
+        assert_eq!(q.reached, 5);
+    }
+
+    #[test]
+    fn a_tool_that_is_not_near_a_path_marks_nothing_and_one_that_skipped_a_stretch_catches_up() {
+        let mut q = square();
+        advance_reached(&mut q, (50.0, 50.0), 0.3);
+        assert_eq!(q.reached, 0);
+        // the tool is on the first path from the start and then on the third side: the first two are passed
+        advance_reached(&mut q, (0.0, 0.0), 0.3);
+        advance_reached(&mut q, (5.0, 10.0), 0.3);
+        assert_eq!(q.reached, 3);
+        // a path of one point is reached when the tool is at it
+        let mut dot = Path {
+            tool: 2,
+            points: vec![(4.0, 4.0)],
+            reached: 0,
+        };
+        advance_reached(&mut dot, (4.1, 4.0), 0.3);
+        assert_eq!(dot.reached, 1);
+        let mut empty = Path {
+            tool: 2,
+            points: vec![],
+            reached: 0,
+        };
+        advance_reached(&mut empty, (0.0, 0.0), 0.3);
+        assert_eq!(empty.reached, 0);
     }
 }

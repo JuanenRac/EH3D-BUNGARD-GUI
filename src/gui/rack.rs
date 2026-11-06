@@ -150,6 +150,8 @@ impl App {
         self.rack_pieces = pieces;
         self.rack_only = Some(first.clone());
         let skip = std::mem::take(&mut self.rack_skip);
+        self.rack_first = 0;
+        self.rack_chain = false;
         self.begin_program(first.0, skip);
     }
 
@@ -165,6 +167,8 @@ impl App {
         self.rack_pieces.clear();
         self.rack_only = None;
         self.rack_skip = 0;
+        self.rack_first = 0;
+        self.rack_chain = false;
     }
 
     /// The tool of a program with its diameter (drills) or its number (routers).
@@ -422,7 +426,11 @@ mod tests {
             if a.modal == Some(Modal::Rack) {
                 a.act(Act::RackGo);
             }
-            if a.running.is_none() && a.modal.is_none() && a.rack_loads.is_empty() {
+            if a.stage_wait {
+                a.act(Act::Start);
+            }
+            if a.running.is_none() && a.modal.is_none() && a.rack_loads.is_empty() && !a.stage_wait
+            {
                 break;
             }
         }
@@ -493,6 +501,34 @@ mod tests {
             .iter()
             .all(|q| q.reached == q.points.len()));
         assert!(a.running.is_none() && a.rack_loads.is_empty());
+    }
+
+    #[test]
+    fn with_the_changer_the_routing_takes_its_places_after_the_drills_and_gets_the_chuck_from_the_last_drill(
+    ) {
+        let mut a = app();
+        a.apply_model(crate::machines::Model::from_name("CCD/2 ATC").unwrap());
+        a.auto_ok = true;
+        a.fixed_dt = Some(2.0);
+        let drills = a.tools_to_do(Program::Drill).len();
+        assert!(drills > 0 && !a.tools_to_do(Program::Route).is_empty());
+        a.act(Act::Start);
+        a.act(Act::RackGo);
+        assert_eq!(a.rack_first, 0);
+        // the drilling hands its chuck on: the routing is the next piece of the same load
+        assert_eq!(a.rack_pieces.first().map(|x| x.0), Some(Program::Route));
+        for _ in 0..200_000 {
+            if a.stage_wait {
+                break;
+            }
+            a.tick();
+        }
+        assert!(a.stage_wait, "the drilling did not end");
+        // the rack is not asked for again and the window that follows the routing is shown
+        assert!(a.modal.is_none());
+        a.act(Act::Start);
+        assert_eq!(a.running, Some(Program::Route));
+        assert_eq!(a.rack_first, drills);
     }
 
     #[test]

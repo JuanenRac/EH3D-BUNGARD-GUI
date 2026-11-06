@@ -397,8 +397,11 @@ fn a_wrong_value_in_the_settings_keeps_the_default() {
 fn the_position_of_the_stop_button_is_kept_inside_the_drawing_board() {
     let s = Settings::parse("estop_pos = -50,5000\n");
     assert_eq!(s.estop_pos, (0.0, 900.0));
+    // a place on a wide window (the board grows to 2000 units) is kept; past the widest board it is brought back
     let s = Settings::parse("estop_pos = 1700.5, 12\n");
-    assert_eq!(s.estop_pos, (1600.0, 12.0));
+    assert_eq!(s.estop_pos, (1700.5, 12.0));
+    let s = Settings::parse("estop_pos = 2500, 12\n");
+    assert_eq!(s.estop_pos, (2000.0, 12.0));
 }
 
 #[test]

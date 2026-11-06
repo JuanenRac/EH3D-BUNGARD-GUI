@@ -1,8 +1,8 @@
-//! The line of the bar under the views that says what the work is doing: the tool in use (its number, diameter, kind, name in the catalogue and place in the rack),
-//! the steps of that tool, the next tool, the tools finished, the time left and the state. The numbers come from [`crate::jobinfo`].
+//! The blocks under the bar of progress that say what the work is doing: the tool in use and its step, the times, the position and the depth, and the counters.
+//! The numbers come from [`crate::jobinfo`].
 
 use super::*;
-use crate::jobinfo::{clock, locate, seconds_left, tool_stats};
+use crate::jobinfo::{clock, end_clock, locate, seconds_left, tool_stats};
 
 impl App {
     /// The state of the machine in a word: working with the kind of tool, holding, or waiting for a tool change.
@@ -59,60 +59,146 @@ impl App {
         out
     }
 
-    /// The text of the line: what is being done now and what is left. Nothing while the program has no steps.
-    pub(crate) fn hud_info_line(&self) -> Option<String> {
+    /// The blocks under the bar of progress: the tool and the step, the times, the position and the depth, and the counters. Each has a small label, a value in big
+    /// letters and a line of detail; lengths are in the units of the settings. Nothing while the program has no steps.
+    pub(crate) fn hud_blocks(&self) -> Option<Vec<HudBlock>> {
         let stats = tool_stats(&self.drill.scene.holes, &self.route.scene.paths);
         if stats.is_empty() {
             return None;
         }
         let drilling = self.running != Some(Program::Route);
-        let tool = self.running_view().and_then(|v| v.tool);
-        let at = locate(&stats, tool, drilling);
-        let mut parts: Vec<String> = Vec::new();
-        if let Some(c) = &at.current {
-            let mut now = self.hud_tool_name(c);
-            if let Some((slot, _, _)) = self
-                .rack_slot_tools()
-                .into_iter()
-                .find(|(_, p, t)| (*p == Program::Drill) == c.drill && *t == c.tool)
-            {
-                now.push_str(&format!(" | {} {slot}", self.tr(Text::HudRackSlot)));
+        let view = self.running_view();
+        let at = locate(&stats, view.as_ref().and_then(|v| v.tool), drilling);
+        let unit = self.len_unit();
+
+        // 1. the tool and the step
+        let (tool, step) = match &at.current {
+            Some(c) => {
+                let mut detail = format!(
+                    "{} {}/{}  \u{b7}  {}",
+                    self.tr(if c.drill {
+                        Text::HudHoleOne
+                    } else {
+                        Text::HudSegmentOne
+                    }),
+                    (c.done + 1).min(c.total),
+                    c.total,
+                    self.tr(if c.drill {
+                        Text::Drilling
+                    } else {
+                        Text::Routing
+                    })
+                );
+                if let Some((slot, _, _)) = self
+                    .rack_slot_tools()
+                    .into_iter()
+                    .find(|(_, p, t)| (*p == Program::Drill) == c.drill && *t == c.tool)
+                {
+                    detail.push_str(&format!("  \u{b7}  {} {slot}", self.tr(Text::HudRackSlot)));
+                }
+                (self.hud_tool_name(c), detail)
             }
-            parts.push(now);
-            parts.push(format!(
-                "{}/{} {}",
-                c.done,
-                c.total,
-                self.tr(if c.drill {
-                    Text::HudHolesLbl
-                } else {
-                    Text::HudSegmentsLbl
-                })
-            ));
-        }
-        if let Some(n) = &at.next {
-            parts.push(format!(
-                "{} {}",
-                self.tr(Text::HudNext),
-                self.hud_tool_name(n)
-            ));
-        }
-        parts.push(format!(
-            "{}/{} {}",
-            at.tools_done,
-            at.tools_total,
-            self.tr(Text::HudToolsLbl)
-        ));
+            None => ("--".to_string(), String::new()),
+        };
+        let step = match self.hud_state() {
+            Some(st) if !step.is_empty() => format!("{step}  \u{b7}  {st}"),
+            _ => step,
+        };
+
+        // 2. the times
+        let mut left_text = "--:--".to_string();
+        let mut spent_text = String::new();
         if let (Some(t0), Some(_)) = (self.job_started, self.running) {
-            if let Some(s) = seconds_left(t0.elapsed().as_secs_f64(), self.progress()) {
-                parts.push(format!("{} {}", clock(s), self.tr(Text::HudLeft)));
+            let spent = t0.elapsed().as_secs_f64();
+            spent_text = format!("{} {}", clock(spent as u64), self.tr(Text::HudElapsed));
+            if let Some(s) = seconds_left(spent, self.progress()) {
+                left_text = format!("{} {}", clock(s), self.tr(Text::HudLeft));
+                let now = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map_or(0, |d| d.as_secs());
+                spent_text.push_str(&format!(
+                    "  \u{b7}  {} {}",
+                    end_clock(now, s, self.settings.clock_utc_offset_min),
+                    self.tr(Text::HudEndsAt)
+                ));
             }
         }
-        if let Some(state) = self.hud_state() {
-            parts.push(state.to_string());
-        }
-        Some(parts.join("   |   "))
+
+        // 3. the position and the depth
+        let head = self.head();
+        let num = |v: Option<f64>| v.map_or("--".to_string(), |x| self.len_text(x));
+        let place = format!(
+            "X {}  Y {}  Z {} {unit}",
+            num(head.map(|h| h.0)),
+            num(head.map(|h| h.1)),
+            num(self.running.map(|_| self.head_lift_mm()))
+        );
+        let deep = format!(
+            "{} {} {unit}  \u{b7}  {} {}  \u{b7}  {} rpm",
+            self.tr(Text::HudDepth),
+            num(view.as_ref().map(|v| v.stroke_mm)),
+            self.tr(Text::HudFeed),
+            view.as_ref()
+                .map_or("--".to_string(), |v| v.z_feed.to_string()),
+            view.as_ref()
+                .map_or("--".to_string(), |v| v.rpm.to_string())
+        );
+
+        // 4. the counters
+        let (hd, ht) = stats
+            .iter()
+            .filter(|s| s.drill)
+            .fold((0, 0), |(d, t), s| (d + s.done, t + s.total));
+        let (cut, all) = crate::jobinfo::route_lengths(&self.route.scene.paths);
+        let (made, changes) = crate::jobinfo::tool_changes(&stats);
+        let holes = if ht > 0 {
+            format!("{hd}/{ht} {}", self.tr(Text::HudHolesLbl))
+        } else {
+            "--".to_string()
+        };
+        let routed = if all > 0.0 {
+            format!(
+                "{} {}/{} {unit}  \u{b7}  ",
+                self.tr(Text::Routing),
+                self.len_text(cut),
+                self.len_text(all)
+            )
+        } else {
+            String::new()
+        };
+        let counts = format!("{routed}{made}/{changes} {}", self.tr(Text::HudChanges));
+        Some(vec![
+            HudBlock {
+                label: self.tr(Text::HudBlkTool),
+                value: tool,
+                detail: step,
+            },
+            HudBlock {
+                label: self.tr(Text::HudBlkTime),
+                value: left_text,
+                detail: spent_text,
+            },
+            HudBlock {
+                label: self.tr(Text::HudBlkPos),
+                value: place,
+                detail: deep,
+            },
+            HudBlock {
+                label: self.tr(Text::HudBlkCount),
+                value: holes,
+                detail: counts,
+            },
+        ])
     }
+}
+
+/// One block of the area under the bar of progress.
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct HudBlock {
+    /// The small label, the value in big letters and the line of detail under it.
+    pub label: &'static str,
+    pub value: String,
+    pub detail: String,
 }
 
 #[cfg(test)]
@@ -134,26 +220,64 @@ mod tests {
         a
     }
 
-    #[test]
-    fn before_a_job_the_line_gives_the_first_tool_its_steps_and_the_tools_to_do() {
-        let a = app();
-        let line = a.hud_info_line().expect("a program with holes has a line");
-        // the steps are those of the first tool, not of all the holes
-        let total = tool_stats(&a.drill.scene.holes, &[])[0].total;
-        assert!(line.contains(&format!("0/{total} ")), "{line}");
-        assert!(line.contains('T'));
-        let tools = tool_stats(&a.drill.scene.holes, &a.route.scene.paths).len();
-        assert!(line.contains(&format!("0/{tools} ")), "{line}");
-        // nothing is running: no time left and no state
-        assert!(!line.contains(a.tr(Text::HudLeft)));
+    fn app_with_both() -> App {
+        let mut a = app();
+        a.open_path(
+            &Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("testdata")
+                .join("05_board_outline.plt"),
+        );
+        a
     }
 
     #[test]
-    fn the_steps_of_the_tool_follow_the_holes_that_are_done_and_the_line_names_the_next_tool() {
-        let mut a = app();
+    fn before_a_job_the_blocks_give_the_first_tool_its_step_and_the_counters() {
+        let a = app();
+        let blocks = a.hud_blocks().expect("a program with holes has blocks");
+        assert_eq!(blocks.len(), 4);
+        // each block has its own label, in the language of the window
+        let labels: Vec<&str> = blocks.iter().map(|b| b.label).collect();
+        assert_eq!(
+            labels,
+            vec![
+                a.tr(Text::HudBlkTool),
+                a.tr(Text::HudBlkTime),
+                a.tr(Text::HudBlkPos),
+                a.tr(Text::HudBlkCount)
+            ]
+        );
+        // the steps are those of the first tool, not of all the holes
+        let stats = tool_stats(&a.drill.scene.holes, &[]);
+        assert!(blocks[0].value.starts_with('T'), "{:?}", blocks[0]);
+        assert!(
+            blocks[0].detail.contains(&format!("1/{}", stats[0].total)),
+            "{:?}",
+            blocks[0]
+        );
+        // the holes done in all and the tool changes
+        let holes: usize = stats.iter().map(|s| s.total).sum();
+        assert!(
+            blocks[3].value.starts_with(&format!("0/{holes} ")),
+            "{:?}",
+            blocks[3]
+        );
+        assert!(
+            blocks[3]
+                .detail
+                .contains(&format!("0/{} ", stats.len() - 1)),
+            "{:?}",
+            blocks[3]
+        );
+        // nothing runs: no time left
+        assert_eq!(blocks[1].value, "--:--");
+        assert!(blocks[1].detail.is_empty());
+    }
+
+    #[test]
+    fn the_blocks_follow_the_holes_that_are_done_and_the_lengths_use_the_units_of_the_settings() {
+        let mut a = app_with_both();
         let stats = tool_stats(&a.drill.scene.holes, &[]);
         let first = stats[0].tool;
-        let n = stats[0].total;
         for h in a
             .drill
             .scene
@@ -164,11 +288,62 @@ mod tests {
         {
             h.done = true;
         }
-        let line = a.hud_info_line().unwrap();
-        assert!(line.contains(&format!("2/{n}")) || n < 2, "{line}");
-        if stats.len() > 1 {
-            assert!(line.contains(a.tr(Text::HudNext)), "{line}");
+        let blocks = a.hud_blocks().unwrap();
+        let total: usize = stats.iter().map(|s| s.total).sum();
+        let done = a.drill.scene.holes.iter().filter(|h| h.done).count();
+        assert!(
+            blocks[3].value.starts_with(&format!("{done}/{total} ")),
+            "{:?}",
+            blocks[3]
+        );
+        // the routing length is told in the unit of the settings
+        assert!(blocks[3].detail.contains(" mm"), "{:?}", blocks[3]);
+        a.settings.display_mil = true;
+        let blocks = a.hud_blocks().unwrap();
+        assert!(blocks[3].detail.contains(" mil"), "{:?}", blocks[3]);
+        assert!(blocks[2].value.contains(" mil"), "{:?}", blocks[2]);
+        assert!(!blocks[3].detail.contains(" mm"), "{:?}", blocks[3]);
+    }
+
+    #[test]
+    fn while_a_job_runs_the_blocks_give_the_times_the_position_and_the_depth() {
+        let mut a = app();
+        a.auto_ok = true;
+        a.fixed_dt = Some(0.05);
+        a.act(Act::Start);
+        for _ in 0..400_000 {
+            a.tick();
+            if a.drill.engine.done() > 0 {
+                break;
+            }
         }
+        assert!(a.running.is_some());
+        // the time spent takes a moment of the clock of the computer to show
+        a.job_started = Some(std::time::Instant::now() - std::time::Duration::from_secs(30));
+        let blocks = a.hud_blocks().unwrap();
+        assert!(
+            blocks[1].detail.contains(a.tr(Text::HudElapsed)),
+            "{:?}",
+            blocks[1]
+        );
+        // the position has the three axes and the detail has the depth, the feed and the speed of the spindle
+        assert!(blocks[2].value.starts_with("X "), "{:?}", blocks[2]);
+        assert!(
+            blocks[2].value.contains(" Y ") && blocks[2].value.contains(" Z "),
+            "{:?}",
+            blocks[2]
+        );
+        assert!(
+            blocks[2].detail.contains(a.tr(Text::HudDepth)) && blocks[2].detail.contains(" rpm"),
+            "{:?}",
+            blocks[2]
+        );
+        // and the step is the one of a hole
+        assert!(
+            blocks[0].detail.contains(a.tr(Text::HudHoleOne)),
+            "{:?}",
+            blocks[0]
+        );
     }
 
     #[test]
@@ -176,6 +351,6 @@ mod tests {
         let mut a = app();
         a.drill.scene.holes.clear();
         a.route.scene.paths.clear();
-        assert_eq!(a.hud_info_line(), None);
+        assert_eq!(a.hud_blocks(), None);
     }
 }

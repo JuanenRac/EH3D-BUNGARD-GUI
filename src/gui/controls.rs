@@ -1027,10 +1027,14 @@ mod tests {
     fn words_in_literals(src: &str) -> Vec<String> {
         let code = src.split("\n#[cfg(test)]").next().unwrap_or(src);
         let mut found = Vec::new();
+        let mut before = "";
         for line in code.lines() {
             let t = line.trim_start();
+            let after_log_call = before.contains("applog::");
+            before = t;
             // messages of errors, of the log and of the checks are not for the screen
             if t.starts_with("//")
+                || after_log_call
                 || [
                     "expect(",
                     "assert",
@@ -1044,6 +1048,7 @@ mod tests {
                     "env!(",
                     "include_str!",
                     "tracing::",
+                    "applog::",
                     "log::",
                 ]
                 .iter()

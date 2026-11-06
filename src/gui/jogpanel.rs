@@ -1270,6 +1270,8 @@ mod tests {
                     repeat: false,
                     modifiers,
                 }],
+                // the state of the keys the program reads comes from here, not from the event
+                modifiers,
                 ..Default::default()
             };
             let mut out = ctx.run_ui(input, |ui| a.jog_hotkey(ui.ctx()));

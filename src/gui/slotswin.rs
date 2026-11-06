@@ -555,6 +555,8 @@ mod tests {
         /// How many looks were taken while the router was cutting, and the farthest the head was from the design at one of them.
         cutting: usize,
         worst_mm: f64,
+        /// Where the head was (x, y, z in mm) at the look that was the farthest from the design.
+        worst_at: (f64, f64, f64),
         /// The farthest the head was, while cutting, from the corner of the table along X and along Y.
         reach: (f64, f64),
     }
@@ -591,6 +593,7 @@ mod tests {
             bar_in_routing: Vec::new(),
             cutting: 0,
             worst_mm: 0.0,
+            worst_at: (0.0, 0.0, 0.0),
             reach: (0.0, 0.0),
         };
         for _ in 0..400_000 {
@@ -618,7 +621,11 @@ mod tests {
                 };
                 if let (true, Some(h)) = (deep, a.route.engine.head_mm().filter(|h| !at_bar(*h))) {
                     out.cutting += 1;
-                    out.worst_mm = out.worst_mm.max(distance_to(&paths, (h.0, h.1)));
+                    let far = distance_to(&paths, (h.0, h.1));
+                    if far > out.worst_mm {
+                        out.worst_mm = far;
+                        out.worst_at = h;
+                    }
                     out.reach = (out.reach.0.max(h.0), out.reach.1.max(h.1));
                 }
             }
@@ -859,8 +866,9 @@ mod tests {
             assert!(played.cutting > 0, "{file}: the router never cut");
             assert!(
                 played.worst_mm < 0.5,
-                "{file}: the head cut {} mm from the design",
-                played.worst_mm
+                "{file}: the head cut {} mm from the design, at {:?}",
+                played.worst_mm,
+                played.worst_at
             );
             assert!(
                 played.reach.0 <= w && played.reach.1 <= d,

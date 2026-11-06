@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The tour of pictures in the README goes from 23 to 5:** the main screen, the machine in 3D, the positions of the tools in the bar, the general settings and the window of the board, all taken again from the published program, with their texts in the eight languages. The picture of the panel that moves the machine waits for the next build, which opens it from the command line (`--modal jog`).
 - **A log section in the settings window:** the General tab has the switch to write the log, the level of detail (error, warn, info, debug), the largest size of a file (256 KB, 1, 4 or 16 MB) and two buttons, one to open the folder of the log and one to copy the path of its file, with their words in the 37 languages. The choices are kept in the settings file (`log`, `log_level`, `log_max_kb`) and apply the next time the program starts.
 
 ## [0.2.4] - Hour of the computer, local logs for the cause of a closing, jog panel, positions of the tools in the bar, voices and the chaining of the changer

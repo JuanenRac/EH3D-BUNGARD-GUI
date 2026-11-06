@@ -89,142 +89,34 @@ EH3D-BUNGARD-GUI 是 EH3D 家族中 Bungard 机器的现代界面。它按路径
 
 
 <p align="center">
-  <img src="images/screenshots/viewer.png" alt="viewer" width="100%">
+  <img src="images/screenshots/main.png" alt="主界面" width="100%">
 </p>
 
-<p align="center"><em>查看器：工作台上的 2D 作业、3D 机器以及作业控制。</em></p>
+<p align="center"><em>主界面：左侧是作业及其刀具，中间是电路板的平面视图，右侧是 3D 机器，下方是作业进度。</em></p>
 
 <p align="center">
-  <img src="images/screenshots/edit-select.png" alt="edit" width="100%">
+  <img src="images/screenshots/viewer-3d.png" alt="3D 机器" width="100%">
 </p>
 
-<p align="center"><em>在平面视图中编辑：选择工具选中了电路板左侧的孔，可复制、粘贴、剪切或删除；列表中的每把刀具都有自己的按钮，可将其从作业中移除。</em></p>
+<p align="center"><em>侧向旋转的 3D 机器：机架、工作台和位于电路板上方的主轴头，以及急停按钮和打开手动移动面板的按钮。</em></p>
 
 <p align="center">
-  <img src="images/screenshots/open-preview.png" alt="open file with preview" width="100%">
+  <img src="images/screenshots/atc-slots.png" alt="刀库中的刀具位置" width="100%">
 </p>
 
-<p align="center"><em>打开窗口，在列表右侧显示所选钻孔文件的预览；下方的开关可将其关闭，列表随即恢复原来的宽度。</em></p>
-
-<p align="center">
-  <img src="images/screenshots/job-running.png" alt="job running" width="100%">
-</p>
-
-<p align="center"><em>运行中的作业：已完成的孔和路径、刀具位置，以及暂停和停止。</em></p>
-
-<p align="center">
-  <img src="images/screenshots/atc-bar.png" alt="ATC 型号的刀具架" width="100%">
-</p>
-
-<p align="center"><em>ATC 型号的刀具架：刀位绘制在工作台旁，平面视图和 3D 视图中都有显示，并标出要取的刀具和放回的位置。</em></p>
-
-<p align="center">
-  <img src="images/screenshots/atc-bar-window.png" alt="刀具架窗口" width="100%">
-</p>
-
-<p align="center"><em>刀具架窗口：第一把和最后一把刀具的位置、刀位数量和刀具尺寸；中间的刀位等距排列。</em></p>
-
-<p align="center">
-  <img src="images/screenshots/panes.png" alt="可调整宽度的分栏" width="100%">
-</p>
-
-<p align="center"><em>主窗口三个部分的另一种宽度：拖动它们之间的细条，可以给列表、平面视图或机器视图更多空间（双击恢复默认值）。</em></p>
-
-<p align="center">
-  <img src="images/screenshots/board-too-big.png" alt="电路板大于工作台" width="100%">
-</p>
-
-<p align="center"><em>电路板即使旋转 90 度也放不下机器工作台时，平面视图上显示的警告：两者的尺寸以及超出多少。</em></p>
-
-<p align="center">
-  <img src="images/screenshots/boards-all-makers.png" alt="包含所有厂商的电路板列表" width="100%">
-</p>
-
-<p align="center"><em>同时列出所有厂商电路板的列表：厂商菜单的第一项是“所有厂商”，列表按字母顺序排列。</em></p>
-
-<p align="center">
-  <img src="images/screenshots/panel.png" alt="panel" width="100%">
-</p>
-
-<p align="center"><em>拼板窗口：板子的副本和外轮廓的连接点，通过下拉列表和计数器选择。</em></p>
-
-<p align="center">
-  <img src="images/screenshots/panelized.png" alt="2 x 2 拼板" width="100%">
-</p>
-
-<p align="center"><em>在 CCD/2 工作台上按 2 x 2 拼板的电路板：四份副本带着间距摆放在虚拟板上，平面视图和 3D 视图中都可看到。</em></p>
-
-<p align="center">
-  <img src="images/screenshots/tools.png" alt="tools" width="100%">
-</p>
-
-<p align="center"><em>刀具：进给、转速和深度，电路板上每个钻头的孔数以及累计钻孔数。</em></p>
+<p align="center"><em>换刀器刀库中的刀具位置：作业中的每把刀具都有自己的位置，只要有刀具没有位置，作业就不会开始。</em></p>
 
 <p align="center">
   <img src="images/screenshots/settings.png" alt="常规设置" width="100%">
 </p>
 
-<p align="center"><em>常规设置：主题、语言、单位、模拟速度和全屏开关（F11 的作用相同）。</em></p>
+<p align="center"><em>设置窗口的“常规”选项卡：主题、语言、单位、模拟速度和全屏。</em></p>
 
 <p align="center">
-  <img src="images/screenshots/machine-settings.png" alt="settings" width="100%">
+  <img src="images/screenshots/board.png" alt="板材窗口" width="100%">
 </p>
 
-<p align="center"><em>设置：每种 Bungard 型号、工作台和文件的单位。</em></p>
-
-<p align="center">
-  <img src="images/screenshots/themes.png" alt="themes" width="100%">
-</p>
-
-<p align="center"><em>设置窗口中的十一种主题，每种都以窗口语言命名。</em></p>
-
-<p align="center">
-  <img src="images/screenshots/neon-theme.png" alt="Neon Arcade 主题" width="100%">
-</p>
-
-<p align="center"><em>Neon Arcade 主题。</em></p>
-
-<p align="center">
-  <img src="images/screenshots/sounds.png" alt="sounds" width="100%">
-</p>
-
-<p align="center"><em>作业结束声音的列表：六十个声音，从高音到低音，另有标准音调、无声或自己的文件。</em></p>
-
-<p align="center">
-  <img src="images/screenshots/calibration.png" alt="calibration" width="100%">
-</p>
-
-<p align="center"><em>工作台校准：在点阵上测得的高度图，含高低差和倾斜。</em></p>
-
-<p align="center">
-  <img src="images/screenshots/catalogue.png" alt="catalogue of bits" width="100%">
-</p>
-
-<p align="center"><em>钻头目录，可按类型筛选，并带有主轴和电路板材料的提示。</em></p>
-
-<p align="center">
-  <img src="images/screenshots/fleet.png" alt="machines and stations" width="100%">
-</p>
-
-<p align="center"><em>服务器的机床和工位：每台机床的状态、作业和进度，以及作业发往的机床。</em></p>
-
-<p align="center">
-  <img src="images/screenshots/head-node.png" alt="钻头节点" width="100%">
-</p>
-
-<p align="center"><em>钻头节点：摄像头、主轴转速和温度、保护输出，以及摄像头周围的 LED 环形灯（关和三档亮度）。</em></p>
-
-<p align="center">
-  <img src="images/screenshots/quality-check.png" alt="质量检查" width="100%">
-</p>
-
-<p align="center"><em>加工后的质量检查：摄像头查看电路板，作业中的每个孔都被标出（绿色正确、红色错误、琥珀色在画面外），测量铣削沟槽，结论大如招牌。</em></p>
-
-<p align="center">
-  <img src="images/screenshots/quality-tolerances.png" alt="公差" width="100%">
-</p>
-
-<p align="center"><em>工坊分析器的公差：孔的尺寸和位置、圆度、毛刺、沟槽的宽度和均匀度，以及图像清晰到可以判断的标准。</em></p>
+<p align="center"><em>板材窗口：制造商、材料、厚度、铜厚和尺寸，内置超过 650 种基础材料库。</em></p>
 
 ## ✨ 功能
 

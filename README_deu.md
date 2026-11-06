@@ -89,142 +89,34 @@ Wie die Teile dieses Repositorys zusammenpassen: wer es nutzt, was es enthält u
 
 
 <p align="center">
-  <img src="images/screenshots/viewer.png" alt="viewer" width="100%">
+  <img src="images/screenshots/main.png" alt="Hauptbildschirm" width="100%">
 </p>
 
-<p align="center"><em>Der Betrachter: der Auftrag auf dem Tisch in 2D, die Maschine in 3D und die Bedienelemente des Auftrags.</em></p>
+<p align="center"><em>Der Hauptbildschirm: der Auftrag mit seinen Werkzeugen links, die Draufsicht der Platine in der Mitte und die Maschine in 3D rechts, darunter der Fortschritt des Auftrags.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/edit-select.png" alt="edit" width="100%">
+  <img src="images/screenshots/viewer-3d.png" alt="Maschine in 3D" width="100%">
 </p>
 
-<p align="center"><em>Bearbeiten in der 2D-Ansicht: Das Auswahlwerkzeug hat die Löcher der linken Platinenhälfte gewählt, bereit zum Kopieren, Einfügen, Ausschneiden oder Löschen; jedes Werkzeug der Liste hat eine eigene Schaltfläche, um es aus dem Auftrag zu entfernen.</em></p>
+<p align="center"><em>Die Maschine in 3D, zur Seite gedreht: Rahmen, Tisch und Kopf über der Platine, mit dem Not-Aus-Knopf und der Taste, die das Feld zum Bewegen der Maschine öffnet.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/open-preview.png" alt="open file with preview" width="100%">
+  <img src="images/screenshots/atc-slots.png" alt="Positionen der Werkzeuge in der Leiste" width="100%">
 </p>
 
-<p align="center"><em>Das Öffnen-Fenster mit der Vorschau der gewählten Bohrdatei rechts neben der Liste; ein Schalter darunter blendet sie aus, und die Liste bekommt ihren Platz zurück.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/job-running.png" alt="job running" width="100%">
-</p>
-
-<p align="center"><em>Ein laufender Auftrag: die fertigen Löcher und Bahnen, die Position des Werkzeugs, Pause und Stopp.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/atc-bar.png" alt="Werkzeugleiste der ATC-Modelle" width="100%">
-</p>
-
-<p align="center"><em>Die Werkzeugleiste eines ATC-Modells: die Plätze der Werkzeuge neben dem Tisch in der Draufsicht und in 3D, mit dem Werkzeug, das genommen wird, und dem Platz, an dem es abgelegt wird.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/atc-bar-window.png" alt="Fenster der Werkzeugleiste" width="100%">
-</p>
-
-<p align="center"><em>Das Fenster der Werkzeugleiste: wo das erste und das letzte Werkzeug liegen, wie viele Plätze es gibt und wie groß die Werkzeuge sind; die Plätze dazwischen liegen in gleichen Abständen.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/panes.png" alt="verstellbare Bereiche" width="100%">
-</p>
-
-<p align="center"><em>Die drei Teile des Hauptfensters mit anderen Breiten: Wer die dünnen Balken dazwischen zieht, gibt der Liste, der Draufsicht oder der Maschinenansicht mehr Platz (ein Doppelklick stellt die Vorgabe wieder her).</em></p>
-
-<p align="center">
-  <img src="images/screenshots/board-too-big.png" alt="Platine größer als der Tisch" width="100%">
-</p>
-
-<p align="center"><em>Die Warnung über der Draufsicht, wenn die Platine nicht auf den Tisch der Maschine passt, auch nicht um 90 Grad gedreht: die Größen von beiden und um wie viel sie überstehen.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/boards-all-makers.png" alt="Platinenliste mit allen Herstellern" width="100%">
-</p>
-
-<p align="center"><em>Die Platinenliste mit den Platinen aller Hersteller auf einmal: der erste Eintrag des Herstellermenüs ist Alle Hersteller, und die Liste ist alphabetisch geordnet.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/panel.png" alt="panel" width="100%">
-</p>
-
-<p align="center"><em>Das Fenster Panelisierung: die Kopien der Platine und die Haltestege der Außenkontur, gewählt mit Auswahllisten und Zählern.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/panelized.png" alt="Platine im Nutzen 2 x 2" width="100%">
-</p>
-
-<p align="center"><em>Die Platine als Nutzen 2 x 2 auf dem Tisch einer CCD/2: die vier Kopien liegen mit dem Abstand dazwischen auf der virtuellen Platine, in der Draufsicht und in 3D.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/tools.png" alt="tools" width="100%">
-</p>
-
-<p align="center"><em>Die Werkzeuge: Vorschübe, Drehzahlen und Tiefen, die Löcher jedes Bohrers auf der Platine und die insgesamt gebohrten.</em></p>
+<p align="center"><em>Die Positionen der Werkzeuge in der Leiste des Werkzeugwechslers: Jedes Werkzeug des Auftrags hat seinen Platz, und der Auftrag startet nicht, solange einem Werkzeug der Platz fehlt.</em></p>
 
 <p align="center">
   <img src="images/screenshots/settings.png" alt="allgemeine Einstellungen" width="100%">
 </p>
 
-<p align="center"><em>Die allgemeinen Einstellungen: Thema, Sprache, Einheiten, Simulationsgeschwindigkeit und der Schalter für Vollbild (F11 macht dasselbe).</em></p>
+<p align="center"><em>Das Einstellungsfenster, Reiter Allgemein: Design, Sprache, Einheiten, Geschwindigkeit der Simulation und Vollbild.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/machine-settings.png" alt="settings" width="100%">
+  <img src="images/screenshots/board.png" alt="Fenster der Platine" width="100%">
 </p>
 
-<p align="center"><em>Die Einstellungen: jedes Bungard-Modell, der Tisch und die Einheiten der Dateien.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/themes.png" alt="themes" width="100%">
-</p>
-
-<p align="center"><em>Elf Themen im Einstellungsfenster, jedes mit seinem Namen in der Sprache des Fensters.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/neon-theme.png" alt="Thema Neon Arcade" width="100%">
-</p>
-
-<p align="center"><em>Das Thema Neon Arcade.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/sounds.png" alt="sounds" width="100%">
-</p>
-
-<p align="center"><em>Die Liste der Töne für das Ende des Auftrags: sechzig Töne von hohen bis zu tiefen, der Standardton, keiner oder eine eigene Datei.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/calibration.png" alt="calibration" width="100%">
-</p>
-
-<p align="center"><em>Die Tischkalibrierung: die Höhenkarte, in einem Punktraster gemessen, mit Spanne und Neigung.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/catalogue.png" alt="catalogue of bits" width="100%">
-</p>
-
-<p align="center"><em>Der Katalog der Bohrer, nach Art gefiltert, mit den Hinweisen zur Spindel und zum Material der Platine.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/fleet.png" alt="machines and stations" width="100%">
-</p>
-
-<p align="center"><em>Die Maschinen und Stationen des Servers: Zustand, Auftrag und Fortschritt jeder Maschine und die Maschine, an die die Aufträge gehen.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/head-node.png" alt="Knoten am Bohrkopf" width="100%">
-</p>
-
-<p align="center"><em>Der Knoten am Bohrkopf: seine Kamera, Drehzahl und Temperatur der Spindel, der Schutzausgang und der LED-Ring um die Kamera (aus und drei Stufen).</em></p>
-
-<p align="center">
-  <img src="images/screenshots/quality-check.png" alt="Qualitätsprüfung" width="100%">
-</p>
-
-<p align="center"><em>Die Qualitätsprüfung nach dem Auftrag: Die Kamera betrachtet die Platine, jede Bohrung des Auftrags ist markiert (grün richtig, rot falsch, bernstein außerhalb des Bildes), die gefrästen Kanäle werden gemessen und das Urteil ist so groß wie ein Schild.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/quality-tolerances.png" alt="Toleranzen" width="100%">
-</p>
-
-<p align="center"><em>Die Toleranzen des Analysators der Werkstatt: Größe und Lage der Bohrungen, Rundheit, Grat, Breite und Gleichmäßigkeit der Kanäle und was ein Bild gut genug zum Beurteilen macht.</em></p>
+<p align="center"><em>Das Fenster der Platine: Hersteller, Material, Dicke, Kupfer und Größe, mit einer Bibliothek von mehr als 650 Grundmaterialien.</em></p>
 
 ## ✨ Funktionen
 

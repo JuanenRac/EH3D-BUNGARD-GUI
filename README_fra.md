@@ -89,142 +89,34 @@ Comment les parties de ce dépôt s'articulent : qui l'utilise, ce qu'il contien
 
 
 <p align="center">
-  <img src="images/screenshots/viewer.png" alt="viewer" width="100%">
+  <img src="images/screenshots/main.png" alt="écran principal" width="100%">
 </p>
 
-<p align="center"><em>Le visualiseur : le travail sur la table en 2D, la machine en 3D et les commandes du travail.</em></p>
+<p align="center"><em>L'écran principal : le travail avec ses outils à gauche, la vue en plan de la carte au centre et la machine en 3D à droite, avec la progression du travail dessous.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/edit-select.png" alt="edit" width="100%">
+  <img src="images/screenshots/viewer-3d.png" alt="machine en 3D" width="100%">
 </p>
 
-<p align="center"><em>Édition dans la vue 2D : l'outil de sélection a pris les trous de la partie gauche de la carte, prêts à être copiés, collés, coupés ou supprimés ; chaque outil de la liste a son bouton pour le retirer du travail.</em></p>
+<p align="center"><em>La machine en 3D, tournée de côté : le châssis, la table et la tête au-dessus de la carte, avec le bouton d'arrêt d'urgence et le bouton qui ouvre le panneau de déplacement de la machine.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/open-preview.png" alt="open file with preview" width="100%">
+  <img src="images/screenshots/atc-slots.png" alt="positions des outils dans la barre" width="100%">
 </p>
 
-<p align="center"><em>La fenêtre d'ouverture avec l'aperçu du fichier de perçage choisi, à droite de la liste ; un interrupteur en dessous le retire et la liste reprend sa place.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/job-running.png" alt="job running" width="100%">
-</p>
-
-<p align="center"><em>Un travail en cours : les trous et trajets faits, la position de l'outil, Pause et Stop.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/atc-bar.png" alt="barre d'outils des modèles ATC" width="100%">
-</p>
-
-<p align="center"><em>La barre porte-outils d'un modèle ATC : les emplacements des outils dessinés à côté de la table dans la vue en plan et en 3D, avec l'outil à prendre et l'emplacement où le déposer.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/atc-bar-window.png" alt="fenêtre de la barre d'outils" width="100%">
-</p>
-
-<p align="center"><em>La fenêtre de la barre porte-outils : où se trouvent le premier et le dernier outil, combien il y a d'emplacements et la taille des outils ; les emplacements intermédiaires sont à égale distance.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/panes.png" alt="volets réglables" width="100%">
-</p>
-
-<p align="center"><em>Les trois parties de la fenêtre principale avec d'autres largeurs : faire glisser les barres fines qui les séparent donne plus de place à la liste, à la vue en plan ou à la vue de la machine (un double clic rend la valeur d'origine).</em></p>
-
-<p align="center">
-  <img src="images/screenshots/board-too-big.png" alt="carte plus grande que la table" width="100%">
-</p>
-
-<p align="center"><em>L'avertissement sur la vue en plan quand la carte ne tient pas sur la table de la machine, même tournée de 90 degrés : les tailles des deux et de combien elle dépasse.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/boards-all-makers.png" alt="liste des cartes de tous les fabricants" width="100%">
-</p>
-
-<p align="center"><em>La liste des cartes avec celles de tous les fabricants à la fois : la première entrée du menu des fabricants est Tous les fabricants et la liste est en ordre alphabétique.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/panel.png" alt="panel" width="100%">
-</p>
-
-<p align="center"><em>La fenêtre Panélisation : les copies de la carte et les ponts de l'extérieur, choisis avec des listes déroulantes et des compteurs.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/panelized.png" alt="carte en panneau 2 x 2" width="100%">
-</p>
-
-<p align="center"><em>La carte en panneau 2 x 2 sur la table d'une CCD/2 : les quatre copies sont placées sur la carte virtuelle avec l'espace entre elles, dans la vue en plan et en 3D.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/tools.png" alt="tools" width="100%">
-</p>
-
-<p align="center"><em>Les outils : avances, vitesses et profondeurs, les trous de chaque foret sur la carte et les trous percés au total.</em></p>
+<p align="center"><em>Les positions des outils dans la barre du changeur d'outils : chaque outil du travail a sa place, et le travail ne démarre pas tant qu'un outil n'en a pas.</em></p>
 
 <p align="center">
   <img src="images/screenshots/settings.png" alt="réglages généraux" width="100%">
 </p>
 
-<p align="center"><em>Les réglages généraux : thème, langue, unités, vitesse de simulation et l'interrupteur du plein écran (F11 fait la même chose).</em></p>
+<p align="center"><em>La fenêtre des réglages, onglet Général : thème, langue, unités, vitesse de la simulation et plein écran.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/machine-settings.png" alt="settings" width="100%">
+  <img src="images/screenshots/board.png" alt="fenêtre de la carte" width="100%">
 </p>
 
-<p align="center"><em>Les réglages : chaque modèle Bungard, la table et les unités des fichiers.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/themes.png" alt="themes" width="100%">
-</p>
-
-<p align="center"><em>Onze thèmes dans la fenêtre des réglages, chacun nommé dans la langue de la fenêtre.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/neon-theme.png" alt="thème Neon Arcade" width="100%">
-</p>
-
-<p align="center"><em>Le thème Neon Arcade.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/sounds.png" alt="sounds" width="100%">
-</p>
-
-<p align="center"><em>La liste des sons de la fin du travail : soixante sons des aigus aux graves, la tonalité standard, aucun ou un fichier à soi.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/calibration.png" alt="calibration" width="100%">
-</p>
-
-<p align="center"><em>L'étalonnage de la table : la carte des hauteurs mesurées sur une grille de points, avec l'écart et l'inclinaison.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/catalogue.png" alt="catalogue of bits" width="100%">
-</p>
-
-<p align="center"><em>Le catalogue des forets, filtré par type, avec les avertissements de la broche et du matériau de la carte.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/fleet.png" alt="machines and stations" width="100%">
-</p>
-
-<p align="center"><em>Les machines et stations du serveur : état, travail et avancement de chaque machine, et la machine à laquelle vont les travaux.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/head-node.png" alt="nœud de la tête de perçage" width="100%">
-</p>
-
-<p align="center"><em>Le nœud de la tête de perçage : sa caméra, la vitesse et la température de la broche, la sortie de protection et l'anneau de LED autour de la caméra (éteint et trois niveaux).</em></p>
-
-<p align="center">
-  <img src="images/screenshots/quality-check.png" alt="contrôle qualité" width="100%">
-</p>
-
-<p align="center"><em>Le contrôle qualité après le travail : la caméra regarde la carte, chaque trou du travail est marqué (vert bon, rouge mauvais, ambre hors de l'image), les canaux fraisés sont mesurés et le verdict est grand comme un panneau.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/quality-tolerances.png" alt="tolérances" width="100%">
-</p>
-
-<p align="center"><em>Les tolérances de l'analyseur de l'atelier : taille et position des trous, rondeur, bavures, largeur et régularité des canaux, et ce qui rend une photo assez bonne pour juger.</em></p>
+<p align="center"><em>La fenêtre de la carte : fabricant, matériau, épaisseur, cuivre et taille, avec une bibliothèque de plus de 650 matériaux de base.</em></p>
 
 ## ✨ Fonctionnalités
 

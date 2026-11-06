@@ -89,142 +89,34 @@ Como as partes deste repositório se encaixam: quem o usa, o que contém e de qu
 
 
 <p align="center">
-  <img src="images/screenshots/viewer.png" alt="viewer" width="100%">
+  <img src="images/screenshots/main.png" alt="ecrã principal" width="100%">
 </p>
 
-<p align="center"><em>O visualizador: o trabalho na mesa em 2D, a máquina em 3D e os comandos do trabalho.</em></p>
+<p align="center"><em>O ecrã principal: o trabalho com as suas ferramentas à esquerda, a vista em planta da placa ao centro e a máquina em 3D à direita, com o progresso do trabalho por baixo.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/edit-select.png" alt="edit" width="100%">
+  <img src="images/screenshots/viewer-3d.png" alt="máquina em 3D" width="100%">
 </p>
 
-<p align="center"><em>Edição na vista 2D: a ferramenta de seleção apanhou os furos da parte esquerda da placa, prontos a copiar, colar, cortar ou eliminar; cada ferramenta da lista tem o seu botão para a retirar do trabalho.</em></p>
+<p align="center"><em>A máquina em 3D, rodada de lado: a estrutura, a mesa e a cabeça sobre a placa, com o botão de paragem de emergência e o botão que abre o painel que move a máquina.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/open-preview.png" alt="open file with preview" width="100%">
+  <img src="images/screenshots/atc-slots.png" alt="posições das ferramentas na barra" width="100%">
 </p>
 
-<p align="center"><em>A janela de abrir com a pré-visualização do ficheiro de furação escolhido, à direita da lista; um interruptor por baixo retira-a e a lista recupera o seu espaço.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/job-running.png" alt="job running" width="100%">
-</p>
-
-<p align="center"><em>Um trabalho em curso: os furos e trajetos feitos, a posição da ferramenta, Pausa e Stop.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/atc-bar.png" alt="barra de ferramentas dos modelos ATC" width="100%">
-</p>
-
-<p align="center"><em>A barra porta-ferramentas de um modelo ATC: os lugares das ferramentas desenhados junto à mesa na vista em planta e em 3D, com a ferramenta a tirar e o lugar onde a deixar.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/atc-bar-window.png" alt="janela da barra de ferramentas" width="100%">
-</p>
-
-<p align="center"><em>A janela da barra porta-ferramentas: onde estão a primeira e a última ferramenta, quantos lugares há e o tamanho das ferramentas; os lugares intermédios ficam à mesma distância.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/panes.png" alt="painéis ajustáveis" width="100%">
-</p>
-
-<p align="center"><em>As três partes da janela principal com outras larguras: arrastar as barras finas que as separam dá mais espaço à lista, à vista em planta ou à vista da máquina (um duplo clique devolve o valor de origem).</em></p>
-
-<p align="center">
-  <img src="images/screenshots/board-too-big.png" alt="placa maior do que a mesa" width="100%">
-</p>
-
-<p align="center"><em>O aviso sobre a vista em planta quando a placa não cabe na mesa da máquina, nem sequer rodada 90 graus: os tamanhos de ambas e quanto sobra.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/boards-all-makers.png" alt="lista de placas com todos os fabricantes" width="100%">
-</p>
-
-<p align="center"><em>A lista de placas com as de todos os fabricantes ao mesmo tempo: a primeira entrada do menu de fabricantes é Todos os fabricantes e a lista está por ordem alfabética.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/panel.png" alt="panel" width="100%">
-</p>
-
-<p align="center"><em>A janela Painelização: as cópias da placa e as pontes do exterior, escolhidas com listas pendentes e contadores.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/panelized.png" alt="placa em painel 2 x 2" width="100%">
-</p>
-
-<p align="center"><em>A placa em painel 2 x 2 na mesa de uma CCD/2: as quatro cópias ficam na placa virtual com o espaço entre elas, na vista em planta e em 3D.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/tools.png" alt="tools" width="100%">
-</p>
-
-<p align="center"><em>As ferramentas: avanços, velocidades e profundidades, os furos de cada broca na placa e os feitos no total.</em></p>
+<p align="center"><em>As posições das ferramentas na barra do trocador: cada ferramenta do trabalho tem a sua posição, e o trabalho não arranca enquanto alguma não a tiver.</em></p>
 
 <p align="center">
   <img src="images/screenshots/settings.png" alt="definições gerais" width="100%">
 </p>
 
-<p align="center"><em>As definições gerais: tema, idioma, unidades, velocidade de simulação e o interruptor do ecrã inteiro (F11 faz o mesmo).</em></p>
+<p align="center"><em>A janela de definições, separador Geral: tema, idioma, unidades, velocidade da simulação e ecrã inteiro.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/machine-settings.png" alt="settings" width="100%">
+  <img src="images/screenshots/board.png" alt="janela da placa" width="100%">
 </p>
 
-<p align="center"><em>As definições: cada modelo Bungard, a mesa e as unidades dos ficheiros.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/themes.png" alt="themes" width="100%">
-</p>
-
-<p align="center"><em>Onze temas na janela de definições, cada um com o nome no idioma da janela.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/neon-theme.png" alt="tema Neon Arcade" width="100%">
-</p>
-
-<p align="center"><em>O tema Neon Arcade.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/sounds.png" alt="sounds" width="100%">
-</p>
-
-<p align="center"><em>A lista de sons do fim do trabalho: sessenta sons dos agudos aos graves, o tom padrão, nenhum ou um ficheiro próprio.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/calibration.png" alt="calibration" width="100%">
-</p>
-
-<p align="center"><em>A calibração da mesa: o mapa de alturas medido numa grelha de pontos, com a diferença e a inclinação.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/catalogue.png" alt="catalogue of bits" width="100%">
-</p>
-
-<p align="center"><em>O catálogo de brocas, filtrado por tipo, com os avisos do fuso e do material da placa.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/fleet.png" alt="machines and stations" width="100%">
-</p>
-
-<p align="center"><em>As máquinas e estações do servidor: estado, trabalho e progresso de cada máquina, e a máquina para onde vão os trabalhos.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/head-node.png" alt="nó da cabeça de furação" width="100%">
-</p>
-
-<p align="center"><em>O nó da cabeça de furação: a sua câmara, a velocidade e a temperatura do fuso, a saída de proteção e o anel de LEDs à volta da câmara (desligado e três níveis).</em></p>
-
-<p align="center">
-  <img src="images/screenshots/quality-check.png" alt="verificação de qualidade" width="100%">
-</p>
-
-<p align="center"><em>A verificação de qualidade depois do trabalho: a câmara olha para a placa, cada furo do trabalho fica marcado (verde certo, vermelho errado, âmbar fora da imagem), medem-se os canais fresados e o veredicto é grande como um cartaz.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/quality-tolerances.png" alt="tolerâncias" width="100%">
-</p>
-
-<p align="center"><em>As tolerâncias do analisador da oficina: tamanho e posição dos furos, redondeza, rebarbas, largura e regularidade dos canais, e o que torna uma foto boa o bastante para julgar.</em></p>
+<p align="center"><em>A janela da placa: fabricante, material, espessura, cobre e tamanho, com uma biblioteca de mais de 650 materiais de base.</em></p>
 
 ## ✨ Funcionalidades
 

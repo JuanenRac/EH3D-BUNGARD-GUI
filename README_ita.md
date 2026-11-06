@@ -89,142 +89,34 @@ Come si incastrano le parti di questo repository: chi lo usa, che cosa contiene 
 
 
 <p align="center">
-  <img src="images/screenshots/viewer.png" alt="viewer" width="100%">
+  <img src="images/screenshots/main.png" alt="schermata principale" width="100%">
 </p>
 
-<p align="center"><em>Il visualizzatore: il lavoro sul piano in 2D, la macchina in 3D e i comandi del lavoro.</em></p>
+<p align="center"><em>La schermata principale: il lavoro con i suoi utensili a sinistra, la vista in pianta della scheda al centro e la macchina in 3D a destra, con l'avanzamento del lavoro sotto.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/edit-select.png" alt="edit" width="100%">
+  <img src="images/screenshots/viewer-3d.png" alt="macchina in 3D" width="100%">
 </p>
 
-<p align="center"><em>Modifica nella vista 2D: lo strumento di selezione ha preso i fori della parte sinistra della scheda, pronti per copiare, incollare, tagliare o eliminare; ogni utensile dell'elenco ha il suo pulsante per toglierlo dal lavoro.</em></p>
+<p align="center"><em>La macchina in 3D, ruotata di lato: il telaio, il piano e la testa sopra la scheda, con il pulsante di emergenza e il pulsante che apre il pannello che muove la macchina.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/open-preview.png" alt="open file with preview" width="100%">
+  <img src="images/screenshots/atc-slots.png" alt="posizioni degli utensili nella barra" width="100%">
 </p>
 
-<p align="center"><em>La finestra di apertura con l'anteprima del file di foratura scelto, a destra dell'elenco; un interruttore sotto la toglie e l'elenco riprende il suo spazio.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/job-running.png" alt="job running" width="100%">
-</p>
-
-<p align="center"><em>Un lavoro in corso: i fori e i percorsi fatti, la posizione dell'utensile, Pausa e Stop.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/atc-bar.png" alt="barra utensili dei modelli ATC" width="100%">
-</p>
-
-<p align="center"><em>La barra portautensili di un modello ATC: i posti degli utensili disegnati accanto al piano nella vista in pianta e in 3D, con l'utensile da prendere e il posto dove lasciarlo.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/atc-bar-window.png" alt="finestra della barra utensili" width="100%">
-</p>
-
-<p align="center"><em>La finestra della barra portautensili: dove si trovano il primo e l'ultimo utensile, quanti posti ci sono e la dimensione degli utensili; i posti intermedi sono a distanza uguale.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/panes.png" alt="pannelli regolabili" width="100%">
-</p>
-
-<p align="center"><em>Le tre parti della finestra principale con altre larghezze: trascinando le barre sottili che le separano si dà più spazio all'elenco, alla vista in pianta o alla vista della macchina (un doppio clic ripristina il valore iniziale).</em></p>
-
-<p align="center">
-  <img src="images/screenshots/board-too-big.png" alt="scheda più grande del piano" width="100%">
-</p>
-
-<p align="center"><em>L'avviso sulla vista in pianta quando la scheda non sta sul piano della macchina, nemmeno ruotata di 90 gradi: le dimensioni di entrambi e di quanto sporge.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/boards-all-makers.png" alt="elenco delle schede di tutti i produttori" width="100%">
-</p>
-
-<p align="center"><em>L'elenco delle schede con quelle di tutti i produttori insieme: la prima voce del menu dei produttori è Tutti i produttori e l'elenco è in ordine alfabetico.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/panel.png" alt="panel" width="100%">
-</p>
-
-<p align="center"><em>La finestra Pannellizzazione: le copie della scheda e i ponticelli dell'esterno, scelti con menu a tendina e contatori.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/panelized.png" alt="scheda in pannello 2 x 2" width="100%">
-</p>
-
-<p align="center"><em>La scheda in pannello 2 x 2 sul piano di una CCD/2: le quattro copie sono disposte sulla scheda virtuale con lo spazio tra loro, nella vista in pianta e in 3D.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/tools.png" alt="tools" width="100%">
-</p>
-
-<p align="center"><em>Gli utensili: avanzamenti, velocità e profondità, i fori di ogni punta sulla scheda e quelli eseguiti in totale.</em></p>
+<p align="center"><em>Le posizioni degli utensili nella barra del cambio utensile: ogni utensile del lavoro ha il suo posto e il lavoro non parte finché ne manca uno.</em></p>
 
 <p align="center">
   <img src="images/screenshots/settings.png" alt="impostazioni generali" width="100%">
 </p>
 
-<p align="center"><em>Le impostazioni generali: tema, lingua, unità, velocità di simulazione e l'interruttore dello schermo intero (F11 fa lo stesso).</em></p>
+<p align="center"><em>La finestra delle impostazioni, scheda Generale: tema, lingua, unità, velocità della simulazione e schermo intero.</em></p>
 
 <p align="center">
-  <img src="images/screenshots/machine-settings.png" alt="settings" width="100%">
+  <img src="images/screenshots/board.png" alt="finestra della scheda" width="100%">
 </p>
 
-<p align="center"><em>Le impostazioni: ogni modello Bungard, il piano e le unità dei file.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/themes.png" alt="themes" width="100%">
-</p>
-
-<p align="center"><em>Undici temi nella finestra delle impostazioni, ognuno con il nome nella lingua della finestra.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/neon-theme.png" alt="tema Neon Arcade" width="100%">
-</p>
-
-<p align="center"><em>Il tema Neon Arcade.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/sounds.png" alt="sounds" width="100%">
-</p>
-
-<p align="center"><em>L'elenco dei suoni della fine del lavoro: sessanta suoni dai più acuti ai più gravi, il tono standard, nessuno o un file proprio.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/calibration.png" alt="calibration" width="100%">
-</p>
-
-<p align="center"><em>La calibrazione del tavolo: la mappa delle altezze misurate in una griglia di punti, con la differenza e l'inclinazione.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/catalogue.png" alt="catalogue of bits" width="100%">
-</p>
-
-<p align="center"><em>Il catalogo delle punte, filtrato per tipo, con gli avvisi del mandrino e del materiale della scheda.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/fleet.png" alt="machines and stations" width="100%">
-</p>
-
-<p align="center"><em>Le macchine e stazioni del server: stato, lavoro e avanzamento di ogni macchina e la macchina a cui vanno i lavori.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/head-node.png" alt="nodo della testa di foratura" width="100%">
-</p>
-
-<p align="center"><em>Il nodo della testa di foratura: la sua telecamera, la velocità e la temperatura del mandrino, l'uscita di protezione e l'anello di LED attorno alla telecamera (spento e tre livelli).</em></p>
-
-<p align="center">
-  <img src="images/screenshots/quality-check.png" alt="controllo qualità" width="100%">
-</p>
-
-<p align="center"><em>Il controllo qualità dopo il lavoro: la telecamera guarda la scheda, ogni foro del lavoro è segnato (verde giusto, rosso sbagliato, ambra fuori immagine), i canali fresati sono misurati e il verdetto è grande come un cartello.</em></p>
-
-<p align="center">
-  <img src="images/screenshots/quality-tolerances.png" alt="tolleranze" width="100%">
-</p>
-
-<p align="center"><em>Le tolleranze dell'analizzatore dell'officina: dimensione e posizione dei fori, rotondità, residui, larghezza e regolarità dei canali, e ciò che rende una foto abbastanza buona per giudicare.</em></p>
+<p align="center"><em>La finestra della scheda: produttore, materiale, spessore, rame e dimensioni, con una libreria di oltre 650 materiali di base.</em></p>
 
 ## ✨ Funzionalità
 

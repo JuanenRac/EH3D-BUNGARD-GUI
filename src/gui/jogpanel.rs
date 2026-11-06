@@ -372,6 +372,25 @@ impl App {
         }
     }
 
+    /// The name of the panel with the key that opens and closes it, for the buttons and their notes.
+    pub(super) fn jog_label(&self) -> String {
+        format!("{} [J]", self.tr(Text::JogTitle))
+    }
+
+    /// J opens and closes the panel, in the viewer, when no window or text box has the keyboard (with no link to the machine too: the head then
+    /// moves on the screen only).
+    pub(super) fn jog_hotkey(&mut self, ctx: &egui::Context) {
+        let free = self.screen == Screen::Viewer
+            && self.modal.is_none()
+            && self.edit.is_none()
+            && !ctx.egui_wants_keyboard_input();
+        let pressed =
+            ctx.input(|i| i.key_pressed(egui::Key::J) && !i.modifiers.command && !i.modifiers.alt);
+        if free && pressed {
+            self.act(Act::Jog(JogAct::Toggle));
+        }
+    }
+
     /// The keys, while the panel is open and nothing else wants them: Esc stops (before it closes anything), the arrows and the page keys move, + and - change the step.
     pub(super) fn jog_keys(&mut self, ctx: &egui::Context) {
         let free = self.jog_ui.open
@@ -1210,6 +1229,70 @@ mod tests {
         );
         // the four arrows of the cross and the two of Z were drawn for the pointer to find
         assert_eq!(a.jog_ui.rects.borrow().len(), 6);
+    }
+
+    #[test]
+    fn the_button_with_text_is_in_the_bars_and_the_j_key_opens_the_panel() {
+        let ctx = egui::Context::default();
+        install_fonts(&ctx);
+        let mut a = app();
+        a.screen = Screen::Viewer;
+        a.animate = false;
+        let rect = Rect::from_min_size(Pos2::ZERO, Vec2::new(design_w(), DESIGN_H));
+        let paint = |a: &mut App| {
+            let input = egui::RawInput {
+                screen_rect: Some(rect),
+                ..Default::default()
+            };
+            let _ = ctx.run_ui(input, |ui| {
+                let p = ui.ctx().layer_painter(egui::LayerId::background());
+                a.paint(&p, rect);
+            });
+        };
+        paint(&mut a);
+        // the main bar and the bar of the 3D view each have a button that toggles the panel (the small icon of the plan bar makes a third)
+        let toggles = |a: &App| {
+            a.hits
+                .iter()
+                .filter(|(_, act)| *act == Act::Jog(JogAct::Toggle))
+                .count()
+        };
+        assert!(toggles(&a) >= 2, "{}", toggles(&a));
+        // the key, with no link to the machine
+        let key = |a: &mut App, modifiers: egui::Modifiers| {
+            let input = egui::RawInput {
+                screen_rect: Some(rect),
+                events: vec![egui::Event::Key {
+                    key: egui::Key::J,
+                    physical_key: Some(egui::Key::J),
+                    pressed: true,
+                    repeat: false,
+                    modifiers,
+                }],
+                ..Default::default()
+            };
+            let _ = ctx.run_ui(input, |ui| a.jog_hotkey(ui.ctx()));
+        };
+        assert!(!a.conn.is_real());
+        key(&mut a, egui::Modifiers::NONE);
+        assert!(a.jog_ui.open);
+        // with Ctrl it is another shortcut
+        key(&mut a, egui::Modifiers::COMMAND);
+        assert!(a.jog_ui.open);
+        key(&mut a, egui::Modifiers::NONE);
+        assert!(!a.jog_ui.open);
+        // a window in front keeps the key
+        a.show_modal(Modal::Open);
+        key(&mut a, egui::Modifiers::NONE);
+        assert!(!a.jog_ui.open);
+        a.modal = None;
+        // the panel opens inside the window, clear of the buttons of the job
+        a.act(Act::Jog(JogAct::Toggle));
+        let (px, py) = a.jog_panel_pos();
+        assert!(px >= 0.0 && px + W <= design_w());
+        assert!(py + H < DESIGN_H - HUD_H - 20.0);
+        paint(&mut a);
+        assert!(a.jog_label().ends_with("[J]"));
     }
 
     #[test]

@@ -3275,7 +3275,12 @@ impl App {
             ),
         ];
         for (dx, icon, on, tip, act) in tools {
-            cv.icon_chip(ix + dx, top + 8.0, 40.0, 32.0, icon, on, self.tr(tip), act);
+            let note = if act == Act::Jog(JogAct::Toggle) {
+                self.jog_label()
+            } else {
+                self.tr(tip).to_string()
+            };
+            cv.icon_chip(ix + dx, top + 8.0, 40.0, 32.0, icon, on, &note, act);
         }
         cv.text(
             cx + cw - 18.0,
@@ -3343,6 +3348,17 @@ impl App {
                 false,
                 Act::ResetView(Zone::Machine),
             );
+            if right_w >= 560.0 {
+                cv.chip(
+                    rx + right_w - 204.0 - 232.0,
+                    top + 8.0,
+                    222.0,
+                    30.0,
+                    &self.jog_label(),
+                    self.jog_ui.open,
+                    Act::Jog(JogAct::Toggle),
+                );
+            }
             cv.text(
                 rx + right_w - 18.0,
                 top + card_h - 16.0,
@@ -3557,6 +3573,16 @@ impl App {
         } else {
             cv.icon_button_off(1416.0, hud_y + 28.0, 150.0, 86.0, Icon::Stop, stop_c);
         }
+        // the button with text that opens the panel to move the machine, under Pause, Start and Stop (lit while the panel is open)
+        cv.chip(
+            1084.0,
+            hud_y + 160.0,
+            482.0,
+            44.0,
+            &self.jog_label(),
+            self.jog_ui.open,
+            Act::Jog(JogAct::Toggle),
+        );
         self.paint_estop(cv);
         self.paint_jog(cv);
         cv.text(
@@ -4180,6 +4206,7 @@ impl eframe::App for App {
             self.act(Act::Choose(Choice::Modern));
         }
         // the panel that moves the machine takes Esc (and its own keys) first, when it is open and busy
+        self.jog_hotkey(&ctx);
         self.jog_keys(&ctx);
         if ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
             if self.edit.is_some() {

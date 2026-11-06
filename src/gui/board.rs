@@ -1845,6 +1845,8 @@ impl App {
                     self.settings.fullscreen,
                     Act::ToggleFullscreen,
                 );
+                // the log of the program
+                self.paint_log_section(cv, x, sy + 150.0);
             }
             1 => {
                 // the model of the machine

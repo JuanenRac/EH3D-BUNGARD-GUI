@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **A log section in the settings window:** the General tab has the switch to write the log, the level of detail (error, warn, info, debug), the largest size of a file (256 KB, 1, 4 or 16 MB) and two buttons, one to open the folder of the log and one to copy the path of its file, with their words in the 37 languages. The choices are kept in the settings file (`log`, `log_level`, `log_max_kb`) and apply the next time the program starts.
+
 ## [0.2.4] - Hour of the computer, local logs for the cause of a closing, jog panel, positions of the tools in the bar, voices and the chaining of the changer
 
 - Update the zip library to the version without the known vulnerabilities.

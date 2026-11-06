@@ -11,14 +11,14 @@
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
-  <img src="https://img.shields.io/badge/Tests-380-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-385-0f6cbd.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.2.4-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
 ---
 
-**诚实性检查 - 今天实际能运行的内容：**一个带窗口的 Rust 程序，有 380 项可在电脑上运行的测试。启动器提供现代界面，或用于手动 (MTC) 或自动 (ATC) 换刀机器的经典钻孔与铣削程序。查看器可从文件夹浏览器、拖放或命令行打开钻孔文件、HP-GL 绘图文件和包含作业的 ZIP 压缩包，在平面视图中按钻头尺寸绘出每个孔并在其上叠加铣削路径，用配置中选定尺寸的工作台以 3D 显示机器，对电路板拼板，并在作业运行时跟踪进度。作业运行在 EH3D-DRILLPRO 和 EH3D-ROUTEPRO 引擎的**模拟器**上；如何连接真实机器（电脑的 RS-232、USB-RS232 适配器，或直接或经由 EH3D-SERVER 连接 EH3D-NODE-BUNGARD）由它们读取的同一个机器文件决定，而**这些方式都没有在此窗口中试过**。连接、设置和刀具窗口只更改它们提供的值，完整的机器和刀具文件还不能编辑，3D 视图也不显示路径的高度。
+**诚实性检查 - 今天实际能运行的内容：**一个带窗口的 Rust 程序，有 385 项可在电脑上运行的测试。启动器提供现代界面，或用于手动 (MTC) 或自动 (ATC) 换刀机器的经典钻孔与铣削程序。查看器可从文件夹浏览器、拖放或命令行打开钻孔文件、HP-GL 绘图文件和包含作业的 ZIP 压缩包，在平面视图中按钻头尺寸绘出每个孔并在其上叠加铣削路径，用配置中选定尺寸的工作台以 3D 显示机器，对电路板拼板，并在作业运行时跟踪进度。作业运行在 EH3D-DRILLPRO 和 EH3D-ROUTEPRO 引擎的**模拟器**上；如何连接真实机器（电脑的 RS-232、USB-RS232 适配器，或直接或经由 EH3D-SERVER 连接 EH3D-NODE-BUNGARD）由它们读取的同一个机器文件决定，而**这些方式都没有在此窗口中试过**。连接、设置和刀具窗口只更改它们提供的值，完整的机器和刀具文件还不能编辑，3D 视图也不显示路径的高度。
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | 版本 | `0.2.4` |
 | 成熟度 | 脚手架 |
-| 测试 | 380 |
+| 测试 | 385 |
 | 技术栈 | Rust |
 | 真实硬件 | 否。只在模拟器和电脑上运行过；从未通过此窗口驱动过任何机器 |
 
@@ -49,7 +49,7 @@
 | 文件与拼板 | 🟡 | 钻孔文件、HP-GL 文件和 ZIP 压缩包可从浏览器、拖放或命令行打开；电路板可按三种模式重复。已用本仓库的小型示例文件试过。 |
 | 设置 | 🟠 | 可更改工作台的可用宽度和深度并保存到机器文件；机器和刀具文件的其余部分仍用经典程序编辑。 |
 | 机器控制 | 🔴 | 作业通过 EH3D-DRILLPRO 和 EH3D-ROUTEPRO 的引擎，因此原则上具备它们的所有连接；只在模拟器上运行过。连接窗口可选择连接方式（计算机的 RS-232、USB-RS232 适配器、EH3D 节点或 EH3D 服务器），测试并保存到机器文件；暂停会在两次移动之间保持作业。 |
-| 测试 | 🟡 | 电脑上通过 380 项测试（`cargo test --features gui`）：启动器、设置、把文件读入场景、机器配置、面板和命令行。没有任何一项接触真实机器。 |
+| 测试 | 🟡 | 电脑上通过 385 项测试（`cargo test --features gui`）：启动器、设置、把文件读入场景、机器配置、面板和命令行。没有任何一项接触真实机器。 |
 | 预编译包 | 🟠 | 工作流为 Windows（64 位和 32 位）、Linux 和 macOS 构建带示例文件的程序；尚未发布版本。 |
 
 ## 🎯 概述
@@ -273,7 +273,7 @@ EH3D-BUNGARD-GUI 是 EH3D 家族中 Bungard 机器的现代界面。它按路径
 
 * **窗口：**启动器和查看器，用鼠标和键盘操作（`Enter` 确认启动器的选择，`Esc` 返回，`Ctrl+O` 打开文件）。
 * **命令行：**`bungard-gui [文件...] [--drill FILE.NCD] [--route FILE.PLT] [--zip JOB.ZIP] [--lang CODE] [--theme NAME] [--data DIR] [--connection FILE] [--screen launcher|viewer]`；没有选项的文件按其扩展名打开。`--modal`、`--panel`、`--yaw`、`--shot` 和 `--start` 为制图而设定窗口、面板、3D 视图的旋转、窗口图片以及作业的开始。
-* **日志：**程序在设置文件夹（Windows 为 `%APPDATA%\EH3D`，其他系统为 `~/.config/eh3d`）中写入 `bungard-gui.log`（较旧的为 `bungard-gui.log.1`、`.2`……）。每一行包含本地时间、自 1970 年起的秒数、版本、进程、级别和程序的相关部分。它记录启动（版本、系统、选项、文件夹、读取的设置）、窗口的变化（获得或失去焦点、最小化、最大化、全屏、大小、屏幕）、当前画面和最上层窗口、按钮的每个操作、打开或拖入的文件及其读取结果、连接（测试、保存、失败）、作业（开始、暂停、停止、各部分结束、机器的提问、急停）、红色提示、更新、恢复文件、后台线程、带有进程和系统内存以及帧时间的心跳、带回溯的 panic，以及在 Windows 上系统的未处理异常。一行写入后即已落盘；相同的行反复出现只计数，行数暴增时会被截断。密码、密钥和令牌绝不会写入。自行结束的运行会写入 `=== clean exit`；下次启动若找不到它，就会写 `previous run ended without a clean exit` 并复制上一份日志的最后几行。设置文件接受 `log = yes|no`（yes）、`log_level = error|warn|info|debug`（info）、`log_max_kb`（1024：开始新文件的大小，64 到 65536）、`log_files`（3：保留的文件数，1 到 20）和 `log_heartbeat_s`（30：两次心跳之间的秒数，5 到 3600）。截图运行（`--shot`）不写日志。
+* **日志：**程序在设置文件夹（Windows 为 `%APPDATA%\EH3D`，其他系统为 `~/.config/eh3d`）中写入 `bungard-gui.log`（较旧的为 `bungard-gui.log.1`、`.2`……）。每一行包含本地时间、自 1970 年起的秒数、版本、进程、级别和程序的相关部分。它记录启动（版本、系统、选项、文件夹、读取的设置）、窗口的变化（获得或失去焦点、最小化、最大化、全屏、大小、屏幕）、当前画面和最上层窗口、按钮的每个操作、打开或拖入的文件及其读取结果、连接（测试、保存、失败）、作业（开始、暂停、停止、各部分结束、机器的提问、急停）、红色提示、更新、恢复文件、后台线程、带有进程和系统内存以及帧时间的心跳、带回溯的 panic，以及在 Windows 上系统的未处理异常。一行写入后即已落盘；相同的行反复出现只计数，行数暴增时会被截断。密码、密钥和令牌绝不会写入。自行结束的运行会写入 `=== clean exit`；下次启动若找不到它，就会写 `previous run ended without a clean exit` 并复制上一份日志的最后几行。设置文件接受 `log = yes|no`（yes）、`log_level = error|warn|info|debug`（info）、`log_max_kb`（1024：开始新文件的大小，64 到 65536）、`log_files`（3：保留的文件数，1 到 20）和 `log_heartbeat_s`（30：两次心跳之间的秒数，5 到 3600）。“设置”窗口的“常规”选项卡中有日志部分，包含开关、详细程度（error、warn、info、debug）、单个文件的最大大小（256 KB、1、4 或 16 MB），以及两个按钮：一个打开日志文件夹，一个复制其文件的路径；更改将在下次启动程序时生效。截图运行（`--shot`）不写日志。
 * **机器：**通过 EH3D-DRILLPRO 和 EH3D-ROUTEPRO 的引擎及它们共用的机器文件：电脑的 RS-232、USB-RS232 适配器、EH3D-NODE-BUNGARD 或 EH3D-SERVER。没有机器文件时，作业在模拟器上运行。
 
 ## ⚙️ 配置
@@ -296,7 +296,7 @@ python -I tools/ci_validate.py
 
 ## 🧪 测试
 
-测试套件有 380 项测试（`cargo test --features gui`）。它们检查启动器及其记住的内容、设置、钻孔或 HP-GL 文件如何变成场景、机器配置、面板和命令行。它使用的引擎（协议、运动、安全门）在 EH3D-DRILLPRO 和 EH3D-ROUTEPRO 中测试。CI 还运行 `cargo fmt --check` 和把警告当作错误的 `cargo clippy`，`python -I tools/ci_validate.py` 检查清单、版本、更新日志和八个 README。
+测试套件有 385 项测试（`cargo test --features gui`）。它们检查启动器及其记住的内容、设置、钻孔或 HP-GL 文件如何变成场景、机器配置、面板和命令行。它使用的引擎（协议、运动、安全门）在 EH3D-DRILLPRO 和 EH3D-ROUTEPRO 中测试。CI 还运行 `cargo fmt --check` 和把警告当作错误的 `cargo clippy`，`python -I tools/ci_validate.py` 检查清单、版本、更新日志和八个 README。
 
 ## 🏗️ 构建与发布
 

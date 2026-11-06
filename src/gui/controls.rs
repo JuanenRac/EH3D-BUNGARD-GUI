@@ -1110,6 +1110,7 @@ mod tests {
             ("head.rs", include_str!("head.rs")),
             ("inspect.rs", include_str!("inspect.rs")),
             ("levelling.rs", include_str!("levelling.rs")),
+            ("logpane.rs", include_str!("logpane.rs")),
             ("machine3d.rs", include_str!("machine3d.rs")),
             ("numedit.rs", include_str!("numedit.rs")),
             ("opener.rs", include_str!("opener.rs")),

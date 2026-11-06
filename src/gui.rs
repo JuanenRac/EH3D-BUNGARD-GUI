@@ -42,6 +42,7 @@ mod icons;
 mod inspect;
 mod jogpanel;
 mod levelling;
+mod logpane;
 mod look;
 mod machine3d;
 mod numedit;
@@ -137,6 +138,12 @@ enum Act {
     DisplayMil(bool),
     /// The window fills the screen, or not.
     ToggleFullscreen,
+    /// The log of the program: the switch, the level, the largest size of a file (KiB), open its folder, copy its path.
+    LogToggle,
+    LogLevel(crate::applog::Level),
+    LogSize(u32),
+    LogOpenFolder,
+    LogCopyPath,
     /// A value to type: what it is and where its box goes (x, y, width).
     Edit(EditTarget, f32, f32, f32),
     ToolDefault(Program, usize),
@@ -309,6 +316,8 @@ pub struct App {
     /// The job is held between two moves: the engine is not asked for the next one.
     paused: bool,
     message: Option<String>,
+    /// Text for the clipboard, which the window hands over at the start of the next frame.
+    pending_copy: Option<String>,
     connection: String,
     hits: Vec<(Rect, Act)>,
     frame: u32,
@@ -565,6 +574,7 @@ impl App {
             running: None,
             paused: false,
             message: None,
+            pending_copy: None,
             connection,
             hits: Vec::new(),
             frame: 0,
@@ -1857,6 +1867,11 @@ impl App {
                 self.settings.fullscreen = !self.settings.fullscreen;
                 self.remember_settings();
             }
+            Act::LogToggle => self.log_toggle(),
+            Act::LogLevel(l) => self.log_set_level(l),
+            Act::LogSize(kb) => self.log_set_size(kb),
+            Act::LogOpenFolder => self.log_open_folder(),
+            Act::LogCopyPath => self.log_copy_path(),
             Act::DisplayMil(v) => {
                 self.settings.display_mil = v;
                 self.remember_settings();
@@ -4369,6 +4384,9 @@ impl eframe::App for App {
         // the words of the menu of the text boxes
         ctx.data_mut(|d| d.insert_temp(egui::Id::unique("ui-language"), self.lang));
         self.run_pending_text_keys(&ctx);
+        if let Some(text) = self.pending_copy.take() {
+            ctx.copy_text(text);
+        }
         // F11 fills the screen or gives it back; the window follows the setting (a picture keeps its size)
         if self.shot.is_none() {
             if ctx.input(|i| i.key_pressed(egui::Key::F11)) {

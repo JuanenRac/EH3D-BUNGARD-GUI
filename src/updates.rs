@@ -443,7 +443,10 @@ pub fn extract_program(archive: &Path, label: &str, out: &Path) -> Done<()> {
             .map_err(|e| bad(&e))?;
         for i in 0..z.len() {
             let entry = z.by_index(i).map_err(|e| bad(&e))?;
-            if entry.is_dir() || last_part(entry.name()) != want {
+            let Ok(name) = entry.name() else {
+                continue;
+            };
+            if entry.is_dir() || last_part(&name) != want {
                 continue;
             }
             copy_limited(entry, out)?;

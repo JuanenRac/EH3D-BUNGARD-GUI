@@ -317,7 +317,6 @@ EH3D-BUNGARD-GUI/
 │   ├── gui.rs                                   a janela: lançador, vista em planta, vista 3D, progresso do trabalho
 │   ├── gui/extra.rs                             abrir ficheiros, panelização, definições da mesa, Acerca de, mover as vistas
 │   ├── gui/fleet.rs                             janela das máquinas e estações do servidor
-│   ├── jog.rs gui/jogpanel.rs                   o painel que move a máquina à mão: passos, velocidades, posições, curso
 │   ├── inspection.rs gui/inspect.rs             a verificação de qualidade do trabalho com a câmara
 │   ├── gui/machine3d.rs                         a máquina da vista 3D: arranque, home, primeiro ponto, trabalho
 │   ├── gui/opener.rs  gui/board.rs              janelas Abrir, placa, ferramentas e definições

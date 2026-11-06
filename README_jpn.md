@@ -317,7 +317,6 @@ EH3D-BUNGARD-GUI/
 │   ├── gui.rs                                   ウィンドウ：ランチャー、平面図、3D 表示、作業の進行
 │   ├── gui/extra.rs                             ファイルを開く、面付け、テーブル設定、バージョン情報、表示の移動
 │   ├── gui/fleet.rs                             サーバーのマシンとステーションのウィンドウ
-│   ├── jog.rs gui/jogpanel.rs                   機械を手動で動かすパネル：ステップ、速度、保存位置、可動範囲
 │   ├── inspection.rs gui/inspect.rs             カメラによる加工の品質チェック
 │   ├── gui/machine3d.rs                         3D 表示のマシン：起動・ホーム・最初の点・作業
 │   ├── gui/opener.rs  gui/board.rs              開く・基板・工具・設定のウィンドウ

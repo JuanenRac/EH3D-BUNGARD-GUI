@@ -317,7 +317,6 @@ EH3D-BUNGARD-GUI/
 │   ├── gui.rs                                   窗口：启动器、平面视图、3D 视图、作业进度
 │   ├── gui/extra.rs                             打开文件、拼板、工作台设置、关于、移动视图
 │   ├── gui/fleet.rs                             服务器机床和工位窗口
-│   ├── jog.rs gui/jogpanel.rs                   手动移动机床的面板：步距、速度、保存位置、行程
 │   ├── inspection.rs gui/inspect.rs             通过摄像头检查加工质量
 │   ├── gui/machine3d.rs                         3D 视图的机床：启动、回原点、第一个点、加工
 │   ├── gui/opener.rs  gui/board.rs              打开、电路板、刀具和设置窗口

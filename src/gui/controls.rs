@@ -742,6 +742,33 @@ mod tests {
                     found.push(format!("{}: {t}", lang.code()));
                 }
             }
+            // the notices in red of the foot of the screen (the zone under the blocks of the viewer, the strip of the other screens), the longest ones joined as the job does
+            a.modal = None;
+            let notices = [
+                a.tr(Text::JobOutsideTable).to_string(),
+                a.tr(Text::JobNothingOn).to_string(),
+                a.tr(Text::JobFinishedRemove).to_string(),
+                a.tr(Text::ClassicMissing).to_string(),
+                a.tr(Text::StageDoneTitle).to_string(),
+                format!(
+                    "{}: {}",
+                    a.tr(Text::BoardTooBig),
+                    a.tr(Text::JobOutsideTable)
+                ),
+                format!("{}: {}", a.tr(Text::RackOutside), a.tr(Text::LblNoRack)),
+                format!("x.ncd: {}", a.tr(Text::NotAnOutline)),
+            ];
+            for screen in [Screen::Viewer, Screen::Launcher] {
+                a.screen = screen;
+                for n in &notices {
+                    a.message = Some(n.clone());
+                    clipped_on(&mut a, &ctx);
+                    for t in clipped_on(&mut a, &ctx) {
+                        found.push(format!("{}: {t}", lang.code()));
+                    }
+                }
+            }
+            a.message = None;
         }
         found.sort();
         found.dedup();

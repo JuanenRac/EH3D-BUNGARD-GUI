@@ -196,6 +196,291 @@ impl App {
     }
 }
 
+// ------------------------------------------------------------------------------------------------ the card under the views
+// Every height of the card is decided here, in design units counted from the top of the card; what paints it (`paint_viewer`) and the tests read [`hud_layout`].
+
+/// The height of the card of the numbers, the bar of progress, the blocks, the notices and the buttons of the job: the views take the rest of the height.
+pub(super) const HUD_H: f32 = 200.0;
+/// The width of each of the four blocks of text of the card.
+pub(super) const HUD_BLOCK_W: f32 = 246.0;
+/// The space between two blocks.
+const HUD_BLOCK_GAP: f32 = 10.0;
+/// Where the contents of the card begin along it (the card itself begins at 20).
+const HUD_LEFT: f32 = 44.0;
+/// The numbers of the head: how many, how wide each is, how far apart they start, and the top of the row with its two heights (label and value).
+const HUD_VALS: usize = 6;
+const HUD_VAL_W: f32 = 148.0;
+const HUD_VAL_STEP: f32 = 156.0;
+const HUD_VALS_Y: f32 = 8.0;
+const HUD_VAL_LABEL_H: f32 = 13.0;
+const HUD_VAL_H: f32 = 32.0;
+/// The row of the progress: the top, the height of its label, the bar and where the percent goes.
+const HUD_PROG_Y: f32 = 60.0;
+const HUD_PROG_LABEL_H: f32 = 14.0;
+const HUD_BAR_W: f32 = 900.0;
+const HUD_BAR_H: f32 = 10.0;
+const HUD_PERCENT_X: f32 = 956.0;
+const HUD_PERCENT_W: f32 = 90.0;
+const HUD_PERCENT_H: f32 = 20.0;
+/// The note of a simulated job ends here, on the line of the label of the progress.
+const HUD_NOTE_RIGHT: f32 = 1064.0;
+const HUD_NOTE_W: f32 = 364.0;
+/// The four blocks: the top of the row and the heights of the label, the value and the detail.
+const HUD_BLOCKS_Y: f32 = 100.0;
+const HUD_BLOCK_LABEL_H: f32 = 14.0;
+const HUD_BLOCK_VALUE_H: f32 = 24.0;
+const HUD_BLOCK_DETAIL_H: f32 = 18.0;
+/// The zone of the notices in red: below the blocks, as wide as they are, with room for this many lines of this height.
+const HUD_WARN_Y: f32 = 160.0;
+pub(super) const HUD_WARN_LINES: usize = 2;
+pub(super) const HUD_WARN_LINE_H: f32 = 16.0;
+pub(super) const HUD_WARN_SIZE: f32 = 13.0;
+/// The buttons of the job at the right: where they start, their sizes and the space between them.
+const HUD_BTN_X: f32 = 1084.0;
+const HUD_BTN_W: f32 = 150.0;
+const HUD_BTN_STEP: f32 = 166.0;
+const HUD_BTN_H: f32 = 76.0;
+const HUD_CHIP_H: f32 = 40.0;
+const HUD_BTN_GAP: f32 = 10.0;
+const HUD_BTN_RIGHT: f32 = 1566.0;
+
+/// The label, the value and the detail of one text of the card.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(super) struct HudCell {
+    pub label: Rect,
+    pub value: Rect,
+    pub detail: Rect,
+}
+
+/// Where everything in the card goes, in design units from the top left corner of the card at its left margin of 20 (x) and its top (y). The text is drawn on the bottom
+/// edge of its rectangle.
+#[derive(Debug, Clone, PartialEq)]
+pub(super) struct HudLayout {
+    /// The numbers of the head (the label and the value of each).
+    pub vals: Vec<HudCell>,
+    pub progress_label: Rect,
+    pub bar: Rect,
+    pub percent: Rect,
+    pub note: Rect,
+    pub blocks: Vec<HudCell>,
+    pub warn: Rect,
+    /// Pause, Start and Stop, and the button with text under them.
+    pub buttons: [Rect; 3],
+    pub jog: Rect,
+}
+
+impl HudLayout {
+    #[cfg(test)]
+    /// The rectangles that must not touch each other (the parts of the cells, not the cells).
+    pub(super) fn leaves(&self) -> Vec<Rect> {
+        let mut out = vec![
+            self.progress_label,
+            self.bar,
+            self.percent,
+            self.note,
+            self.warn,
+            self.jog,
+        ];
+        out.extend(self.buttons);
+        for c in self.vals.iter().chain(&self.blocks) {
+            out.extend([c.label, c.value]);
+            if c.detail.height() > 0.0 {
+                out.push(c.detail);
+            }
+        }
+        out
+    }
+}
+
+/// The height of the group of the three round buttons and the button with text under them, and where it starts so that it is centred in the card.
+fn hud_buttons_y() -> f32 {
+    (HUD_H - (HUD_BTN_H + HUD_BTN_GAP + HUD_CHIP_H)) / 2.0
+}
+
+/// The places of everything in the card (see [`HudLayout`]).
+pub(super) fn hud_layout() -> HudLayout {
+    let r = |x: f32, y: f32, w: f32, h: f32| Rect::from_min_size(Pos2::new(x, y), Vec2::new(w, h));
+    let vals = (0..HUD_VALS)
+        .map(|i| {
+            let x = HUD_LEFT + i as f32 * HUD_VAL_STEP;
+            HudCell {
+                label: r(x, HUD_VALS_Y, HUD_VAL_W, HUD_VAL_LABEL_H),
+                value: r(x, HUD_VALS_Y + HUD_VAL_LABEL_H + 1.0, HUD_VAL_W, HUD_VAL_H),
+                detail: r(x, 0.0, 0.0, 0.0),
+            }
+        })
+        .collect();
+    let blocks = (0..4)
+        .map(|i| {
+            let x = HUD_LEFT + i as f32 * (HUD_BLOCK_W + HUD_BLOCK_GAP);
+            let value_y = HUD_BLOCKS_Y + HUD_BLOCK_LABEL_H;
+            HudCell {
+                label: r(x, HUD_BLOCKS_Y, HUD_BLOCK_W, HUD_BLOCK_LABEL_H),
+                value: r(x, value_y, HUD_BLOCK_W, HUD_BLOCK_VALUE_H),
+                detail: r(
+                    x,
+                    value_y + HUD_BLOCK_VALUE_H,
+                    HUD_BLOCK_W,
+                    HUD_BLOCK_DETAIL_H,
+                ),
+            }
+        })
+        .collect();
+    let bar_y = HUD_PROG_Y + HUD_PROG_LABEL_H + 1.0 + (HUD_PERCENT_H - HUD_BAR_H) / 2.0;
+    let by = hud_buttons_y();
+    let button = |i: usize| {
+        r(
+            HUD_BTN_X + i as f32 * HUD_BTN_STEP,
+            by,
+            HUD_BTN_W,
+            HUD_BTN_H,
+        )
+    };
+    HudLayout {
+        vals,
+        progress_label: r(HUD_LEFT, HUD_PROG_Y, 300.0, HUD_PROG_LABEL_H),
+        bar: r(HUD_LEFT, bar_y, HUD_BAR_W, HUD_BAR_H),
+        percent: r(
+            HUD_PERCENT_X,
+            HUD_PROG_Y + HUD_PROG_LABEL_H + 1.0,
+            HUD_PERCENT_W,
+            HUD_PERCENT_H,
+        ),
+        note: r(
+            HUD_NOTE_RIGHT - HUD_NOTE_W,
+            HUD_PROG_Y,
+            HUD_NOTE_W,
+            HUD_PROG_LABEL_H,
+        ),
+        blocks,
+        warn: r(
+            HUD_LEFT,
+            HUD_WARN_Y,
+            4.0 * HUD_BLOCK_W + 3.0 * HUD_BLOCK_GAP,
+            HUD_WARN_LINES as f32 * HUD_WARN_LINE_H + 2.0,
+        ),
+        buttons: [button(0), button(1), button(2)],
+        jog: r(
+            HUD_BTN_X,
+            by + HUD_BTN_H + HUD_BTN_GAP,
+            HUD_BTN_RIGHT - HUD_BTN_X,
+            HUD_CHIP_H,
+        ),
+    }
+}
+
+/// A text broken into lines no wider than `max_w` by `width` (the same measure the painter uses): at the spaces, and inside a word that is wider than a line alone.
+pub(super) fn wrap_to_width(text: &str, max_w: f32, width: &dyn Fn(&str) -> f32) -> Vec<String> {
+    let mut lines = Vec::new();
+    let mut cur = String::new();
+    for word in text.split_whitespace() {
+        let joined = if cur.is_empty() {
+            word.to_string()
+        } else {
+            format!("{cur} {word}")
+        };
+        if width(&joined) <= max_w {
+            cur = joined;
+            continue;
+        }
+        if !cur.is_empty() {
+            lines.push(std::mem::take(&mut cur));
+        }
+        let mut piece = String::new();
+        for ch in word.chars() {
+            piece.push(ch);
+            if width(&piece) > max_w && piece.chars().count() > 1 {
+                piece.pop();
+                lines.push(std::mem::take(&mut piece));
+                piece.push(ch);
+            }
+        }
+        cur = piece;
+    }
+    if !cur.is_empty() {
+        lines.push(cur);
+    }
+    lines
+}
+
+/// The text in at most `max_lines` lines of at most `max_w`; the last one ends in an ellipsis when there is more. The flag says that something was left out.
+pub(super) fn fit_lines(
+    text: &str,
+    max_lines: usize,
+    max_w: f32,
+    width: &dyn Fn(&str) -> f32,
+) -> (Vec<String>, bool) {
+    let mut lines = wrap_to_width(text, max_w, width);
+    let cut = lines.len() > max_lines;
+    if cut {
+        lines.truncate(max_lines);
+        if let Some(last) = lines.last_mut() {
+            while last.chars().count() > 1 && width(&format!("{last}\u{2026}")) > max_w {
+                last.pop();
+            }
+            last.push('\u{2026}');
+        }
+    }
+    (lines, cut)
+}
+
+impl Cv<'_> {
+    /// The notices of the zone `zone` (in the units of the design, an absolute place), one over the other without touching: the lines are made with the measure of the
+    /// painter, the zone has room for `HUD_WARN_LINES` of them and a notice that does not fit ends in an ellipsis. With `centred` they go in the middle of the zone.
+    pub(super) fn notices(&self, zone: Rect, notes: &[(String, Color32)], centred: bool) {
+        if notes.is_empty() {
+            return;
+        }
+        let font = FontId::proportional(HUD_WARN_SIZE * self.u);
+        let width = |s: &str| {
+            self.p
+                .layout_no_wrap(s.to_string(), font.clone(), Color32::WHITE)
+                .size()
+                .x
+                / self.u
+        };
+        let each = (HUD_WARN_LINES / notes.len()).max(1);
+        let mut y = zone.min.y;
+        for (text, color) in notes {
+            let (lines, cut) = fit_lines(text, each, zone.width(), &width);
+            #[cfg(test)]
+            if cut {
+                CLIPPED.with(|c| {
+                    c.borrow_mut()
+                        .push(format!("{text} (notice, {each} lines)"))
+                });
+            }
+            #[cfg(not(test))]
+            let _ = cut;
+            for line in lines {
+                if y + HUD_WARN_LINE_H > zone.max.y + 1.0 {
+                    return;
+                }
+                if centred {
+                    self.text(
+                        (zone.min.x + zone.max.x) / 2.0,
+                        y,
+                        Align2::CENTER_TOP,
+                        &line,
+                        HUD_WARN_SIZE,
+                        *color,
+                    );
+                } else {
+                    self.text(
+                        zone.min.x,
+                        y,
+                        Align2::LEFT_TOP,
+                        &line,
+                        HUD_WARN_SIZE,
+                        *color,
+                    );
+                }
+                y += HUD_WARN_LINE_H;
+            }
+        }
+    }
+}
+
 /// One block of the area under the bar of progress.
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct HudBlock {
@@ -348,6 +633,103 @@ mod tests {
             "{:?}",
             blocks[0]
         );
+    }
+
+    /// Whether two rectangles share some area (touching at an edge is not sharing).
+    fn overlap(a: Rect, b: Rect) -> bool {
+        a.min.x < b.max.x && b.min.x < a.max.x && a.min.y < b.max.y && b.min.y < a.max.y
+    }
+
+    #[test]
+    fn the_places_of_the_card_do_not_overlap_fit_in_it_and_the_buttons_are_centred() {
+        let lay = hud_layout();
+        // the card goes from the margin of 20 to the margin of the window, and from its top to its height
+        let card = Rect::from_min_size(
+            Pos2::new(20.0, 0.0),
+            Vec2::new(crate::panes::BOARD_W - 40.0, HUD_H),
+        );
+        let leaves = lay.leaves();
+        assert!(leaves.len() > 20);
+        for (i, a) in leaves.iter().enumerate() {
+            assert!(
+                a.width() > 0.0 && a.height() > 0.0,
+                "empty place {i}: {a:?}"
+            );
+            assert!(
+                a.min.x >= card.min.x && a.max.x <= card.max.x,
+                "{a:?} leaves the card along it"
+            );
+            assert!(
+                a.min.y >= card.min.y && a.max.y <= card.max.y,
+                "{a:?} leaves the card in height {}",
+                card.height()
+            );
+            for b in &leaves[i + 1..] {
+                assert!(!overlap(*a, *b), "{a:?} overlaps {b:?}");
+            }
+        }
+        // the card is back to about what it was before the blocks, and the notices are the last thing in it
+        assert!(card.height() <= 200.0, "the card is {} high", card.height());
+        assert!(lay.warn.max.y <= card.height());
+        assert!(
+            lay.warn.height() >= HUD_WARN_LINES as f32 * HUD_WARN_LINE_H,
+            "the zone of the notices has room for its lines"
+        );
+        // the notices have the width of the four blocks and are under all of them
+        let last = lay.blocks.last().unwrap();
+        assert!((lay.warn.max.x - last.value.max.x).abs() < 1e-3);
+        for b in &lay.blocks {
+            assert!(b.detail.max.y <= lay.warn.min.y);
+        }
+        // Pause, Start and Stop are in one line, and they and the button under them are centred in the height of the card
+        assert!(lay.buttons.iter().all(|b| b.min.y == lay.buttons[0].min.y));
+        assert!(lay.jog.min.y >= lay.buttons[0].max.y);
+        let (top, bottom) = (lay.buttons[0].min.y, lay.jog.max.y);
+        let middle = (top + bottom) / 2.0;
+        assert!(
+            (middle - card.height() / 2.0).abs() <= 1.0,
+            "the buttons are centred at {middle}, the card at {}",
+            card.height() / 2.0
+        );
+        assert!((top - (card.height() - bottom)).abs() <= 1.0);
+        // the buttons end where the button with text ends, and that is inside the card at its narrowest
+        assert!((lay.buttons[2].max.x - lay.jog.max.x).abs() <= 1.0);
+        // the bar of progress is centred on the line of its percent
+        assert!((lay.bar.center().y - lay.percent.center().y).abs() <= 1.0);
+    }
+
+    #[test]
+    fn the_notices_are_broken_into_lines_that_fit_with_an_ellipsis_at_the_end_of_the_last() {
+        let width = |s: &str| s.chars().count() as f32 * 7.0;
+        // a short one is one line, as it is
+        let (lines, cut) = fit_lines("Does not fit", 2, 300.0, &width);
+        assert_eq!(lines, vec!["Does not fit".to_string()]);
+        assert!(!cut);
+        // nothing gives no lines
+        assert!(fit_lines("   ", 2, 300.0, &width).0.is_empty());
+        // a long one goes to the second line at a space
+        let text = "The board does not fit on the table of this machine and the job cannot start";
+        let (lines, cut) = fit_lines(text, 2, 300.0, &width);
+        assert_eq!(lines.len(), 2, "{lines:?}");
+        assert!(!cut);
+        assert!(lines.iter().all(|l| width(l) <= 300.0));
+        assert_eq!(lines.join(" "), text);
+        // a longer one is cut with an ellipsis and still fits
+        let long = text.repeat(4);
+        let (lines, cut) = fit_lines(&long, 2, 300.0, &width);
+        assert!(cut);
+        assert_eq!(lines.len(), 2);
+        assert!(lines[1].ends_with('\u{2026}'));
+        assert!(lines.iter().all(|l| width(l) <= 300.0), "{lines:?}");
+        // a word wider than the line (a path, or a language written without spaces) is broken inside
+        let (lines, cut) = fit_lines(&"a".repeat(100), 6, 140.0, &width);
+        assert!(!cut);
+        assert_eq!(lines.len(), 5);
+        assert!(lines.iter().all(|l| width(l) <= 140.0), "{lines:?}");
+        assert_eq!(lines.concat(), "a".repeat(100));
+        let (lines, cut) = fit_lines(&"\u{5de5}".repeat(60), 2, 140.0, &width);
+        assert!(cut);
+        assert!(lines.iter().all(|l| width(l) <= 140.0), "{lines:?}");
     }
 
     #[test]

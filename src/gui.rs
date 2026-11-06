@@ -64,9 +64,8 @@ fn design_w() -> f32 {
     crate::panes::board_width()
 }
 const DESIGN_H: f32 = 900.0;
-/// The height of the card of the numbers and the buttons of the job under the views, and the width of each of the four blocks of text in it.
-const HUD_H: f32 = 240.0;
-const HUD_BLOCK_W: f32 = 246.0;
+// The height of the card under the views (all its places are in `hudinfo`).
+use hudinfo::HUD_H;
 /// The buttons of the top bar: where they start along the bar and how wide each is.
 const TOP_BAR_FROM: f32 = 280.0;
 const TOP_BUTTON_W: f32 = 112.0;
@@ -2531,14 +2530,20 @@ impl App {
         // an open drop-down list is over everything, and the rest of the window waits while it is open
         self.paint_combo(&mut cv);
         if let Some(m) = &self.message {
-            cv.text(
-                design_w() / 2.0,
-                DESIGN_H - 24.0,
-                Align2::CENTER_BOTTOM,
-                m,
-                16.0,
-                col(t.danger),
-            );
+            // in the viewer the notice goes in the zone the card under the views keeps for it; on the other screens, in a strip at the foot
+            let notes = [(m.clone(), col(t.danger))];
+            if self.screen == Screen::Viewer {
+                let zone = hudinfo::hud_layout()
+                    .warn
+                    .translate(Vec2::new(0.0, DESIGN_H - HUD_H - 20.0));
+                cv.notices(zone, &notes, false);
+            } else {
+                let zone = Rect::from_min_size(
+                    Pos2::new(40.0, DESIGN_H - 60.0),
+                    Vec2::new(design_w() - 80.0, 36.0),
+                );
+                cv.notices(zone, &notes, true);
+            }
         }
         self.hits = std::mem::take(&mut cv.hits);
         self.zones = std::mem::take(&mut cv.zones);
@@ -3392,8 +3397,10 @@ impl App {
             }
         }
 
-        // ---- bottom: the numbers and the buttons
+        // ---- bottom: the numbers and the buttons (every place comes from `hud_layout`, counted from the top of the card)
         cv.card(20.0, hud_y, design_w() - 40.0, HUD_H, false, None);
+        let lay = hudinfo::hud_layout();
+        let at = |r: Rect| r.translate(Vec2::new(0.0, hud_y));
         let view = self.running_view();
         let vals = [
             (
@@ -3428,97 +3435,104 @@ impl App {
             ),
             (self.tr(Text::LayerMachine), self.connection.clone()),
         ];
-        for (i, (lab, val)) in vals.iter().enumerate() {
-            let x = 44.0 + i as f32 * 156.0;
+        for (i, ((lab, val), cell)) in vals.iter().zip(&lay.vals).enumerate() {
+            let (l, v) = (at(cell.label), at(cell.value));
             cv.text_fit(
-                x,
-                hud_y + 42.0,
+                l.min.x,
+                l.max.y,
                 Align2::LEFT_BOTTOM,
                 &lab.to_uppercase(),
-                12.0,
+                11.0,
                 col(t.dim),
-                148.0,
+                l.width(),
             );
-            cv.text(
-                x,
-                hud_y + 78.0,
+            cv.text_fit(
+                v.min.x,
+                v.max.y,
                 Align2::LEFT_BOTTOM,
                 val,
-                if i == 5 { 20.0 } else { 28.0 },
+                if i == 5 { 19.0 } else { 26.0 },
                 col(t.text),
+                v.width(),
             );
         }
         let progress = self.progress();
+        let (pl, bar, pct) = (at(lay.progress_label), at(lay.bar), at(lay.percent));
         cv.text(
-            44.0,
-            hud_y + 118.0,
+            pl.min.x,
+            pl.max.y,
             Align2::LEFT_BOTTOM,
             &self.tr(Text::Progress).to_uppercase(),
-            12.0,
+            11.0,
             col(t.dim),
         );
         cv.p.rect_filled(
-            cv.rect(44.0, hud_y + 128.0, 900.0, 16.0),
-            8.0 * cv.u,
+            cv.rect(bar.min.x, bar.min.y, bar.width(), bar.height()),
+            (bar.height() / 2.0) * cv.u,
             alpha(Color32::WHITE, 26),
         );
         cv.p.rect_filled(
-            cv.rect(44.0, hud_y + 128.0, 900.0 * progress as f32, 16.0),
-            8.0 * cv.u,
+            cv.rect(
+                bar.min.x,
+                bar.min.y,
+                bar.width() * progress as f32,
+                bar.height(),
+            ),
+            (bar.height() / 2.0) * cv.u,
             col(t.ok),
         );
         if cv.running && progress > 0.01 {
             // a soft light that crosses the part that is done, once every two seconds
-            let fill_w = 900.0 * progress as f32;
-            let at = (cv.time / 2.0).fract() * (fill_w + 80.0) - 40.0;
-            let (a, b) = (at.max(0.0), (at + 40.0).min(fill_w));
+            let fill_w = bar.width() * progress as f32;
+            let from = (cv.time / 2.0).fract() * (fill_w + 80.0) - 40.0;
+            let (a, b) = (from.max(0.0), (from + 40.0).min(fill_w));
             if b > a {
                 cv.p.rect_filled(
-                    cv.rect(44.0 + a, hud_y + 130.0, b - a, 12.0),
-                    6.0 * cv.u,
+                    cv.rect(bar.min.x + a, bar.min.y + 2.0, b - a, bar.height() - 4.0),
+                    3.0 * cv.u,
                     alpha(Color32::WHITE, 70),
                 );
             }
         }
-        cv.text(
-            960.0,
-            hud_y + 142.0,
+        cv.text_fit(
+            pct.min.x,
+            pct.max.y,
             Align2::LEFT_BOTTOM,
             &format!("{} %", (progress * 100.0).round()),
-            18.0,
+            16.0,
             col(t.text),
+            pct.width(),
         );
         // what is being done, in four blocks (small label, big value, line of detail): the tool and its step, the times, the position and the depth, and the counters
         if let Some(blocks) = self.hud_blocks() {
-            let width = HUD_BLOCK_W;
-            for (i, b) in blocks.iter().enumerate() {
-                let x = 44.0 + i as f32 * (width + 10.0);
+            for (b, cell) in blocks.iter().zip(&lay.blocks) {
+                let (l, v, d) = (at(cell.label), at(cell.value), at(cell.detail));
                 cv.text_fit(
-                    x,
-                    hud_y + 178.0,
+                    l.min.x,
+                    l.max.y,
                     Align2::LEFT_BOTTOM,
                     &b.label.to_uppercase(),
-                    11.0,
+                    10.5,
                     col(t.dim),
-                    width,
+                    l.width(),
                 );
                 cv.text_fit(
-                    x,
-                    hud_y + 206.0,
+                    v.min.x,
+                    v.max.y,
                     Align2::LEFT_BOTTOM,
                     &b.value,
-                    21.0,
+                    20.0,
                     col(t.text),
-                    width,
+                    v.width(),
                 );
                 cv.text_fit(
-                    x,
-                    hud_y + 228.0,
+                    d.min.x,
+                    d.max.y,
                     Align2::LEFT_BOTTOM,
                     &b.detail,
-                    14.0,
+                    13.0,
                     col(t.dim),
-                    width,
+                    d.width(),
                 );
             }
         }
@@ -3534,65 +3548,91 @@ impl App {
             Color32::from_rgb(40, 230, 90),
             Color32::from_rgb(255, 40, 40),
         );
+        let [pb, sb, xb] = lay.buttons.map(at);
         if can_pause {
             cv.icon_button(
-                1084.0,
-                hud_y + 28.0,
-                150.0,
-                86.0,
+                pb.min.x,
+                pb.min.y,
+                pb.width(),
+                pb.height(),
                 Icon::Pause,
                 pause_c,
                 Act::Pause,
             );
         } else {
-            cv.icon_button_off(1084.0, hud_y + 28.0, 150.0, 86.0, Icon::Pause, pause_c);
+            cv.icon_button_off(
+                pb.min.x,
+                pb.min.y,
+                pb.width(),
+                pb.height(),
+                Icon::Pause,
+                pause_c,
+            );
         }
         if can_start {
             cv.icon_button(
-                1250.0,
-                hud_y + 28.0,
-                150.0,
-                86.0,
+                sb.min.x,
+                sb.min.y,
+                sb.width(),
+                sb.height(),
                 Icon::Play,
                 start_c,
                 Act::Start,
             );
         } else {
-            cv.icon_button_off(1250.0, hud_y + 28.0, 150.0, 86.0, Icon::Play, start_c);
+            cv.icon_button_off(
+                sb.min.x,
+                sb.min.y,
+                sb.width(),
+                sb.height(),
+                Icon::Play,
+                start_c,
+            );
         }
         if can_stop {
             cv.icon_button(
-                1416.0,
-                hud_y + 28.0,
-                150.0,
-                86.0,
+                xb.min.x,
+                xb.min.y,
+                xb.width(),
+                xb.height(),
                 Icon::Stop,
                 stop_c,
                 Act::Stop,
             );
         } else {
-            cv.icon_button_off(1416.0, hud_y + 28.0, 150.0, 86.0, Icon::Stop, stop_c);
+            cv.icon_button_off(
+                xb.min.x,
+                xb.min.y,
+                xb.width(),
+                xb.height(),
+                Icon::Stop,
+                stop_c,
+            );
         }
         // the button with text that opens the panel to move the machine, under Pause, Start and Stop (lit while the panel is open)
+        let jog = at(lay.jog);
         cv.chip(
-            1084.0,
-            hud_y + 160.0,
-            482.0,
-            44.0,
+            jog.min.x,
+            jog.min.y,
+            jog.width(),
+            jog.height(),
             &self.jog_label(),
             self.jog_ui.open,
             Act::Jog(JogAct::Toggle),
         );
+        // the note of a job that is only a simulation, on the line of the label of the progress and at its right
+        let note = at(lay.note);
+        cv.text_fit(
+            note.max.x,
+            note.max.y,
+            Align2::RIGHT_BOTTOM,
+            self.tr(Text::SimulatedJob),
+            11.0,
+            col(t.dim),
+            note.width(),
+        );
         self.paint_estop(cv);
         self.paint_jog(cv);
-        cv.text(
-            1250.0,
-            hud_y + 152.0,
-            Align2::LEFT_BOTTOM,
-            self.tr(Text::SimulatedJob),
-            12.0,
-            col(t.dim),
-        );
 
         // ---- a question of the machine for the operator
         if let Some(p) = self.running {

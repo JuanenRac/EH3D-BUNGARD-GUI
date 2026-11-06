@@ -12,6 +12,7 @@ pub mod inspection;
 pub mod jobflow;
 pub mod jobinfo;
 pub mod jobs;
+pub mod jog;
 pub mod launcher;
 pub mod link;
 pub mod machines;

@@ -569,6 +569,19 @@ mod tests {
             .iter()
             .map(|q| q.points.clone())
             .collect();
+        // the bar is deep in the travel of Z, as deep as the board is thick below the surface: a head that is at the bar, or on its way to a place of it, is not cutting
+        let bar: Option<(f64, f64, f64, f64, f64)> = a.bar_view().map(|v| {
+            let xs = v.slots.iter().map(|s| s.x_mm);
+            let ys = v.slots.iter().map(|s| s.y_mm);
+            let zs = v.slots.iter().map(|s| s.z_mm);
+            (
+                xs.clone().fold(f64::MAX, f64::min),
+                xs.fold(f64::MIN, f64::max),
+                ys.clone().fold(f64::MAX, f64::min),
+                ys.fold(f64::MIN, f64::max),
+                zs.fold(f64::MAX, f64::min),
+            )
+        });
         a.act(Act::Start);
         if a.modal == Some(Modal::Rack) {
             a.act(Act::RackGo);
@@ -597,7 +610,13 @@ mod tests {
                     .engine
                     .depth_below_surface_mm()
                     .is_some_and(|d| d >= min_depth);
-                if let (true, Some(h)) = (deep, a.route.engine.head_mm()) {
+                let at_bar = |h: (f64, f64, f64)| {
+                    bar.is_some_and(|(x0, x1, y0, y1, z)| {
+                        (h.0 >= x0 - 1.0 && h.0 <= x1 + 1.0 && h.1 >= y0 - 1.0 && h.1 <= y1 + 1.0)
+                            || h.2 >= z - 1.0
+                    })
+                };
+                if let (true, Some(h)) = (deep, a.route.engine.head_mm().filter(|h| !at_bar(*h))) {
                     out.cutting += 1;
                     out.worst_mm = out.worst_mm.max(distance_to(&paths, (h.0, h.1)));
                     out.reach = (out.reach.0.max(h.0), out.reach.1.max(h.1));

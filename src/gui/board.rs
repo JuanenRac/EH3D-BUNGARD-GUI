@@ -559,12 +559,16 @@ impl App {
                 // the last copy ends where the design of the first one ends, a pitch for each copy; when the copies are a board apart that is the board
                 // moved by the pitch, and when a bigger board (a sheet) holds them the sheet stays and the copies are inside it
                 let (dx1, dy1) = self.design_rect().map_or((x1, y1), |d| (d.2, d.3));
-                (
-                    x0,
-                    y0,
-                    x1.max(dx1 + c.saturating_sub(1) as f64 * px),
-                    y1.max(dy1 + r.saturating_sub(1) as f64 * py),
-                )
+                // a pitch of a whole board or more means each copy is a board: the last board ends a pitch for each copy after the first one
+                let end = |board_end: f64, design_end: f64, start: f64, n: u32, pitch: f64| {
+                    let steps = n.saturating_sub(1) as f64;
+                    if pitch >= board_end - start - 1e-9 {
+                        board_end + steps * pitch
+                    } else {
+                        board_end.max(design_end + steps * pitch)
+                    }
+                };
+                (x0, y0, end(x1, dx1, x0, c, px), end(y1, dy1, y0, r, py))
             }
             None => (x0, y0, x1, y1),
         })

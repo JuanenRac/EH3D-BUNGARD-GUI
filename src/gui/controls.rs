@@ -2046,7 +2046,11 @@ EOF
         assert!(!b.tool_is_on(Program::Drill, off));
         let mut routed = false;
         for _ in 0..80_000 {
-            if b.running.is_none() {
+            if b.stage_wait {
+                // the drilling is done: the routing is followed
+                b.act(Act::Start);
+            }
+            if b.running.is_none() && !b.stage_wait {
                 break;
             }
             if b.running == Some(Program::Route) {

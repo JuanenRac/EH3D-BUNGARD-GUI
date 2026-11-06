@@ -58,9 +58,9 @@ STAGE = {
     "eu": "Zulaketa amaitu da. Orain fresaketa dator.",
 }
 
-# the speed of the voices: Piper's length scale (above 1 is slower). The notices of this folder are spoken a little slower than usual;
+# the speed of the voices: Piper's length scale (above 1 is slower). The notices of this folder last about 2% longer than Piper's own speed (measured on en/m finished.wav);
 # check that the new file lasts as the sentence should against finished.wav and change it with --length-scale if it does not.
-LENGTH_SCALE = 1.15
+LENGTH_SCALE = 1.02
 
 LINE = re.compile(r"^([A-Za-z-]+)/([fm]): (\S+)( \([^)]*\))? - (.*)$")
 SPEAKER = re.compile(r"speaker (\d+)")
@@ -86,9 +86,15 @@ def make(model, speaker, text, out, length_scale, python):
     cmd += ["--", text]
     done = subprocess.run(cmd, capture_output=True, text=True)
     if done.returncode != 0:
+        out.unlink(missing_ok=True)
         return (done.stderr or done.stdout).strip().splitlines()[-1:] or ["Piper failed"]
     # the same format as the other notices: 16 bits, mono (any rate)
-    with wave.open(str(out), "rb") as w:
+    try:
+        w = wave.open(str(out), "rb")
+    except (wave.Error, EOFError) as e:
+        out.unlink(missing_ok=True)
+        return [f"the file is not a WAV ({e})"]
+    with w:
         if w.getnchannels() != 1 or w.getsampwidth() != 2:
             out.unlink()
             return [f"the file is not 16 bits mono ({w.getnchannels()} channels, {8 * w.getsampwidth()} bits)"]

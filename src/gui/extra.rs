@@ -11,6 +11,8 @@ pub(crate) enum Zone {
     Machine,
     /// The emergency button, which is dragged to where the operator wants it.
     Estop,
+    /// The panel that moves the machine by hand, which is dragged by its top.
+    Jog,
     /// The top of a window, which is dragged to move the window.
     ModalMove,
     /// The thin bar between the list of the job and the plan view, and the one between the plan view and the machine view: dragged to give the panes more or less width.
@@ -838,6 +840,7 @@ impl App {
                 let (x, y) = self.settings.estop_pos;
                 self.settings.estop_pos = estop_inside((x + d.0, y + d.1));
             }
+            Zone::Jog => self.jog_drag(d),
             Zone::Machine => {
                 if pan {
                     self.view3d.pan.0 += d.0;
@@ -855,7 +858,7 @@ impl App {
         match z {
             Zone::Plan => self.view2d.zoom = (self.view2d.zoom * k).clamp(0.3, 20.0),
             Zone::Machine => self.view3d.zoom = (self.view3d.zoom * k).clamp(0.3, 8.0),
-            Zone::Estop | Zone::ModalMove | Zone::SplitLeft | Zone::SplitRight => {}
+            Zone::Estop | Zone::Jog | Zone::ModalMove | Zone::SplitLeft | Zone::SplitRight => {}
         }
     }
 
@@ -865,6 +868,8 @@ impl App {
             Zone::Machine => self.view3d = Nav3::default(),
             Zone::Estop => self.settings.estop_pos = crate::launcher::Settings::default().estop_pos,
             Zone::ModalMove => self.modal_off = (0.0, 0.0),
+            // a double click on the panel is a quick pair of presses on its buttons: it never sends the panel anywhere
+            Zone::Jog => {}
             Zone::SplitLeft | Zone::SplitRight => {
                 self.panes = (crate::panes::DEFAULT_LEFT, crate::panes::DEFAULT_RIGHT);
                 self.keep_panes();

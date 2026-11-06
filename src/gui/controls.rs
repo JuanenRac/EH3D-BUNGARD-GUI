@@ -377,6 +377,8 @@ pub(crate) enum Icon {
     Info,
     /// A circular arrow with an arrow pointing down inside it: the window of the updates.
     Update,
+    /// A cross of four arrows: the panel that moves the machine.
+    Jog,
 }
 
 impl Cv<'_> {
@@ -1067,6 +1069,7 @@ mod tests {
             ("opener.rs", include_str!("opener.rs")),
             ("resume.rs", include_str!("resume.rs")),
             ("view2d.rs", include_str!("view2d.rs")),
+            ("jogpanel.rs", include_str!("jogpanel.rs")),
         ];
         let mut bad = Vec::new();
         for (name, src) in files {

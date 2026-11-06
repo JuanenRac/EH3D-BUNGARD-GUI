@@ -39,6 +39,7 @@ mod head;
 mod hudinfo;
 mod icons;
 mod inspect;
+mod jogpanel;
 mod levelling;
 mod look;
 mod machine3d;
@@ -53,6 +54,7 @@ use board::BoardPick;
 use combo::{Combo, ComboId};
 use controls::{apply_visuals, Icon};
 use extra::{Field, Modal, Nav2, Nav3, PanelCfg, PanelMode, Zone};
+use jogpanel::{JogAct, JogUi};
 use numedit::{EditTarget, NumEdit};
 use opener::Browser;
 use std::sync::mpsc::Receiver;
@@ -126,6 +128,8 @@ enum Act {
     FitPlan(bool),
     CenterTool(Program, u8),
     ToggleEmergency,
+    /// A button of the panel that moves the machine by hand.
+    Jog(JogAct),
     /// A tab of the settings window.
     Tab(u8),
     FileUnit(u8),
@@ -473,6 +477,8 @@ pub struct App {
     tool_scroll: usize,
     bars: Vec<BarInfo>,
     bar_drag: Option<Bar>,
+    /// The panel that moves the machine by hand.
+    jog_ui: JogUi,
 }
 
 impl App {
@@ -486,6 +492,7 @@ impl App {
             launcher::settings_path()
         };
         let settings = Settings::load(&settings_path);
+        let jog_path = settings_path.with_extension("jog.cfg");
         let settings_panes = (settings.pane_left, settings.pane_right);
         let settings_fullscreen = settings.fullscreen;
         let lang = o.lang.unwrap_or(settings.lang);
@@ -684,6 +691,7 @@ impl App {
             tool_scroll: 0,
             bars: Vec::new(),
             bar_drag: None,
+            jog_ui: JogUi::new(jog_path),
         };
         let examples = app.base_dir.join("examples");
         let has_jobs = std::fs::read_dir(&examples).is_ok_and(|rd| {
@@ -1143,6 +1151,8 @@ impl App {
 
     /// Starts the job leaving out the first `skip` holes (or paths) of it, which are already done. Without a skip it does the drilling and the routing that are on, one after the other.
     fn start_job_from(&mut self, skip: usize) {
+        // the machine is the job's now: the panel lets go of it
+        self.jog_yield();
         let mut programs = self.job_programs();
         if skip > 0 {
             programs = self.active().map(|(p, _)| p).into_iter().collect();
@@ -1733,6 +1743,7 @@ impl App {
             Act::BoardSwap => self.board_swap(),
             Act::FitPlan(b) => self.fit_plan(b),
             Act::CenterTool(p, t) => self.center_on_tool(p, t),
+            Act::Jog(a) => self.jog_act(a),
             Act::ToggleEmergency => {
                 self.settings.emergency = !self.settings.emergency;
                 self.remember_settings();
@@ -3235,6 +3246,13 @@ impl App {
         );
         // choose, move, copy, cut, paste and delete what is drawn, and undo and redo it
         let tools = [
+            (
+                -464.0,
+                Icon::Jog,
+                self.jog_ui.open,
+                Text::JogTitle,
+                Act::Jog(JogAct::Toggle),
+            ),
             (-96.0, Icon::Redo, false, Text::RedoEdit, Act::RedoEdit),
             (-140.0, Icon::Undo, false, Text::UndoEdit, Act::UndoEdit),
             (-192.0, Icon::Trash, false, Text::DeleteSel, Act::DeleteSel),
@@ -3540,6 +3558,7 @@ impl App {
             cv.icon_button_off(1416.0, hud_y + 28.0, 150.0, 86.0, Icon::Stop, stop_c);
         }
         self.paint_estop(cv);
+        self.paint_jog(cv);
         cv.text(
             1250.0,
             hud_y + 152.0,
@@ -3695,6 +3714,9 @@ impl App {
     /// Where the head of the machine of the 3D view is: the machine has a place of its own (it starts, goes home, travels to the first point and works), so the board
     /// can be moved in the plan view without the machine following it.
     fn head3d(&self) -> Option<(f64, f64)> {
+        if let Some(h) = self.jog_head() {
+            return Some((h.0, h.1));
+        }
         Some(self.m3d.pos())
     }
 
@@ -3706,6 +3728,10 @@ impl App {
             .settings()
             .map_or(23.7, |m| m.z_max_depth_mm - m.base_mm - m.board_mm)
             .clamp(8.0, 60.0);
+        // moved by hand: the panel says how deep
+        if let Some(h) = self.jog_head() {
+            return (at_board - h.2).clamp(-4.0, 60.0);
+        }
         match (self.running, self.head_z) {
             (Some(_), Some(z)) => (at_board - z).clamp(-4.0, 60.0),
             _ => at_board,
@@ -3738,6 +3764,10 @@ impl App {
     }
 
     fn head(&self) -> Option<(f64, f64)> {
+        // moved by hand from the panel
+        if let Some(h) = self.jog_head() {
+            return Some((h.0, h.1));
+        }
         // the simulated head: the plan view and the bar follow it to the bar and back, as the 3D view does
         if let Some(h) = self.running_head_mm() {
             return Some((h.0, h.1));
@@ -4149,6 +4179,8 @@ impl eframe::App for App {
         if ctx.input(|i| i.key_pressed(egui::Key::Enter)) && self.screen == Screen::Launcher {
             self.act(Act::Choose(Choice::Modern));
         }
+        // the panel that moves the machine takes Esc (and its own keys) first, when it is open and busy
+        self.jog_keys(&ctx);
         if ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
             if self.edit.is_some() {
                 self.edit = None;
@@ -4286,6 +4318,7 @@ impl eframe::App for App {
             }
         }
         self.upd_poll();
+        self.jog_tick(&ctx);
         if self.close {
             ctx.send_viewport_cmd(egui::ViewportCommand::Close);
         }

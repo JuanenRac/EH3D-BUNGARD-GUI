@@ -526,6 +526,29 @@ impl Cv<'_> {
                     Stroke::NONE,
                 );
             }
+            Icon::Jog => {
+                // four arrows from the middle, each a line with a head
+                for (dx, dy) in [(0.0f32, -1.0f32), (0.0, 1.0), (-1.0, 0.0), (1.0, 0.0)] {
+                    self.line((cx, cy), (cx + dx * h * 0.7, cy + dy * h * 0.7), 2.2, c);
+                    let (tx, ty) = (cx + dx * h, cy + dy * h);
+                    let (qx, qy) = (-dy, dx);
+                    self.poly(
+                        &[
+                            (tx, ty),
+                            (
+                                tx - dx * h * 0.45 + qx * h * 0.34,
+                                ty - dy * h * 0.45 + qy * h * 0.34,
+                            ),
+                            (
+                                tx - dx * h * 0.45 - qx * h * 0.34,
+                                ty - dy * h * 0.45 - qy * h * 0.34,
+                            ),
+                        ],
+                        c,
+                        Stroke::NONE,
+                    );
+                }
+            }
             Icon::Play | Icon::Pause | Icon::Stop | Icon::Alert => {}
         }
     }

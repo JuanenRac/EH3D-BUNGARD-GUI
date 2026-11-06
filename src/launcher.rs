@@ -465,9 +465,13 @@ impl Settings {
             one_line(&self.machine_make),
             self.profile.to_text()
         ));
+        // the clock offset is written only when one was chosen; otherwise the system clock is used
+        let clock = self
+            .clock_utc_offset_min
+            .map(|m| format!("clock_utc_offset_minutes = {m}\n"))
+            .unwrap_or_default();
         out.push_str(&format!(
-            "clock_utc_offset_minutes = {}\nroute_mark_tolerance_mm = {}\nroute_mark_step_s = {}\nroute_mark_min_depth_mm = {}\n",
-            self.clock_utc_offset_min,
+            "{clock}route_mark_tolerance_mm = {}\nroute_mark_step_s = {}\nroute_mark_min_depth_mm = {}\n",
             self.route_mark_tolerance_mm,
             self.route_mark_step_s,
             self.route_mark_min_depth_mm

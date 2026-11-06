@@ -616,11 +616,18 @@ mod tests {
                     .engine
                     .depth_below_surface_mm()
                     .is_some_and(|d| d >= min_depth);
+                // the way from the work to the bar, and back, runs outside the table: the head is not cutting there
+                let (table_w, table_d) = (a.table.width_mm, a.table.depth_mm);
                 let at_bar = |h: (f64, f64, f64)| {
-                    bar.is_some_and(|(x0, x1, y0, y1, z)| {
-                        (h.0 >= x0 - 1.0 && h.0 <= x1 + 1.0 && h.1 >= y0 - 1.0 && h.1 <= y1 + 1.0)
-                            || h.2 >= z - 1.0
-                    })
+                    h.0 > table_w + 1.0
+                        || h.1 > table_d + 1.0
+                        || bar.is_some_and(|(x0, x1, y0, y1, z)| {
+                            (h.0 >= x0 - 1.0
+                                && h.0 <= x1 + 1.0
+                                && h.1 >= y0 - 1.0
+                                && h.1 <= y1 + 1.0)
+                                || h.2 >= z - 1.0
+                        })
                 };
                 if let (true, Some(h)) = (deep, a.route.engine.head_mm().filter(|h| !at_bar(*h))) {
                     out.cutting += 1;

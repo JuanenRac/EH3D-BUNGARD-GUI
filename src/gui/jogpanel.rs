@@ -1244,10 +1244,11 @@ mod tests {
                 screen_rect: Some(rect),
                 ..Default::default()
             };
-            let _ = ctx.run_ui(input, |ui| {
+            let mut out = ctx.run_ui(input, |ui| {
                 let p = ui.ctx().layer_painter(egui::LayerId::background());
                 a.paint(&p, rect);
             });
+            out.textures_delta.clear();
         };
         paint(&mut a);
         // the main bar and the bar of the 3D view each have a button that toggles the panel (the small icon of the plan bar makes a third)
@@ -1271,7 +1272,8 @@ mod tests {
                 }],
                 ..Default::default()
             };
-            let _ = ctx.run_ui(input, |ui| a.jog_hotkey(ui.ctx()));
+            let mut out = ctx.run_ui(input, |ui| a.jog_hotkey(ui.ctx()));
+            out.textures_delta.clear();
         };
         assert!(!a.conn.is_real());
         key(&mut a, egui::Modifiers::NONE);

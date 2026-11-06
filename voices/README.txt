@@ -75,3 +75,5 @@ Tool:       "Please change the tool."                          (and the same in 
 Visual check, correct:     "The visual check of the board is correct."     (and the same in each language)
 Visual check, not correct: "The visual check of the board is not correct." (and the same in each language)
 A voice that has no recording of the check or of the stage notice plays the tone instead, so an older folder of voices still works.
+The recordings of the stage notice (stage.wav) are made with voices/make_stage.py, which needs Piper and the models of the voices of SOURCES.txt (it downloads nothing):
+`python voices/make_stage.py --models FOLDER_OF_THE_MODELS`, one voice after the other. Until a voice has its stage.wav, the tone plays.

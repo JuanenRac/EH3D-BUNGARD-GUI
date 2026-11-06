@@ -30,3 +30,4 @@ ru/m: ru_RU-dmitri-medium - CC0
 sq/m: sq_AL-edon-medium - CC0
 eu/m: eu_ES-antton-medium - CC BY 4.0 (Antton dataset by Itzune, attribution)
 pt-br/m: pt_BR-faber-medium - CC0
+stage.wav: made by make_stage.py with the voice of each line above (and its speaker, where the line gives one); the sentences are in that script

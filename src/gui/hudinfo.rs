@@ -2,7 +2,7 @@
 //! The numbers come from [`crate::jobinfo`].
 
 use super::*;
-use crate::jobinfo::{clock, end_clock, locate, seconds_left, tool_stats};
+use crate::jobinfo::{clock, clock_offset_min, end_clock, locate, seconds_left, tool_stats};
 
 impl App {
     /// The state of the machine in a word: working with the kind of tool, holding, or waiting for a tool change.
@@ -118,7 +118,11 @@ impl App {
                     .map_or(0, |d| d.as_secs());
                 spent_text.push_str(&format!(
                     "  \u{b7}  {} {}",
-                    end_clock(now, s, self.settings.clock_utc_offset_min),
+                    end_clock(
+                        now,
+                        s,
+                        clock_offset_min(self.settings.clock_utc_offset_min, now)
+                    ),
                     self.tr(Text::HudEndsAt)
                 ));
             }

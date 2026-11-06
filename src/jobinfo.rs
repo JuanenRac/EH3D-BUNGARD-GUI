@@ -155,6 +155,20 @@ pub fn end_clock(now_unix_s: u64, left_s: u64, offset_min: i32) -> String {
     format!("{:02}:{:02}", day / 3600, day % 3600 / 60)
 }
 
+/// Minutes the time zone of the system is from universal time at the given moment (seconds since 1970), daylight saving included.
+pub fn system_utc_offset_min(now_unix_s: u64) -> i32 {
+    use chrono::{Offset, TimeZone};
+    i64::try_from(now_unix_s)
+        .ok()
+        .and_then(|t| chrono::Local.timestamp_opt(t, 0).single())
+        .map_or(0, |d| d.offset().fix().local_minus_utc() / 60)
+}
+
+/// The offset the end hour is shown with: the one of the settings when there is one, the one of the system when not.
+pub fn clock_offset_min(setting: Option<i32>, now_unix_s: u64) -> i32 {
+    setting.unwrap_or_else(|| system_utc_offset_min(now_unix_s))
+}
+
 /// The length of the paths in mm, as (cut so far, in all): a segment is cut when the point it ends at has been reached.
 pub fn route_lengths(paths: &[Path]) -> (f64, f64) {
     let (mut done, mut total) = (0.0, 0.0);
@@ -289,6 +303,9 @@ mod tests {
         assert_eq!(end_clock(ten, 5400, 120), "13:30");
         assert_eq!(end_clock(ten, 0, -11 * 60), "23:00");
         // past midnight it starts again
+        // a setting wins over the system; without one the zone of the system is used (a sane value, whatever the machine)
+        assert_eq!(clock_offset_min(Some(90), ten), 90);
+        assert!((-14 * 60..=14 * 60).contains(&clock_offset_min(None, ten)));
         assert_eq!(end_clock(23 * 3600 + 50 * 60, 20 * 60, 0), "00:10");
     }
 

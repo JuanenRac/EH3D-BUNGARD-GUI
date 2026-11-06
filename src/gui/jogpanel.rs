@@ -1263,15 +1263,17 @@ mod tests {
         let key = |a: &mut App, modifiers: egui::Modifiers| {
             let input = egui::RawInput {
                 screen_rect: Some(rect),
-                events: vec![egui::Event::Key {
-                    key: egui::Key::J,
-                    physical_key: Some(egui::Key::J),
-                    pressed: true,
-                    repeat: false,
-                    modifiers,
-                }],
-                // the state of the keys the program reads comes from here, not from the event
-                modifiers,
+                // the state of the modifier keys the program reads comes from the event that changes them
+                events: vec![
+                    egui::Event::ModifiersChanged(modifiers),
+                    egui::Event::Key {
+                        key: egui::Key::J,
+                        physical_key: Some(egui::Key::J),
+                        pressed: true,
+                        repeat: false,
+                        modifiers,
+                    },
+                ],
                 ..Default::default()
             };
             let mut out = ctx.run_ui(input, |ui| a.jog_hotkey(ui.ctx()));

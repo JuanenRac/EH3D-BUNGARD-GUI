@@ -332,7 +332,9 @@ impl App {
             .and_then(|p| self.running_view().and_then(|v| v.tool).map(|n| (p, n)));
         // the rows that fit between here and the layers; with more tools than that the list scrolls (bar at its side, wheel over it)
         let first_y = y0 + 52.0;
-        let fit = (((max_y - first_y) / 52.0).floor().max(1.0)) as usize;
+        // on a model with the tool changer the button of the places of the tools in the bar goes under the list
+        let reserve = if self.has_changer() { 38.0 } else { 0.0 };
+        let fit = (((max_y - first_y - reserve) / 52.0).floor().max(1.0)) as usize;
         let total = lines.len();
         let shown = total.min(fit);
         let first = self.tool_scroll.min(total.saturating_sub(shown));
@@ -469,6 +471,18 @@ impl App {
             shown,
             first,
         );
+        if self.has_changer() {
+            cv.chip(
+                38.0,
+                y + 2.0,
+                lw - 36.0,
+                32.0,
+                self.tr(Text::SlotsTitle),
+                self.modal == Some(Modal::Slots),
+                Act::Show(Modal::Slots),
+            );
+            y += 36.0;
+        }
         y
     }
 

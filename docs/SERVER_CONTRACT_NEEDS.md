@@ -38,3 +38,42 @@ change from the place of the last drill to the place of the first cutter. The pr
 - If the server answers 400 or 422 to a request with `rack`, the program sends the job again without the two fields.
 - If the server answers 200 without `"rack_applied": true`, the job runs as the server planned it.
 - In both cases every tool goes back to its own place after its work, and the run window shows a red line saying the server did not chain the tool changes.
+
+## Places of the tools in the bar (`rack.slots`)
+
+The tools of a job do not have to be in the bar in the order the job uses them: the person says in which place each one is (the window of the positions in the bar). The programs plan
+this locally. For a job on the server the same `rack` field carries it.
+
+### The request
+
+```json
+{
+  "kind": "drill",
+  "request_version": 2,
+  "rack": {
+    "first": 0,
+    "carry_in": false,
+    "carry_out": true,
+    "slots": [ { "tool": 1, "place": 6 }, { "tool": 2, "place": 3 } ],
+    "carry_slot": 5
+  }
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `rack.slots` | the place of each tool of this job: the tool number and the place of the rack it is in (1 to 14; 0 is the test pin). Absent when the person gave no places: the tools wait from the place `first + 1` in the order of the job, as before |
+| `rack.carry_slot` | with `carry_in`, the place of the tool the chuck comes holding (the last tool of the job before); absent: the place `first` |
+
+### What the server has to do
+
+1. Take every tool of this job from the place in `slots` (a tool that is not in the list is taken from the place the order of the job gives it), put the tool the chuck holds back in its own place, and
+   put the last tool back in its place at the end unless `carry_out`.
+2. Refuse the job with 400 or 422 when a place is not defined in the machine file or is out of reach, and say which.
+3. Answer with `"rack_applied": true` only when it planned with the places.
+
+### What the programs do meanwhile
+
+- A server that refuses the field gets the job again without `rack`: it plans the tools in the order of the job, and not in the places of the window. The run window shows the red line
+  of the chained tool changes; **the tools of that job must then be in the bar in the order of the job.**
+- A server that answers 200 without `"rack_applied": true` has done the same.

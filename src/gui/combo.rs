@@ -24,6 +24,8 @@ pub(crate) enum ComboId {
     BoardSize,
     /// The kind of bit the catalogue shows.
     CatKind,
+    /// The place in the bar of the tool in this row of the window of the places of the tools.
+    Slot(usize),
 }
 
 /// A list that is open, and the first row it shows.
@@ -116,6 +118,7 @@ impl App {
                 .into_iter()
                 .map(|t| self.tr(t).to_string())
                 .collect(),
+            ComboId::Slot(row) => self.slot_items(row),
             ComboId::Sound(cue) => {
                 let mut v = vec![
                     self.tr(Text::SndOff).to_string(),
@@ -192,6 +195,7 @@ impl App {
                     .position(|f| *f == s)
                     .map_or(0, |i| i + 1)
             }),
+            ComboId::Slot(row) => self.slot_current(row),
             ComboId::TabPlace => match self.panel.tab_place {
                 TabPlacement::Even => 0,
                 TabPlacement::Ends => 1,
@@ -266,6 +270,7 @@ impl App {
                 self.saved = false;
                 self.apply_panel();
             }
+            ComboId::Slot(tool_row) => self.slot_pick(tool_row, row),
             ComboId::Sound(cue) => {
                 let setting = match row {
                     0 => SoundSetting::Off,

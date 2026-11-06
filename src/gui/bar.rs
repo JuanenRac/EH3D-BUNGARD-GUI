@@ -1013,6 +1013,7 @@ mod tests {
         a.apply_model_with(machines::Model::from_name("CCD/2 ATC").unwrap(), false);
         a.auto_ok = true;
         a.fixed_dt = Some(0.05);
+        a.assign_job_order();
         a.act(Act::Start);
         // the window of the rack comes first on these models
         if a.modal == Some(Modal::Rack) {
@@ -1144,6 +1145,7 @@ X1481Y984
         a.open_path(&file);
         a.auto_ok = true;
         a.fixed_dt = Some(0.02);
+        a.assign_job_order();
         let loaded = a.rack_slot_tools();
         let all = loaded.len();
         assert!(all >= 2, "{loaded:?}");

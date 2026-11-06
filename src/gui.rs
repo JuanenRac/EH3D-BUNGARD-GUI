@@ -47,6 +47,7 @@ mod numedit;
 mod opener;
 mod rack;
 mod resume;
+mod slotswin;
 mod spindle3d;
 mod update;
 mod view2d;
@@ -193,6 +194,9 @@ enum Act {
     ComboOpen(ComboId),
     ComboPick(usize),
     ComboClose,
+    /// The window of the places of the tools in the bar: give each tool a place in order, or take every place away.
+    SlotsAuto,
+    SlotsClear,
     ToggleToolsOnOpen,
     ToggleSkip,
     Adjust(Field, f32),
@@ -464,6 +468,12 @@ pub struct App {
     rack_first: usize,
     /// The program that ran last in this load left its last tool in the chuck for the next one.
     rack_chain: bool,
+    /// The last tool of the program that ran last in this load (the one the chuck holds when it is handed on), and the tools of the whole load, whatever has run.
+    rack_last: Option<(Program, u8)>,
+    rack_load: Vec<(Program, Vec<u8>)>,
+    /// The place the person gave to each tool of the job in the bar, and the tools of the job when the places were last matched with what was remembered.
+    slot_assign: crate::slots::Assignment,
+    slot_seen: Vec<crate::slots::JobTool>,
     /// The drilling is done and the routing waits for the person to accept (the window that follows the process); the pieces still to run wait in the same lists.
     stage_wait: bool,
     /// The clock of the animations, and when the screen and the window that are on show began to show (in seconds of that clock).
@@ -682,6 +692,10 @@ impl App {
             rack_no: (0, 0),
             rack_first: 0,
             rack_chain: false,
+            rack_last: None,
+            rack_load: Vec::new(),
+            slot_assign: Vec::new(),
+            slot_seen: Vec::new(),
             stage_wait: false,
             anim0: Instant::now(),
             anim_screen: (None, 0.0),
@@ -784,6 +798,7 @@ impl App {
             Some("board") => app.show_modal(Modal::Board),
             Some("tools") => app.show_modal(Modal::Tools),
             Some("bar") => app.show_modal(Modal::Bar),
+            Some("slots") => app.show_modal(Modal::Slots),
             Some("catalogue") => app.show_modal(Modal::Catalogue),
             Some("head") => app.show_modal(Modal::Head),
             Some("inspect") => {
@@ -1183,6 +1198,10 @@ impl App {
             self.message = Some(self.tr(Text::JobOutsideTable).to_string());
             return;
         }
+        // the models with the tool changer need every tool of the job in a place of the bar of its own, and said so, before anything moves
+        if self.has_changer() && !self.slots_ready() {
+            return;
+        }
         // the models with the tool changer load the rack first (and again when the tools do not fit all at once)
         if self.has_changer() {
             let loads = self.rack_plan(&programs);
@@ -1246,6 +1265,8 @@ impl App {
             (0, false, false)
         };
         self.rack_chain = rack_carry_out;
+        // the places the person gave to the tools of this program, and the one of the tool the chuck comes holding
+        let (rack_slots, rack_carry_slot) = self.slots_for_program(program, rack_carry_in);
         self.set_end_sound(program, more_follows);
         if !started {
             let side = self.side_mut(program);
@@ -1261,6 +1282,8 @@ impl App {
                 rack_first,
                 rack_carry_in,
                 rack_carry_out,
+                rack_slots,
+                rack_carry_slot,
                 ..Default::default()
             });
             side.engine.start();
@@ -1453,6 +1476,7 @@ impl App {
 
     /// Advances the engine and takes from it what the views show.
     fn tick(&mut self) {
+        self.slots_sync();
         self.carry_follow();
         self.fleet_tick();
         if let Some(r) = self.conn_rx.as_ref().and_then(|rx| rx.try_recv().ok()) {
@@ -1625,6 +1649,10 @@ impl App {
             if !self.rack_pieces.is_empty() {
                 // the next program takes its tools from the places after the ones of the program that ran, and the chuck is handed on to it
                 self.rack_first += self.rack_only.as_ref().map_or(0, |(_, t)| t.len());
+                self.rack_last = self
+                    .rack_only
+                    .as_ref()
+                    .and_then(|(p, t)| t.last().map(|&t| (*p, t)));
                 let next = self.rack_pieces.remove(0);
                 self.rack_only = Some(next.clone());
                 self.begin_program(next.0, 0);
@@ -1847,6 +1875,8 @@ impl App {
             Act::BrowseSort(c) => self.browse_sort(c),
             Act::BrowseFilter => self.browse_filter(),
             Act::ToggleSelect => self.toggle_select_mode(),
+            Act::SlotsAuto => self.slots_auto(),
+            Act::SlotsClear => self.slots_clear(),
             Act::RackGo => self.rack_go(),
             Act::RackCancel => self.rack_cancel(),
             Act::StartAt(p, t) => self.toggle_start_at(p, t),

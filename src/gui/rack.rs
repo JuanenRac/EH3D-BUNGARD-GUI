@@ -103,19 +103,23 @@ impl App {
         crate::jobflow::plan_loads(&tools, cap)
     }
 
-    /// The tool of each slot of the first load of the job (slot 1 holds the first tool the job uses): the slot, the program and the tool.
+    /// The tool of each slot of the bar: the slot, the program and the tool. Where the person gave the tools their places (always, to start a job on the changer) these are the
+    /// places, and every tool of the job is in the bar from the first moment to the last, whatever has run. Without places, slot 1 holds the first tool the job uses and the
+    /// rest follow in the order of the job.
     pub(crate) fn rack_slot_tools(&self) -> Vec<(u8, Program, u8)> {
         if !self.has_changer() {
             return Vec::new();
         }
-        let live = if self.rack_only.is_some() || !self.rack_show.is_empty() {
-            // a job is going on or the window of the rack is open: what is in the rack now
-            let mut pieces: Vec<(Program, Vec<u8>)> = self.rack_show.clone();
-            if let Some(p) = &self.rack_only {
-                pieces.insert(0, p.clone());
-            }
-            pieces.extend(self.rack_pieces.clone());
-            Some(pieces)
+        let given = self.slot_tools_given();
+        if !given.is_empty() {
+            return given;
+        }
+        let live = if !self.rack_show.is_empty() {
+            // the window of the rack is open: what goes in the rack
+            Some(self.rack_show.clone())
+        } else if self.rack_active && !self.rack_load.is_empty() {
+            // a job is going on: the whole load, the programs that ran before this one included
+            Some(self.rack_load.clone())
         } else {
             None
         };
@@ -134,6 +138,7 @@ impl App {
             return;
         }
         self.rack_show = self.rack_loads.remove(0);
+        self.rack_load = self.rack_show.clone();
         self.rack_no.0 += 1;
         self.show_modal(Modal::Rack);
     }
@@ -152,6 +157,7 @@ impl App {
         let skip = std::mem::take(&mut self.rack_skip);
         self.rack_first = 0;
         self.rack_chain = false;
+        self.rack_last = None;
         self.begin_program(first.0, skip);
     }
 
@@ -169,6 +175,8 @@ impl App {
         self.rack_skip = 0;
         self.rack_first = 0;
         self.rack_chain = false;
+        self.rack_last = None;
+        self.rack_load.clear();
     }
 
     /// The tool of a program with its diameter (drills) or its number (routers).
@@ -230,11 +238,13 @@ impl App {
             let ry = y + 144.0 + row as f32 * 34.0;
             let r = cv.rect(col_x, ry, 330.0, 30.0);
             cv.p.rect_filled(r, 6.0 * cv.u, col(t.panel_raised));
+            // the place the person gave the tool, or the next one of the load when it has none
+            let place = crate::slots::slot_of(&self.slot_assign, *p, *tool).unwrap_or(i + 1);
             cv.text(
                 col_x + 12.0,
                 ry + 22.0,
                 Align2::LEFT_BOTTOM,
-                &format!("{}", i + 1),
+                &format!("{place}"),
                 15.0,
                 col(t.accent),
             );
@@ -336,6 +346,7 @@ mod tests {
         let mut a = app();
         a.settings.model = "CCD/2 ATC".to_string();
         assert!(a.has_changer() && a.rack_places() > 0);
+        a.assign_job_order();
         a.act(Act::Start);
         assert_eq!(a.modal, Some(Modal::Rack));
         assert!(a.running.is_none());
@@ -393,6 +404,7 @@ mod tests {
 
     /// Plays a whole job and says whether the operator was ever asked for a tool and how far along X the head went.
     fn play_whole_job(a: &mut App) -> (bool, f64) {
+        a.assign_job_order();
         a.auto_ok = true;
         a.fixed_dt = Some(2.0);
         a.act(Act::Start);
@@ -442,6 +454,7 @@ mod tests {
         for moved in [false, true] {
             let mut a = app();
             a.apply_model(crate::machines::Model::from_name("CCD/2 ATC").unwrap());
+            a.assign_job_order();
             if moved {
                 a.shift_board(60.0, 40.0);
                 // the job drills where the board was moved to, as the views draw it (and not where the file was when it was opened)
@@ -512,6 +525,7 @@ mod tests {
         a.fixed_dt = Some(2.0);
         let drills = a.tools_to_do(Program::Drill).len();
         assert!(drills > 0 && !a.tools_to_do(Program::Route).is_empty());
+        a.assign_job_order();
         a.act(Act::Start);
         a.act(Act::RackGo);
         assert_eq!(a.rack_first, 0);

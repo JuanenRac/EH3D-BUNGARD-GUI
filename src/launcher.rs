@@ -131,6 +131,9 @@ pub struct Settings {
     pub machine_spindles: std::collections::BTreeMap<String, [Spindle; 2]>,
     /// The thickness (mm) and the copper (um) the person typed for each material whose maker gives none, by `maker|name`, so the next time the material is chosen they come back.
     pub material_values: std::collections::BTreeMap<String, (f64, f64)>,
+    /// The places the person gave to the tools in the bar of the tool changer, kept for each machine (by the key of its model) so that the next job with the same tools finds
+    /// them where they were put.
+    pub slot_books: std::collections::BTreeMap<String, crate::slots::Book>,
     /// The sizes the 3D view draws the original spindle with (from its data sheet unless the settings file says otherwise).
     pub head_dims: crate::spindle::HeadDims,
     /// The updates from GitHub: the master switch (off, the program never asks the network), whether it looks for a new version when it starts, the hours
@@ -199,6 +202,7 @@ impl Default for Settings {
             machine_make: String::new(),
             machine_spindles: std::collections::BTreeMap::new(),
             material_values: std::collections::BTreeMap::new(),
+            slot_books: std::collections::BTreeMap::new(),
             head_dims: crate::spindle::HeadDims::default(),
             updates_enabled: true,
             updates_at_start: false,
@@ -406,6 +410,14 @@ impl Settings {
                 "profile_aluminium" => s.profile = crate::profile::ProfileDims::from_text(v),
                 "machine_name" => s.machine_name = one_line(v.trim()),
                 "machine_make" => s.machine_make = one_line(v.trim()),
+                k if k.starts_with("bar_slots_") => {
+                    // `bar_slots_<model>`: the places of the tools in the bar of that machine (see `slots::Book`)
+                    let model = &k["bar_slots_".len()..];
+                    let book = crate::slots::Book::parse(v);
+                    if !model.is_empty() && !book.is_empty() {
+                        s.slot_books.insert(model.to_string(), book);
+                    }
+                }
                 k if k.starts_with("machine_spindle_") => {
                     // `machine_spindle_<model>_<original|vfd>`: the limits of a model that is not in use
                     if let Some((model, code)) = k["machine_spindle_".len()..].rsplit_once('_') {
@@ -462,6 +474,11 @@ impl Settings {
         ));
         for (key, (t, c)) in &self.material_values {
             out.push_str(&format!("material_values = {}|{t}|{c}\n", one_line(key)));
+        }
+        for (model, book) in &self.slot_books {
+            if !model.is_empty() && !book.is_empty() {
+                out.push_str(&format!("bar_slots_{model} = {}\n", book.to_text()));
+            }
         }
         for (model, pair) in &self.machine_spindles {
             if *model == model_key(&self.model) || model.is_empty() {
@@ -689,6 +706,12 @@ mod tests {
             material_values: [("Acme|Plain laminate".to_string(), (1.6, 35.0))]
                 .into_iter()
                 .collect(),
+            slot_books: [(
+                "ccd_2_atc".to_string(),
+                crate::slots::Book::parse("v1;d800#1=5,r0#7=14"),
+            )]
+            .into_iter()
+            .collect(),
             holes_drilled: [(1u8, 9172u64), (3, 40)].into_iter().collect(),
             recent: vec!["C:/jobs/a.ncd".to_string(), "C:/jobs/b.zip".to_string()],
             fullscreen: true,

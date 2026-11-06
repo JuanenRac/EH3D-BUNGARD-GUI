@@ -36,7 +36,13 @@ impl App {
                     self.fleet.fleet = Some(f);
                     self.fleet.error = None;
                 }
-                Err(e) => self.fleet.error = Some(e),
+                Err(e) => {
+                    crate::applog::warn(
+                        "fleet",
+                        format!("the server did not give the machines: {e}"),
+                    );
+                    self.fleet.error = Some(e)
+                }
             }
         }
         if self.modal != Some(Modal::Fleet) || self.fleet.rx.is_some() {
@@ -56,6 +62,7 @@ impl App {
         let client = Client::new(&self.conn);
         let (tx, rx) = std::sync::mpsc::channel();
         std::thread::spawn(move || {
+            let _t = crate::applog::thread_guard("fleet");
             let _ = tx.send(client.fleet());
         });
         self.fleet.rx = Some(rx);
@@ -71,6 +78,7 @@ impl App {
             .and_then(|f| f.machines.get(index))
             .map(|m| m.id.clone());
         if let Some(id) = id {
+            crate::applog::info("fleet", format!("machine of the server chosen: {id}"));
             self.conn.server_machine = id;
             self.conn_save();
         }

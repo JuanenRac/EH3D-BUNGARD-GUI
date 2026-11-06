@@ -749,10 +749,17 @@ pub fn spawn_check(
     });
     let st = st.clone();
     std::thread::spawn(move || {
+        let _t = crate::applog::thread_guard("update-check");
         let r = match label {
             Some(l) => fetch_release(&cfg, l),
             None => Err(Failure::NoPackage),
         };
+        match &r {
+            Ok(rel) => crate::applog::info("update", format!("latest release {}", rel.tag)),
+            Err(e) => {
+                crate::applog::warn("update", format!("the look for a new version failed: {e}"))
+            }
+        }
         with(&st, |s| {
             s.busy = false;
             s.checked = true;
@@ -807,7 +814,15 @@ pub fn spawn_update(
     });
     let st = st.clone();
     std::thread::spawn(move || {
+        let _t = crate::applog::thread_guard("update");
         let r = run_update(&st, &cfg, &release, &target, &cancel);
+        match &r {
+            Ok(()) => crate::applog::info(
+                "update",
+                format!("updated from {} to {}", target.version, release.version),
+            ),
+            Err(e) => crate::applog::error("update", format!("the update failed: {e}")),
+        }
         let _ = std::fs::remove_dir_all(&target.work);
         let (what, note) = match &r {
             Ok(()) => ("update", String::new()),

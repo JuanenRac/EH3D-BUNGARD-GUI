@@ -11,14 +11,14 @@
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
-  <img src="https://img.shields.io/badge/Tests-367-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-380-0f6cbd.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.2.3-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
 ---
 
-**Honesty check - what actually runs today:** a Rust program with a window and 367 tests that run on a computer. The launcher offers the modern interface or the classic drilling and routing programs for a machine with manual (MTC) or automatic (ATC) tool change. The viewer opens drilling files, HP-GL plot files and ZIP archives of jobs (from a folder browser, by drag and drop or from the command line), draws the plan view with every hole by drill size and the routing paths over it, shows the machine in 3D with the table of the size chosen in the configuration, panelizes the board and follows the job as it runs. The job runs on the **simulator** of the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO; the same machine file they read decides how a real machine is reached (the computer's RS-232, a USB-RS232 adapter, or the EH3D-NODE-BUNGARD directly or through EH3D-SERVER), and **none of those has been tried from this window**. The windows of the connection, the settings and the tools change the values they offer, the whole machine and tool files cannot be edited yet, and the 3D view does not show the height of the tool paths.
+**Honesty check - what actually runs today:** a Rust program with a window and 380 tests that run on a computer. The launcher offers the modern interface or the classic drilling and routing programs for a machine with manual (MTC) or automatic (ATC) tool change. The viewer opens drilling files, HP-GL plot files and ZIP archives of jobs (from a folder browser, by drag and drop or from the command line), draws the plan view with every hole by drill size and the routing paths over it, shows the machine in 3D with the table of the size chosen in the configuration, panelizes the board and follows the job as it runs. The job runs on the **simulator** of the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO; the same machine file they read decides how a real machine is reached (the computer's RS-232, a USB-RS232 adapter, or the EH3D-NODE-BUNGARD directly or through EH3D-SERVER), and **none of those has been tried from this window**. The windows of the connection, the settings and the tools change the values they offer, the whole machine and tool files cannot be edited yet, and the 3D view does not show the height of the tool paths.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Version | `0.2.3` |
 | Maturity | Scaffolding |
-| Tests | 367 |
+| Tests | 380 |
 | Stack | Rust |
 | On real hardware | No. It has run on the simulator and on a computer only; no machine has been driven from this window |
 
@@ -49,7 +49,7 @@ Each line is one part of this repository and the light says how far it is today.
 | Files and panelization | 🟡 | Drilling files, HP-GL files and ZIP archives are opened from a browser, by drag and drop or from the command line; the board is repeated in three modes. Tried with the small sample files of this repository. |
 | Settings | 🟠 | The usable width and depth of the table are changed and saved to the machine files; the rest of the machine and tool files is still edited with the classic programs. |
 | Machine control | 🔴 | The job goes through the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO, so every connection they have is there in principle; it has run on the simulator only. The Connection window chooses the link (the computer's RS-232, a USB-RS232 adapter, the EH3D node or the EH3D server), tests it and saves it to the machine file, and Pause holds the job between two moves. |
-| Tests | 🟡 | 367 tests pass on a computer (`cargo test --features gui`): the launcher, the settings, the reading of the files into the scene, the machine profiles, the panel and the command line. None of them touches a machine. |
+| Tests | 🟡 | 380 tests pass on a computer (`cargo test --features gui`): the launcher, the settings, the reading of the files into the scene, the machine profiles, the panel and the command line. None of them touches a machine. |
 | Ready-made packages | 🟠 | A workflow builds the program for Windows (64 and 32 bits), Linux and macOS with the sample files; no release has been published yet. |
 
 ## 🎯 Overview
@@ -273,6 +273,7 @@ How the parts of this repository fit together: who uses it, what it holds and wh
 
 * **Window:** the launcher and the viewer, with the mouse and the keyboard (`Enter` accepts the choice of the launcher, `Esc` goes back, `Ctrl+O` opens files).
 * **Command line:** `bungard-gui [FILE...] [--drill FILE.NCD] [--route FILE.PLT] [--zip JOB.ZIP] [--lang CODE] [--theme NAME] [--data DIR] [--connection FILE] [--screen launcher|viewer]`; files without an option are opened as what their extension says. `--modal`, `--panel`, `--yaw`, `--shot` and `--start` set a window, the panel, the turn of the 3D view, a picture of the window and the start of the job, for the pictures.
+* **Log:** the program writes `bungard-gui.log` in the settings folder (`%APPDATA%\EH3D` on Windows, `~/.config/eh3d` elsewhere; the older ones are `bungard-gui.log.1`, `.2`...). Each line has the local time, the seconds since 1970, the version, the process, the level and the part of the program. It records the start (version, system, options, folders, the settings read), the changes of the window (focus gained or lost, minimised, maximised, full screen, size, screen), the screen and the window on top, every action of the buttons, the files opened or dropped and what the reading of each found, the connection (tested, saved, failed), the job (start, pause, stop, end of each part, questions of the machine, emergency stop), the red notices, the update, the recovery file, the background threads, a heartbeat with the memory of the process and of the system and the times of the frames, a panic with its backtrace and, on Windows, an unhandled exception of the system. A line is on the disk as soon as it is written; the same line again and again is only counted, and a flood of lines is cut. Passwords, keys and tokens are never written. A run that ends by itself writes `=== clean exit`; the next start, if it finds none, says `previous run ended without a clean exit` and copies the last lines of the log before it. The settings file takes `log = yes|no` (yes), `log_level = error|warn|info|debug` (info), `log_max_kb` (1024: the size at which a new file is started, 64 to 65536), `log_files` (3: how many files are kept, 1 to 20) and `log_heartbeat_s` (30: seconds between two heartbeats, 5 to 3600). A picture run (`--shot`) writes no log.
 * **Machine:** through the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO and the machine file they share: the computer's RS-232, a USB-RS232 adapter, the EH3D-NODE-BUNGARD, or EH3D-SERVER. Without a machine file the job runs on the simulator.
 
 ## ⚙️ Configuration
@@ -295,7 +296,7 @@ Run it with `run.bat` (Windows) or `./run.sh` (Linux and macOS); both build the 
 
 ## 🧪 Testing
 
-The suite has 367 tests (`cargo test --features gui`). They check the launcher and what it remembers, the settings, how a drilling or an HP-GL file becomes the scene, the machine profiles, the panel and the command line. The engines it uses (protocol, motion, safety gate) are tested in EH3D-DRILLPRO and EH3D-ROUTEPRO. The CI also runs `cargo fmt --check` and `cargo clippy` with warnings as errors, and `python -I tools/ci_validate.py` checks the manifest, the versions, the changelog and the eight READMEs.
+The suite has 380 tests (`cargo test --features gui`). They check the launcher and what it remembers, the settings, how a drilling or an HP-GL file becomes the scene, the machine profiles, the panel and the command line. The engines it uses (protocol, motion, safety gate) are tested in EH3D-DRILLPRO and EH3D-ROUTEPRO. The CI also runs `cargo fmt --check` and `cargo clippy` with warnings as errors, and `python -I tools/ci_validate.py` checks the manifest, the versions, the changelog and the eight READMEs.
 
 ## 🏗️ Build & Release
 
@@ -326,6 +327,7 @@ EH3D-BUNGARD-GUI/
 │   ├── machines.rs                              the Bungard machine profiles and the work area from the table size
 │   ├── launcher.rs                              the launcher choices, the classic programs and what is remembered
 │   ├── link.rs                                  the connection of the machine file: which keys it writes
+│   ├── applog.rs gui/diag.rs                    the log file of the program and what the window tells it
 │   ├── cli.rs                                   the command line
 │   ├── lib.rs bin/                              the library root and the bungard-gui executable
 │   ├── spindle.rs                               the two spindles, their limits and whether a bit fits each

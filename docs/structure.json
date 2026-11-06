@@ -178,6 +178,19 @@
           }
         },
         {
+          "name": "applog.rs gui/diag.rs",
+          "desc": {
+            "en": "the log file of the program and what the window tells it",
+            "es": "el fichero de registro del programa y lo que le cuenta la ventana",
+            "de": "die Protokolldatei des Programms und was das Fenster ihr meldet",
+            "fr": "le fichier journal du programme et ce que la fenêtre lui dit",
+            "it": "il file di registro del programma e ciò che la finestra gli comunica",
+            "ja": "プログラムのログファイルと、ウィンドウがそこへ書き込む内容",
+            "zh": "程序的日志文件，以及窗口写入其中的内容",
+            "pt": "o ficheiro de registo do programa e o que a janela lhe comunica"
+          }
+        },
+        {
           "name": "cli.rs",
           "desc": {
             "en": "the command line",

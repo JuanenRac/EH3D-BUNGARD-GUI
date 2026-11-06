@@ -148,6 +148,7 @@ impl App {
         if done != self.recovery_done || due {
             if done != self.recovery_done || self.recovery_at.is_none() {
                 self.recovery_now(p).save(&path);
+                crate::applog::debug("recovery", format!("recovery file saved: {done} done"));
                 self.recovery_done = done;
             }
             self.recovery_at = Some(Instant::now());
@@ -176,6 +177,7 @@ impl App {
                     .or(r.route.as_ref())
                     .is_some_and(|f| f.exists()) =>
             {
+                crate::applog::info("recovery", "a job left in the middle is offered");
                 self.resume = Some(r);
                 self.screen = Screen::Viewer;
                 self.modal = Some(Modal::Resume);
@@ -193,6 +195,10 @@ impl App {
         if !r.fingerprint.is_empty()
             && r.fingerprint != self.work_fingerprint(r.drill.as_ref(), r.route.as_ref())
         {
+            crate::applog::warn(
+                "recovery",
+                "the files or the settings changed: the job is not resumed",
+            );
             self.message = Some(self.tr(Text::ResumeChanged).to_string());
             self.clear_recovery();
             return;

@@ -317,6 +317,7 @@ impl App {
         self.start_at.clear();
         self.board_frozen = None;
         self.move_design = false;
+        crate::applog::info("file", format!("opening {}", path.display()));
         let name = path
             .file_name()
             .map(|n| n.to_string_lossy().to_string())
@@ -746,8 +747,16 @@ impl App {
     pub(super) fn conn_test(&mut self) {
         let c = self.conn.clone();
         let (tx, rx) = std::sync::mpsc::channel();
+        crate::applog::info("connection", format!("testing the link: {}", c.describe()));
         std::thread::spawn(move || {
+            let _t = crate::applog::thread_guard("connection-test");
             let r = c.open().map(|_| ()).map_err(|e| e.to_string());
+            match &r {
+                Ok(()) => crate::applog::info("connection", "test: the link opened"),
+                Err(e) => {
+                    crate::applog::warn("connection", format!("test: the link did not open: {e}"))
+                }
+            }
             let _ = tx.send(r);
         });
         self.conn_rx = Some(rx);
@@ -770,10 +779,24 @@ impl App {
         }
         match std::fs::write(&self.conn_path, text) {
             Ok(()) => {
+                crate::applog::info(
+                    "connection",
+                    format!(
+                        "connection saved to {}: {}",
+                        self.conn_path.display(),
+                        self.connection
+                    ),
+                );
                 self.saved = true;
                 self.message = None;
             }
-            Err(e) => self.message = Some(format!("{}: {e}", self.conn_path.display())),
+            Err(e) => {
+                crate::applog::error(
+                    "connection",
+                    format!("cannot write {}: {e}", self.conn_path.display()),
+                );
+                self.message = Some(format!("{}: {e}", self.conn_path.display()))
+            }
         }
     }
 
@@ -785,7 +808,13 @@ impl App {
                 self.saved = true;
                 self.message = None;
             }
-            (Err(e), _) | (_, Err(e)) => self.message = Some(e),
+            (Err(e), _) | (_, Err(e)) => {
+                crate::applog::error(
+                    "settings",
+                    format!("cannot save the settings of the machine: {e}"),
+                );
+                self.message = Some(e)
+            }
         }
         // the sounds and the connection go to the machine file
         if self.running.is_none() {

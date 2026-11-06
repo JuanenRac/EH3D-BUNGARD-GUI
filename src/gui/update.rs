@@ -74,6 +74,7 @@ impl App {
             return;
         }
         self.upd_seen = false;
+        crate::applog::info("update", "look for a new version started");
         let _ = up::spawn_check(&self.upd, self.upd_config(), up::platform_label());
     }
 
@@ -91,6 +92,7 @@ impl App {
             return;
         }
         self.upd_cancel.store(false, Ordering::Relaxed);
+        crate::applog::info("update", format!("update to {} started", rel.version));
         let _ = up::spawn_update(
             &self.upd,
             self.upd_config(),
@@ -108,6 +110,7 @@ impl App {
         if v.busy || v.restart_needed || up::previous_version(&target.exe).is_none() {
             return;
         }
+        crate::applog::info("update", "going back to the earlier version");
         let _ = up::run_undo(&self.upd, &target);
     }
 
@@ -116,9 +119,16 @@ impl App {
             return;
         }
         if let Some(exe) = self.upd_exe.clone() {
+            crate::applog::info(
+                "update",
+                format!("restart to use the new version: {}", exe.display()),
+            );
             match up::restart(&exe) {
                 Ok(()) => self.close = true,
-                Err(e) => self.message = Some(format!("{}: {e}", self.tr(Text::UpdFailed))),
+                Err(e) => {
+                    crate::applog::error("update", format!("the restart failed: {e}"));
+                    self.message = Some(format!("{}: {e}", self.tr(Text::UpdFailed)))
+                }
             }
         }
     }

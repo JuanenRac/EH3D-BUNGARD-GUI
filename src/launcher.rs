@@ -165,6 +165,8 @@ pub struct Settings {
     pub route_mark_step_s: f64,
     /// How far into the board (in mm) the tool has to be for the head to count as cutting; above that the head is travelling and marks nothing.
     pub route_mark_min_depth_mm: f64,
+    /// The log of the program (`bungard-gui.log`): whether it is written, how detailed, how big, how many files, how often the heartbeat beats.
+    pub log: crate::applog::Config,
 }
 
 /// Where the latest release of this program is asked for (the API of GitHub); the settings file can point it elsewhere.
@@ -220,6 +222,7 @@ impl Default for Settings {
             route_mark_tolerance_mm: 0.35,
             route_mark_step_s: 0.05,
             route_mark_min_depth_mm: 0.02,
+            log: crate::applog::Config::default(),
         }
     }
 }
@@ -447,7 +450,10 @@ impl Settings {
                         }
                     }
                 }
-                _ => {}
+                other => {
+                    // the keys of the log; any other key is not known and is left
+                    s.log.set(other, v);
+                }
             }
         }
         // the model in use keeps its limits in `spindles`
@@ -476,6 +482,7 @@ impl Settings {
             self.route_mark_step_s,
             self.route_mark_min_depth_mm
         ));
+        out.push_str(&self.log.to_text());
         for (key, (t, c)) in &self.material_values {
             out.push_str(&format!("material_values = {}|{t}|{c}\n", one_line(key)));
         }
@@ -736,6 +743,13 @@ mod tests {
             route_mark_tolerance_mm: 0.5,
             route_mark_step_s: 0.1,
             route_mark_min_depth_mm: 0.05,
+            log: crate::applog::Config {
+                enabled: false,
+                level: crate::applog::Level::Debug,
+                max_kb: 256,
+                files: 5,
+                heartbeat_s: 10,
+            },
         };
         s.save(&path).unwrap();
         assert_eq!(Settings::load(&path), s);
@@ -862,6 +876,32 @@ route_mark_step_s = 99
         assert_eq!(wild.clock_utc_offset_min, None);
         assert_eq!(wild.route_mark_tolerance_mm, d.route_mark_tolerance_mm);
         assert_eq!(wild.route_mark_step_s, d.route_mark_step_s);
+    }
+
+    #[test]
+    fn the_keys_of_the_log_are_read_with_limits_and_written_with_the_others() {
+        let s = Settings::parse(
+            "log = no
+log_level = debug
+log_max_kb = 512
+log_files = 2
+log_heartbeat_s = 15
+",
+        );
+        assert!(!s.log.enabled);
+        assert_eq!(s.log.level, crate::applog::Level::Debug);
+        assert_eq!((s.log.max_kb, s.log.files, s.log.heartbeat_s), (512, 2, 15));
+        assert_eq!(Settings::parse(&s.to_text()).log, s.log);
+        let d = Settings::default();
+        assert!(d.log.enabled);
+        assert!(d.to_text().contains("log_heartbeat_s = 30"));
+        // out of range or not a level: the defaults stay
+        let wild = Settings::parse(
+            "log_max_kb = 1
+log_level = loud
+",
+        );
+        assert_eq!(wild.log, d.log);
     }
 
     #[test]

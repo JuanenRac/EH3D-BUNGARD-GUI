@@ -80,6 +80,7 @@ impl App {
         };
         let (tx, rx) = channel();
         std::thread::spawn(move || {
+            let _t = crate::applog::thread_guard("node-status");
             let _ = tx.send(link.status());
         });
         self.head.status_rx = Some(rx);
@@ -90,7 +91,9 @@ impl App {
     pub(crate) fn head_measure(&mut self) {
         let Some(link) = self.head_link() else { return };
         let (tx, rx) = channel();
+        crate::applog::info("head", "measure of the table asked");
         std::thread::spawn(move || {
+            let _t = crate::applog::thread_guard("node-measure");
             let _ = tx.send(link.measure(0));
         });
         self.head.measure_rx = Some(rx);
@@ -99,6 +102,7 @@ impl App {
 
     fn head_stop_camera(&mut self) {
         if let Some(stop) = self.head.stop_camera.take() {
+            crate::applog::info("head", "camera stream stopped");
             stop.store(true, Ordering::SeqCst);
         }
         self.head.frame_rx = None;
@@ -110,9 +114,15 @@ impl App {
         let stop = Arc::new(AtomicBool::new(false));
         let (tx, rx) = channel::<Frame>();
         let flag = stop.clone();
+        crate::applog::info("head", "camera stream started");
         std::thread::spawn(move || {
+            let _t = crate::applog::thread_guard("camera");
             while !flag.load(Ordering::SeqCst) {
-                if let Ok(mut s) = link.open_stream() {
+                let opened = link.open_stream();
+                if let Err(e) = &opened {
+                    crate::applog::warn("head", format!("the camera stream did not open: {e}"));
+                }
+                if let Ok(mut s) = opened {
                     let mut split = MjpegSplitter::new();
                     let mut buf = [0u8; 16 * 1024];
                     while !flag.load(Ordering::SeqCst) {
@@ -159,6 +169,9 @@ impl App {
             .as_ref()
             .and_then(|rx| rx.try_recv().ok())
         {
+            if let Err(e) = &r {
+                crate::applog::warn("head", format!("the node did not give its status: {e}"));
+            }
             self.head.status = Some(r);
             self.head.status_rx = None;
         }
@@ -168,6 +181,10 @@ impl App {
             .as_ref()
             .and_then(|rx| rx.try_recv().ok())
         {
+            match &r {
+                Ok(_) => crate::applog::info("head", "measure of the table received"),
+                Err(e) => crate::applog::warn("head", format!("measure of the table failed: {e}")),
+            }
             self.head.measure = Some(r);
             self.head.measure_rx = None;
         }

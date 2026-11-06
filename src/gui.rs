@@ -31,6 +31,7 @@ mod board;
 mod catalogue;
 mod combo;
 mod controls;
+mod diag;
 mod edit;
 mod extra;
 mod fleet;
@@ -488,6 +489,8 @@ pub struct App {
     bar_drag: Option<Bar>,
     /// The panel that moves the machine by hand.
     jog_ui: JogUi,
+    /// What is logged of the window and of the state of the program (see `diag`).
+    diag: diag::Diag,
 }
 
 impl App {
@@ -504,6 +507,7 @@ impl App {
         let jog_path = settings_path.with_extension("jog.cfg");
         let settings_panes = (settings.pane_left, settings.pane_right);
         let settings_fullscreen = settings.fullscreen;
+        let settings_log_beat = settings.log.heartbeat_s;
         let lang = o.lang.unwrap_or(settings.lang);
         let theme_id = o.theme.unwrap_or(settings.theme);
         let dlang = drill_lang(lang);
@@ -705,6 +709,7 @@ impl App {
             bars: Vec::new(),
             bar_drag: None,
             jog_ui: JogUi::new(jog_path),
+            diag: diag::Diag::new(settings_log_beat),
         };
         let examples = app.base_dir.join("examples");
         let has_jobs = std::fs::read_dir(&examples).is_ok_and(|rd| {
@@ -866,6 +871,10 @@ impl App {
     }
 
     fn load_drill(&mut self, path: &Path) {
+        crate::applog::info(
+            "file",
+            format!("loading the drilling file {}", path.display()),
+        );
         self.drill_path = Some(path.to_path_buf());
         let turned = self.source_for(path, true);
         let path = turned.as_path();
@@ -891,8 +900,21 @@ impl App {
                 }
                 self.drill.base = self.drill.scene.clone();
                 self.message = None;
+                crate::applog::info(
+                    "file",
+                    format!(
+                        "drilling file loaded: {} holes, {} tools, unit {} mm",
+                        self.drill.scene.holes.len(),
+                        self.drill.scene.sizes().len(),
+                        unit
+                    ),
+                );
             }
-            None => self.message = Some(self.drill.engine.error().unwrap_or("?").to_string()),
+            None => {
+                let why = self.drill.engine.error().unwrap_or("?").to_string();
+                crate::applog::error("file", format!("the drilling file was not loaded: {why}"));
+                self.message = Some(why)
+            }
         }
         self.drill.last_done = 0;
     }
@@ -959,6 +981,10 @@ impl App {
         } else {
             path
         };
+        crate::applog::info(
+            "file",
+            format!("loading the routing file {}", path.display()),
+        );
         self.route_path = Some(path.to_path_buf());
         let turned = self.source_for(path, false);
         let path = turned.as_path();
@@ -981,12 +1007,22 @@ impl App {
                 }
             }
             self.route.base = self.route.scene.clone();
+            crate::applog::info(
+                "file",
+                format!(
+                    "routing file loaded: {} paths",
+                    self.route.scene.paths.len()
+                ),
+            );
+        } else {
+            crate::applog::error("file", "the routing file could not be read");
         }
         self.route.last_done = 0;
     }
 
     /// Opens a job archive: its first drilling file and its first routing file are loaded and the others can be chosen from the list.
     fn open_zip(&mut self, path: &Path) {
+        crate::applog::info("file", format!("opening the archive {}", path.display()));
         match Archive::open(path) {
             Ok(a) => {
                 let first_drill = a.first(Kind::Drill).map(|e| e.name.clone());
@@ -997,7 +1033,10 @@ impl App {
                 }
                 self.refit_table();
             }
-            Err(e) => self.message = Some(e),
+            Err(e) => {
+                crate::applog::error("file", format!("the archive was not opened: {e}"));
+                self.message = Some(e)
+            }
         }
     }
 
@@ -1012,7 +1051,13 @@ impl App {
                 Kind::Route => self.load_route(&p),
                 Kind::Other => {}
             },
-            Err(e) => self.message = Some(e),
+            Err(e) => {
+                crate::applog::error(
+                    "file",
+                    format!("{name}: it was not taken out of the archive: {e}"),
+                );
+                self.message = Some(e)
+            }
         }
     }
 
@@ -1032,6 +1077,10 @@ impl App {
         self.settings.lang = self.lang;
         self.settings.theme = self.theme.id;
         if let Err(e) = self.settings.save(&self.settings_path) {
+            crate::applog::error(
+                "settings",
+                format!("cannot save {}: {e}", self.settings_path.display()),
+            );
             self.message = Some(format!("{}: {e}", self.settings_path.display()));
         }
     }
@@ -1176,6 +1225,7 @@ impl App {
 
     /// Starts the programs one after the other; the first leaves out its first `skip` holes (or paths).
     pub(crate) fn start_programs(&mut self, programs: Vec<Program>, skip: usize) {
+        crate::applog::info("job", format!("start requested: {programs:?}, skipping {skip}; connection {}, model {}, emergency stop {}", self.connection, self.settings.model, self.estop));
         if programs.is_empty() {
             if self.drill.engine.file_loaded() || self.route.engine.file_loaded() {
                 self.message = Some(self.tr(Text::JobNothingOn).to_string());
@@ -1453,6 +1503,7 @@ impl App {
     }
 
     fn stop_job(&mut self) {
+        crate::applog::info("job", format!("stop requested; running {:?}", self.running));
         self.paused = false;
         self.stage_wait = false;
         self.job_queue.clear();
@@ -1618,6 +1669,13 @@ impl App {
                     q.reached = q.points.len();
                 }
             }
+            crate::applog::info(
+                "job",
+                format!(
+                    "{p:?} finished: {} holes done, {} paths done",
+                    self.drill.last_done, self.route.last_done
+                ),
+            );
             self.running = None;
             self.clear_recovery();
             if p == Program::Drill {
@@ -1626,6 +1684,7 @@ impl App {
             if self.stage_follows(p) {
                 // the drilling is done and the routing comes next: the person is told (by sound and in a window) and goes on when ready
                 self.stage_wait = true;
+                crate::applog::info("sound", "notice between the stages");
                 eh3d_drillpro::protocol::sound::play_stage(&self.conn.sound_finish);
                 self.message = Some(self.tr(Text::StageDoneTitle).to_string());
             } else {
@@ -1681,6 +1740,10 @@ impl App {
     }
 
     fn choose(&mut self, c: Choice) {
+        crate::applog::info(
+            "launcher",
+            format!("choice {c:?}, remembered {}", self.remember),
+        );
         if self.remember {
             self.settings.choice = Some(c);
             self.remember_settings();
@@ -1689,8 +1752,20 @@ impl App {
             Choice::Modern => self.screen = Screen::Viewer,
             classic => match launcher::classic_launch(classic, &self.base_dir) {
                 Some(l) => match std::process::Command::new(&l.exe).args(&l.args).spawn() {
-                    Ok(_) => self.close = true,
-                    Err(e) => self.message = Some(format!("{}: {e}", l.exe.display())),
+                    Ok(_) => {
+                        crate::applog::info(
+                            "launcher",
+                            format!("classic program started: {}", l.exe.display()),
+                        );
+                        self.close = true
+                    }
+                    Err(e) => {
+                        crate::applog::error(
+                            "launcher",
+                            format!("cannot start {}: {e}", l.exe.display()),
+                        );
+                        self.message = Some(format!("{}: {e}", l.exe.display()))
+                    }
                 },
                 None => self.message = Some(self.tr(Text::ClassicMissing).to_string()),
             },
@@ -1698,6 +1773,7 @@ impl App {
     }
 
     fn act(&mut self, a: Act) {
+        crate::applog::info("action", format!("{a:?}"));
         // the design is locked while the machine works: what would change it is refused (the views still move and zoom)
         if self.design_locked()
             && matches!(
@@ -4258,7 +4334,9 @@ fn save_png(img: &egui::ColorImage, path: &Path) -> std::io::Result<()> {
 impl eframe::App for App {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let ctx = ui.ctx().clone();
+        let frame_began = Instant::now();
         self.frame += 1;
+        self.diag_begin(&ctx);
         if self.visuals_theme != Some(self.theme.id) {
             apply_visuals(&ctx, &self.theme);
             self.visuals_theme = Some(self.theme.id);
@@ -4388,6 +4466,10 @@ impl eframe::App for App {
                 .collect()
         });
         for p in dropped {
+            crate::applog::info(
+                "file",
+                format!("file dropped on the window: {}", p.display()),
+            );
             self.screen = Screen::Viewer;
             self.modal = None;
             self.open_path_asking(&p);
@@ -4634,6 +4716,7 @@ impl eframe::App for App {
                 }
             }
         }
+        self.diag_end(frame_began);
         // fast while a job runs or a window or screen is coming in, a calm 15 frames a second otherwise (the slow breathing of the lights)
         let settling = self.animate
             && self.anim0.elapsed().as_secs_f32() - self.anim_screen.1.max(self.anim_modal.1)

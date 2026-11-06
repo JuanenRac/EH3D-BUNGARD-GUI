@@ -11,14 +11,14 @@
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
-  <img src="https://img.shields.io/badge/Tests-367-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-380-0f6cbd.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.2.3-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
 ---
 
-**Vérification d'honnêteté - ce qui tourne aujourd'hui :** un programme Rust avec une fenêtre et 367 tests qui s'exécutent sur un ordinateur. Le lanceur propose l'interface moderne ou les programmes classiques de perçage et de fraisage pour une machine avec changement d'outil manuel (MTC) ou automatique (ATC). Le visualiseur ouvre des fichiers de perçage, des fichiers de tracé HP-GL et des archives ZIP de travaux (depuis un navigateur de dossiers, par glisser-déposer ou depuis la ligne de commande), dessine la vue en plan avec chaque trou par diamètre de foret et les trajets de fraisage par-dessus, montre la machine en 3D avec la table de la taille choisie dans la configuration, panélise la carte et suit le travail pendant qu'il tourne. Le travail s'exécute dans le **simulateur** des moteurs de EH3D-DRILLPRO et EH3D-ROUTEPRO ; le même fichier de machine qu'ils lisent décide comment on atteint une vraie machine (le RS-232 de l'ordinateur, un adaptateur USB-RS232, ou le EH3D-NODE-BUNGARD directement ou via EH3D-SERVER), et **aucune de ces voies n'a été essayée depuis cette fenêtre**. Les fenêtres de connexion, de réglages et d'outils changent les valeurs qu'elles offrent, les fichiers entiers de machine et d'outils ne sont pas encore modifiables, et la vue 3D ne montre pas la hauteur des trajets.
+**Vérification d'honnêteté - ce qui tourne aujourd'hui :** un programme Rust avec une fenêtre et 380 tests qui s'exécutent sur un ordinateur. Le lanceur propose l'interface moderne ou les programmes classiques de perçage et de fraisage pour une machine avec changement d'outil manuel (MTC) ou automatique (ATC). Le visualiseur ouvre des fichiers de perçage, des fichiers de tracé HP-GL et des archives ZIP de travaux (depuis un navigateur de dossiers, par glisser-déposer ou depuis la ligne de commande), dessine la vue en plan avec chaque trou par diamètre de foret et les trajets de fraisage par-dessus, montre la machine en 3D avec la table de la taille choisie dans la configuration, panélise la carte et suit le travail pendant qu'il tourne. Le travail s'exécute dans le **simulateur** des moteurs de EH3D-DRILLPRO et EH3D-ROUTEPRO ; le même fichier de machine qu'ils lisent décide comment on atteint une vraie machine (le RS-232 de l'ordinateur, un adaptateur USB-RS232, ou le EH3D-NODE-BUNGARD directement ou via EH3D-SERVER), et **aucune de ces voies n'a été essayée depuis cette fenêtre**. Les fenêtres de connexion, de réglages et d'outils changent les valeurs qu'elles offrent, les fichiers entiers de machine et d'outils ne sont pas encore modifiables, et la vue 3D ne montre pas la hauteur des trajets.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Version | `0.2.3` |
 | Maturité | Échafaudage |
-| Tests | 367 |
+| Tests | 380 |
 | Pile technique | Rust |
 | Sur du matériel réel | Non. Il n'a tourné que sur le simulateur et sur un ordinateur ; aucune machine n'a été pilotée depuis cette fenêtre |
 
@@ -49,7 +49,7 @@ Chaque ligne est une partie de ce dépôt et le feu dit où elle en est aujourd'
 | Fichiers et panélisation | 🟡 | Les fichiers de perçage, HP-GL et les archives ZIP s'ouvrent depuis un navigateur, par glisser-déposer ou depuis la ligne de commande ; la carte est répétée en trois modes. Essayé avec les petits fichiers d'exemple de ce dépôt. |
 | Réglages | 🟠 | La largeur et la profondeur utiles de la table se changent et s'enregistrent dans les fichiers de la machine ; le reste des fichiers de machine et d'outils s'édite encore avec les programmes classiques. |
 | Pilotage de la machine | 🔴 | Le travail passe par les moteurs de EH3D-DRILLPRO et EH3D-ROUTEPRO, donc en principe toutes leurs connexions sont là ; il n'a tourné que sur le simulateur. La fenêtre de Connexion choisit la liaison (le RS-232 de l'ordinateur, un adaptateur USB-RS232, le nœud EH3D ou le serveur EH3D), la teste et l'enregistre dans le fichier de la machine, et Pause retient le travail entre deux mouvements. |
-| Tests | 🟡 | 367 tests passent sur un ordinateur (`cargo test --features gui`) : le lanceur, les réglages, la lecture des fichiers vers la scène, les profils de machine, le panneau et la ligne de commande. Aucun ne touche une machine. |
+| Tests | 🟡 | 380 tests passent sur un ordinateur (`cargo test --features gui`) : le lanceur, les réglages, la lecture des fichiers vers la scène, les profils de machine, le panneau et la ligne de commande. Aucun ne touche une machine. |
 | Paquets prêts à l'emploi | 🟠 | Un workflow compile le programme pour Windows (64 et 32 bits), Linux et macOS avec les fichiers d'exemple ; aucune version n'a encore été publiée. |
 
 ## 🎯 Présentation
@@ -273,6 +273,7 @@ Comment les parties de ce dépôt s'articulent : qui l'utilise, ce qu'il contien
 
 * **Fenêtre :** le lanceur et le visualiseur, à la souris et au clavier (`Entrée` valide le choix du lanceur, `Échap` revient en arrière, `Ctrl+O` ouvre des fichiers).
 * **Ligne de commande :** `bungard-gui [FICHIER...] [--drill FICHIER.NCD] [--route FICHIER.PLT] [--zip TRAVAIL.ZIP] [--lang CODE] [--theme NOM] [--data DOSSIER] [--connection FICHIER] [--screen launcher|viewer]` ; les fichiers sans option sont ouverts selon leur extension. `--modal`, `--panel`, `--yaw`, `--shot` et `--start` fixent une fenêtre, le panneau, la rotation de la vue 3D, une image de la fenêtre et le démarrage du travail, pour les images.
+* **Journal :** le programme écrit `bungard-gui.log` dans le dossier des réglages (`%APPDATA%\EH3D` sous Windows, `~/.config/eh3d` ailleurs ; les plus anciens sont `bungard-gui.log.1`, `.2`...). Chaque ligne porte l'heure locale, les secondes depuis 1970, la version, le processus, le niveau et la partie du programme. Il note le démarrage (version, système, options, dossiers, les réglages lus), les changements de la fenêtre (focus gagné ou perdu, réduite, agrandie, plein écran, taille, écran), l'écran et la fenêtre du dessus, chaque action des boutons, les fichiers ouverts ou déposés et ce que leur lecture a trouvé, la connexion (testée, enregistrée, en échec), le travail (démarrage, pause, arrêt, fin de chaque partie, questions de la machine, arrêt d'urgence), les avis en rouge, la mise à jour, le fichier de reprise, les fils d'arrière-plan, un battement avec la mémoire du processus et du système et les temps des images, une panique avec sa trace et, sous Windows, une exception non gérée du système. Une ligne est sur le disque dès qu'elle est écrite ; la même ligne répétée est seulement comptée et un déluge de lignes est coupé. Les mots de passe, les clés et les jetons ne sont jamais écrits. Une exécution qui se termine d'elle-même écrit `=== clean exit` ; au démarrage suivant, s'il ne la trouve pas, le programme dit `previous run ended without a clean exit` et copie les dernières lignes du journal précédent. Le fichier de réglages accepte `log = yes|no` (yes), `log_level = error|warn|info|debug` (info), `log_max_kb` (1024 : taille à laquelle un nouveau fichier commence, de 64 à 65536), `log_files` (3 : combien de fichiers sont gardés, de 1 à 20) et `log_heartbeat_s` (30 : secondes entre deux battements, de 5 à 3600). Une exécution de capture (`--shot`) n'écrit pas de journal.
 * **Machine :** via les moteurs de EH3D-DRILLPRO et EH3D-ROUTEPRO et le fichier de machine qu'ils partagent : le RS-232 de l'ordinateur, un adaptateur USB-RS232, le EH3D-NODE-BUNGARD ou EH3D-SERVER. Sans fichier de machine, le travail s'exécute sur le simulateur.
 
 ## ⚙️ Configuration
@@ -295,7 +296,7 @@ Lancez-le avec `run.bat` (Windows) ou `./run.sh` (Linux et macOS) ; les deux com
 
 ## 🧪 Tests
 
-La suite compte 367 tests (`cargo test --features gui`). Ils vérifient le lanceur et ce qu'il mémorise, les réglages, comment un fichier de perçage ou HP-GL devient la scène, les profils de machine, le panneau et la ligne de commande. Les moteurs qu'il utilise (protocole, mouvement, porte de sécurité) sont testés dans EH3D-DRILLPRO et EH3D-ROUTEPRO. La CI exécute aussi `cargo fmt --check` et `cargo clippy` avec les avertissements en erreurs, et `python -I tools/ci_validate.py` vérifie le manifeste, les versions, le journal des modifications et les huit README.
+La suite compte 380 tests (`cargo test --features gui`). Ils vérifient le lanceur et ce qu'il mémorise, les réglages, comment un fichier de perçage ou HP-GL devient la scène, les profils de machine, le panneau et la ligne de commande. Les moteurs qu'il utilise (protocole, mouvement, porte de sécurité) sont testés dans EH3D-DRILLPRO et EH3D-ROUTEPRO. La CI exécute aussi `cargo fmt --check` et `cargo clippy` avec les avertissements en erreurs, et `python -I tools/ci_validate.py` vérifie le manifeste, les versions, le journal des modifications et les huit README.
 
 ## 🏗️ Compilation et publication
 
@@ -326,6 +327,7 @@ EH3D-BUNGARD-GUI/
 │   ├── machines.rs                              les profils des machines Bungard et la zone de travail selon la table
 │   ├── launcher.rs                              les choix du lanceur, les programmes classiques et ce qui est mémorisé
 │   ├── link.rs                                  la liaison du fichier de la machine : les clés écrites
+│   ├── applog.rs gui/diag.rs                    le fichier journal du programme et ce que la fenêtre lui dit
 │   ├── cli.rs                                   la ligne de commande
 │   ├── lib.rs bin/                              la racine de la bibliothèque et l'exécutable bungard-gui
 │   ├── spindle.rs                               les deux broches, leurs limites et si un outil convient

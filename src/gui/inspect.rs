@@ -110,7 +110,12 @@ impl App {
         };
         let light = LIGHT_CHOICES[self.insp.light.min(LIGHT_CHOICES.len() - 1)];
         let (tx, rx) = channel();
+        crate::applog::info(
+            "inspect",
+            format!("quality check started on {} holes", holes.len()),
+        );
         std::thread::spawn(move || {
+            let _t = crate::applog::thread_guard("quality-check");
             let _ = tx.send(inspection::run_check(&link, &profile, &holes, light));
         });
         self.insp.rx = Some(rx);
@@ -122,7 +127,9 @@ impl App {
     pub(super) fn head_light_set(&mut self, level: Option<u32>) {
         let Some(link) = self.head_link() else { return };
         let (tx, rx) = channel();
+        crate::applog::info("inspect", format!("ring of LEDs: {level:?}"));
         std::thread::spawn(move || {
+            let _t = crate::applog::thread_guard("light");
             let r = match level {
                 Some(l) => link.set_light(&LightRequest::camera(l)),
                 None => link.set_light(&LightRequest::off()),
@@ -170,6 +177,7 @@ impl App {
             ),
             Verdict::Unknown => return,
         };
+        crate::applog::info("sound", format!("sound of the quality check {cue:?}"));
         eh3d_drillpro::protocol::sound::play(setting, cue);
     }
 
@@ -223,12 +231,18 @@ impl App {
 
     /// Keeps the profile in its file, and gives it to the server of the machine when the node is reached through it, so the screen next to the machine checks with the same one.
     fn insp_save(&mut self) {
-        let _ = inspection::save_profile(&self.insp_profile_path(), &self.insp.profile);
+        if let Err(e) = inspection::save_profile(&self.insp_profile_path(), &self.insp.profile) {
+            crate::applog::error(
+                "inspect",
+                format!("cannot save the profile of the check: {e}"),
+            );
+        }
         self.insp.saved_at = Some(Instant::now());
         if self.conn.head_node == HeadNode::Server {
             if let Some(link) = self.head_link() {
                 let body = self.insp.profile.to_json().to_string();
                 std::thread::spawn(move || {
+                    let _t = crate::applog::thread_guard("inspect-profile");
                     let _ = link.put_inspect_profile(&body);
                 });
             }

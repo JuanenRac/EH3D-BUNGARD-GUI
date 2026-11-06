@@ -181,6 +181,7 @@ impl App {
             Cue::CheckOk => &self.conn.sound_check_ok,
             Cue::CheckNotOk => &self.conn.sound_check_bad,
         };
+        crate::applog::info("sound", format!("test of the sound {cue:?}"));
         eh3d_drillpro::protocol::sound::play(s, cue);
     }
 
@@ -329,6 +330,14 @@ impl App {
 
     /// The emergency stop: the job and the machine stop at once; the button must be pressed again to release the stop before a job can start.
     pub(crate) fn emergency(&mut self) {
+        crate::applog::warn(
+            "safety",
+            format!(
+                "emergency stop button pressed; it was {}, running {:?}",
+                if self.estop { "on" } else { "off" },
+                self.running
+            ),
+        );
         if self.estop {
             self.estop = false;
             self.message = None;

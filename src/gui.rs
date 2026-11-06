@@ -814,6 +814,7 @@ impl App {
             Some("tools") => app.show_modal(Modal::Tools),
             Some("bar") => app.show_modal(Modal::Bar),
             Some("slots") => app.show_modal(Modal::Slots),
+            Some("jog") => app.jog_act(JogAct::Toggle),
             Some("catalogue") => app.show_modal(Modal::Catalogue),
             Some("head") => app.show_modal(Modal::Head),
             Some("inspect") => {
@@ -826,7 +827,11 @@ impl App {
             _ => {}
         }
         app.refit_table();
-        if o.shot.is_some() && o.modal.is_none() && !o.start && o.machine.is_none() {
+        if o.shot.is_some()
+            && !matches!(o.modal.as_deref(), Some(m) if m != "jog")
+            && !o.start
+            && o.machine.is_none()
+        {
             // a picture shows the job, not the corner of the table where it starts
             let mut all = app.drill.base.clone();
             all.overlay(&app.route.base);

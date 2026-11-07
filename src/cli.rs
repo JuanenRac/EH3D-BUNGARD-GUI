@@ -63,6 +63,8 @@ pub struct Options {
     pub size: Option<(f32, f32)>,
     /// The model of the machine to show (`--machine "CCD/2 ATC"`), without remembering it: for the pictures.
     pub machine: Option<String>,
+    /// Writes the report of the job (pieces, holes, tools, time, warnings) to the terminal and leaves, with no window (`--report`).
+    pub report: bool,
 }
 
 impl Options {
@@ -139,6 +141,7 @@ impl Options {
                     o.hole = Some(v.parse().map_err(|_| "--hole needs a number")?);
                 }
                 "--auto-ok" => o.auto_ok = true,
+                "--report" => o.report = true,
                 "--select" => o.select = true,
                 "--panes" => {
                     let v = value("--panes")?;
@@ -201,6 +204,16 @@ mod tests {
                 ..Default::default()
             }
         );
+    }
+
+    #[test]
+    fn the_report_is_asked_for_with_its_files_and_its_panel() {
+        let o = parse("--report --drill a.ncd --panel 2,3 --lang de b.plt").unwrap();
+        assert!(o.report);
+        assert_eq!(o.panel, Some((2, 3)));
+        assert_eq!(o.lang, Some(Lang::De));
+        assert_eq!(o.open, vec![PathBuf::from("b.plt")]);
+        assert!(!parse("--drill a.ncd").unwrap().report);
     }
 
     #[test]

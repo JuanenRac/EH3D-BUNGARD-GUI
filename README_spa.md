@@ -11,14 +11,14 @@
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
-  <img src="https://img.shields.io/badge/Tests-385-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-408-0f6cbd.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.2.4-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
 ---
 
-**Comprobación de honestidad - lo que se ejecuta hoy:** un programa en Rust con una ventana y 385 pruebas que se ejecutan en un ordenador. El lanzador ofrece la interfaz moderna o los programas clásicos de taladrado y fresado para una máquina con cambio de herramienta manual (MTC) o automático (ATC). El visor abre ficheros de taladrado, ficheros de trazado HP-GL y archivos ZIP de trabajos (desde un explorador de carpetas, arrastrando y soltando o desde la línea de órdenes), dibuja la vista en planta con cada agujero por diámetro de broca y las trayectorias de fresado encima, muestra la máquina en 3D con la mesa del tamaño elegido en la configuración, paneliza la placa y sigue el trabajo mientras corre. El trabajo se ejecuta en el **simulador** de los motores de EH3D-DRILLPRO y EH3D-ROUTEPRO; el mismo fichero de máquina que ellos leen decide cómo se llega a una máquina real (el RS-232 del ordenador, un adaptador USB-RS232, o el EH3D-NODE-BUNGARD directamente o a través de EH3D-SERVER), y **ninguna de esas vías se ha probado desde esta ventana**. Las ventanas de conexión, ajustes y herramientas cambian los valores que ofrecen, aún no se pueden editar los ficheros enteros de máquina y herramientas, y la vista 3D no muestra la altura de las trayectorias.
+**Comprobación de honestidad - lo que se ejecuta hoy:** un programa en Rust con una ventana y 408 pruebas que se ejecutan en un ordenador. El lanzador ofrece la interfaz moderna o los programas clásicos de taladrado y fresado para una máquina con cambio de herramienta manual (MTC) o automático (ATC). El visor abre ficheros de taladrado, ficheros de trazado HP-GL y archivos ZIP de trabajos (desde un explorador de carpetas, arrastrando y soltando o desde la línea de órdenes), dibuja la vista en planta con cada agujero por diámetro de broca y las trayectorias de fresado encima, muestra la máquina en 3D con la mesa del tamaño elegido en la configuración, paneliza la placa y sigue el trabajo mientras corre. El trabajo se ejecuta en el **simulador** de los motores de EH3D-DRILLPRO y EH3D-ROUTEPRO; el mismo fichero de máquina que ellos leen decide cómo se llega a una máquina real (el RS-232 del ordenador, un adaptador USB-RS232, o el EH3D-NODE-BUNGARD directamente o a través de EH3D-SERVER), y **ninguna de esas vías se ha probado desde esta ventana**. Las ventanas de conexión, ajustes y herramientas cambian los valores que ofrecen, aún no se pueden editar los ficheros enteros de máquina y herramientas, y la vista 3D no muestra la altura de las trayectorias.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Versión | `0.2.4` |
 | Madurez | Andamiaje |
-| Pruebas | 385 |
+| Pruebas | 408 |
 | Pila tecnológica | Rust |
 | En hardware real | No. Se ha ejecutado solo en el simulador y en un ordenador; no se ha manejado ninguna máquina desde esta ventana |
 
@@ -49,7 +49,7 @@ Cada línea es una parte de este repositorio y la luz dice hasta dónde llega ho
 | Ficheros y panelización | 🟡 | Los ficheros de taladrado, HP-GL y los archivos ZIP se abren desde un explorador, arrastrando y soltando o desde la línea de órdenes; la placa se repite en tres modos. Probado con los pequeños ficheros de muestra de este repositorio. |
 | Ajustes | 🟠 | El ancho y el fondo útiles de la mesa se cambian y se guardan en los ficheros de la máquina; el resto de los ficheros de máquina y herramientas se sigue editando con los programas clásicos. |
 | Control de la máquina | 🔴 | El trabajo pasa por los motores de EH3D-DRILLPRO y EH3D-ROUTEPRO, así que en principio están todas sus conexiones; solo ha corrido en el simulador. La ventana de Conexión elige el enlace (el RS-232 del ordenador, un adaptador USB-RS232, el nodo EH3D o el servidor EH3D), lo prueba y lo guarda en el fichero de la máquina, y Pausa detiene el trabajo entre dos movimientos. |
-| Pruebas | 🟡 | Pasan 385 pruebas en un ordenador (`cargo test --features gui`): el lanzador, los ajustes, la lectura de los ficheros a la escena, los perfiles de máquina, el panel y la línea de órdenes. Ninguna toca una máquina. |
+| Pruebas | 🟡 | Pasan 408 pruebas en un ordenador (`cargo test --features gui`): el lanzador, los ajustes, la lectura de los ficheros a la escena, los perfiles de máquina, el panel y la línea de órdenes. Ninguna toca una máquina. |
 | Paquetes ya compilados | 🟠 | Un flujo de trabajo compila el programa para Windows (64 y 32 bits), Linux y macOS con los ficheros de muestra; todavía no se ha publicado ninguna versión. |
 
 ## 🎯 Resumen
@@ -166,6 +166,7 @@ Cómo encajan las partes de este repositorio: quién lo usa, qué contiene y de 
 * **Ventana:** el lanzador y el visor, con el ratón y el teclado (`Enter` acepta la elección del lanzador, `Esc` vuelve atrás, `Ctrl+O` abre ficheros).
 * **Línea de órdenes:** `bungard-gui [FICHERO...] [--drill FICHERO.NCD] [--route FICHERO.PLT] [--zip TRABAJO.ZIP] [--lang CÓDIGO] [--theme NOMBRE] [--data DIR] [--connection FICHERO] [--screen launcher|viewer]`; los ficheros sin opción se abren como dice su extensión. `--modal`, `--panel`, `--yaw`, `--shot` y `--start` fijan una ventana, el panel, el giro de la vista 3D, una imagen de la ventana y el inicio del trabajo, para las imágenes.
 * **Registro:** el programa escribe `bungard-gui.log` en la carpeta de ajustes (`%APPDATA%\EH3D` en Windows, `~/.config/eh3d` en otros sistemas; los anteriores son `bungard-gui.log.1`, `.2`...). Cada línea lleva la hora local, los segundos desde 1970, la versión, el proceso, el nivel y la parte del programa. Registra el arranque (versión, sistema, opciones, carpetas, los ajustes leídos), los cambios de la ventana (foco ganado o perdido, minimizada, maximizada, pantalla completa, tamaño, pantalla), la pantalla y la ventana superior, cada acción de los botones, los ficheros abiertos o soltados y lo que encontró su lectura, la conexión (probada, guardada, fallida), el trabajo (inicio, pausa, parada, fin de cada parte, preguntas de la máquina, parada de emergencia), los avisos en rojo, la actualización, el fichero de recuperación, los hilos de fondo, un latido con la memoria del proceso y del sistema y los tiempos de los fotogramas, un pánico con su traza y, en Windows, una excepción no controlada del sistema. Una línea está en el disco en cuanto se escribe; la misma línea repetida solo se cuenta y una avalancha de líneas se corta. Las contraseñas, las claves y los tokens no se escriben nunca. Un arranque que termina por sí mismo escribe `=== clean exit`; el siguiente arranque, si no la encuentra, dice `previous run ended without a clean exit` y copia las últimas líneas del registro anterior. El fichero de ajustes admite `log = yes|no` (yes), `log_level = error|warn|info|debug` (info), `log_max_kb` (1024: tamaño al que se empieza un fichero nuevo, de 64 a 65536), `log_files` (3: cuántos ficheros se guardan, de 1 a 20) y `log_heartbeat_s` (30: segundos entre dos latidos, de 5 a 3600). La ventana Ajustes tiene, en la pestaña General, una sección Registro con el interruptor, el nivel de detalle (error, warn, info, debug), el tamaño máximo de un fichero (256 KB, 1, 4 o 16 MB) y dos botones, uno para abrir la carpeta del registro y otro para copiar la ruta de su fichero; los cambios se aplican la próxima vez que se inicie el programa. Una ejecución de captura (`--shot`) no escribe registro.
+* **Informe:** el botón Informe de la ventana de herramientas abre una ventana con las piezas (las copias del panel), los agujeros y los trayectos por herramienta, el tiempo que se espera que dure el trabajo (una estimación) y lo que parece mal (un trabajo vacío, trabajo fuera de la mesa, una placa que no cabe, un trabajo más largo que el límite), y un botón lo copia todo como texto. `bungard-gui --report --drill FICHERO.NCD --route FICHERO.PLT [--panel COLUMNAS,FILAS] [--lang CÓDIGO]` escribe el mismo informe en el terminal, sin ventana. Las cifras de la estimación (segundos que tarda un agujero, velocidad del cabezal y del corte, segundos de un cambio de herramienta, el límite de un trabajo largo) están en `bungard-gui.report.cfg`, junto al fichero de ajustes, sobre las que vienen en `src/report_defaults.cfg`. Las palabras están en `locales/report/`, un fichero por cada uno de los 37 idiomas (las traducciones de los 29 añadidos esperan la revisión de un hablante nativo).
 * **Máquina:** a través de los motores de EH3D-DRILLPRO y EH3D-ROUTEPRO y el fichero de máquina que comparten: el RS-232 del ordenador, un adaptador USB-RS232, el EH3D-NODE-BUNGARD o EH3D-SERVER. Sin fichero de máquina el trabajo se ejecuta en el simulador.
 
 ## ⚙️ Configuración
@@ -188,7 +189,7 @@ Ejecútalo con `run.bat` (Windows) o `./run.sh` (Linux y macOS); ambos compilan 
 
 ## 🧪 Pruebas
 
-La suite tiene 385 pruebas (`cargo test --features gui`). Comprueban el lanzador y lo que recuerda, los ajustes, cómo un fichero de taladrado o HP-GL se convierte en la escena, los perfiles de máquina, el panel y la línea de órdenes. Los motores que usa (protocolo, movimiento, puerta de seguridad) se prueban en EH3D-DRILLPRO y EH3D-ROUTEPRO. La CI también ejecuta `cargo fmt --check` y `cargo clippy` con los avisos como errores, y `python -I tools/ci_validate.py` comprueba el manifiesto, las versiones, el registro de cambios y los ocho README.
+La suite tiene 408 pruebas (`cargo test --features gui`). Comprueban el lanzador y lo que recuerda, los ajustes, cómo un fichero de taladrado o HP-GL se convierte en la escena, los perfiles de máquina, el panel y la línea de órdenes. Los motores que usa (protocolo, movimiento, puerta de seguridad) se prueban en EH3D-DRILLPRO y EH3D-ROUTEPRO. La CI también ejecuta `cargo fmt --check` y `cargo clippy` con los avisos como errores, y `python -I tools/ci_validate.py` comprueba el manifiesto, las versiones, el registro de cambios y los ocho README.
 
 ## 🏗️ Compilación y publicación
 
@@ -220,6 +221,7 @@ EH3D-BUNGARD-GUI/
 │   ├── launcher.rs                              las opciones del lanzador, los programas clásicos y lo que se recuerda
 │   ├── link.rs                                  la conexión del fichero de máquina: qué claves escribe
 │   ├── applog.rs gui/diag.rs                    el fichero de registro del programa y lo que le cuenta la ventana
+│   ├── report.rs  gui/reportpane.rs             el informe de un trabajo para copiar (ventana y --report)
 │   ├── cli.rs                                   la línea de órdenes
 │   ├── lib.rs bin/                              la raíz de la biblioteca y el ejecutable bungard-gui
 │   ├── spindle.rs                               los dos husillos, sus límites y si una herramienta les sirve
@@ -229,6 +231,7 @@ EH3D-BUNGARD-GUI/
 ├── docs/                                        las fuentes de las dos imágenes
 ├── tools/                                       comprobación de CI, comprobación del README y herramientas de las imágenes
 ├── images/                                      banner, las dos imágenes y las capturas de pantalla
+├── locales/                                     las palabras del informe, 37 idiomas
 ├── voices/                                      avisos hablados
 ├── .github/                                     flujos de CI y de publicación, plantillas de issues y pull requests
 ├── build.sh build.bat                           compilan la ventana

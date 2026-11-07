@@ -191,6 +191,19 @@
           }
         },
         {
+          "name": "report.rs  gui/reportpane.rs",
+          "desc": {
+            "en": "the report of a job to copy (window and --report)",
+            "es": "el informe de un trabajo para copiar (ventana y --report)",
+            "de": "der Bericht über einen Auftrag zum Kopieren (Fenster, --report)",
+            "fr": "le rapport d'un travail à copier (fenêtre et --report)",
+            "it": "il rapporto di un lavoro da copiare (finestra e --report)",
+            "ja": "コピーできる作業レポート（ウィンドウと --report）",
+            "zh": "可复制的作业报告（窗口与 --report）",
+            "pt": "o relatório de um trabalho para copiar (janela e --report)"
+          }
+        },
+        {
           "name": "cli.rs",
           "desc": {
             "en": "the command line",
@@ -385,6 +398,19 @@
             "ja": "バナー、2 つの図、スクリーンショット",
             "zh": "横幅图、两张图片和屏幕截图",
             "pt": "faixa, as duas imagens e as capturas de ecrã"
+          }
+        },
+        {
+          "name": "locales/",
+          "desc": {
+            "en": "the words of the report, 37 languages",
+            "es": "las palabras del informe, 37 idiomas",
+            "de": "die Wörter des Berichts, 37 Sprachen",
+            "fr": "les mots du rapport, 37 langues",
+            "it": "le parole del rapporto, 37 lingue",
+            "ja": "レポートの文言、37 言語",
+            "zh": "报告的文字，37 种语言",
+            "pt": "as palavras do relatório, 37 línguas"
           }
         },
         {

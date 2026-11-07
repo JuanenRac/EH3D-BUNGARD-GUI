@@ -1,0 +1,16 @@
+# ro: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Raport de lucru
+Pieces	Piese
+Holes	Găuri
+PerPiece	pe piesă
+Tools	Scule
+Paths	Traiectorii
+Length	Lungime frezată
+Time	Timp (estimare)
+Warnings	Avertismente
+None	niciunul
+Copy	Copiază raportul
+Copied	Raport copiat
+WarnEmpty	Lucrarea nu are găuri și nici traiectorii
+WarnOutside	Lucrare în afara mesei
+WarnLong	Lucrarea durează mai mult de

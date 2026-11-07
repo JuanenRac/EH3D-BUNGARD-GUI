@@ -1,0 +1,16 @@
+# is: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Vinnuskýrsla
+Pieces	Stykki
+Holes	Göt
+PerPiece	á hvert stykki
+Tools	Verkfæri
+Paths	Brautir
+Length	Frásaða lengd
+Time	Tími (áætlun)
+Warnings	Viðvaranir
+None	engar
+Copy	Afrita skýrslu
+Copied	Skýrsla afrituð
+WarnEmpty	Verkið hefur hvorki göt né brautir
+WarnOutside	Verk utan borðsins
+WarnLong	Verkið tekur lengri tíma en

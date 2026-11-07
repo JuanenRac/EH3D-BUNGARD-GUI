@@ -1,0 +1,16 @@
+# sv: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Arbetsrapport
+Pieces	Stycken
+Holes	Hål
+PerPiece	per stycke
+Tools	Verktyg
+Paths	Banor
+Length	Fräst längd
+Time	Tid (uppskattning)
+Warnings	Varningar
+None	inga
+Copy	Kopiera rapporten
+Copied	Rapporten kopierad
+WarnEmpty	Jobbet har varken hål eller banor
+WarnOutside	Arbete utanför bordet
+WarnLong	Jobbet tar längre tid än

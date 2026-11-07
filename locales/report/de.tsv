@@ -1,0 +1,16 @@
+# de: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Arbeitsbericht
+Pieces	Stücke
+Holes	Bohrungen
+PerPiece	pro Stück
+Tools	Werkzeuge
+Paths	Bahnen
+Length	Gefräste Länge
+Time	Zeit (Schätzung)
+Warnings	Warnungen
+None	keine
+Copy	Bericht kopieren
+Copied	Bericht kopiert
+WarnEmpty	Der Auftrag hat weder Bohrungen noch Bahnen
+WarnOutside	Arbeit außerhalb des Tisches
+WarnLong	Der Auftrag dauert länger als

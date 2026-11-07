@@ -1,0 +1,16 @@
+# et: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Töö aruanne
+Pieces	Tükid
+Holes	Augud
+PerPiece	tüki kohta
+Tools	Tööriistad
+Paths	Rajad
+Length	Freesitud pikkus
+Time	Aeg (hinnang)
+Warnings	Hoiatused
+None	puuduvad
+Copy	Kopeeri aruanne
+Copied	Aruanne kopeeritud
+WarnEmpty	Töös pole auke ega radu
+WarnOutside	Töö väljaspool lauda
+WarnLong	Töö kestab kauem kui

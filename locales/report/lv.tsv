@@ -1,0 +1,16 @@
+# lv: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Darba pārskats
+Pieces	Detaļas
+Holes	Caurumi
+PerPiece	uz detaļu
+Tools	Instrumenti
+Paths	Trajektorijas
+Length	Frēzēšanas garums
+Time	Laiks (aprēķins)
+Warnings	Brīdinājumi
+None	nav
+Copy	Kopēt pārskatu
+Copied	Pārskats nokopēts
+WarnEmpty	Darbā nav ne caurumu, ne trajektoriju
+WarnOutside	Darbs ārpus galda
+WarnLong	Darbs ilgst ilgāk nekā

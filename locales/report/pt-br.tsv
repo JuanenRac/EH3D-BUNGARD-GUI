@@ -1,0 +1,16 @@
+# pt-br: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Relatório de trabalho
+Pieces	Peças
+Holes	Furos
+PerPiece	por peça
+Tools	Ferramentas
+Paths	Trajetos
+Length	Comprimento fresado
+Time	Tempo (estimativa)
+Warnings	Avisos
+None	nenhum
+Copy	Copiar relatório
+Copied	Relatório copiado
+WarnEmpty	O trabalho não tem furos nem trajetos
+WarnOutside	Trabalho fora da mesa
+WarnLong	O trabalho leva mais de

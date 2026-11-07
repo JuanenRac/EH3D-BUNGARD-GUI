@@ -1,0 +1,16 @@
+# no: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Arbeidsrapport
+Pieces	Stykker
+Holes	Hull
+PerPiece	per stykke
+Tools	Verktøy
+Paths	Baner
+Length	Frest lengde
+Time	Tid (anslag)
+Warnings	Advarsler
+None	ingen
+Copy	Kopier rapporten
+Copied	Rapporten er kopiert
+WarnEmpty	Jobben har verken hull eller baner
+WarnOutside	Arbeid utenfor bordet
+WarnLong	Jobben tar lengre tid enn

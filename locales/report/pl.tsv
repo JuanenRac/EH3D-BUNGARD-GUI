@@ -1,0 +1,16 @@
+# pl: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Raport z pracy
+Pieces	Sztuki
+Holes	Otwory
+PerPiece	na sztukę
+Tools	Narzędzia
+Paths	Ścieżki
+Length	Długość frezowania
+Time	Czas (szacunek)
+Warnings	Ostrzeżenia
+None	brak
+Copy	Kopiuj raport
+Copied	Raport skopiowany
+WarnEmpty	Praca nie ma otworów ani ścieżek
+WarnOutside	Praca poza stołem
+WarnLong	Praca trwa dłużej niż

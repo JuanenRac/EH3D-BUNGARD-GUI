@@ -1,0 +1,16 @@
+# hr: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Izvješće o poslu
+Pieces	Komadi
+Holes	Rupe
+PerPiece	po komadu
+Tools	Alati
+Paths	Putanje
+Length	Duljina glodanja
+Time	Vrijeme (procjena)
+Warnings	Upozorenja
+None	nema
+Copy	Kopiraj izvješće
+Copied	Izvješće kopirano
+WarnEmpty	Posao nema ni rupa ni putanja
+WarnOutside	Posao izvan stola
+WarnLong	Posao traje dulje od

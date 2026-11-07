@@ -1,0 +1,16 @@
+# sk: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Správa o práci
+Pieces	Kusy
+Holes	Otvory
+PerPiece	na kus
+Tools	Nástroje
+Paths	Dráhy
+Length	Dĺžka frézovania
+Time	Čas (odhad)
+Warnings	Varovania
+None	žiadne
+Copy	Kopírovať správu
+Copied	Správa skopírovaná
+WarnEmpty	Práca nemá žiadne otvory ani dráhy
+WarnOutside	Práca mimo stola
+WarnLong	Práca trvá dlhšie ako

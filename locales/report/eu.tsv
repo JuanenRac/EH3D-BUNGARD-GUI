@@ -1,0 +1,16 @@
+# eu: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Lan-txostena
+Pieces	Piezak
+Holes	Zuloak
+PerPiece	pieza bakoitzeko
+Tools	Erremintak
+Paths	Ibilbideak
+Length	Fresatutako luzera
+Time	Denbora (zenbatespena)
+Warnings	Abisuak
+None	bat ere ez
+Copy	Kopiatu txostena
+Copied	Txostena kopiatu da
+WarnEmpty	Lanak ez du zulorik ez ibilbiderik
+WarnOutside	Lana mahaitik kanpo
+WarnLong	Lanak honek baino gehiago irauten du:

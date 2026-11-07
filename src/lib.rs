@@ -20,6 +20,7 @@ pub mod machines;
 pub mod panes;
 pub mod profile;
 pub mod recovery;
+pub mod report;
 pub mod slots;
 pub mod spindle;
 #[cfg(feature = "updates")]

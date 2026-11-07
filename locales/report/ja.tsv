@@ -1,0 +1,16 @@
+# ja: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	作業レポート
+Pieces	ピース数
+Holes	穴数
+PerPiece	1ピースあたり
+Tools	工具
+Paths	パス数
+Length	ルーティング長
+Time	時間（見積り）
+Warnings	警告
+None	なし
+Copy	レポートをコピー
+Copied	レポートをコピーしました
+WarnEmpty	この作業には穴もパスもありません
+WarnOutside	作業がテーブルの外にあります
+WarnLong	作業時間が次を超えています：

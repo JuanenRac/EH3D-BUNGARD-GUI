@@ -1,0 +1,16 @@
+# en: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Work report
+Pieces	Pieces
+Holes	Holes
+PerPiece	per piece
+Tools	Tools
+Paths	Paths
+Length	Routed length
+Time	Time (estimate)
+Warnings	Warnings
+None	none
+Copy	Copy report
+Copied	Report copied
+WarnEmpty	The job has no holes and no paths
+WarnOutside	Work outside the table
+WarnLong	The job takes longer than

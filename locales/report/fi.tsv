@@ -1,0 +1,16 @@
+# fi: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Työraportti
+Pieces	Kappaleet
+Holes	Reiät
+PerPiece	kappaletta kohti
+Tools	Työkalut
+Paths	Reitit
+Length	Jyrsitty pituus
+Time	Aika (arvio)
+Warnings	Varoitukset
+None	ei mitään
+Copy	Kopioi raportti
+Copied	Raportti kopioitu
+WarnEmpty	Työssä ei ole reikiä eikä reittejä
+WarnOutside	Työ pöydän ulkopuolella
+WarnLong	Työ kestää kauemmin kuin

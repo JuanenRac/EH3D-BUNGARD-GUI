@@ -1,0 +1,16 @@
+# sq: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Raport pune
+Pieces	Pjesë
+Holes	Vrima
+PerPiece	për pjesë
+Tools	Mjete
+Paths	Rrugë
+Length	Gjatësia e frezimit
+Time	Koha (vlerësim)
+Warnings	Paralajmërime
+None	asnjë
+Copy	Kopjo raportin
+Copied	Raporti u kopjua
+WarnEmpty	Puna nuk ka vrima as rrugë
+WarnOutside	Punë jashtë tavolinës
+WarnLong	Puna zgjat më shumë se

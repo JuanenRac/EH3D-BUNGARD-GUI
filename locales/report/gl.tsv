@@ -1,0 +1,16 @@
+# gl: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Informe de traballo
+Pieces	Pezas
+Holes	Buratos
+PerPiece	por peza
+Tools	Ferramentas
+Paths	Traxectos
+Length	Lonxitude fresada
+Time	Tempo (estimado)
+Warnings	Avisos
+None	ningún
+Copy	Copiar o informe
+Copied	Informe copiado
+WarnEmpty	O traballo non ten buratos nin traxectos
+WarnOutside	Traballo fóra da mesa
+WarnLong	O traballo dura máis de

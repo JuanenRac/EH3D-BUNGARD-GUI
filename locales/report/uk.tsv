@@ -1,0 +1,16 @@
+# uk: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Звіт про роботу
+Pieces	Деталі
+Holes	Отвори
+PerPiece	на деталь
+Tools	Інструменти
+Paths	Траєкторії
+Length	Довжина фрезерування
+Time	Час (оцінка)
+Warnings	Попередження
+None	немає
+Copy	Копіювати звіт
+Copied	Звіт скопійовано
+WarnEmpty	У роботі немає ні отворів, ні траєкторій
+WarnOutside	Робота поза столом
+WarnLong	Робота триває довше ніж

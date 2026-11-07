@@ -1,0 +1,16 @@
+# sl: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Poročilo o delu
+Pieces	Kosi
+Holes	Luknje
+PerPiece	na kos
+Tools	Orodja
+Paths	Poti
+Length	Dolžina frezanja
+Time	Čas (ocena)
+Warnings	Opozorila
+None	ni
+Copy	Kopiraj poročilo
+Copied	Poročilo kopirano
+WarnEmpty	Delo nima ne lukenj ne poti
+WarnOutside	Delo zunaj mize
+WarnLong	Delo traja dlje kot

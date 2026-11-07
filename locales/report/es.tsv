@@ -1,0 +1,16 @@
+# es: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Informe de trabajo
+Pieces	Piezas
+Holes	Agujeros
+PerPiece	por pieza
+Tools	Herramientas
+Paths	Trayectos
+Length	Longitud fresada
+Time	Tiempo (estimado)
+Warnings	Avisos
+None	ninguno
+Copy	Copiar informe
+Copied	Informe copiado
+WarnEmpty	El trabajo no tiene agujeros ni trayectos
+WarnOutside	Trabajo fuera de la mesa
+WarnLong	El trabajo dura más de

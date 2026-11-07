@@ -1,0 +1,16 @@
+# ca: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Informe de treball
+Pieces	Peces
+Holes	Forats
+PerPiece	per peça
+Tools	Eines
+Paths	Trajectes
+Length	Longitud fresada
+Time	Temps (estimat)
+Warnings	Avisos
+None	cap
+Copy	Copia l'informe
+Copied	Informe copiat
+WarnEmpty	El treball no té forats ni trajectes
+WarnOutside	Treball fora de la taula
+WarnLong	El treball dura més de

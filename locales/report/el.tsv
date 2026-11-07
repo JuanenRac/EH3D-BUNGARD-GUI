@@ -1,0 +1,16 @@
+# el: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Αναφορά εργασίας
+Pieces	Τεμάχια
+Holes	Οπές
+PerPiece	ανά τεμάχιο
+Tools	Εργαλεία
+Paths	Διαδρομές
+Length	Μήκος φρεζαρίσματος
+Time	Χρόνος (εκτίμηση)
+Warnings	Προειδοποιήσεις
+None	καμία
+Copy	Αντιγραφή αναφοράς
+Copied	Η αναφορά αντιγράφηκε
+WarnEmpty	Η εργασία δεν έχει οπές ούτε διαδρομές
+WarnOutside	Εργασία εκτός τραπεζιού
+WarnLong	Η εργασία διαρκεί περισσότερο από

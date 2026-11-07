@@ -1,0 +1,16 @@
+# hu: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Munkajelentés
+Pieces	Darabok
+Holes	Furatok
+PerPiece	darabonként
+Tools	Szerszámok
+Paths	Pályák
+Length	Marási hossz
+Time	Idő (becslés)
+Warnings	Figyelmeztetések
+None	nincs
+Copy	Jelentés másolása
+Copied	Jelentés másolva
+WarnEmpty	A munkában nincs furat és nincs pálya
+WarnOutside	A munka az asztalon kívül van
+WarnLong	A munka tovább tart, mint

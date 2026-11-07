@@ -1,0 +1,16 @@
+# mt: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Rapport tax-xogħol
+Pieces	Biċċiet
+Holes	Toqob
+PerPiece	għal kull biċċa
+Tools	Għodod
+Paths	Mogħdijiet
+Length	Tul tal-frejżar
+Time	Ħin (stima)
+Warnings	Twissijiet
+None	xejn
+Copy	Ikkopja r-rapport
+Copied	Ir-rapport ġie kkupjat
+WarnEmpty	Ix-xogħol m'għandu l-ebda toqba jew mogħdija
+WarnOutside	Xogħol barra mit-tavla
+WarnLong	Ix-xogħol idum aktar minn

@@ -1,0 +1,16 @@
+# ga: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Tuarascáil oibre
+Pieces	Píosaí
+Holes	Poill
+PerPiece	an píosa
+Tools	Uirlisí
+Paths	Cosáin
+Length	Fad an mhiotalaithe
+Time	Am (meastachán)
+Warnings	Rabhaidh
+None	aon cheann
+Copy	Cóipeáil an tuarascáil
+Copied	Tuarascáil cóipeáilte
+WarnEmpty	Níl poill ná cosáin san obair
+WarnOutside	Obair lasmuigh den bhord
+WarnLong	Tógann an obair níos faide ná

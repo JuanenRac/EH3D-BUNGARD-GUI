@@ -1,0 +1,16 @@
+# cs: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Zpráva o práci
+Pieces	Kusy
+Holes	Otvory
+PerPiece	na kus
+Tools	Nástroje
+Paths	Dráhy
+Length	Délka frézování
+Time	Čas (odhad)
+Warnings	Varování
+None	žádná
+Copy	Kopírovat zprávu
+Copied	Zpráva zkopírována
+WarnEmpty	Práce nemá žádné otvory ani dráhy
+WarnOutside	Práce mimo stůl
+WarnLong	Práce trvá déle než

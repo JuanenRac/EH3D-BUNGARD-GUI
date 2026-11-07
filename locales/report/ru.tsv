@@ -1,0 +1,16 @@
+# ru: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Отчёт о работе
+Pieces	Детали
+Holes	Отверстия
+PerPiece	на деталь
+Tools	Инструменты
+Paths	Траектории
+Length	Длина фрезерования
+Time	Время (оценка)
+Warnings	Предупреждения
+None	нет
+Copy	Копировать отчёт
+Copied	Отчёт скопирован
+WarnEmpty	В работе нет ни отверстий, ни траекторий
+WarnOutside	Работа за пределами стола
+WarnLong	Работа длится дольше, чем

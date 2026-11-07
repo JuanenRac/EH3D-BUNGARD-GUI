@@ -1,0 +1,16 @@
+# zh: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	作业报告
+Pieces	工件数
+Holes	孔数
+PerPiece	每件
+Tools	刀具
+Paths	路径数
+Length	铣削长度
+Time	时间（估算）
+Warnings	警告
+None	无
+Copy	复制报告
+Copied	报告已复制
+WarnEmpty	该作业没有孔，也没有路径
+WarnOutside	作业超出工作台
+WarnLong	作业耗时超过

@@ -1,0 +1,16 @@
+# fr: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Rapport de travail
+Pieces	Pièces
+Holes	Trous
+PerPiece	par pièce
+Tools	Outils
+Paths	Parcours
+Length	Longueur fraisée
+Time	Durée (estimation)
+Warnings	Avertissements
+None	aucun
+Copy	Copier le rapport
+Copied	Rapport copié
+WarnEmpty	Le travail n'a ni trous ni parcours
+WarnOutside	Travail hors de la table
+WarnLong	Le travail dure plus de

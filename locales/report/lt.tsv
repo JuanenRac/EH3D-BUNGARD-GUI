@@ -1,0 +1,16 @@
+# lt: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Darbo ataskaita
+Pieces	Detalės
+Holes	Skylės
+PerPiece	vienai detalei
+Tools	Įrankiai
+Paths	Trajektorijos
+Length	Frezavimo ilgis
+Time	Laikas (įvertis)
+Warnings	Įspėjimai
+None	nėra
+Copy	Kopijuoti ataskaitą
+Copied	Ataskaita nukopijuota
+WarnEmpty	Darbe nėra nei skylių, nei trajektorijų
+WarnOutside	Darbas už stalo ribų
+WarnLong	Darbas trunka ilgiau nei

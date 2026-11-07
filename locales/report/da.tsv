@@ -1,0 +1,16 @@
+# da: Name<TAB>text, one per line; a text that is missing is taken from English.
+Title	Arbejdsrapport
+Pieces	Stykker
+Holes	Huller
+PerPiece	pr. stykke
+Tools	Værktøjer
+Paths	Baner
+Length	Fræset længde
+Time	Tid (skøn)
+Warnings	Advarsler
+None	ingen
+Copy	Kopiér rapport
+Copied	Rapport kopieret
+WarnEmpty	Jobbet har hverken huller eller baner
+WarnOutside	Arbejde uden for bordet
+WarnLong	Jobbet tager længere end

@@ -75,6 +75,8 @@ pub(crate) enum Modal {
     Bar,
     /// The place of each tool of the job in the bar of the tool changer.
     Slots,
+    /// The report of the job: pieces, holes, tools, time and warnings, to copy.
+    Report,
     /// The update of the program from the releases of GitHub.
     Update,
 }
@@ -455,6 +457,9 @@ impl App {
         }
         if m == Modal::Slots {
             self.slots_recall();
+        }
+        if m == Modal::Report {
+            self.report_open();
         }
         self.modal = Some(m);
     }
@@ -990,6 +995,7 @@ impl App {
             Modal::Rack => self.paint_rack(cv),
             Modal::Bar => self.paint_bar_modal(cv),
             Modal::Slots => self.paint_slots(cv),
+            Modal::Report => self.paint_report(cv),
             Modal::Catalogue => self.paint_catalogue(cv),
             Modal::Head => self.paint_head(cv),
             Modal::Inspect => self.paint_inspect(cv),

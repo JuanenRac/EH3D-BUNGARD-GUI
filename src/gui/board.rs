@@ -1407,6 +1407,15 @@ impl App {
         );
         cv.card(x, y, w, h, true, None);
         cv.title(x + 30.0, y + 44.0, self.tr(Text::Tools));
+        cv.chip(
+            x + 1010.0,
+            y + 14.0,
+            320.0,
+            38.0,
+            &crate::report::word(self.lang, "Title"),
+            false,
+            Act::Show(Modal::Report),
+        );
         cv.text(
             x + 260.0,
             y + 44.0,

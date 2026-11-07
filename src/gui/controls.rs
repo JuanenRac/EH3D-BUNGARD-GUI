@@ -1114,6 +1114,7 @@ mod tests {
             ("machine3d.rs", include_str!("machine3d.rs")),
             ("numedit.rs", include_str!("numedit.rs")),
             ("opener.rs", include_str!("opener.rs")),
+            ("reportpane.rs", include_str!("reportpane.rs")),
             ("resume.rs", include_str!("resume.rs")),
             ("view2d.rs", include_str!("view2d.rs")),
             ("jogpanel.rs", include_str!("jogpanel.rs")),

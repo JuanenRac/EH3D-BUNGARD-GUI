@@ -23,7 +23,7 @@ pub struct Options {
     pub zip: Option<PathBuf>,
     /// Files given without an option: each one is opened as what its extension says (a drilling file, a routing file or a ZIP archive).
     pub open: Vec<PathBuf>,
-    /// A window to open at the start (`--modal about|open|panel|settings|jog`), the panel (`--panel COLUMNS,ROWS`) and the turn of the 3D view (`--yaw DEGREES`): for the pictures.
+    /// A window to open at the start (`--modal about|open|panel|settings|jog|report`), the panel (`--panel COLUMNS,ROWS`) and the turn of the 3D view (`--yaw DEGREES`): for the pictures.
     pub modal: Option<String>,
     /// A drop-down list to open at the start (`--combo theme|lang|model|finish|tool`): for the pictures.
     pub combo: Option<String>,

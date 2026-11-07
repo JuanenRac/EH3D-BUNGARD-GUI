@@ -48,6 +48,7 @@ mod machine3d;
 mod numedit;
 mod opener;
 mod rack;
+mod reportpane;
 mod resume;
 mod slotswin;
 mod spindle3d;
@@ -110,6 +111,8 @@ enum Act {
     Answer(bool),
     /// The answer to the summary of the job: start it, or leave it.
     Summary(bool),
+    /// Copies the report of the job as text.
+    ReportCopy,
     /// A file of the ZIP archive of the job (by its place among the drilling and routing files).
     Entry(usize),
     Show(Modal),
@@ -318,6 +321,8 @@ pub struct App {
     message: Option<String>,
     /// Text for the clipboard, which the window hands over at the start of the next frame.
     pending_copy: Option<String>,
+    /// The lines of the report of the job, worked out when its window opens.
+    report_lines: Vec<String>,
     connection: String,
     hits: Vec<(Rect, Act)>,
     frame: u32,
@@ -575,6 +580,7 @@ impl App {
             paused: false,
             message: None,
             pending_copy: None,
+            report_lines: Vec::new(),
             connection,
             hits: Vec::new(),
             frame: 0,
@@ -812,6 +818,7 @@ impl App {
             Some("connection") => app.show_modal(Modal::Connection),
             Some("board") => app.show_modal(Modal::Board),
             Some("tools") => app.show_modal(Modal::Tools),
+            Some("report") => app.show_modal(Modal::Report),
             Some("bar") => app.show_modal(Modal::Bar),
             Some("slots") => app.show_modal(Modal::Slots),
             Some("jog") => app.jog_act(JogAct::Toggle),
@@ -1877,6 +1884,7 @@ impl App {
             Act::LogSize(kb) => self.log_set_size(kb),
             Act::LogOpenFolder => self.log_open_folder(),
             Act::LogCopyPath => self.log_copy_path(),
+            Act::ReportCopy => self.report_copy(),
             Act::DisplayMil(v) => {
                 self.settings.display_mil = v;
                 self.remember_settings();

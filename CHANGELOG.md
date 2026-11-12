@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The CI keeps its actions up to date and does not pile up runs:** a `dependabot.yml` groups the updates of the GitHub Actions in one monthly request, a new push to a branch cancels the run of the older one that is still going, and the Rust jobs have a time limit, so a stuck job cannot hold a runner for hours.
 - **Seeded tests of the order of the job:** three thousand sets of tools and racks made from a fixed seed check that every tool is loaded once, in the order of the job, with no load past the places of the rack and the slots numbered from 1; two thousand jobs check that the steps after a program always end the job within as many steps as it has pieces, loads and programs.
 - **The pause of the job is decided outside the window:** `jobflow::toggle_pause` gives the state after the Pause button (it toggles while a program runs and is off when none does), the last of the decisions of the job that the window took by itself; a test checks the four cases.
 - **What a start comes to is decided outside the window:** `jobflow::start_decision` says whether a request to start does nothing, tells that nothing is on, refuses a work that falls off the table, goes to the tool changer or starts the programs, and `jobflow::programs_for_start` picks the programs (only the one that was running when the job goes on from a hole already done); the window only does what they say. Two tests check the decisions.

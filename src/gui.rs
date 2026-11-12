@@ -2052,7 +2052,9 @@ impl App {
                     self.start_job();
                 }
             }
-            Act::Pause => self.paused = self.running.is_some() && !self.paused,
+            Act::Pause => {
+                self.paused = crate::jobflow::toggle_pause(self.running.is_some(), self.paused)
+            }
             Act::Stop => self.stop_job(),
             Act::Back => {
                 self.stop_job();

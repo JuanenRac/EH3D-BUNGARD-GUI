@@ -85,6 +85,11 @@ pub fn programs_for_start(on: Vec<Program>, running: Option<Program>, skip: usiz
     }
 }
 
+/// The state of the pause after the Pause button: it toggles while a program runs and is never on when none does.
+pub fn toggle_pause(running: bool, paused: bool) -> bool {
+    running && !paused
+}
+
 /// What the job does when a program of it has ended.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Next {
@@ -219,5 +224,13 @@ mod tests {
             vec![Program::Route]
         );
         assert!(programs_for_start(on, None, 5).is_empty());
+    }
+
+    #[test]
+    fn the_pause_toggles_only_while_a_program_runs() {
+        assert!(toggle_pause(true, false));
+        assert!(!toggle_pause(true, true));
+        assert!(!toggle_pause(false, false));
+        assert!(!toggle_pause(false, true));
     }
 }

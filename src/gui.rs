@@ -1057,7 +1057,7 @@ impl App {
             }
             Err(e) => {
                 crate::applog::error("file", format!("the archive was not opened: {e}"));
-                self.message = Some(e)
+                self.message = Some(e.to_string())
             }
         }
     }
@@ -1078,7 +1078,7 @@ impl App {
                     "file",
                     format!("{name}: it was not taken out of the archive: {e}"),
                 );
-                self.message = Some(e)
+                self.message = Some(e.to_string())
             }
         }
     }

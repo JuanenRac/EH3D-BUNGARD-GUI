@@ -1,8 +1,33 @@
 //! Puts the icon and the version information of the program into the Windows executable.
 //! On every other target nothing happens, and a missing icon or resource compiler only gives a warning.
 
+/// The short commit of a repository folder (the one the program was built from and its siblings), or `unknown` when git cannot say.
+fn commit_of(folder: &str) -> String {
+    std::process::Command::new("git")
+        .args(["-C", folder, "rev-parse", "--short=7", "HEAD"])
+        .output()
+        .ok()
+        .filter(|o| o.status.success())
+        .and_then(|o| String::from_utf8(o.stdout).ok())
+        .map(|t| t.trim().to_string())
+        .filter(|t| !t.is_empty() && t.chars().all(|c| c.is_ascii_hexdigit()))
+        .unwrap_or_else(|| "unknown".to_string())
+}
+
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
+    // the commits the program is made of, for the About window: a bug report says exactly which code ran
+    let parts = [
+        ("BUNGARD-GUI", "."),
+        ("COMMON", "../EH3D-COMMON"),
+        ("DRILLPRO", "../EH3D-DRILLPRO"),
+        ("ROUTEPRO", "../EH3D-ROUTEPRO"),
+    ];
+    let text: Vec<String> = parts
+        .iter()
+        .map(|(name, folder)| format!("{name} {}", commit_of(folder)))
+        .collect();
+    println!("cargo:rustc-env=EH3D_BUILD_COMMITS={}", text.join(" / "));
     println!("cargo:rerun-if-changed=images/brand/app.ico");
     #[cfg(windows)]
     embed();

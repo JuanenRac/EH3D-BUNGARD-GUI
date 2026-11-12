@@ -1019,6 +1019,15 @@ impl App {
                     18.0,
                     col(t.accent),
                 );
+                // the commits of this program and of the siblings it is built from
+                cv.text(
+                    x + 30.0,
+                    y + 180.0,
+                    Align2::LEFT_BOTTOM,
+                    env!("EH3D_BUILD_COMMITS"),
+                    13.0,
+                    col(t.dim),
+                );
                 for (i, l) in wrap(self.tr(Text::AboutBody), 62).iter().enumerate() {
                     cv.text(
                         x + 30.0,

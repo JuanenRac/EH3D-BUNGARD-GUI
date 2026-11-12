@@ -412,4 +412,23 @@ mod tests {
         advance_reached(&mut empty, (0.0, 0.0), 0.3);
         assert_eq!(empty.reached, 0);
     }
+
+    #[test]
+    fn the_build_names_the_commit_of_the_program_and_of_each_sibling() {
+        let text = env!("EH3D_BUILD_COMMITS");
+        let parts: Vec<&str> = text.split(" / ").collect();
+        let names: Vec<&str> = parts
+            .iter()
+            .map(|p| p.split(' ').next().unwrap_or(""))
+            .collect();
+        assert_eq!(names, ["BUNGARD-GUI", "COMMON", "DRILLPRO", "ROUTEPRO"]);
+        for p in parts {
+            let commit = p.split(' ').nth(1).unwrap_or("");
+            assert!(
+                commit == "unknown"
+                    || (commit.len() == 7 && commit.chars().all(|c| c.is_ascii_hexdigit())),
+                "{p}"
+            );
+        }
+    }
 }

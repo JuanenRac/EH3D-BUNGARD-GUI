@@ -238,6 +238,7 @@ EH3D-BUNGARD-GUI/
 ├── run.sh run.bat                               starten das Fenster, ohne Argumente mit den Testdateien
 ├── eh3d.project.json bump_manifest_version.py   Manifest und Versionswerkzeug
 ├── Cargo.toml Cargo.lock                        das Rust-Paket und seine festgelegten Abhängigkeiten
+├── rust-toolchain.toml                          die festgelegte Rust-Toolchain
 ├── CHANGELOG.md                                 was sich in jeder Version geändert hat
 ├── SECURITY.md SUPPORT.md                       wie man eine Schwachstelle meldet und wo man fragt
 └── CONTRIBUTING.md CODE_OF_CONDUCT.md LICENSE   wie man beiträgt, der Verhaltenskodex und die Lizenz

@@ -238,6 +238,7 @@ EH3D-BUNGARD-GUI/
 ├── run.sh run.bat                               ウィンドウを起動（引数なしならテストファイルで）
 ├── eh3d.project.json bump_manifest_version.py   マニフェストとバージョン用ユーティリティ
 ├── Cargo.toml Cargo.lock                        Rust パッケージと固定された依存関係
+├── rust-toolchain.toml                          固定されたRustツールチェーン
 ├── CHANGELOG.md                                 各バージョンの変更点
 ├── SECURITY.md SUPPORT.md                       脆弱性の報告方法と質問先
 └── CONTRIBUTING.md CODE_OF_CONDUCT.md LICENSE   貢献の方法、行動規範、ライセンス

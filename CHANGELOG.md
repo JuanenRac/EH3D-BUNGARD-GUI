@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The CCD/2 ECO and the CCD/2 Precision are models of the machine:** the ECO (economy spindle of 5,000 to 35,000 rpm, tool change by hand) and the Precision (changer only, feed of 7,000 mm/min, step of 0.79 micrometres) are listed next to the others with the size of the CCD/2, and each profile now carries the spindle, the feed and the step the maker publishes (nothing where it does not say). A table of the size of the CCD/2 is still told as the CCD/2. A test checks both models.
 - **The starting limits of the spindles come from the table shared with the server:** the turns, power, feeds and thickest bit of the original spindle and of the one with the drive are read from the shared table (`spindles.cfg` of the shared crate) instead of being written here, and a test checks that both spindles and every number are the ones of the table.
 - **A drilling or routing file past the limits of the readers is not drawn, and a big one is said:** the views read the files through `ncd::parse_limited` and `hpgl::parse_limited` with the limits of `reader_limits.cfg` of the shared crate (the engines refuse a file past a hard limit with `EH3D-FORMATS-011` in the language of the screen), and a file past a warning limit is drawn with the notice that it is big, in the 37 languages.
 ## [0.2.5] - Copyable job report in 37 languages, the log section in the settings, the jog window and a shorter tour

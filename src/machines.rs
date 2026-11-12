@@ -13,6 +13,10 @@ use eh3d_view::scene::Table;
 pub enum Family {
     Ccd,
     Ccd2,
+    /// The CCD/2 with the economy spindle and the semi-automatic change of 99 tools.
+    Ccd2Eco,
+    /// The CCD/2 ATC with the finer step and the faster feed.
+    Ccd2Precision,
     CcdXl,
     CcdPremium,
 }
@@ -28,9 +32,17 @@ pub struct Profile {
     pub weight_kg: f64,
     /// The places of the tool changer of the model that has one (the standard one has 15 and the test pin).
     pub tool_places: u8,
+    /// The ways the model changes the tools: the CCD and CCD/2 are sold with both, the ECO by hand (semi-automatic) and the Precision only with the changer.
+    pub changes: &'static [ToolChange],
+    /// What the maker publishes of the spindle, the feed and the step; `None` when it does not say.
+    pub spindle_rpm: Option<(u32, u32)>,
+    pub max_feed_mm_min: Option<u32>,
+    pub step_um: Option<f64>,
 }
 
-pub const PROFILES: [Profile; 4] = [
+const BOTH: &[ToolChange] = &[ToolChange::Manual, ToolChange::Automatic];
+
+pub const PROFILES: [Profile; 6] = [
     Profile {
         family: Family::Ccd2,
         name: "CCD/2",
@@ -38,6 +50,10 @@ pub const PROFILES: [Profile; 4] = [
         overall_mm: (700.0, 550.0, 300.0),
         weight_kg: 30.0,
         tool_places: 15,
+        changes: BOTH,
+        spindle_rpm: Some((5_000, 63_000)),
+        max_feed_mm_min: Some(9_000),
+        step_um: Some(3.175),
     },
     Profile {
         family: Family::Ccd,
@@ -46,6 +62,10 @@ pub const PROFILES: [Profile; 4] = [
         overall_mm: (800.0, 700.0, 300.0),
         weight_kg: 35.0,
         tool_places: 15,
+        changes: BOTH,
+        spindle_rpm: Some((5_000, 63_000)),
+        max_feed_mm_min: Some(9_000),
+        step_um: Some(3.175),
     },
     Profile {
         family: Family::CcdPremium,
@@ -54,6 +74,10 @@ pub const PROFILES: [Profile; 4] = [
         overall_mm: (950.0, 800.0, 600.0),
         weight_kg: 80.0,
         tool_places: 30,
+        changes: BOTH,
+        spindle_rpm: None,
+        max_feed_mm_min: None,
+        step_um: None,
     },
     Profile {
         family: Family::CcdXl,
@@ -62,6 +86,34 @@ pub const PROFILES: [Profile; 4] = [
         overall_mm: (950.0, 950.0, 300.0),
         weight_kg: 49.0,
         tool_places: 25,
+        changes: BOTH,
+        spindle_rpm: None,
+        max_feed_mm_min: None,
+        step_um: None,
+    },
+    Profile {
+        family: Family::Ccd2Eco,
+        name: "CCD/2 ECO",
+        work_mm: (325.0, 270.0, 38.0),
+        overall_mm: (700.0, 550.0, 300.0),
+        weight_kg: 30.0,
+        tool_places: 0,
+        changes: &[ToolChange::Manual],
+        spindle_rpm: Some((5_000, 35_000)),
+        max_feed_mm_min: None,
+        step_um: None,
+    },
+    Profile {
+        family: Family::Ccd2Precision,
+        name: "CCD/2 Precision",
+        work_mm: (325.0, 270.0, 38.0),
+        overall_mm: (700.0, 550.0, 300.0),
+        weight_kg: 30.0,
+        tool_places: 15,
+        changes: &[ToolChange::Automatic],
+        spindle_rpm: Some((5_000, 63_000)),
+        max_feed_mm_min: Some(7_000),
+        step_um: Some(0.79),
     },
 ];
 
@@ -79,11 +131,15 @@ pub struct Model {
     pub change: ToolChange,
 }
 
-/// Every model: each machine of the family as the MTC (manual change) and as the ATC (changer with its rack).
+/// Every model: each machine as the MTC (manual change) and as the ATC (changer with its rack) when it is sold so; the ECO has the manual change only and the Precision the changer only.
 pub fn models() -> Vec<Model> {
-    (0..PROFILES.len())
-        .flat_map(|profile| {
-            [ToolChange::Manual, ToolChange::Automatic].map(|change| Model { profile, change })
+    PROFILES
+        .iter()
+        .enumerate()
+        .flat_map(|(profile, p)| {
+            p.changes
+                .iter()
+                .map(move |&change| Model { profile, change })
         })
         .collect()
 }
@@ -206,7 +262,7 @@ mod tests {
 
     #[test]
     fn the_default_bar_of_each_model_is_inside_what_the_machine_reaches_and_in_a_line() {
-        for p in PROFILES {
+        for p in PROFILES.iter().filter(|p| p.tool_places > 0) {
             let (first, last, n) = p.default_bar();
             assert_eq!(n, p.tool_places as usize);
             assert!(
@@ -263,7 +319,10 @@ mod tests {
     #[test]
     fn every_machine_is_a_model_with_the_manual_and_with_the_automatic_change() {
         let all = models();
-        assert_eq!(all.len(), PROFILES.len() * 2);
+        assert_eq!(
+            all.len(),
+            PROFILES.iter().map(|p| p.changes.len()).sum::<usize>()
+        );
         for m in &all {
             assert_eq!(
                 Model::from_name(&m.name()),
@@ -280,6 +339,22 @@ mod tests {
             Some(15)
         );
         assert_eq!(Model::from_name("nothing"), None);
+    }
+
+    #[test]
+    fn the_eco_and_the_precision_are_the_models_the_maker_sells_with_their_numbers() {
+        let all = models();
+        let eco = all[Model::from_name("CCD/2 ECO MTC").expect("the ECO as a manual model")];
+        assert_eq!(eco.profile().spindle_rpm, Some((5_000, 35_000)));
+        assert_eq!(eco.rack_places(), 0);
+        assert!(Model::from_name("CCD/2 ECO ATC").is_none());
+        let precision = all[Model::from_name("CCD/2 Precision ATC").expect("the Precision")];
+        assert_eq!(precision.profile().max_feed_mm_min, Some(7_000));
+        assert_eq!(precision.profile().step_um, Some(0.79));
+        assert_eq!(precision.rack_places(), 15);
+        assert!(Model::from_name("CCD/2 Precision MTC").is_none());
+        // they share the table of the CCD/2, which stays the machine a table of that size is told as
+        assert_eq!(for_table(&Table::new(325.0, 270.0)).name, "CCD/2");
     }
 
     #[test]

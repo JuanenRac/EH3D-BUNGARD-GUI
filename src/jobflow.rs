@@ -290,7 +290,7 @@ mod tests {
 
     #[test]
     fn a_job_always_ends_after_as_many_steps_as_it_has_pieces_loads_and_programs() {
-        let mut rng = Rng(0xF10_0D);
+        let mut rng = Rng(0xF10D);
         for _ in 0..2_000 {
             let rack = rng.below(2) == 0;
             let (mut pieces, mut loads, mut queue) = (rng.below(5), rng.below(4), rng.below(4));

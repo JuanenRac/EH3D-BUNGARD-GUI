@@ -233,4 +233,88 @@ mod tests {
         assert!(!toggle_pause(false, false));
         assert!(!toggle_pause(false, true));
     }
+
+    /// A small generator with a fixed seed: the same cases on every run.
+    struct Rng(u64);
+
+    impl Rng {
+        fn below(&mut self, n: usize) -> usize {
+            self.0 = self
+                .0
+                .wrapping_mul(6_364_136_223_846_793_005)
+                .wrapping_add(1_442_695_040_888_963_407);
+            ((self.0 >> 33) % n as u64) as usize
+        }
+    }
+
+    #[test]
+    fn whatever_the_tools_and_the_rack_every_tool_is_loaded_once_in_the_order_of_the_job() {
+        let mut rng = Rng(0x10AD_5EED);
+        for _ in 0..3_000 {
+            let mut next_tool = 1u8;
+            let mut tools: Vec<Piece> = Vec::new();
+            for program in [Program::Drill, Program::Route] {
+                let n = rng.below(9);
+                let list: Vec<u8> = (0..n)
+                    .map(|_| {
+                        next_tool += 1;
+                        next_tool
+                    })
+                    .collect();
+                tools.push((program, list));
+            }
+            let places = rng.below(7);
+            let loads = plan_loads(&tools, places);
+            let cap = places.max(1);
+            let order: Vec<(Program, u8)> = tools
+                .iter()
+                .flat_map(|(p, ts)| ts.iter().map(move |&t| (*p, t)))
+                .collect();
+            let loaded: Vec<(Program, u8)> = loads
+                .iter()
+                .flatten()
+                .flat_map(|(p, ts)| ts.iter().map(move |&t| (*p, t)))
+                .collect();
+            assert_eq!(loaded, order, "{tools:?} in {places} places");
+            for load in &loads {
+                assert!(!load.is_empty());
+                assert!(load.iter().all(|(_, ts)| !ts.is_empty()));
+                let held: usize = load.iter().map(|(_, ts)| ts.len()).sum();
+                assert!(held <= cap, "{held} tools in a rack of {cap}: {tools:?}");
+                // the slots of a load are numbered 1..=held in the order of the job
+                let slots: Vec<u8> = slot_tools(load).iter().map(|s| s.0).collect();
+                assert_eq!(slots, (1..=held as u8).collect::<Vec<_>>());
+            }
+        }
+    }
+
+    #[test]
+    fn a_job_always_ends_after_as_many_steps_as_it_has_pieces_loads_and_programs() {
+        let mut rng = Rng(0xF10_0D);
+        for _ in 0..2_000 {
+            let rack = rng.below(2) == 0;
+            let (mut pieces, mut loads, mut queue) = (rng.below(5), rng.below(4), rng.below(4));
+            let budget = pieces + loads + queue + 1;
+            let mut steps = 0;
+            loop {
+                steps += 1;
+                assert!(steps <= budget, "the job does not end");
+                match after_program(rack, pieces, loads, queue) {
+                    Next::Piece => {
+                        assert!(rack && pieces > 0);
+                        pieces -= 1;
+                    }
+                    Next::Reload => {
+                        assert!(rack && pieces == 0 && loads > 0);
+                        loads -= 1;
+                    }
+                    Next::Program => {
+                        assert!(!rack && queue > 0);
+                        queue -= 1;
+                    }
+                    Next::Over => break,
+                }
+            }
+        }
+    }
 }

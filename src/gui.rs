@@ -1257,27 +1257,24 @@ impl App {
     fn start_job_from(&mut self, skip: usize) {
         // the machine is the job's now: the panel lets go of it
         self.jog_yield();
-        let mut programs = self.job_programs();
-        if skip > 0 {
-            programs = self.active().map(|(p, _)| p).into_iter().collect();
-        }
+        let programs = crate::jobflow::programs_for_start(
+            self.job_programs(),
+            self.active().map(|(p, _)| p),
+            skip,
+        );
         self.start_programs(programs, skip);
     }
 
     /// Starts the programs one after the other; the first leaves out its first `skip` holes (or paths).
     pub(crate) fn start_programs(&mut self, programs: Vec<Program>, skip: usize) {
         crate::applog::info("job", format!("start requested: {programs:?}, skipping {skip}; connection {}, model {}, emergency stop {}", self.connection, self.settings.model, self.estop));
-        if programs.is_empty() {
-            if self.drill.engine.file_loaded() || self.route.engine.file_loaded() {
-                self.message = Some(self.tr(Text::JobNothingOn).to_string());
+        let file_loaded = self.drill.engine.file_loaded() || self.route.engine.file_loaded();
+        // a job that does not fit on the table is refused before it starts, not found out on the machine (the board that is bigger than the table is said first, and does not stop it)
+        if !programs.is_empty() {
+            if let Some((head, detail)) = self.board_fit_warning() {
+                self.message = Some(format!("{head}: {detail}"));
             }
-            return;
         }
-        // a board bigger than the table (turned too) is said before the job starts; the job is not stopped by it
-        if let Some((head, detail)) = self.board_fit_warning() {
-            self.message = Some(format!("{head}: {detail}"));
-        }
-        // a job that does not fit on the table is refused before it starts, not found out on the machine
         let outside = programs.iter().any(|p| {
             let (holes, paths) = match p {
                 Program::Drill => self.drill.scene.outside_table(),
@@ -1285,9 +1282,22 @@ impl App {
             };
             !holes.is_empty() || !paths.is_empty()
         });
-        if outside {
-            self.message = Some(self.tr(Text::JobOutsideTable).to_string());
-            return;
+        match crate::jobflow::start_decision(
+            programs.is_empty(),
+            file_loaded,
+            outside,
+            self.has_changer(),
+        ) {
+            crate::jobflow::Start::Silent => return,
+            crate::jobflow::Start::NothingOn => {
+                self.message = Some(self.tr(Text::JobNothingOn).to_string());
+                return;
+            }
+            crate::jobflow::Start::Outside => {
+                self.message = Some(self.tr(Text::JobOutsideTable).to_string());
+                return;
+            }
+            crate::jobflow::Start::Changer | crate::jobflow::Start::Plain => {}
         }
         // the models with the tool changer need every tool of the job in a place of the bar of its own, and said so, before anything moves
         if self.has_changer() && !self.slots_ready() {

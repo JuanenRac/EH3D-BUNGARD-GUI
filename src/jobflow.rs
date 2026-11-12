@@ -39,6 +39,52 @@ pub fn slot_tools(pieces: &[Piece]) -> Vec<(u8, Program, u8)> {
         .collect()
 }
 
+/// What a request to start a job comes to, before anything moves.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Start {
+    /// Nothing is switched on and no file is loaded: nothing to say.
+    Silent,
+    /// A file is loaded but the drilling and the routing are both off.
+    NothingOn,
+    /// Part of the work falls outside the table: the job is refused.
+    Outside,
+    /// The machine has the tool changer: the places of the bar and the loads of the rack come first.
+    Changer,
+    /// The programs start one after the other.
+    Plain,
+}
+
+/// The first decision of a start: `programs_empty` (nothing switched on), `file_loaded`, `outside` (part of the work is off the table) and `changer` (the model has the tool changer).
+pub fn start_decision(
+    programs_empty: bool,
+    file_loaded: bool,
+    outside: bool,
+    changer: bool,
+) -> Start {
+    if programs_empty {
+        if file_loaded {
+            Start::NothingOn
+        } else {
+            Start::Silent
+        }
+    } else if outside {
+        Start::Outside
+    } else if changer {
+        Start::Changer
+    } else {
+        Start::Plain
+    }
+}
+
+/// The programs a start works on: the ones that are on, or, when it goes on from a hole already done (`skip` above 0), only the program that was running.
+pub fn programs_for_start(on: Vec<Program>, running: Option<Program>, skip: usize) -> Vec<Program> {
+    if skip > 0 {
+        running.into_iter().collect()
+    } else {
+        on
+    }
+}
+
 /// What the job does when a program of it has ended.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Next {
@@ -153,5 +199,25 @@ mod tests {
         assert_eq!(hand_over(3, None), (3, None));
         let empty: Piece = (Program::Route, vec![]);
         assert_eq!(hand_over(0, Some(&empty)), (0, None));
+    }
+
+    #[test]
+    fn a_start_is_silent_refused_or_goes_to_the_changer_or_on() {
+        assert_eq!(start_decision(true, false, false, true), Start::Silent);
+        assert_eq!(start_decision(true, true, false, true), Start::NothingOn);
+        assert_eq!(start_decision(false, true, true, true), Start::Outside);
+        assert_eq!(start_decision(false, true, false, true), Start::Changer);
+        assert_eq!(start_decision(false, true, false, false), Start::Plain);
+    }
+
+    #[test]
+    fn going_on_from_a_hole_works_only_on_the_program_that_was_running() {
+        let on = vec![Program::Drill, Program::Route];
+        assert_eq!(programs_for_start(on.clone(), Some(Program::Route), 0), on);
+        assert_eq!(
+            programs_for_start(on.clone(), Some(Program::Route), 5),
+            vec![Program::Route]
+        );
+        assert!(programs_for_start(on, None, 5).is_empty());
     }
 }

@@ -39,6 +39,50 @@ pub fn slot_tools(pieces: &[Piece]) -> Vec<(u8, Program, u8)> {
         .collect()
 }
 
+/// What the job does when a program of it has ended.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Next {
+    /// The next piece of the load that is in the rack (its tools come from the places after the ones that ran).
+    Piece,
+    /// The rack has to be loaded again for the next load.
+    Reload,
+    /// The next program of the queue starts (the machine has no changer, or the rack is not in use).
+    Program,
+    /// There is nothing more: the job is over.
+    Over,
+}
+
+/// The step after a program ended: with the rack in use the pieces of the load go first, then the next load, then the end; without it the queue of programs decides.
+pub fn after_program(
+    rack_active: bool,
+    pieces_left: usize,
+    loads_left: usize,
+    queue_left: usize,
+) -> Next {
+    if rack_active {
+        if pieces_left > 0 {
+            Next::Piece
+        } else if loads_left > 0 {
+            Next::Reload
+        } else {
+            Next::Over
+        }
+    } else if queue_left == 0 {
+        Next::Over
+    } else {
+        Next::Program
+    }
+}
+
+/// How the chuck is handed on to the next piece of a load: the first place the next program takes its tools from (after the ones of the piece that ran) and the tool the
+/// chuck holds now (the last tool of that piece).
+pub fn hand_over(first: usize, ran: Option<&Piece>) -> (usize, Option<(Program, u8)>) {
+    (
+        first + ran.map_or(0, |(_, t)| t.len()),
+        ran.and_then(|(p, t)| t.last().map(|&t| (*p, t))),
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -91,5 +135,23 @@ mod tests {
             ]
         );
         assert!(slot_tools(&[]).is_empty());
+    }
+
+    #[test]
+    fn after_a_program_the_pieces_go_first_then_the_next_load_then_the_end() {
+        assert_eq!(after_program(true, 2, 1, 5), Next::Piece);
+        assert_eq!(after_program(true, 0, 1, 5), Next::Reload);
+        assert_eq!(after_program(true, 0, 0, 5), Next::Over);
+        assert_eq!(after_program(false, 0, 0, 1), Next::Program);
+        assert_eq!(after_program(false, 9, 9, 0), Next::Over);
+    }
+
+    #[test]
+    fn the_chuck_is_handed_on_with_the_last_tool_of_the_piece_that_ran() {
+        let ran: Piece = (Program::Drill, vec![4, 5]);
+        assert_eq!(hand_over(3, Some(&ran)), (5, Some((Program::Drill, 5))));
+        assert_eq!(hand_over(3, None), (3, None));
+        let empty: Piece = (Program::Route, vec![]);
+        assert_eq!(hand_over(0, Some(&empty)), (0, None));
     }
 }

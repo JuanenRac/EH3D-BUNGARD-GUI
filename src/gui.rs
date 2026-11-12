@@ -1745,33 +1745,41 @@ impl App {
     /// person is told that the board can be taken out.
     fn continue_job(&mut self) {
         self.stage_wait = false;
-        if self.rack_active {
-            if !self.rack_pieces.is_empty() {
+        match crate::jobflow::after_program(
+            self.rack_active,
+            self.rack_pieces.len(),
+            self.rack_loads.len(),
+            self.job_queue.len(),
+        ) {
+            crate::jobflow::Next::Piece => {
                 // the next program takes its tools from the places after the ones of the program that ran, and the chuck is handed on to it
-                self.rack_first += self.rack_only.as_ref().map_or(0, |(_, t)| t.len());
-                self.rack_last = self
-                    .rack_only
-                    .as_ref()
-                    .and_then(|(p, t)| t.last().map(|&t| (*p, t)));
+                let (first, last) =
+                    crate::jobflow::hand_over(self.rack_first, self.rack_only.as_ref());
+                self.rack_first = first;
+                self.rack_last = last;
                 let next = self.rack_pieces.remove(0);
                 self.rack_only = Some(next.clone());
                 self.begin_program(next.0, 0);
-            } else if !self.rack_loads.is_empty() {
+            }
+            crate::jobflow::Next::Reload => {
                 // the rack has to be loaded again
                 self.rack_only = None;
                 self.m3d.finish();
                 self.rack_next();
-            } else {
+            }
+            crate::jobflow::Next::Over if self.rack_active => {
                 self.rack_clear();
                 self.m3d.finish();
                 self.job_over();
             }
-        } else if self.job_queue.is_empty() {
-            self.m3d.finish();
-            self.job_over();
-        } else {
-            let next = self.job_queue.remove(0);
-            self.begin_program(next, 0);
+            crate::jobflow::Next::Over => {
+                self.m3d.finish();
+                self.job_over();
+            }
+            crate::jobflow::Next::Program => {
+                let next = self.job_queue.remove(0);
+                self.begin_program(next, 0);
+            }
         }
     }
 

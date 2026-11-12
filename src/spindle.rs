@@ -47,27 +47,19 @@ pub struct Spindle {
 }
 
 impl Spindle {
-    /// The starting values: prudent ones, to be tuned on the machine (they are kept in the settings file, one line each).
+    /// The starting values: prudent ones, to be tuned on the machine (they are kept in the settings file, one line each). They come from the table of the spindles
+    /// shared with the server (`spindles.cfg` of the shared crate), so both say the same.
     pub fn default_for(id: SpindleId) -> Spindle {
-        match id {
-            SpindleId::Original => Spindle {
-                id,
-                min_rpm: 5_000,
-                max_rpm: 63_000,
-                power_w: 150,
-                max_xy_mm_min: 3_000,
-                max_z_mm_min: 4_000,
-                max_bit_mm: 3.2,
-            },
-            SpindleId::Vfd => Spindle {
-                id,
-                min_rpm: 6_000,
-                max_rpm: 24_000,
-                power_w: 2_200,
-                max_xy_mm_min: 1_500,
-                max_z_mm_min: 1_200,
-                max_bit_mm: 6.0,
-            },
+        let l = eh3d_materials::spindle::defaults(id.code())
+            .expect("the table of the spindles has every spindle");
+        Spindle {
+            id,
+            min_rpm: l.min_rpm,
+            max_rpm: l.max_rpm,
+            power_w: l.power_w,
+            max_xy_mm_min: l.max_xy_mm_min,
+            max_z_mm_min: l.max_z_mm_min,
+            max_bit_mm: l.max_bit_mm,
         }
     }
 
@@ -260,6 +252,24 @@ mod tests {
             .iter()
             .find(|b| b.kind == kind)
             .expect("a bit of the kind")
+    }
+
+    #[test]
+    fn the_spindles_are_the_ones_of_the_shared_table_with_its_numbers() {
+        let ids: Vec<&str> = SpindleId::ALL.iter().map(|i| i.code()).collect();
+        assert_eq!(ids, eh3d_materials::spindle::IDS);
+        for id in SpindleId::ALL {
+            let shared = eh3d_materials::spindle::defaults(id.code()).unwrap();
+            let own = Spindle::default_for(id);
+            assert_eq!(
+                (own.min_rpm, own.max_rpm, own.power_w),
+                (shared.min_rpm, shared.max_rpm, shared.power_w)
+            );
+            assert_eq!(
+                (own.max_xy_mm_min, own.max_z_mm_min, own.max_bit_mm),
+                (shared.max_xy_mm_min, shared.max_z_mm_min, shared.max_bit_mm)
+            );
+        }
     }
 
     #[test]

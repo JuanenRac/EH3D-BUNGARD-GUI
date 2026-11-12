@@ -14,6 +14,7 @@ use eframe::egui::{
     Stroke, StrokeKind, Vec2,
 };
 use eh3d_archive::{Archive, Kind};
+use eh3d_bungard_formats::limits::ReaderLimits;
 use eh3d_drillpro::classic::engine::{ClassicEngine, Question};
 use eh3d_drillpro::job::{JobOptions, Panel};
 use eh3d_drillpro::protocol::connection::{ConnectionConfig, Kind as LinkKind};
@@ -901,9 +902,17 @@ impl App {
         let turned = self.source_for(path, true);
         let path = turned.as_path();
         self.drill.engine.load(path);
-        let file = jobs::read_latin1(path)
+        // the size limits of the readers (reader_limits.cfg of the shared crate): a file past a hard limit is not drawn, one past a warning limit is drawn and said
+        let (file, big) = match jobs::read_latin1(path)
             .ok()
-            .and_then(|t| eh3d_drillpro::ncd::parse(&t).ok());
+            .and_then(|t| eh3d_drillpro::ncd::parse_limited(&t, &ReaderLimits::default()).ok())
+        {
+            Some((f, verdict)) => (
+                Some(f),
+                eh3d_drillpro::summary::size_warning(verdict, self.lang),
+            ),
+            None => (None, None),
+        };
         let (unit, offset, scale) = self
             .drill
             .engine
@@ -921,7 +930,7 @@ impl App {
                     h.y_mm = h.y_mm * scale.1 + offset.1;
                 }
                 self.drill.base = self.drill.scene.clone();
-                self.message = None;
+                self.message = big;
                 crate::applog::info(
                     "file",
                     format!(
@@ -1011,9 +1020,16 @@ impl App {
         let turned = self.source_for(path, false);
         let path = turned.as_path();
         self.route.engine.load(path);
-        let plot = jobs::read_latin1(path)
-            .ok()
-            .map(|t| eh3d_routepro::hpgl::parse_with(&t, self.route_segments()));
+        let segments = self.route_segments();
+        let (plot, big) = match jobs::read_latin1(path).ok().and_then(|t| {
+            eh3d_routepro::hpgl::parse_limited(&t, segments, &ReaderLimits::default()).ok()
+        }) {
+            Some((p, verdict)) => (
+                Some(p),
+                eh3d_drillpro::summary::size_warning(verdict, self.lang),
+            ),
+            None => (None, None),
+        };
         let offset = self
             .route
             .engine
@@ -1029,6 +1045,9 @@ impl App {
                 }
             }
             self.route.base = self.route.scene.clone();
+            if big.is_some() {
+                self.message = big;
+            }
             crate::applog::info(
                 "file",
                 format!(

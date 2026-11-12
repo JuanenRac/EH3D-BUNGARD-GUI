@@ -11,14 +11,14 @@
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
-  <img src="https://img.shields.io/badge/Tests-408-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-416-0f6cbd.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.2.5-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
 ---
 
-**正直さの確認 - 現在実際に動くもの：** ウィンドウを持つ Rust プログラムで、コンピューター上で動く 408 件のテストがあります。ランチャーは、手動 (MTC) または自動 (ATC) ツールチェンジのマシン向けに、新しいインターフェースか従来のドリル・ルーティングのプログラムを選べます。ビューアーは、ドリルファイル、HP-GL プロットファイル、作業を収めた ZIP アーカイブをフォルダーブラウザー、ドラッグ＆ドロップ、コマンドラインから開き、ドリル径ごとの穴とその上のルーティング経路を平面図に描き、設定で選んだサイズのテーブルを持つマシンを 3D で表示し、基板を面付けし、実行中の作業を追います。作業は EH3D-DRILLPRO と EH3D-ROUTEPRO のエンジンの**シミュレーター**で動きます。実機への接続方法（コンピューターの RS-232、USB-RS232 アダプター、または EH3D-NODE-BUNGARD を直接あるいは EH3D-SERVER 経由）は、それらが読む同じマシンファイルで決まりますが、**このウィンドウからはどれも試していません**。接続、設定、ツールの各ウィンドウは提供する値だけを変更し、マシンファイルとツールファイル全体はまだ編集できず、3D 表示は経路の高さを示しません。
+**正直さの確認 - 現在実際に動くもの：** ウィンドウを持つ Rust プログラムで、コンピューター上で動く 416 件のテストがあります。ランチャーは、手動 (MTC) または自動 (ATC) ツールチェンジのマシン向けに、新しいインターフェースか従来のドリル・ルーティングのプログラムを選べます。ビューアーは、ドリルファイル、HP-GL プロットファイル、作業を収めた ZIP アーカイブをフォルダーブラウザー、ドラッグ＆ドロップ、コマンドラインから開き、ドリル径ごとの穴とその上のルーティング経路を平面図に描き、設定で選んだサイズのテーブルを持つマシンを 3D で表示し、基板を面付けし、実行中の作業を追います。作業は EH3D-DRILLPRO と EH3D-ROUTEPRO のエンジンの**シミュレーター**で動きます。実機への接続方法（コンピューターの RS-232、USB-RS232 アダプター、または EH3D-NODE-BUNGARD を直接あるいは EH3D-SERVER 経由）は、それらが読む同じマシンファイルで決まりますが、**このウィンドウからはどれも試していません**。接続、設定、ツールの各ウィンドウは提供する値だけを変更し、マシンファイルとツールファイル全体はまだ編集できず、3D 表示は経路の高さを示しません。
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | バージョン | `0.2.5` |
 | 成熟度 | 足場 |
-| テスト | 408 |
+| テスト | 416 |
 | 技術スタック | Rust |
 | 実機での動作 | いいえ。シミュレーターとコンピューター上でのみ動かしました。このウィンドウから実機を動かしたことはありません |
 
@@ -49,7 +49,7 @@
 | ファイルと面付け | 🟡 | ドリルファイル、HP-GL ファイル、ZIP アーカイブをブラウザー、ドラッグ＆ドロップ、コマンドラインから開き、基板を 3 つのモードで繰り返します。このリポジトリの小さなサンプルファイルで試しました。 |
 | 設定 | 🟠 | テーブルの使用可能な幅と奥行きを変更してマシンファイルに保存できます。マシンファイルとツールファイルのそれ以外の部分は、引き続き従来のプログラムで編集します。 |
 | マシンの制御 | 🔴 | 作業は EH3D-DRILLPRO と EH3D-ROUTEPRO のエンジンを通るため、原則としてそれらのすべての接続が使えます。ただしシミュレーターでしか動かしていません。接続ウィンドウで接続（コンピューターの RS-232、USB-RS232 アダプター、EH3D ノード、EH3D サーバー）を選んで試し、マシンファイルに保存できます。一時停止は 2 つの動きの間で作業を止めます。 |
-| テスト | 🟡 | コンピューター上で 408 件のテストが通ります（`cargo test --features gui`）：ランチャー、設定、ファイルからシーンへの読み込み、マシンのプロファイル、パネル、コマンドライン。マシンに触れるものはありません。 |
+| テスト | 🟡 | コンピューター上で 416 件のテストが通ります（`cargo test --all-targets --features gui`）：ランチャー、設定、ファイルからシーンへの読み込み、マシンのプロファイル、パネル、コマンドライン。マシンに触れるものはありません。 |
 | ビルド済みパッケージ | 🟠 | ワークフローが Windows（64 ビットと 32 ビット）、Linux、macOS 向けにサンプルファイル付きでビルドします。リリースはまだ公開していません。 |
 
 ## 🎯 概要
@@ -179,7 +179,7 @@ EH3D-BUNGARD-GUI は、EH3D ファミリーにおける Bungard マシン用の�
 
 ```bash
 cargo build --release --features gui
-cargo test --features gui
+cargo test --all-targets --features gui
 cargo clippy --all-targets --features gui -- -D warnings
 cargo fmt --all --check
 python -I tools/ci_validate.py
@@ -189,7 +189,7 @@ python -I tools/ci_validate.py
 
 ## 🧪 テスト
 
-テストスイートには 408 件のテストがあります（`cargo test --features gui`）。ランチャーと記憶する内容、設定、ドリルまたは HP-GL ファイルがシーンになる過程、マシンのプロファイル、パネル、コマンドラインを検証します。使用するエンジン（プロトコル、動作、安全ゲート）は EH3D-DRILLPRO と EH3D-ROUTEPRO でテストされています。CI は `cargo fmt --check` と、警告をエラーとする `cargo clippy` も実行し、`python -I tools/ci_validate.py` がマニフェスト、バージョン、変更履歴、8 つの README を検証します。
+テストスイートには 416 件のテストがあります（`cargo test --all-targets --features gui`）。ランチャーと記憶する内容、設定、ドリルまたは HP-GL ファイルがシーンになる過程、マシンのプロファイル、パネル、コマンドラインを検証します。使用するエンジン（プロトコル、動作、安全ゲート）は EH3D-DRILLPRO と EH3D-ROUTEPRO でテストされています。CI は `cargo fmt --check` と、警告をエラーとする `cargo clippy` も実行し、`python -I tools/ci_validate.py` がマニフェスト、バージョン、変更履歴、8 つの README を検証します。
 
 ## 🏗️ ビルドとリリース
 
@@ -283,7 +283,7 @@ README とテキストは、英語、スペイン語、フランス語、イタ�
 
 ## 🤝 コントリビュートとコミュニティ
 
-* プルリクエストの前に `cargo fmt --all --check`、`cargo clippy --all-targets --features gui -- -D warnings`、`cargo test --features gui`、`python -I tools/ci_validate.py` を実行し、すべて通してください。[CONTRIBUTING.md](CONTRIBUTING.md) と[行動規範](CODE_OF_CONDUCT.md)を参照してください。
+* プルリクエストの前に `cargo fmt --all --check`、`cargo clippy --all-targets --features gui -- -D warnings`、`cargo test --all-targets --features gui`、`python -I tools/ci_validate.py` を実行し、すべて通してください。[CONTRIBUTING.md](CONTRIBUTING.md) と[行動規範](CODE_OF_CONDUCT.md)を参照してください。
 * README は 8 言語あり、テキストの変更は 8 つのファイルすべてで行います。2 つの図は `docs/architecture.json` と `docs/structure.json` から `tools/make_architecture.py` と `tools/make_structure.py` で描きます。
 * シミュレーターでしか試していないことを、マシンで動作するかのように書かないでください。
 * 脆弱性は非公開で報告してください：[SECURITY.md](SECURITY.md)。質問、アイデア、報告：electrohobby3d@gmail.com（[SUPPORT.md](SUPPORT.md)）。

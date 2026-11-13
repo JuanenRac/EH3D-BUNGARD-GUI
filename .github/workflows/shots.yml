@@ -1,0 +1,67 @@
+name: Window pictures
+
+on:
+  push:
+    branches: [shots-tmp]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust:
+    name: Picture of the window
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          path: EH3D-BUNGARD-GUI
+      - name: Check out the sibling EH3D-COMMON (a path dependency)
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          repository: JuanenRac/EH3D-COMMON
+          path: EH3D-COMMON
+      - name: Check out the sibling EH3D-DRILLPRO (a path dependency)
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          repository: JuanenRac/EH3D-DRILLPRO
+          path: EH3D-DRILLPRO
+      - name: Check out the sibling EH3D-ROUTEPRO (a path dependency)
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          repository: JuanenRac/EH3D-ROUTEPRO
+          path: EH3D-ROUTEPRO
+      - name: Linux libraries of the window
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libxkbcommon-dev libwayland-dev libx11-dev libxcursor-dev libxrandr-dev libxi-dev libgl1-mesa-dev
+      - name: Rust toolchain
+        shell: bash
+        working-directory: EH3D-BUNGARD-GUI
+        run: rustup toolchain install "$(sed -n 's/^channel = "\(.*\)"/\1/p' rust-toolchain.toml)" --profile minimal --component rustfmt,clippy
+      - name: Virtual screen
+        run: sudo apt-get install -y xvfb libxkbcommon-x11-0 libgl1-mesa-dri libglx-mesa0 mesa-vulkan-drivers
+      - name: Build the window
+        working-directory: EH3D-BUNGARD-GUI
+        run: cargo build --release
+      - name: Take the pictures
+        working-directory: EH3D-BUNGARD-GUI
+        run: |
+          mkdir -p ../out
+          xvfb-run -a -s "-screen 0 1600x1000x24" python tools/make_shots.py --exe target/release/bungard-gui --out ../out
+          ls -la ../out
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: window-picture
+          path: out

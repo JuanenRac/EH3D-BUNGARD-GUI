@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **Simulation of a job that is cut and resumed:** add `tests/job_cuts.rs`, a twin of a drilling job that saves its state hole by hole as the window does and is cut at holes drawn by a seeded generator. Five tests cover the job that goes on from the saved state and drills no hole twice, the write that was cut and leaves the last good state, the job whose files or settings changed and is not resumed (it starts again from the first hole), a damaged file that is never taken for a job and never panics, and a file that is not there or is empty. Nothing has driven a machine.
+
 - **The shared validation tools are updated:** the validator also runs the workflow and lessons checks of the suite with their latest rules, including a check to run before every push.
 - **The CI validation checks the workflows and the lessons of past CI failures against a baseline:** `tools/workflow_hygiene.py` and `tools/lessons_lint.py` (copies of the shared tools) run in the validation, and only findings that are not in `tools/workflow_hygiene_baseline.json` and `tools/lessons_lint_baseline.json` fail it, so what exists today stays as it is and a new one is caught. `python tools/workflow_hygiene.py --root . --detail` and `python tools/lessons_lint.py --repo .` list the findings.
 - **The validation of the CI is the reusable one of the documentation hub:** the job `validate` calls `validate.yml` of EH3D-DOCS (pinned by commit) and the check of the CHANGELOG is a job of its own.

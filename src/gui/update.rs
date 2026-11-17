@@ -36,6 +36,7 @@ impl App {
         up::Config {
             api_url: self.settings.updates_api_url.clone(),
             timeout_s: self.settings.updates_timeout_s,
+            require_signature: self.settings.updates_require_signature,
         }
     }
 
@@ -185,7 +186,10 @@ impl App {
         let (line, ink) = if !enabled {
             (self.tr(Text::UpdOff).to_string(), col(t.dim))
         } else if v.restart_needed {
-            (self.tr(Text::UpdDone).to_string(), col(t.accent))
+            let signed = v.signed.map_or_else(String::new, |s| {
+                format!(" ({})", crate::updates_text::signature_state(self.lang, s))
+            });
+            (format!("{}{signed}", self.tr(Text::UpdDone)), col(t.accent))
         } else if let Some(e) = &v.error {
             (
                 format!("{}: {}", self.tr(Text::UpdFailed), cut(e, 70)),

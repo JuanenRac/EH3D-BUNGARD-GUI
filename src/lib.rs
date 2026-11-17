@@ -25,7 +25,11 @@ pub mod reportcmd;
 pub mod slots;
 pub mod spindle;
 #[cfg(feature = "updates")]
+pub mod sshsig;
+#[cfg(feature = "updates")]
 pub mod updates;
+#[cfg(feature = "updates")]
+pub mod updates_text;
 
 #[cfg(feature = "gui")]
 pub mod gui;

@@ -673,6 +673,7 @@ dependencies = [
  "jpeg-decoder",
  "jpeg-encoder",
  "png 0.17.16",
+ "ring",
  "serde_json",
  "sha2",
  "tar",

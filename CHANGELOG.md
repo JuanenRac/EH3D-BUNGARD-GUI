@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The update can check a signature of the release key:** when a release publishes `<package>.sig` next to the package (an OpenSSH signature made with `ssh-keygen -Y sign -n eh3d-release`, the same format and the same key as the update helper of the server), the program checks it over the downloaded package with the public key of the releases that is built into it, and an installation whose signature does not verify is stopped before anything is replaced. The new setting `updates_require_signature` (off by default, so a release with no signature is installed on its checksum alone as before) refuses a release that has none. The update window says, next to the result, whether the package was signed, in the 37 languages. The check is tested with a signature made by `ssh-keygen` and with a fake release server for the signed, unsigned, refused and required cases.
+
 - **Simulation of a job that is cut and resumed:** add `tests/job_cuts.rs`, a twin of a drilling job that saves its state hole by hole as the window does and is cut at holes drawn by a seeded generator. Five tests cover the job that goes on from the saved state and drills no hole twice, the write that was cut and leaves the last good state, the job whose files or settings changed and is not resumed (it starts again from the first hole), a damaged file that is never taken for a job and never panics, and a file that is not there or is empty. Nothing has driven a machine.
 
 - **The shared validation tools are updated:** the validator also runs the workflow and lessons checks of the suite with their latest rules, including a check to run before every push.

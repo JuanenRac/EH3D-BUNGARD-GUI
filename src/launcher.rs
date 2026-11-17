@@ -145,6 +145,9 @@ pub struct Settings {
     pub updates_last_check: u64,
     /// Seconds a connection to GitHub may wait before the update gives up.
     pub updates_timeout_s: u64,
+    /// Safety: refuse a release whose package has no signature of the release key (a signature that is published always has to verify). Off by default: the checksum
+    /// alone is enough, as it always was.
+    pub updates_require_signature: bool,
     /// How many holes each drill (by its tool number) has drilled in all the jobs, has drilled in all the jobs of this window, kept between runs.
     pub holes_drilled: std::collections::BTreeMap<u8, u64>,
     /// The files opened last, the newest first (at most [`RECENT_MAX`]).
@@ -212,6 +215,7 @@ impl Default for Settings {
             updates_api_url: DEFAULT_UPDATES_API.to_string(),
             updates_last_check: 0,
             updates_timeout_s: 30,
+            updates_require_signature: false,
             holes_drilled: std::collections::BTreeMap::new(),
             recent: Vec::new(),
             fullscreen: false,
@@ -407,6 +411,9 @@ impl Settings {
                         .filter(|n: &u64| (2..=300).contains(n))
                         .unwrap_or(s.updates_timeout_s)
                 }
+                "updates_require_signature" => {
+                    s.updates_require_signature = matches!(v.trim(), "yes" | "on" | "true" | "1")
+                }
                 "updates_last_check" => s.updates_last_check = v.trim().parse().unwrap_or(0),
                 "spindle_drawing" => s.head_dims = crate::spindle::HeadDims::from_text(v),
                 "spindle" => s.spindle = SpindleId::from_code(v).unwrap_or(s.spindle),
@@ -508,7 +515,7 @@ impl Settings {
 
     fn main_text(&self) -> String {
         format!(
-            "choice = {}\nlang = {}\ntheme = {}\nboard = {}\nask_operator = {}\ntools_on_open = {}\nopen_preview = {}\nsim_speed = {}\nmodel = {}\nemergency = {}\nestop_pos = {},{}\ndisplay_units = {}\nspindle = {}\nspindle_original = {}\nspindle_vfd = {}\nspindle_drawing = {}\nupdates = {}\nupdates_at_start = {}\nupdates_interval_hours = {}\nupdates_api_url = {}\nupdates_last_check = {}\nupdates_timeout_seconds = {}\nholes_drilled = {}\nrecent = {}\nfullscreen = {}\nall_makers = {}\npanes = {},{}\n",
+            "choice = {}\nlang = {}\ntheme = {}\nboard = {}\nask_operator = {}\ntools_on_open = {}\nopen_preview = {}\nsim_speed = {}\nmodel = {}\nemergency = {}\nestop_pos = {},{}\ndisplay_units = {}\nspindle = {}\nspindle_original = {}\nspindle_vfd = {}\nspindle_drawing = {}\nupdates = {}\nupdates_at_start = {}\nupdates_interval_hours = {}\nupdates_api_url = {}\nupdates_last_check = {}\nupdates_timeout_seconds = {}\nupdates_require_signature = {}\nholes_drilled = {}\nrecent = {}\nfullscreen = {}\nall_makers = {}\npanes = {},{}\n",
             self.choice.map_or("ask", |c| c.key()),
             self.lang.code(),
             self.theme.key(),
@@ -532,6 +539,7 @@ impl Settings {
             one_line(&self.updates_api_url),
             self.updates_last_check,
             self.updates_timeout_s,
+            if self.updates_require_signature { "yes" } else { "no" },
             self.holes_drilled
                 .iter()
                 .map(|(t, n)| format!("{t}:{n}"))
@@ -739,6 +747,7 @@ mod tests {
             updates_api_url: "http://127.0.0.1:9/latest".to_string(),
             updates_last_check: 99,
             updates_timeout_s: 8,
+            updates_require_signature: true,
             clock_utc_offset_min: Some(120),
             route_mark_tolerance_mm: 0.5,
             route_mark_step_s: 0.1,
@@ -817,6 +826,10 @@ mod tests {
     fn the_updates_and_the_drawing_of_the_spindle_are_kept_and_start_careful() {
         let d = Settings::default();
         assert!(d.updates_enabled && !d.updates_at_start);
+        assert!(
+            !d.updates_require_signature,
+            "a signed release is not demanded until the settings say so"
+        );
         assert_eq!(d.updates_api_url, DEFAULT_UPDATES_API);
         assert_eq!(d.head_dims, crate::spindle::HeadDims::default());
         let s = Settings {
@@ -825,6 +838,7 @@ mod tests {
             updates_interval_h: 48,
             updates_api_url: "http://127.0.0.1:1/latest".to_string(),
             updates_last_check: 1234,
+            updates_require_signature: true,
             head_dims: crate::spindle::HeadDims {
                 total_mm: 180.0,
                 ..crate::spindle::HeadDims::default()
@@ -837,6 +851,7 @@ mod tests {
         assert_eq!(back.updates_interval_h, 48);
         assert_eq!(back.updates_api_url, "http://127.0.0.1:1/latest");
         assert_eq!(back.updates_last_check, 1234);
+        assert!(back.updates_require_signature);
         assert_eq!(back.updates_timeout_s, 30);
         assert_eq!(back.head_dims.total_mm, 180.0);
         // an interval out of range keeps the default

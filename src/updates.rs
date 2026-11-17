@@ -33,6 +33,9 @@ pub struct Config {
     pub api_url: String,
     /// Seconds a connection may wait for the other end.
     pub timeout_s: u64,
+    /// Whether a release without a signature of the release key is refused. Off, the checksum alone is enough, as it always was; a signature that a release does
+    /// publish has to verify in either case.
+    pub require_signature: bool,
 }
 
 /// Why a step did not end well; the words are in English because they are the technical detail that is shown under the translated heading.
@@ -42,6 +45,7 @@ pub enum Failure {
     Answer(String),
     NoPackage,
     Checksum(String),
+    Signature(String),
     Archive(String),
     Disk(String),
     Refused(String),
@@ -55,6 +59,7 @@ impl std::fmt::Display for Failure {
             Failure::Answer(s) => write!(f, "answer of the server: {s}"),
             Failure::NoPackage => f.write_str("the release has no package for this system"),
             Failure::Checksum(s) => write!(f, "checksum: {s}"),
+            Failure::Signature(s) => write!(f, "signature: {s}"),
             Failure::Archive(s) => write!(f, "package: {s}"),
             Failure::Disk(s) => write!(f, "disk: {s}"),
             Failure::Refused(s) => write!(f, "refused: {s}"),
@@ -167,6 +172,8 @@ pub struct Package {
     pub name: String,
     pub url: String,
     pub sum_url: String,
+    /// The `.sig` file of the package (an OpenSSH signature of the release key), when the release publishes one.
+    pub sig_url: Option<String>,
     pub size: u64,
     /// The checksum the API itself gives for the package (`sha256:...`), when it does; it has to agree with the checksum file.
     pub digest: Option<String>,
@@ -225,6 +232,7 @@ pub fn parse_release(text: &str, label: &str, api_url: &str) -> Done<Release> {
     let version = tag.trim_start_matches(['v', 'V']).to_string();
     let wanted = package_name(&version, label);
     let wanted_sum = format!("{wanted}.sha256");
+    let wanted_sig = format!("{wanted}.sig");
     let assets = v
         .get("assets")
         .and_then(|a| a.as_array())
@@ -244,7 +252,13 @@ pub fn parse_release(text: &str, label: &str, api_url: &str) -> Done<Release> {
                     .to_string()
             };
             let (url, sum_url) = (url_of(p), url_of(sum));
-            if !address_allowed(&url, api_url) || !address_allowed(&sum_url, api_url) {
+            let sig_url = find(&wanted_sig).map(url_of);
+            if !address_allowed(&url, api_url)
+                || !address_allowed(&sum_url, api_url)
+                || sig_url
+                    .as_deref()
+                    .is_some_and(|u| !address_allowed(u, api_url))
+            {
                 return Err(Failure::Refused(
                     "the package is not at a secure address".into(),
                 ));
@@ -253,6 +267,7 @@ pub fn parse_release(text: &str, label: &str, api_url: &str) -> Done<Release> {
                 name: wanted,
                 url,
                 sum_url,
+                sig_url,
                 size: p.get("size").and_then(|n| n.as_u64()).unwrap_or(0),
                 digest: p
                     .get("digest")
@@ -428,6 +443,23 @@ pub fn verify(file: &Path, pkg: &Package, sum_text: &str) -> Done<()> {
         )));
     }
     Ok(())
+}
+
+/// Checks the signature of the downloaded package. `Ok(true)`: it carries a signature of the release key and it verifies. `Ok(false)`: the release publishes none and the
+/// settings do not ask for one. A published signature that does not verify, or a missing one when the settings ask for it, is an error.
+pub fn check_signature(cfg: &Config, pkg: &Package, file: &Path) -> Done<bool> {
+    let Some(url) = &pkg.sig_url else {
+        return if cfg.require_signature {
+            Err(Failure::Signature(
+                "the release is not signed and the settings ask for signed releases".into(),
+            ))
+        } else {
+            Ok(false)
+        };
+    };
+    let text = read_text(cfg, url, crate::sshsig::MAX_SIGNATURE_BYTES)?;
+    crate::sshsig::verify_file(&text, file).map_err(Failure::Signature)?;
+    Ok(true)
 }
 
 // ---- the package
@@ -713,6 +745,8 @@ pub struct Shared {
     pub error: Option<String>,
     /// The new program is in place (or the old one is back): it is used when the program is started again.
     pub restart_needed: bool,
+    /// Whether the package that was installed carried a signature of the release key that verified (`None` before an update has got that far).
+    pub signed: Option<bool>,
     /// The line to add to the history of the window (the thread adds it to the file too).
     pub last: Option<Entry>,
 }
@@ -809,6 +843,7 @@ pub fn spawn_update(
         s.error = None;
         s.log.clear();
         s.restart_needed = false;
+        s.signed = None;
         s.steps = vec![
             (Step::Download, StepState::Waiting, 0.0),
             (Step::Verify, StepState::Waiting, 0.0),
@@ -889,6 +924,23 @@ fn run_update(
         return Err(e);
     }
     say(st, "SHA-256 agrees".into());
+    // the signature of the release key: one that is published has to verify; one that is missing is refused only when the settings ask for signed releases
+    let signed = match check_signature(cfg, &pkg, &file) {
+        Ok(signed) => signed,
+        Err(e) => {
+            step(st, Step::Verify, StepState::Failed, 0.0);
+            return Err(e);
+        }
+    };
+    say(
+        st,
+        if signed {
+            "the signature of the release key agrees".into()
+        } else {
+            "the release is not signed".into()
+        },
+    );
+    with(st, |s| s.signed = Some(signed));
     step(st, Step::Verify, StepState::Done, 1.0);
     // 3. the program is taken out of the package and put in place
     step(st, Step::Install, StepState::Running, 0.0);
@@ -1076,6 +1128,7 @@ mod tests {
         Config {
             api_url: format!("http://127.0.0.1:{port}/latest"),
             timeout_s: 5,
+            require_signature: false,
         }
     }
 
@@ -1319,6 +1372,11 @@ mod tests {
         assert!(s.error.is_none(), "{:?}", s.error);
         assert!(s.restart_needed);
         assert!(s.steps.iter().all(|x| x.1 == StepState::Done));
+        assert_eq!(
+            s.signed,
+            Some(false),
+            "a release with no signature is said to be unsigned"
+        );
         assert_eq!(std::fs::read(&t.exe).unwrap(), b"NEW PROGRAM");
         assert_eq!(std::fs::read(previous_path(&t.exe)).unwrap(), b"OLD");
         assert!(!t.work.exists(), "the download is cleaned up");
@@ -1395,6 +1453,134 @@ mod tests {
         let _ = std::fs::remove_dir_all(d);
     }
 
+    /// The answer of the API for a release whose package carries a `.sig` file as well (the port is filled in when the fake server answers).
+    fn release_json_signed(label: &str, version: &str) -> String {
+        let name = package_name(version, label);
+        release_json(0, label, version, true).replace(
+            r#""assets":["#,
+            &format!(
+                r#""assets":[{{"name":"{name}.sig","browser_download_url":"http://127.0.0.1:0/pkg/{name}.sig","size":300}},"#
+            ),
+        )
+    }
+
+    /// An OpenSSH signature of a key that is not the key of the releases (made for the tests of `sshsig`).
+    const SIGNATURE_OF_ANOTHER_KEY: &str = "-----BEGIN SSH SIGNATURE-----
+U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgrMeYQEDFkj8prUf2gTCqmCsSDu
+GefxxhnmV7HXqD+L0AAAAMZWgzZC1yZWxlYXNlAAAAAAAAAAZzaGE1MTIAAABTAAAAC3Nz
+aC1lZDI1NTE5AAAAQG5dEl9fVQM27oM/I+yNF5MJJCsAx6irR57Sd3Qow+H/e9KB/Wkury
+3gqbMj8P/tLA5ONgHEIIg+skkvnXBvrgA=
+-----END SSH SIGNATURE-----
+";
+
+    /// Runs an update against a fake release whose package has a good checksum and whose `.sig` file (when `sig` is given) is the text given.
+    fn update_with_signature(
+        name_of_scratch: &str,
+        sig: Option<&str>,
+        require_signature: bool,
+    ) -> (Shared, Target) {
+        let d = scratch(name_of_scratch);
+        let pkg = tar_gz(b"NEW PROGRAM");
+        let name = package_name("0.2.0", "linux-x86_64");
+        let mut routes = HashMap::new();
+        routes.insert(format!("/pkg/{name}"), pkg.clone());
+        routes.insert(
+            format!("/pkg/{name}.sha256"),
+            format!("{}  {name}\n", hex(&pkg)).into_bytes(),
+        );
+        let latest = match sig {
+            Some(text) => {
+                routes.insert(format!("/pkg/{name}.sig"), text.as_bytes().to_vec());
+                release_json_signed("linux-x86_64", "0.2.0")
+            }
+            None => release_json(0, "linux-x86_64", "0.2.0", true),
+        };
+        routes.insert(
+            "/latest".into(),
+            latest
+                .replace("127.0.0.1:0", "127.0.0.1:{PORT}")
+                .into_bytes(),
+        );
+        let fake = serve(routes);
+        let st: State = Arc::default();
+        let mut c = cfg(fake.port);
+        c.require_signature = require_signature;
+        let s = wait(&st, spawn_check(&st, c.clone(), Some("linux-x86_64")));
+        let rel = s.release.unwrap();
+        assert_eq!(
+            rel.package.as_ref().unwrap().sig_url.is_some(),
+            sig.is_some()
+        );
+        let t = target(&d, "linux-x86_64");
+        let done = wait(
+            &st,
+            spawn_update(&st, c, rel, t.clone(), Arc::new(AtomicBool::new(false))),
+        );
+        (done, t)
+    }
+
+    #[test]
+    fn a_published_signature_that_does_not_verify_stops_the_update() {
+        let (s, t) = update_with_signature("badsig", Some(SIGNATURE_OF_ANOTHER_KEY), false);
+        assert!(
+            s.error.as_deref().unwrap_or("").starts_with("signature:"),
+            "{:?}",
+            s.error
+        );
+        assert!(!s.restart_needed && s.signed.is_none());
+        assert!(s.steps.iter().any(|x| x.1 == StepState::Failed));
+        assert_eq!(std::fs::read(&t.exe).unwrap(), b"OLD");
+        assert!(!previous_path(&t.exe).exists());
+        assert_eq!(read_history(&t.history)[0].what, "failed");
+        let _ = std::fs::remove_dir_all(t.exe.parent().unwrap());
+    }
+
+    #[test]
+    fn a_release_without_a_signature_is_refused_when_the_settings_ask_for_signed_ones() {
+        let (s, t) = update_with_signature("needsig", None, true);
+        assert!(
+            s.error.as_deref().unwrap_or("").contains("not signed"),
+            "{:?}",
+            s.error
+        );
+        assert!(!s.restart_needed);
+        assert_eq!(std::fs::read(&t.exe).unwrap(), b"OLD");
+        assert!(!previous_path(&t.exe).exists());
+        // the same release is installed when the settings do not ask (the checksum alone, as before)
+        let (ok, t2) = update_with_signature("nosig", None, false);
+        assert!(ok.error.is_none() && ok.restart_needed, "{:?}", ok.error);
+        assert_eq!(ok.signed, Some(false));
+        assert_eq!(std::fs::read(&t2.exe).unwrap(), b"NEW PROGRAM");
+        let _ = std::fs::remove_dir_all(t.exe.parent().unwrap());
+        let _ = std::fs::remove_dir_all(t2.exe.parent().unwrap());
+    }
+
+    #[test]
+    fn the_release_names_the_signature_file_of_the_package() {
+        let json =
+            release_json_signed("linux-x86_64", "0.2.0").replace("127.0.0.1:0", "127.0.0.1:1");
+        let rel = parse_release(&json, "linux-x86_64", "http://127.0.0.1:1/latest").unwrap();
+        let p = rel.package.unwrap();
+        assert!(p.sig_url.unwrap().ends_with(".tar.gz.sig"));
+        // a release without it has none, and a signature at a plain address that is not this computer is refused with the rest
+        let plain = release_json(1, "linux-x86_64", "0.2.0", true);
+        assert!(
+            parse_release(&plain, "linux-x86_64", "http://127.0.0.1:1/latest")
+                .unwrap()
+                .package
+                .unwrap()
+                .sig_url
+                .is_none()
+        );
+        let remote = release_json_signed("linux-x86_64", "0.2.0")
+            .replace("http://127.0.0.1:0/pkg/", "http://example.test/pkg/")
+            .replace("127.0.0.1:0", "127.0.0.1:1");
+        assert!(matches!(
+            parse_release(&remote, "linux-x86_64", "https://api.example.test/latest"),
+            Err(Failure::Refused(_))
+        ));
+    }
+
     #[test]
     fn a_release_that_is_not_newer_or_has_no_package_changes_nothing() {
         let d = scratch("notnewer");
@@ -1402,6 +1588,7 @@ mod tests {
         let c = Config {
             api_url: "http://127.0.0.1:1/latest".into(),
             timeout_s: 2,
+            require_signature: false,
         };
         let t = target(&d, "linux-x86_64");
         let rel = |version: &str, package: Option<Package>| Release {
@@ -1415,6 +1602,7 @@ mod tests {
             name: package_name("0.1.9", "linux-x86_64"),
             url: "http://127.0.0.1:1/p".into(),
             sum_url: "http://127.0.0.1:1/s".into(),
+            sig_url: None,
             size: 0,
             digest: None,
         };
@@ -1449,6 +1637,7 @@ mod tests {
                 Config {
                     api_url: "http://127.0.0.1:1/latest".into(),
                     timeout_s: 1,
+                    require_signature: false,
                 },
                 None,
             ),

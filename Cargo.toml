@@ -11,7 +11,7 @@ readme = "README.md"
 default = []
 gui = ["dep:eframe", "dep:png", "dep:jpeg-decoder", "dep:arboard", "updates"]
 # the update from the releases of GitHub: its own TLS (rustls with the ring provider and the roots of webpki, no system library), SHA-256 and the two archive formats
-updates = ["dep:ureq", "dep:sha2", "dep:flate2", "dep:tar", "dep:zip"]
+updates = ["dep:ureq", "dep:sha2", "dep:ring", "dep:flate2", "dep:tar", "dep:zip"]
 
 [dependencies]
 eh3d-view = { version = ">=0.0.1", path = "../EH3D-COMMON/crates/view" }
@@ -35,6 +35,8 @@ arboard = { version = "3", default-features = false, optional = true }
 
 ureq = { version = "2", default-features = false, features = ["tls"], optional = true }
 sha2 = { version = "0.10", optional = true }
+# only to check the Ed25519 signature of a release package (already in the tree through the TLS of ureq)
+ring = { version = "0.17", optional = true }
 flate2 = { version = "1", optional = true }
 tar = { version = "0.4", default-features = false, optional = true }
 zip = { version = "9", default-features = false, features = ["deflate-flate2"], optional = true }

@@ -188,16 +188,63 @@ pub fn format_line(
     )
 }
 
+/// The words that name a secret in a text of the log.
+const SECRET_WORDS: [&str; 7] = [
+    "password", "passwd", "pass", "token", "secret", "key", "auth",
+];
+
+/// Where the value of a secret starts in a lower-case word written `password=...`, `password:...` or `"password":...` (the byte after the
+/// separator), or None when the word does not name one.
+fn secret_value_start(lower: &str) -> Option<usize> {
+    SECRET_WORDS.iter().find_map(|w| {
+        lower.match_indices(*w).find_map(|(at, _)| {
+            let mut end = at + w.len();
+            if lower[end..].starts_with(['"', '\'']) {
+                end += 1;
+            }
+            lower[end..].starts_with(['=', ':']).then_some(end + 1)
+        })
+    })
+}
+
+/// What the next word of a text is, after a word that announced a secret.
+#[derive(Clone, Copy, PartialEq)]
+enum Next {
+    /// Nothing special.
+    Plain,
+    /// A secret word on its own: the next word is the value if it is a separator (`password = x`, `password : x`).
+    Separator,
+    /// The next word is the value of a secret (`password: x`, `Bearer x`).
+    Value,
+}
+
 /// Takes out of a text what must not be kept: the user and password of an address, the part after `?` of an address and the value of a word
-/// that is written `password=...`, `token=...`, `secret=...`, `key=...` or `auth=...`.
+/// that is written `password=...`, `token: ...`, `"secret":"..."`, `key = ...` or `auth=...` (any of the words of `SECRET_WORDS`, with `=` or `:` and with
+/// spaces or quotes around), and the word that follows `Bearer` or `Basic`.
 pub fn scrub(text: &str) -> String {
-    const WORDS: [&str; 7] = [
-        "password", "passwd", "pass", "token", "secret", "key", "auth",
-    ];
     let mut out = String::with_capacity(text.len());
+    let mut next = Next::Plain;
     for (n, word) in text.split(' ').enumerate() {
         if n > 0 {
             out.push(' ');
+        }
+        if next == Next::Separator {
+            next = Next::Plain;
+            if word == "=" || word == ":" {
+                out.push_str(word);
+                next = Next::Value;
+                continue;
+            }
+        }
+        if next == Next::Value && !word.is_empty() {
+            next = Next::Plain;
+            if word != "=" && word != ":" {
+                out.push_str("<hidden>");
+                continue;
+            }
+            next = Next::Value;
+            out.push_str(word);
+            continue;
         }
         let lower = word.to_ascii_lowercase();
         if let Some(at) = word.find("://") {
@@ -212,16 +259,27 @@ pub fn scrub(text: &str) -> String {
             out.push_str(rest);
             continue;
         }
-        let hidden = WORDS.iter().find_map(|w| {
-            let eq = lower.find(&format!("{w}="))?;
-            Some(eq + w.len() + 1)
-        });
-        match hidden {
+        let bare = lower.trim_matches(['"', '\'', ':']);
+        if bare == "bearer" || bare == "basic" {
+            out.push_str(word);
+            next = Next::Value;
+            continue;
+        }
+        match secret_value_start(&lower) {
             Some(cut) if cut <= word.len() && word.is_char_boundary(cut) => {
                 out.push_str(&word[..cut]);
-                out.push_str("<hidden>");
+                if cut == word.len() {
+                    next = Next::Value;
+                } else {
+                    out.push_str("<hidden>");
+                }
             }
-            _ => out.push_str(word),
+            _ => {
+                out.push_str(word);
+                if SECRET_WORDS.contains(&lower.trim_matches(['"', '\''])) {
+                    next = Next::Separator;
+                }
+            }
         }
     }
     out
@@ -999,6 +1057,29 @@ mod tests {
             "call with password=<hidden> done"
         );
         assert_eq!(scrub("an ordinary line"), "an ordinary line");
+    }
+
+    #[test]
+    fn a_secret_written_in_any_common_way_is_hidden() {
+        assert_eq!(
+            scrub("login password: hunter2 done"),
+            "login password: <hidden> done"
+        );
+        assert_eq!(
+            scrub("login password = hunter2 done"),
+            "login password = <hidden> done"
+        );
+        assert_eq!(
+            scrub("Authorization: Bearer abc.def done"),
+            "Authorization: Bearer <hidden> done"
+        );
+        assert_eq!(scrub("TOKEN=abc"), "TOKEN=<hidden>");
+        let json = scrub(r#"{"password":"hunter2","x":1}"#);
+        assert!(json.contains("<hidden>") && !json.contains("hunter2"));
+        // an ordinary word that merely follows a secret word's name stays as it is
+        assert_eq!(scrub("the key was pressed"), "the key was pressed");
+        assert_eq!(scrub("a password reset"), "a password reset");
+        assert_eq!(scrub("password= "), "password= ");
         assert_eq!(
             settings_line("api_token = abc").unwrap(),
             "api_token = <hidden>"

@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.2.7] - A log that hides more secrets, a signature check of the update and a simulated cut and resume
+
 - **The log hides a secret written in more ways:** besides `password=...`, the value of a secret word written with a colon, with spaces around the separator or inside a JSON text, and the word after `Bearer` or `Basic`, is replaced by `<hidden>` before a line is kept. A line may now lose a little more than the secret (the rest of a JSON text after it). Tested with each form and with ordinary words that only look like one.
 
 - **The update can check a signature of the release key:** when a release publishes `<package>.sig` next to the package (an OpenSSH signature made with `ssh-keygen -Y sign -n eh3d-release`, the same format and the same key as the update helper of the server), the program checks it over the downloaded package with the public key of the releases that is built into it, and an installation whose signature does not verify is stopped before anything is replaced. The new setting `updates_require_signature` (off by default, so a release with no signature is installed on its checksum alone as before) refuses a release that has none. The update window says, next to the result, whether the package was signed, in the 37 languages. The check is tested with a signature made by `ssh-keygen` and with a fake release server for the signed, unsigned, refused and required cases.

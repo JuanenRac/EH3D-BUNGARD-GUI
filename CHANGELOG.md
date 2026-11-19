@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.2.8] - Command line options checked, help and version
+
 - **The command line refuses values that make no sense:** `--wait` is 0 to 3600 frames, `--hole` starts at 1, `--tabs` is 1 to 20, `--tab` is 0 to 3, `--panel` needs a column and a row of 1 or more, `--zoom` must be a number above 0 and `--yaw` a finite number (a `NaN` used to get through and spoil the view, because the window clamps a number but a `NaN` stays one), and the size of a picture is 400x300 to 8192x8192; each error names the option and the range. The turn of 75 degrees that the pictures of the 3D view use is still read. Tested with every limit on both sides, the words that are not numbers and the values the pictures use.
 
 - **A window or a list that does not exist is said, not ignored:** `--modal` takes one of the 17 windows the program can open at the start and `--combo` one of the 10 lists, and a word that is written wrong (`--modal abuot`) is an error that names the words, where before the window simply opened with nothing. A test reads the code of the window and fails when the two lists differ, so a window added later cannot be left out.

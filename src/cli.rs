@@ -5,6 +5,84 @@ use std::path::PathBuf;
 use eh3d_view::texts::Lang;
 use eh3d_view::theme::ThemeId;
 
+/// The windows `--modal` can open at the start: the words `gui::run` knows (a test keeps the two lists equal).
+pub const MODALS: [&str; 17] = [
+    "about",
+    "update",
+    "open",
+    "panel",
+    "settings",
+    "fleet",
+    "connection",
+    "board",
+    "tools",
+    "report",
+    "bar",
+    "slots",
+    "jog",
+    "catalogue",
+    "head",
+    "inspect",
+    "inspect-tune",
+];
+
+/// The drop-down lists `--combo` can open at the start: the words `gui::run` knows (a test keeps the two lists equal).
+pub const COMBOS: [&str; 10] = [
+    "theme",
+    "lang",
+    "model",
+    "finish",
+    "tool",
+    "maker",
+    "type",
+    "thickness",
+    "size",
+    "tabs",
+];
+
+/// The most frames `--wait` can ask for before the picture is taken.
+pub const MAX_WAIT: u32 = 3600;
+/// The most tabs `--tabs` can ask for on each side (the window holds it between 1 and this).
+pub const MAX_TABS: u32 = 20;
+/// The last tab of the settings window `--tab` can ask for (the first is 0).
+pub const MAX_TAB: u8 = 3;
+/// The longest side, in pixels, of the window of a picture (`--size`).
+pub const MAX_SIDE: f32 = 8192.0;
+
+/// What `--help` prints: every option the command line reads.
+pub fn usage() -> String {
+    let languages: Vec<&str> = Lang::ALL.into_iter().map(|l| l.code()).collect();
+    let themes: Vec<&str> = ThemeId::ALL.into_iter().map(|t| t.key()).collect();
+    format!(
+        "bungard-gui: the modern interface for the Bungard machines
+
+  bungard-gui [FILE...] [--drill FILE.NCD] [--route FILE.PLT] [--zip JOB.ZIP]
+              [--lang CODE] [--theme NAME] [--data DIR] [--connection FILE]
+              [--screen launcher|viewer] [--machine MODEL]
+
+  FILE        opened as what its extension says (a drilling file, a routing file or a ZIP archive)
+  --report    write the report of the job (pieces, holes, tools, time, warnings) to the terminal and leave, with no window
+  --help, -h  this text
+  --version, -V
+
+For the pictures of the window (none of them is remembered):
+  --shot FILE.png [--wait FRAMES (0 to {MAX_WAIT}, 6 by default)] [--size WIDTHxHEIGHT (400x300 to {MAX_SIDE}, 1600x900 by default)]
+  --modal WINDOW ({modals})
+  --combo LIST ({combos})
+  --tab N (0 to {MAX_TAB}) of the settings window   --panel COLUMNS,ROWS (1 or more)   --tabs COUNT (1 to {MAX_TABS})
+  --yaw DEGREES   --zoom FACTOR (above 0)   --panes LEFT,RIGHT   --hole N (from 1)   --fleet FILE.json
+  --start   --check   --measure   --select   --auto-ok
+
+--lang takes one of: {languages}
+--theme takes one of: {themes}
+An option that is written wrong, given twice or given a value that makes no sense is an error, never something to ignore.",
+        modals = MODALS.join(", "),
+        combos = COMBOS.join(", "),
+        languages = languages.join(", "),
+        themes = themes.join(", "),
+    )
+}
+
 /// Which screen the window opens on (`--screen`); without it the launcher, or the modern interface when a choice is remembered.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Screen {
@@ -65,6 +143,10 @@ pub struct Options {
     pub machine: Option<String>,
     /// Writes the report of the job (pieces, holes, tools, time, warnings) to the terminal and leaves, with no window (`--report`).
     pub report: bool,
+    /// Prints the options and leaves (`--help` or `-h`).
+    pub help: bool,
+    /// Prints the version and leaves (`--version` or `-V`).
+    pub version: bool,
 }
 
 impl Options {
@@ -74,16 +156,32 @@ impl Options {
             ..Default::default()
         };
         let mut it = args.into_iter();
+        let mut seen: Vec<String> = Vec::new();
         while let Some(a) = it.next() {
+            // an option is given once: the second would silently replace the first
+            if a.starts_with("--") {
+                if seen.contains(&a) {
+                    return Err(format!("{a} is given twice"));
+                }
+                seen.push(a.clone());
+            }
             let mut value = |name: &str| it.next().ok_or(format!("{name} needs a value"));
             match a.as_str() {
+                "--help" | "-h" => o.help = true,
+                "--version" | "-V" => o.version = true,
                 "--lang" => {
                     let v = value("--lang")?;
-                    o.lang = Some(Lang::from_code(&v).ok_or(format!("unknown language '{v}'"))?);
+                    o.lang = Some(Lang::from_code(&v).ok_or_else(|| {
+                        let codes: Vec<&str> = Lang::ALL.into_iter().map(|l| l.code()).collect();
+                        format!("unknown language '{v}' (use one of: {})", codes.join(", "))
+                    })?);
                 }
                 "--theme" => {
                     let v = value("--theme")?;
-                    o.theme = Some(ThemeId::from_key(&v).ok_or(format!("unknown theme '{v}'"))?);
+                    o.theme = Some(ThemeId::from_key(&v).ok_or_else(|| {
+                        let keys: Vec<&str> = ThemeId::ALL.into_iter().map(|t| t.key()).collect();
+                        format!("unknown theme '{v}' (use one of: {})", keys.join(", "))
+                    })?);
                 }
                 "--drill" => o.drill = Some(PathBuf::from(value("--drill")?)),
                 "--route" => o.route = Some(PathBuf::from(value("--route")?)),
@@ -103,42 +201,92 @@ impl Options {
                 "--wait" => {
                     let v = value("--wait")?;
                     o.wait = v
-                        .parse()
-                        .map_err(|_| format!("--wait needs a number, not '{v}'"))?;
+                        .parse::<u32>()
+                        .ok()
+                        .filter(|n| *n <= MAX_WAIT)
+                        .ok_or_else(|| {
+                            format!("--wait needs a number from 0 to {MAX_WAIT}, not '{v}'")
+                        })?;
                 }
-                "--modal" => o.modal = Some(value("--modal")?),
-                "--combo" => o.combo = Some(value("--combo")?),
+                "--modal" => {
+                    let v = value("--modal")?;
+                    if !MODALS.contains(&v.as_str()) {
+                        return Err(format!(
+                            "--modal must be one of {}, not '{v}'",
+                            MODALS.join(", ")
+                        ));
+                    }
+                    o.modal = Some(v);
+                }
+                "--combo" => {
+                    let v = value("--combo")?;
+                    if !COMBOS.contains(&v.as_str()) {
+                        return Err(format!(
+                            "--combo must be one of {}, not '{v}'",
+                            COMBOS.join(", ")
+                        ));
+                    }
+                    o.combo = Some(v);
+                }
                 "--fleet" => o.fleet_file = Some(PathBuf::from(value("--fleet")?)),
                 "--panel" => {
                     let v = value("--panel")?;
                     let (c, r) = v.split_once(',').ok_or("--panel needs COLUMNS,ROWS")?;
-                    o.panel = Some((
-                        c.parse().map_err(|_| "--panel needs numbers")?,
-                        r.parse().map_err(|_| "--panel needs numbers")?,
-                    ));
+                    let (c, r): (u32, u32) = (
+                        c.trim().parse().map_err(|_| "--panel needs numbers")?,
+                        r.trim().parse().map_err(|_| "--panel needs numbers")?,
+                    );
+                    if c == 0 || r == 0 {
+                        return Err("--panel needs COLUMNS,ROWS of 1 or more".to_string());
+                    }
+                    o.panel = Some((c, r));
                 }
                 "--measure" => o.measure = true,
                 "--tabs" => {
                     let v = value("--tabs")?;
-                    o.tabs = Some(v.parse().map_err(|_| "--tabs needs a number")?);
+                    o.tabs = Some(
+                        v.parse::<u32>()
+                            .ok()
+                            .filter(|n| (1..=MAX_TABS).contains(n))
+                            .ok_or_else(|| {
+                                format!("--tabs needs a number from 1 to {MAX_TABS}, not '{v}'")
+                            })?,
+                    );
                 }
                 "--zoom" => {
                     let v = value("--zoom")?;
-                    o.zoom = Some(v.parse().map_err(|_| "--zoom needs a number")?);
+                    o.zoom = Some(
+                        v.parse::<f32>()
+                            .ok()
+                            .filter(|z| z.is_finite() && *z > 0.0)
+                            .ok_or_else(|| format!("--zoom needs a number above 0, not '{v}'"))?,
+                    );
                 }
                 "--yaw" => {
                     let v = value("--yaw")?;
-                    o.yaw = Some(v.parse().map_err(|_| "--yaw needs a number")?);
+                    o.yaw = Some(
+                        v.parse::<f32>()
+                            .ok()
+                            .filter(|y| y.is_finite())
+                            .ok_or_else(|| format!("--yaw needs a number, not '{v}'"))?,
+                    );
                 }
                 "--tab" => {
                     let v = value("--tab")?;
-                    o.tab = Some(v.parse().map_err(|_| "--tab needs a number")?);
+                    o.tab = Some(v.parse::<u8>().ok().filter(|n| *n <= MAX_TAB).ok_or_else(
+                        || format!("--tab needs a number from 0 to {MAX_TAB}, not '{v}'"),
+                    )?);
                 }
                 "--start" => o.start = true,
                 "--check" => o.check = true,
                 "--hole" => {
                     let v = value("--hole")?;
-                    o.hole = Some(v.parse().map_err(|_| "--hole needs a number")?);
+                    o.hole = Some(
+                        v.parse::<usize>()
+                            .ok()
+                            .filter(|n| *n >= 1)
+                            .ok_or_else(|| format!("--hole needs a number from 1, not '{v}'"))?,
+                    );
                 }
                 "--auto-ok" => o.auto_ok = true,
                 "--report" => o.report = true,
@@ -153,8 +301,14 @@ impl Options {
                         Some((w.trim().parse::<f32>().ok()?, h.trim().parse::<f32>().ok()?))
                     });
                     o.size = Some(
-                        size.filter(|(w, h)| *w >= 400.0 && *h >= 300.0)
-                            .ok_or("--size needs WIDTHxHEIGHT")?,
+                        size.filter(|(w, h)| {
+                            (400.0..=MAX_SIDE).contains(w) && (300.0..=MAX_SIDE).contains(h)
+                        })
+                        .ok_or_else(|| {
+                            format!(
+                                "--size needs WIDTHxHEIGHT, from 400x300 to {MAX_SIDE}x{MAX_SIDE}"
+                            )
+                        })?,
                     );
                 }
                 other if !other.starts_with("--") => o.open.push(PathBuf::from(other)),
@@ -226,6 +380,171 @@ mod tests {
         assert!(parse("--wait many").unwrap_err().contains("number"));
         assert!(parse("--drill").unwrap_err().contains("needs a value"));
         assert!(parse("--fast").unwrap_err().contains("unknown option"));
+    }
+
+    #[test]
+    fn numbers_that_make_no_sense_are_refused_and_the_ones_that_do_are_read() {
+        for bad in [
+            "--wait 3601",
+            "--wait -1",
+            "--hole 0",
+            "--hole -3",
+            "--tabs 0",
+            "--tabs 21",
+            "--tab 4",
+            "--tab -1",
+            "--panel 0,2",
+            "--panel 2,0",
+            "--panel 2",
+            "--zoom 0",
+            "--zoom -1",
+            "--zoom NaN",
+            "--zoom inf",
+            "--yaw NaN",
+            "--yaw inf",
+            "--size 9000x900",
+            "--size 1600x9000",
+            "--size 100x100",
+            "--size inf x900",
+        ] {
+            let e = parse(bad).unwrap_err();
+            assert!(e.starts_with(&bad[..bad.find(' ').unwrap()]), "{bad}: {e}");
+        }
+        let o = parse("--wait 3600 --hole 1 --tabs 20 --tab 3 --panel 1,1 --zoom 0.01 --yaw -90 --size 8192x300").unwrap();
+        assert_eq!(
+            (o.wait, o.hole, o.tabs, o.tab),
+            (3600, Some(1), Some(20), Some(3))
+        );
+        assert_eq!(
+            (o.panel, o.zoom, o.yaw),
+            (Some((1, 1)), Some(0.01), Some(-90.0))
+        );
+        assert_eq!(o.size, Some((8192.0, 300.0)));
+        // the turn used for the pictures of the 3D view is beyond what the view allows and is still read
+        assert_eq!(parse("--yaw 75").unwrap().yaw, Some(75.0));
+        assert_eq!(parse("--wait 0").unwrap().wait, 0);
+    }
+
+    #[test]
+    fn the_words_of_modal_and_combo_are_the_ones_the_window_knows() {
+        for w in MODALS {
+            assert_eq!(
+                parse(&format!("--modal {w}")).unwrap().modal.as_deref(),
+                Some(w)
+            );
+        }
+        for w in COMBOS {
+            assert_eq!(
+                parse(&format!("--combo {w}")).unwrap().combo.as_deref(),
+                Some(w)
+            );
+        }
+        let e = parse("--modal abuot").unwrap_err();
+        assert!(
+            e.contains("abuot") && e.contains("about") && e.contains("inspect-tune"),
+            "{e}"
+        );
+        let e = parse("--combo colour").unwrap_err();
+        assert!(e.contains("colour") && e.contains("thickness"), "{e}");
+        assert!(parse("--modal").unwrap_err().contains("needs a value"));
+        // the lists and the code of the window say the same words
+        let gui = include_str!("gui.rs");
+        let modal_at = gui
+            .find("match o.modal.as_deref() {")
+            .expect("the match of the window");
+        let modal_code = &gui[modal_at..modal_at + gui[modal_at..].find("_ => {}").unwrap()];
+        let mut in_code: Vec<&str> = modal_code
+            .split("Some(\"")
+            .skip(1)
+            .filter_map(|s| s.split('"').next())
+            .collect();
+        in_code.sort_unstable();
+        let mut listed = MODALS.to_vec();
+        listed.sort_unstable();
+        assert_eq!(in_code, listed, "--modal and gui::run disagree");
+        let combo_at = gui.find("match c {").expect("the match of the lists");
+        let combo_code = &gui[combo_at..combo_at + gui[combo_at..].find("_ => None").unwrap()];
+        let mut in_code: Vec<&str> = combo_code.split('"').skip(1).step_by(2).collect();
+        in_code.sort_unstable();
+        let mut listed = COMBOS.to_vec();
+        listed.sort_unstable();
+        assert_eq!(in_code, listed, "--combo and gui::run disagree");
+    }
+
+    #[test]
+    fn help_and_version_are_read_and_the_help_names_every_option() {
+        let o = parse("--help").unwrap();
+        assert!(o.help && !o.version);
+        assert!(parse("-h").unwrap().help);
+        assert!(parse("-V").unwrap().version);
+        assert!(parse("--version").unwrap().version);
+        assert!(!parse("--drill a.ncd").unwrap().help);
+        // the word -h is not a file to open
+        assert!(parse("-h").unwrap().open.is_empty());
+        let text = usage();
+        let source = include_str!("cli.rs");
+        let code = &source[..source.find("#[cfg(test)]").unwrap()];
+        let mut options: Vec<&str> = code
+            .split("\"--")
+            .skip(1)
+            .filter_map(|s| {
+                let end = s.find(|c: char| !(c.is_ascii_alphanumeric() || c == '-'))?;
+                (s[end..].starts_with('"')).then_some(&s[..end])
+            })
+            .collect();
+        options.sort_unstable();
+        options.dedup();
+        assert!(options.len() >= 25, "{options:?}");
+        for name in options {
+            assert!(
+                text.contains(&format!("--{name}")),
+                "the help does not name --{name}"
+            );
+        }
+        assert!(text.contains("-h") && text.contains("-V"));
+        for l in ["en", "pt-br", "fr-ca"] {
+            assert!(text.contains(l), "{l}");
+        }
+        assert!(text.contains("windows-classic") && text.contains("inspect-tune"));
+    }
+
+    #[test]
+    fn an_unknown_language_or_theme_names_the_choices() {
+        let e = parse("--lang xx").unwrap_err();
+        assert!(
+            e.contains("unknown language 'xx'") && e.contains("en") && e.contains("pt-br"),
+            "{e}"
+        );
+        let e = parse("--theme pink").unwrap_err();
+        assert!(
+            e.contains("unknown theme 'pink'")
+                && e.contains("forge")
+                && e.contains("windows-classic"),
+            "{e}"
+        );
+        // a region that is not a variant still gives its main language
+        assert_eq!(parse("--lang es-MX").unwrap().lang, Some(Lang::Es));
+    }
+
+    #[test]
+    fn an_option_given_twice_is_an_error_and_files_may_be_many() {
+        for twice in [
+            "--lang en --lang es",
+            "--drill a.ncd --drill b.ncd",
+            "--start --start",
+            "--wait 3 --shot s.png --wait 4",
+            "--help --help",
+        ] {
+            let e = parse(twice).unwrap_err();
+            assert!(e.contains("is given twice"), "{twice}: {e}");
+        }
+        assert!(parse("--drill a.ncd --route a.plt").is_ok());
+        // the value of an option that looks like an option is the value, not a second option
+        assert_eq!(
+            parse("--data --lang").unwrap().data,
+            Some(PathBuf::from("--lang"))
+        );
+        assert_eq!(parse("a.ncd b.ncd c.zip").unwrap().open.len(), 3);
     }
 
     #[test]

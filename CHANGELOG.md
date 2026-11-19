@@ -4,6 +4,16 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The command line refuses values that make no sense:** `--wait` is 0 to 3600 frames, `--hole` starts at 1, `--tabs` is 1 to 20, `--tab` is 0 to 3, `--panel` needs a column and a row of 1 or more, `--zoom` must be a number above 0 and `--yaw` a finite number (a `NaN` used to get through and spoil the view, because the window clamps a number but a `NaN` stays one), and the size of a picture is 400x300 to 8192x8192; each error names the option and the range. The turn of 75 degrees that the pictures of the 3D view use is still read. Tested with every limit on both sides, the words that are not numbers and the values the pictures use.
+
+- **A window or a list that does not exist is said, not ignored:** `--modal` takes one of the 17 windows the program can open at the start and `--combo` one of the 10 lists, and a word that is written wrong (`--modal abuot`) is an error that names the words, where before the window simply opened with nothing. A test reads the code of the window and fails when the two lists differ, so a window added later cannot be left out.
+
+- **`--help` and `--version`:** `bungard-gui --help` (or `-h`) prints every option with its range, the windows and lists of the pictures, the languages and the themes, and `--version` (or `-V`) prints the version, both with no window and without writing to the log; `-h` used to be taken for a file to open. A test fails when an option the command line reads is not in the text of the help.
+
+- **An unknown language or theme names the choices:** `--lang xx` says `unknown language 'xx'` followed by the codes the program has (`en`, `es`, ... `pt-br`, `fr-ca`) and `--theme pink` the names of the themes, so the right word can be found without opening the documentation.
+
+- **An option given twice is an error:** `--lang en --lang es`, two `--drill` or two `--wait` used to keep the last one without a word; now the command line says `--lang is given twice` and does not start. Files without an option can still be as many as wanted, and the value of an option that looks like an option (`--data --lang`) is the value. Tested with value options, switches and the files.
+
 ## [0.2.7] - A log that hides more secrets, a signature check of the update and a simulated cut and resume
 
 - **The log hides a secret written in more ways:** besides `password=...`, the value of a secret word written with a colon, with spaces around the separator or inside a JSON text, and the word after `Bearer` or `Basic`, is replaced by `<hidden>` before a line is kept. A line may now lose a little more than the secret (the rest of a JSON text after it). Tested with each form and with ordinary words that only look like one.

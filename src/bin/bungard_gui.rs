@@ -13,6 +13,15 @@ fn main() -> eframe::Result {
     attach_console();
     start_log();
     match Options::parse(std::env::args().skip(1)) {
+        Ok(o) if o.help => {
+            // the options go to the terminal and the program leaves: no window, no log
+            println!("{}", eh3d_bungard_gui::cli::usage());
+            Ok(())
+        }
+        Ok(o) if o.version => {
+            println!("bungard-gui {}", env!("CARGO_PKG_VERSION"));
+            Ok(())
+        }
         Ok(o) if o.report => {
             // the report goes to the terminal and leaves: no window, no log
             let cfg = eh3d_bungard_gui::report::Config::load(
@@ -54,7 +63,12 @@ fn main() -> eframe::Result {
 /// what the run starts with. A picture run (`--shot`) leaves it alone: it would take the place of the run of the person in the record.
 fn start_log() {
     use eh3d_bungard_gui::{applog, launcher};
-    if std::env::args().any(|a| a == "--shot" || a == "--report") {
+    if std::env::args().any(|a| {
+        matches!(
+            a.as_str(),
+            "--shot" | "--report" | "--help" | "-h" | "--version" | "-V"
+        )
+    }) {
         return;
     }
     let settings_path = launcher::settings_path();

@@ -162,7 +162,7 @@ mod tests {
     fn the_machines_are_listed_by_station_with_their_count() {
         let mut client = client_over(Box::new(Canned(FLEET.into())));
         let text = machines_from(&mut client, sc::Lang::En).unwrap();
-        assert!(text.contains("M1") && text.contains("M2"), "{text}");
+        assert!(text.contains("m1") && text.contains("m2"), "{text}");
         assert!(
             text.ends_with("2 machines: 1 free, 1 busy, 0 waiting for the operator; 1 stations\n"),
             "{text}"

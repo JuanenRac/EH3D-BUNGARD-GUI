@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.2.9] - Server status and machine list without a window
+
 - **`bungard-gui --server-status`:** asks the EH3D server how it is (its name, version, state and API revision) and prints the metrics of the link (requests, retries, answers, losses and the latency of the answers), with no window; it leaves with 2 when the machine file has no `server_address` and with 1 when the server cannot be reached.
 - **`bungard-gui --machines`:** lists the machines and the stations of the server, what each one is doing and its job, with the count of free, busy and waiting machines, with no window, the same list the window of the machines shows.
 - **The commands read the limits of the link from the machine file:** `server_timeout_s` (1 to 120 seconds, 15 by default), `server_retries` (0 to 5, 2 by default), `server_mdns` (`off` by default) and `server_max_answer_mib` (1 to 256, 8 by default) are read with their ranges next to the address, the token and the machine, a value out of its range is an error that says its line, the keys of the classic programs are left alone, and the Connection window keeps these lines when it writes the connection.

@@ -22,6 +22,28 @@ fn main() -> eframe::Result {
             println!("bungard-gui {}", env!("CARGO_PKG_VERSION"));
             Ok(())
         }
+        Ok(o) if o.server_status || o.machines => {
+            // what the server says goes to the terminal and the program leaves: no window, no log
+            let mut texts = Vec::new();
+            if o.server_status {
+                texts.push(eh3d_bungard_gui::servercmd::status(o.connection.as_deref()));
+            }
+            if o.machines {
+                texts.push(eh3d_bungard_gui::servercmd::machines(
+                    o.connection.as_deref(),
+                ));
+            }
+            for answer in texts {
+                match answer {
+                    Ok(text) => print!("{text}"),
+                    Err(failure) => {
+                        eprintln!("bungard-gui: {}", failure.text);
+                        std::process::exit(failure.code);
+                    }
+                }
+            }
+            Ok(())
+        }
         Ok(o) if o.report => {
             // the report goes to the terminal and leaves: no window, no log
             let cfg = eh3d_bungard_gui::report::Config::load(

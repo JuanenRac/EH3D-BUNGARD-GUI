@@ -68,4 +68,24 @@ mod tests {
         assert_eq!(back.server_address, "192.168.0.10:8080");
         assert_eq!(back.server_machine, "bungard-1");
     }
+
+    #[test]
+    fn the_limits_of_the_link_to_the_server_stay_in_the_file_when_the_connection_is_written() {
+        let old = "connection = server\nserver_address = 10.0.0.5:18200\nserver_timeout_s = 30\nserver_retries = 4\nserver_mdns = off\n";
+        let c = ConnectionConfig {
+            server_address: "10.0.0.6:18200".into(),
+            ..ConnectionConfig::default()
+        };
+        let text = update(old, &pairs(&c));
+        assert!(text.contains("server_timeout_s = 30"), "{text}");
+        assert!(text.contains("server_retries = 4"), "{text}");
+        assert!(text.contains("server_mdns = off"), "{text}");
+        // the address was rewritten and the shared client reads the file as it is
+        let settings = eh3d_serverclient::Settings::from_text(&text).unwrap();
+        assert_eq!(settings.server_address, "10.0.0.6:18200");
+        assert_eq!(
+            (settings.server_timeout_s, settings.server_retries),
+            (30, 4)
+        );
+    }
 }

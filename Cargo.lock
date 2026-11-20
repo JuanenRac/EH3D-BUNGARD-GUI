@@ -668,6 +668,7 @@ dependencies = [
  "eh3d-levelling",
  "eh3d-materials",
  "eh3d-routepro",
+ "eh3d-serverclient",
  "eh3d-view",
  "flate2",
  "jpeg-decoder",
@@ -788,6 +789,10 @@ version = "0.0.1"
 dependencies = [
  "eh3d-drillpro-protocol",
 ]
+
+[[package]]
+name = "eh3d-serverclient"
+version = "0.0.1"
 
 [[package]]
 name = "eh3d-summary"

@@ -104,7 +104,7 @@ jobs:
         with:
           persist-credentials: false
           repository: JuanenRac/EH3D-COMMON
-          ref: v0.2.1
+          ref: v0.2.5
           path: EH3D-COMMON
       - name: Check out the sibling EH3D-DRILLPRO (a path dependency)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

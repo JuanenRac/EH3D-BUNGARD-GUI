@@ -62,6 +62,8 @@ pub fn usage() -> String {
 
   FILE        opened as what its extension says (a drilling file, a routing file or a ZIP archive)
   --report    write the report of the job (pieces, holes, tools, time, warnings) to the terminal and leave, with no window
+  --server-status   ask the EH3D server how it is (the address, token and limits of the link are in the machine file) and print the metrics of the link, with no window
+  --machines  list the machines and the stations of the EH3D server and leave, with no window
   --help, -h  this text
   --version, -V
 
@@ -143,6 +145,10 @@ pub struct Options {
     pub machine: Option<String>,
     /// Writes the report of the job (pieces, holes, tools, time, warnings) to the terminal and leaves, with no window (`--report`).
     pub report: bool,
+    /// Asks the EH3D server how it is and prints the metrics of the link, with no window (`--server-status`).
+    pub server_status: bool,
+    /// Lists the machines and the stations of the EH3D server and leaves, with no window (`--machines`).
+    pub machines: bool,
     /// Prints the options and leaves (`--help` or `-h`).
     pub help: bool,
     /// Prints the version and leaves (`--version` or `-V`).
@@ -290,6 +296,8 @@ impl Options {
                 }
                 "--auto-ok" => o.auto_ok = true,
                 "--report" => o.report = true,
+                "--server-status" => o.server_status = true,
+                "--machines" => o.machines = true,
                 "--select" => o.select = true,
                 "--panes" => {
                     let v = value("--panes")?;
@@ -506,6 +514,25 @@ mod tests {
             assert!(text.contains(l), "{l}");
         }
         assert!(text.contains("windows-classic") && text.contains("inspect-tune"));
+    }
+
+    #[test]
+    fn the_two_commands_of_the_server_are_options_that_are_off_unless_they_are_given() {
+        let o = parse("").unwrap();
+        assert!(!o.server_status && !o.machines);
+        let o = parse("--server-status").unwrap();
+        assert!(o.server_status && !o.machines);
+        let o = parse("--machines --connection m.cfg").unwrap();
+        assert!(o.machines && !o.server_status);
+        assert_eq!(o.connection, Some(PathBuf::from("m.cfg")));
+        // --machines is not the model of the machine (--machine)
+        let o = parse("--machine CCD").unwrap();
+        assert!(!o.machines && o.machine.as_deref() == Some("CCD"));
+        assert!(parse("--machines --machines")
+            .unwrap_err()
+            .contains("twice"));
+        let help = usage();
+        assert!(help.contains("--server-status") && help.contains("--machines"));
     }
 
     #[test]

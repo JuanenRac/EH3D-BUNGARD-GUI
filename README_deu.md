@@ -11,14 +11,14 @@
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
-  <img src="https://img.shields.io/badge/Tests-428-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-441-0f6cbd.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.2.8-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
 ---
 
-**Ehrlichkeitscheck - was heute tatsächlich läuft:** ein Rust-Programm mit einem Fenster und 428 Tests, die auf einem Rechner laufen. Der Starter bietet die moderne Oberfläche oder die klassischen Bohr- und Fräsprogramme für eine Maschine mit manuellem (MTC) oder automatischem (ATC) Werkzeugwechsel. Der Betrachter öffnet Bohrdateien, HP-GL-Plotdateien und ZIP-Archive mit Aufträgen (aus einem Ordnerbrowser, per Drag and Drop oder von der Befehlszeile), zeichnet die Draufsicht mit jedem Loch nach Bohrergröße und den Fräsbahnen darüber, zeigt die Maschine in 3D mit dem in der Konfiguration gewählten Tisch, bildet Nutzen und verfolgt den Auftrag während des Laufs. Der Auftrag läuft im **Simulator** der Engines von EH3D-DRILLPRO und EH3D-ROUTEPRO; dieselbe Maschinendatei, die sie lesen, bestimmt, wie eine echte Maschine erreicht wird (die RS-232-Schnittstelle des Rechners, ein USB-RS232-Adapter oder der EH3D-NODE-BUNGARD direkt oder über EH3D-SERVER), und **keiner dieser Wege wurde von diesem Fenster aus ausprobiert**. Die Fenster für Verbindung, Einstellungen und Werkzeuge ändern die Werte, die sie anbieten, die vollständigen Maschinen- und Werkzeugdateien lassen sich noch nicht bearbeiten, und die 3D-Ansicht zeigt die Höhe der Bahnen nicht.
+**Ehrlichkeitscheck - was heute tatsächlich läuft:** ein Rust-Programm mit einem Fenster und 441 Tests, die auf einem Rechner laufen. Der Starter bietet die moderne Oberfläche oder die klassischen Bohr- und Fräsprogramme für eine Maschine mit manuellem (MTC) oder automatischem (ATC) Werkzeugwechsel. Der Betrachter öffnet Bohrdateien, HP-GL-Plotdateien und ZIP-Archive mit Aufträgen (aus einem Ordnerbrowser, per Drag and Drop oder von der Befehlszeile), zeichnet die Draufsicht mit jedem Loch nach Bohrergröße und den Fräsbahnen darüber, zeigt die Maschine in 3D mit dem in der Konfiguration gewählten Tisch, bildet Nutzen und verfolgt den Auftrag während des Laufs. Der Auftrag läuft im **Simulator** der Engines von EH3D-DRILLPRO und EH3D-ROUTEPRO; dieselbe Maschinendatei, die sie lesen, bestimmt, wie eine echte Maschine erreicht wird (die RS-232-Schnittstelle des Rechners, ein USB-RS232-Adapter oder der EH3D-NODE-BUNGARD direkt oder über EH3D-SERVER), und **keiner dieser Wege wurde von diesem Fenster aus ausprobiert**. Die Fenster für Verbindung, Einstellungen und Werkzeuge ändern die Werte, die sie anbieten, die vollständigen Maschinen- und Werkzeugdateien lassen sich noch nicht bearbeiten, und die 3D-Ansicht zeigt die Höhe der Bahnen nicht.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Version | `0.2.8` |
 | Reifegrad | Gerüst |
-| Tests | 428 |
+| Tests | 441 |
 | Technologie-Stack | Rust |
 | Auf echter Hardware | Nein. Es lief nur im Simulator und auf einem Rechner; von diesem Fenster aus wurde keine Maschine betrieben |
 
@@ -49,7 +49,7 @@ Jede Zeile ist ein Teil dieses Repositorys, und die Ampel sagt, wie weit er heut
 | Dateien und Nutzenbildung | 🟡 | Bohrdateien, HP-GL-Dateien und ZIP-Archive werden aus einem Browser, per Drag and Drop oder von der Befehlszeile geöffnet; die Platine wird in drei Modi vervielfacht. Mit den kleinen Beispieldateien dieses Repositorys ausprobiert. |
 | Einstellungen | 🟠 | Nutzbare Breite und Tiefe des Tisches werden geändert und in den Maschinendateien gespeichert; der Rest der Maschinen- und Werkzeugdateien wird weiter mit den klassischen Programmen bearbeitet. |
 | Maschinensteuerung | 🔴 | Der Auftrag läuft über die Engines von EH3D-DRILLPRO und EH3D-ROUTEPRO, also sind im Prinzip alle ihre Verbindungen da; er lief nur im Simulator. Das Verbindungsfenster wählt die Verbindung (den RS-232 des Rechners, einen USB-RS232-Adapter, den EH3D-Knoten oder den EH3D-Server), testet sie und speichert sie in der Maschinendatei, und Pause hält den Auftrag zwischen zwei Bewegungen an. |
-| Tests | 🟡 | 428 Tests bestehen auf einem Rechner (`cargo test --all-targets --features gui`): der Starter, die Einstellungen, das Einlesen der Dateien in die Szene, die Maschinenprofile, der Nutzen und die Befehlszeile. Keiner berührt eine Maschine. Dazu gehört eine Simulation mit festem Seed für einen unterbrochenen und fortgesetzten Auftrag, mit eingespeisten Fehlern und Wiederherstellung. |
+| Tests | 🟡 | 441 Tests bestehen auf einem Rechner (`cargo test --all-targets --features gui`): der Starter, die Einstellungen, das Einlesen der Dateien in die Szene, die Maschinenprofile, der Nutzen und die Befehlszeile. Keiner berührt eine Maschine. Dazu gehört eine Simulation mit festem Seed für einen unterbrochenen und fortgesetzten Auftrag, mit eingespeisten Fehlern und Wiederherstellung. |
 | Fertige Pakete | 🟠 | Ein Workflow baut das Programm für Windows (64 und 32 Bit), Linux und macOS mit den Beispieldateien; eine Version wurde noch nicht veröffentlicht. |
 
 ## 🎯 Überblick
@@ -160,6 +160,7 @@ Wie die Teile dieses Repositorys zusammenpassen: wer es nutzt, was es enthält u
 * **Die Werkzeuge wechselt die Maschine, und die Simulation zeigt es:** Bei den ATC-Modellen wird der Bediener nie nach einem Werkzeug gefragt, weder beim Bohren noch beim Fräsen: Der Kopf fährt zum Platz des Werkzeugs in der Leiste, nimmt es (das gehaltene legt er an seinem eigenen Platz ab), kehrt zur Platine zurück und arbeitet. Die 3D-Ansicht folgt den Schritten des Plans, so sind die Fahrten zur Leiste, die Wechsel und das Eintauchen zu sehen, und ihre Spindel ist die originale in Originalgröße (174 mm lang, runder Körper von 33 mm, 20-mm-Nase mit einem 27-mm-Bund) mit dem Werkzeug des Auftrags in der Spannzange. In der Simulation wird eine Maschinendatei ohne Plätze der Leiste mit den Plätzen geplant, mit denen die Leiste gezeichnet wird; bei einer echten Verbindung werden die Werkzeuge erfragt, bis die Plätze gesetzt sind.
 * **Die obere Leiste** ordnet ihre mittelgroßen Schaltflächen in Gruppen, jede mit einem Symbol und einem Wort: die Datei; die Platine, die Werkzeuge und die Kopien; die Einstellungen, die Verbindung und die Knoten; und das Programm.
 * **Bungard-Katalog in der Plattenbibliothek:** Die vier Bungard-Materialien tragen die Daten des Katalogs 2024/25 (Dicken 0,5 bis 2,5 mm, Kupfer 18, 35 und 70 um und 105 um bei 1,5 mm, die Standardzuschnitte und die Tafeln 510 x 570 und 510 x 1150 mm; Tafeln aus FR2, FR3 und CEM-1). Auch die Pfeile des Spindelkatalogs, der Qualitätsprüfung und der Materialien sowie die Zahlenfelder haben Symbole und Relief.
+* **Der Server von der Befehlszeile:** `bungard-gui --server-status` fragt den EH3D-Server nach seinem Zustand und gibt die Kennzahlen der Verbindung aus, und `bungard-gui --machines` listet die Maschinen und Stationen des Servers auf, beides ohne Fenster. Sie lesen `server_address`, `server_token`, `server_machine` und die Grenzen der Verbindung aus der Maschinendatei (`server_timeout_s`, 1 bis 120, Standard 15; `server_retries`, 0 bis 5, Standard 2; `server_mdns`, Standard `off`; `server_max_answer_mib`, 1 bis 256, Standard 8) und fragen über den Client der Suite (`eh3d-serverclient` aus EH3D-COMMON): ein Zeitlimit und Wiederholungen mit wachsenden Pausen bei jeder Anfrage, und die Ablehnungen des Servers werden anhand ihres Codes in der Sprache des Systems erklärt.
 
 ## 🔌 Schnittstellen
 
@@ -189,7 +190,7 @@ Starte es mit `run.bat` (Windows) oder `./run.sh` (Linux und macOS); beide bauen
 
 ## 🧪 Tests
 
-Die Suite hat 428 Tests (`cargo test --all-targets --features gui`). Sie prüfen den Starter und was er sich merkt, die Einstellungen, wie eine Bohr- oder HP-GL-Datei zur Szene wird, die Maschinenprofile, den Nutzen und die Befehlszeile. Die Engines, die es nutzt (Protokoll, Bewegung, Sicherheitsschranke), werden in EH3D-DRILLPRO und EH3D-ROUTEPRO getestet. Die CI führt außerdem `cargo fmt --check` und `cargo clippy` mit Warnungen als Fehler aus, und `python -I tools/ci_validate.py` prüft Manifest, Versionen, Changelog und die acht READMEs.
+Die Suite hat 441 Tests (`cargo test --all-targets --features gui`). Sie prüfen den Starter und was er sich merkt, die Einstellungen, wie eine Bohr- oder HP-GL-Datei zur Szene wird, die Maschinenprofile, den Nutzen und die Befehlszeile. Die Engines, die es nutzt (Protokoll, Bewegung, Sicherheitsschranke), werden in EH3D-DRILLPRO und EH3D-ROUTEPRO getestet. Die CI führt außerdem `cargo fmt --check` und `cargo clippy` mit Warnungen als Fehler aus, und `python -I tools/ci_validate.py` prüft Manifest, Versionen, Changelog und die acht READMEs.
 
 ## 🏗️ Build und Veröffentlichung
 

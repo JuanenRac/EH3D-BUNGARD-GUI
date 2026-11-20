@@ -4,6 +4,12 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **`bungard-gui --server-status`:** asks the EH3D server how it is (its name, version, state and API revision) and prints the metrics of the link (requests, retries, answers, losses and the latency of the answers), with no window; it leaves with 2 when the machine file has no `server_address` and with 1 when the server cannot be reached.
+- **`bungard-gui --machines`:** lists the machines and the stations of the server, what each one is doing and its job, with the count of free, busy and waiting machines, with no window, the same list the window of the machines shows.
+- **The commands read the limits of the link from the machine file:** `server_timeout_s` (1 to 120 seconds, 15 by default), `server_retries` (0 to 5, 2 by default), `server_mdns` (`off` by default) and `server_max_answer_mib` (1 to 256, 8 by default) are read with their ranges next to the address, the token and the machine, a value out of its range is an error that says its line, the keys of the classic programs are left alone, and the Connection window keeps these lines when it writes the connection.
+- **The refusals and the failures of the network are told by their code in the language of the system:** the two commands ask through the client of the suite (`eh3d-serverclient` of EH3D-COMMON), with a time limit and retries with growing pauses on each request, and explain a refusal with the text of the catalog of the server in English, Spanish, Italian, German, French, Portuguese, Chinese or Japanese (taken from `LC_ALL`, `LC_MESSAGES` or `LANG`; English for any other).
+- **The CI and the release build take `EH3D-COMMON` at `v0.2.5`:** the sibling that is checked out is the release that has the client of the server, and the manifest asks for `min_common` 0.2.5.
+
 ## [0.2.8] - Command line options checked, help and version
 
 - **The command line refuses values that make no sense:** `--wait` is 0 to 3600 frames, `--hole` starts at 1, `--tabs` is 1 to 20, `--tab` is 0 to 3, `--panel` needs a column and a row of 1 or more, `--zoom` must be a number above 0 and `--yaw` a finite number (a `NaN` used to get through and spoil the view, because the window clamps a number but a `NaN` stays one), and the size of a picture is 400x300 to 8192x8192; each error names the option and the range. The turn of 75 degrees that the pictures of the 3D view use is still read. Tested with every limit on both sides, the words that are not numbers and the values the pictures use.

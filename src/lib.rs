@@ -22,6 +22,8 @@ pub mod profile;
 pub mod recovery;
 pub mod report;
 pub mod reportcmd;
+pub mod server_wire;
+pub mod servercmd;
 pub mod slots;
 pub mod spindle;
 #[cfg(feature = "updates")]

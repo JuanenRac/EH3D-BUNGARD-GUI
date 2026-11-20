@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The pictures of the README are new:** they were written again by the picture mode (`--shot`) of the published program.
 ## [0.2.9] - Server status and machine list without a window
 
 - **`bungard-gui --server-status`:** asks the EH3D server how it is (its name, version, state and API revision) and prints the metrics of the link (requests, retries, answers, losses and the latency of the answers), with no window; it leaves with 2 when the machine file has no `server_address` and with 1 when the server cannot be reached.

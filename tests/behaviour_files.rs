@@ -1323,7 +1323,8 @@ mod servercmd_tests {
         let none = d.join("no-server.cfg");
         std::fs::write(&none, "connection = demo\n").unwrap();
         let missing = d.join("missing.cfg");
-        let commands: [fn(Option<&Path>) -> Result<String, Failure>; 2] = [status, machines];
+        type Command = fn(Option<&Path>) -> Result<String, Failure>;
+        let commands: [Command; 2] = [status, machines];
         for command in commands {
             let f = command(Some(&none)).unwrap_err();
             assert_eq!(f.code, 2);

@@ -1061,7 +1061,7 @@ mod tests {
         a.animate = false;
         a.screen = Screen::Viewer;
         a.apply_model_with(machines::Model::from_name("CCD/2 ATC").unwrap(), false);
-        for lang in [Lang::En, Lang::Ja, Lang::Ru] {
+        for lang in [Lang::En, Lang::Ja, Lang::Pt] {
             a.set_lang(lang);
             for id in ThemeId::ALL {
                 a.set_theme(id);

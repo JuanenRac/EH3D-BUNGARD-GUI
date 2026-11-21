@@ -646,7 +646,7 @@ mod tests {
             assert!(w[1].0 - w[0].1 >= 3.0, "{:?} touches {:?}", w[0], w[1]);
         }
         // the theme and the language are at the right: nothing of the bar goes over them, in any language and theme
-        for lang in [Lang::En, Lang::De, Lang::Ru, Lang::Fi, Lang::Ja] {
+        for lang in [Lang::En, Lang::De, Lang::Fr, Lang::Pt, Lang::Ja] {
             for id in ThemeId::ALL {
                 a.set_lang(lang);
                 a.set_theme(id);
@@ -1644,7 +1644,7 @@ EOF
         let mut a = app();
         a.animate = false;
         a.screen = Screen::Viewer;
-        for lang in [Lang::En, Lang::De, Lang::Ru, Lang::Fi, Lang::Ja, Lang::Zh] {
+        for lang in [Lang::En, Lang::De, Lang::Fr, Lang::Pt, Lang::Ja, Lang::Zh] {
             a.lang = lang;
             a.show_modal(Modal::Catalogue);
             let n = a.cat_bits().len();

@@ -29,13 +29,14 @@ pub fn plan_loads(tools: &[Piece], places: usize) -> Vec<Vec<Piece>> {
     loads
 }
 
-/// The slot of each tool of the pieces of a load (slot 1 holds the first tool): the slot, the program and the tool.
+/// The slot of each tool of the pieces of a load (slot 1 holds the first tool): the slot, the program and the tool. A slot number is a byte, so
+/// the first 255 tools get a slot and any further tool gets none (no rack has so many places); a slot is never numbered twice.
 pub fn slot_tools(pieces: &[Piece]) -> Vec<(u8, Program, u8)> {
     pieces
         .iter()
         .flat_map(|(p, ts)| ts.iter().map(move |&t| (*p, t)))
         .enumerate()
-        .map(|(i, (p, t))| ((i + 1) as u8, p, t))
+        .map_while(|(i, (p, t))| Some((u8::try_from(i + 1).ok()?, p, t)))
         .collect()
 }
 
@@ -186,6 +187,25 @@ mod tests {
             ]
         );
         assert!(slot_tools(&[]).is_empty());
+    }
+
+    #[test]
+    fn more_tools_than_a_byte_can_number_keep_their_first_255_slots() {
+        let tools: Vec<u8> = (0..=255u8).cycle().take(300).collect();
+        let slots = slot_tools(&[(Program::Drill, tools.clone())]);
+        assert_eq!(slots.len(), 255);
+        assert_eq!(slots[0], (1, Program::Drill, 0));
+        assert_eq!(slots[254], (255, Program::Drill, 254));
+        let numbers: Vec<u8> = slots.iter().map(|s| s.0).collect();
+        assert_eq!(numbers, (1..=255u8).collect::<Vec<_>>());
+        // exactly 255 tools still fit, and 256 do not wrap round to slot 0
+        assert_eq!(
+            slot_tools(&[(Program::Route, tools[..255].to_vec())]).len(),
+            255
+        );
+        assert!(slot_tools(&[(Program::Route, tools[..256].to_vec())])
+            .iter()
+            .all(|s| s.0 != 0));
     }
 
     #[test]

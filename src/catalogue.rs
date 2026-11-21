@@ -120,10 +120,13 @@ impl Bit {
         })
     }
 
-    /// The depth at which a V-bit cuts a groove of `width_mm` (None when the width is less than the tip or more than the bit can make).
+    /// The depth at which a V-bit cuts a groove of `width_mm` (None when the width is less than the tip or more than the bit can make, or is not a
+    /// finite, non-negative number).
     pub fn depth_for_groove_mm(&self, width_mm: f64) -> Option<f64> {
         if self.kind != Kind::VBit
             || self.angle_deg == 0
+            || !width_mm.is_finite()
+            || width_mm < 0.0
             || width_mm < self.tip_mm
             || width_mm > self.diameter_mm
         {
@@ -721,5 +724,23 @@ mod tests {
         assert!(v.depth_for_groove_mm(0.05).is_none() && v.depth_for_groove_mm(9.0).is_none());
         let drill = bit(Kind::Drill, 1.0, 0.0, 0, 2, 50_000, 0, 600, 1.8);
         assert!(drill.groove_mm(0.1).is_none() && drill.depth_for_groove_mm(0.3).is_none());
+    }
+
+    #[test]
+    fn a_width_that_is_not_a_number_gives_no_depth() {
+        for tip in [0.0, 0.1] {
+            let v = bit(Kind::VBit, 3.175, tip, 30, 2, 24_000, 600, 200, 0.1);
+            for w in [
+                f64::NAN,
+                f64::INFINITY,
+                f64::NEG_INFINITY,
+                -0.5,
+                -f64::MIN_POSITIVE,
+                f64::MAX,
+            ] {
+                assert!(v.depth_for_groove_mm(w).is_none(), "tip {tip}: {w}");
+            }
+            assert!(v.depth_for_groove_mm(1.0).is_some());
+        }
     }
 }

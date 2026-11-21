@@ -286,6 +286,19 @@
             "zh": "语音提示：每个语音四段录音和一个许可",
             "pt": "os avisos falados: quatro gravações e uma licença por voz"
           }
+        },
+        {
+          "name": "reqs.rs",
+          "desc": {
+            "en": "tests of the register of requirements",
+            "es": "pruebas del registro de requisitos",
+            "de": "Tests des Anforderungsregisters",
+            "fr": "tests du registre des exigences",
+            "it": "test del registro dei requisiti",
+            "ja": "要件一覧のテスト",
+            "zh": "需求登记表的测试",
+            "pt": "testes do registo de requisitos"
+          }
         }
       ]
     },
@@ -519,6 +532,19 @@
             "ja": "各バージョンの変更点",
             "zh": "每个版本的变化",
             "pt": "o que mudou em cada versão"
+          }
+        },
+        {
+          "name": "AGENTS.md",
+          "desc": {
+            "en": "the rules for anyone who changes the repository",
+            "es": "las reglas para quien cambie el repositorio",
+            "de": "die Regeln für alle, die das Repository ändern",
+            "fr": "les règles pour qui modifie le dépôt",
+            "it": "le regole per chi modifica il repository",
+            "ja": "リポジトリを変更する人のための規則",
+            "zh": "修改本仓库的人需要遵守的规则",
+            "pt": "as regras para quem altera o repositório"
           }
         },
         {

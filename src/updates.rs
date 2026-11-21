@@ -193,17 +193,47 @@ pub struct Release {
 /// Whether an address may be used: `https`, or plain `http` only towards this same computer and only when the API address is also of this computer (the tests
 /// and a local mirror).
 pub fn address_allowed(url: &str, api_url: &str) -> bool {
+    // The authority is read the way a browser reads it: it ends at the first `/`, `?` or `#`, and anything that
+    // could hide another host (a user name before `@`, a `%` escape, a space or a control character) makes the address not local.
     fn local(u: &str) -> bool {
         let Some(rest) = u.strip_prefix("http://") else {
             return false;
         };
-        let host = rest.split(['/', '?']).next().unwrap_or("");
-        let host = if let Some(h) = host.strip_prefix('[') {
-            h.split(']').next().unwrap_or("")
+        // a `\` is read as a `/` by a browser and as part of a name by other readers: an address with one is not trusted
+        if u.chars()
+            .any(|c| c.is_control() || c.is_whitespace() || c == '\\')
+        {
+            return false;
+        }
+        let authority = rest.split(['/', '?', '#']).next().unwrap_or("");
+        if authority.contains(['@', '%']) {
+            return false;
+        }
+        let (host, port) = if let Some(h) = authority.strip_prefix('[') {
+            let Some((host, after)) = h.split_once(']') else {
+                return false;
+            };
+            if after.is_empty() {
+                (host, None)
+            } else if let Some(port) = after.strip_prefix(':') {
+                (host, Some(port))
+            } else {
+                return false;
+            }
         } else {
-            host.split(':').next().unwrap_or("")
+            match authority.split_once(':') {
+                Some((host, port)) => (host, Some(port)),
+                None => (authority, None),
+            }
         };
-        matches!(host, "127.0.0.1" | "localhost" | "::1")
+        // a port is one to five digits that fit 16 bits; an empty one (`host:`) is not an address to trust
+        let port_ok = match port {
+            None => true,
+            Some(p) => {
+                !p.is_empty() && p.bytes().all(|b| b.is_ascii_digit()) && p.parse::<u16>().is_ok()
+            }
+        };
+        port_ok && matches!(host, "127.0.0.1" | "localhost" | "::1")
     }
     url.starts_with("https://")
         || (local(url) && (local(api_url) || api_url.starts_with("https://")))
@@ -1197,6 +1227,66 @@ mod tests {
             "http://127.0.0.1:9/pkg",
             "http://example.com/latest"
         ));
+    }
+
+    #[test]
+    fn a_user_name_before_the_host_does_not_make_an_address_local() {
+        let api = "http://127.0.0.1:9/latest";
+        for url in [
+            "http://127.0.0.1:80@evil.example/x",
+            "http://127.0.0.1@evil.example/x",
+            "http://localhost:80@evil.example/x",
+            "http://user:pass@127.0.0.1/x",
+            "http://[::1]:80@evil.example/x",
+            "http://127.0.0.1%40evil.example/x",
+            "http://127.0.0.1%2e/x",
+            "http://127.0.0.1\\@evil.example/x",
+            "http://evil.example\\@127.0.0.1/x",
+            "http://evil.example#@127.0.0.1/x",
+            "http://evil.example?@127.0.0.1/x",
+            "http://127.0.0.1.evil.example/x",
+            "http://localhost.evil.example/x",
+            "http://localhost./x",
+            "http://127.0.0.1./x",
+            "http://LocalHost/x",
+            "http://[::1/x",
+            "http://[::1]evil.example/x",
+            "http://[::1]:/x",
+            "http://127.0.0.1:/x",
+            "http://127.0.0.1:99999/x",
+            "http://127.0.0.1:-1/x",
+            "http://127.0.0.1:80:90/x",
+            "http://127.0.0.1 @evil.example/x",
+            "http://127.0.0.1\t.evil.example/x",
+            "http://127.0.0.1\n.evil.example/x",
+            "http://::1/x",
+            "http://0.0.0.0/x",
+            "http://127.1/x",
+            "http://2130706433/x",
+            "http://",
+            "http:///x",
+            "http:/127.0.0.1/x",
+            " http://127.0.0.1/x",
+        ] {
+            assert!(!address_allowed(url, api), "{url:?} must not be local");
+            assert!(!address_allowed(&format!("{url}/pkg"), api), "{url:?}/pkg");
+        }
+        // the same tricks in the API address do not make a local package acceptable either
+        assert!(!address_allowed(
+            "http://127.0.0.1:9/pkg",
+            "http://127.0.0.1:9@evil.example/latest"
+        ));
+        // and the real forms stay allowed
+        for url in [
+            "http://127.0.0.1/x",
+            "http://127.0.0.1:65535/x",
+            "http://localhost:1/x",
+            "http://[::1]/x",
+            "http://[::1]:8080",
+            "http://127.0.0.1#frag",
+        ] {
+            assert!(address_allowed(url, api), "{url:?} must be local");
+        }
     }
 
     #[test]

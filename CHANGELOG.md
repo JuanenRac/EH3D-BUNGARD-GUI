@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The window drives the machine with the current engines (safety):** EH3D-DRILLPRO at v0.2.4 (it was v0.2.2) and EH3D-ROUTEPRO with its latest tool changer fix (it was v0.1.9): the spindle and chuck pauses last their whole time on the node, a stop also releases the run bit of the spindle, and after the tool changer the head crosses to the work before the tool goes down. Checked by the tests against the simulator; not tried on a machine.
+
 ## [0.3.1] - The eight languages of the project, the current shared base and safer resume files
 
 - **Removed: 29 languages. The window now has the eight of the project** (English, Spanish, Italian, German, French, Portuguese of Portugal, Chinese and Japanese). Bulgarian, Croatian, Czech, Danish, Dutch, Estonian, Finnish, Greek, Hungarian, Irish, Latvian, Lithuanian, Maltese, Polish, Romanian, Slovak, Slovenian, Swedish, Norwegian, Icelandic, Ukrainian, Russian, Serbian, Albanian, Catalan, Galician, Basque, Brazilian Portuguese and Canadian French are no longer in the window, in the report, in the notices of the updates or in the spoken notices. `--lang` with one of them (also `pt-br` and `fr-ca`) gives English and says so on the terminal and in the log; a settings file that names one starts in English.

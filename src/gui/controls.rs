@@ -2570,6 +2570,8 @@ EOF
         assert!(a.fleet.fleet.is_none() && a.fleet.rx.is_none());
 
         a.conn.kind = LinkKind::Server;
+        // the client of the suite asks the server for the fleet only with the token of the program
+        a.conn.server_token = "program-token".to_string();
         a.conn.server_address = fleet_server(
             r#"{"stations":[{"id":"bench","machines":["m1","m2"]}],"machines":[
             {"id":"m1","name":"M1","station":"bench","connection":"demo","state":"busy","job":{"id":"j","name":"board","kind":"drill","items_done":1,"items_total":4,"percent":25},"ready":0},

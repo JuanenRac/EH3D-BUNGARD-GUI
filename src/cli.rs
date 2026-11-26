@@ -95,7 +95,8 @@ For the pictures of the window (none of them is remembered):
   --yaw DEGREES   --zoom FACTOR (above 0)   --panes LEFT,RIGHT   --hole N (from 1)   --fleet FILE.json
   --start   --check   --measure   --select   --auto-ok
 
---lang takes one of: {languages} (a language the program had before gives English and a notice)
+--lang takes one of: {languages}
+A language the program had before gives English and a notice.
 --theme takes one of: {themes}
 An option that is written wrong, given twice or given a value that makes no sense is an error, never something to ignore.",
         modals = MODALS.join(", "),

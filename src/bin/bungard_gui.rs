@@ -12,7 +12,13 @@ fn main() -> eframe::Result {
     eh3d_drillpro::crash::install("bungard-gui", env!("CARGO_PKG_VERSION"));
     attach_console();
     start_log();
-    match Options::parse(std::env::args().skip(1)) {
+    let parsed = Options::parse(std::env::args().skip(1));
+    if let Some(notice) = parsed.as_ref().ok().and_then(Options::language_notice) {
+        // on the terminal (never in what the report prints) and in the log of the run
+        eh3d_bungard_gui::applog::warn("run", &notice);
+        eprintln!("bungard-gui: {notice}");
+    }
+    match parsed {
         Ok(o) if o.help => {
             // the options go to the terminal and the program leaves: no window, no log
             println!("{}", eh3d_bungard_gui::cli::usage());

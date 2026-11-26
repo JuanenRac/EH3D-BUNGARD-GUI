@@ -1,7 +1,8 @@
-//! The folder of the spoken notices: every voice is a complete set of four recordings, the languages that were added later are offered in the lists, and each
+//! The folder of the spoken notices: every voice is a complete set of four recordings, only the languages of the program have a folder, and each
 //! voice is named, with its licence, in the files that say where it comes from.
 
-use eh3d_drillpro::protocol::sound::{available_voices, voice_file, Cue, VOICE_LANGS};
+use eh3d_drillpro::protocol::sound::{available_voices, voice_file, Cue};
+use eh3d_view::texts::Lang;
 use std::path::{Path, PathBuf};
 
 fn voices() -> PathBuf {
@@ -35,8 +36,8 @@ fn every_voice_has_its_four_recordings_of_a_sensible_length() {
         }
         let code = lang.file_name().to_string_lossy().to_string();
         assert!(
-            VOICE_LANGS.contains(&code.as_str()),
-            "{code} is not a language of the voices"
+            Lang::ALL.iter().any(|l| l.code() == code),
+            "{code} is not a language of the program"
         );
         for gender in std::fs::read_dir(lang.path()).unwrap().flatten() {
             let female = match gender.file_name().to_string_lossy().as_ref() {
@@ -66,29 +67,18 @@ fn every_voice_has_its_four_recordings_of_a_sensible_length() {
             found += 1;
         }
     }
-    assert!(found >= 30, "{found} voices");
+    assert_eq!(found, 12, "{found} voices");
 }
 
 #[test]
-fn the_voices_of_the_new_languages_are_offered() {
+fn the_recorded_voices_of_the_languages_are_offered() {
     let offered = available_voices(&voices());
-    for (lang, female) in [
-        ("cs", false),
-        ("pl", false),
-        ("uk", true),
-        ("pt-br", false),
-        ("el", true),
-        ("ru", false),
-    ] {
-        assert!(
-            offered.contains(&(lang, female)),
-            "{lang} {female}: {offered:?}"
-        );
+    for voice in [("en", true), ("es", false), ("pt", false), ("zh", false)] {
+        assert!(offered.contains(&voice), "{voice:?}: {offered:?}");
     }
-    // a language without a voice is not in the list, so it falls to the tone
-    assert!(!offered
-        .iter()
-        .any(|(l, _)| ["hr", "ga", "mt", "gl", "ca", "sr", "is", "lt"].contains(l)));
+    assert_eq!(offered.len(), 12, "{offered:?}");
+    // Japanese has no recording, so it is not in the list and falls to the tone
+    assert!(!offered.iter().any(|(l, _)| *l == "ja"));
 }
 
 #[test]

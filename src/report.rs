@@ -1,6 +1,6 @@
 //! The report of a job that can be copied: how many pieces, the holes and the paths by tool, how long the job takes (an estimate from the figures of
 //! `report_defaults.cfg`) and what looks wrong in it. It is worked out from the scene alone (the same for the window and for the command line, `--report`),
-//! and written in any of the 37 languages from the files of `locales/report/` (`Name<TAB>text` per line; a name that is missing is taken from English).
+//! and written in any of the eight languages from the files of `locales/report/` (`Name<TAB>text` per line; a name that is missing is taken from English).
 
 use std::path::Path;
 
@@ -222,7 +222,7 @@ pub const KEYS: [&str; 15] = [
 ];
 
 /// The files of the languages, one for each language of the program.
-const FILES: [(&str, &str); 37] = [
+const FILES: [(&str, &str); 8] = [
     ("en", include_str!("../locales/report/en.tsv")),
     ("es", include_str!("../locales/report/es.tsv")),
     ("it", include_str!("../locales/report/it.tsv")),
@@ -231,35 +231,6 @@ const FILES: [(&str, &str); 37] = [
     ("pt", include_str!("../locales/report/pt.tsv")),
     ("zh", include_str!("../locales/report/zh.tsv")),
     ("ja", include_str!("../locales/report/ja.tsv")),
-    ("bg", include_str!("../locales/report/bg.tsv")),
-    ("hr", include_str!("../locales/report/hr.tsv")),
-    ("cs", include_str!("../locales/report/cs.tsv")),
-    ("da", include_str!("../locales/report/da.tsv")),
-    ("nl", include_str!("../locales/report/nl.tsv")),
-    ("et", include_str!("../locales/report/et.tsv")),
-    ("fi", include_str!("../locales/report/fi.tsv")),
-    ("el", include_str!("../locales/report/el.tsv")),
-    ("hu", include_str!("../locales/report/hu.tsv")),
-    ("ga", include_str!("../locales/report/ga.tsv")),
-    ("lv", include_str!("../locales/report/lv.tsv")),
-    ("lt", include_str!("../locales/report/lt.tsv")),
-    ("mt", include_str!("../locales/report/mt.tsv")),
-    ("pl", include_str!("../locales/report/pl.tsv")),
-    ("ro", include_str!("../locales/report/ro.tsv")),
-    ("sk", include_str!("../locales/report/sk.tsv")),
-    ("sl", include_str!("../locales/report/sl.tsv")),
-    ("sv", include_str!("../locales/report/sv.tsv")),
-    ("no", include_str!("../locales/report/no.tsv")),
-    ("is", include_str!("../locales/report/is.tsv")),
-    ("uk", include_str!("../locales/report/uk.tsv")),
-    ("ru", include_str!("../locales/report/ru.tsv")),
-    ("sr", include_str!("../locales/report/sr.tsv")),
-    ("sq", include_str!("../locales/report/sq.tsv")),
-    ("ca", include_str!("../locales/report/ca.tsv")),
-    ("gl", include_str!("../locales/report/gl.tsv")),
-    ("eu", include_str!("../locales/report/eu.tsv")),
-    ("pt-br", include_str!("../locales/report/pt-br.tsv")),
-    ("fr-ca", include_str!("../locales/report/fr-ca.tsv")),
 ];
 
 /// The text of a word in a language: its own, or the English one when the file of the language lacks it.

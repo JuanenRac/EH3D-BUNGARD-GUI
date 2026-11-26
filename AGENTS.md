@@ -20,7 +20,7 @@ EH3D-BUNGARD-GUI: the modern window for the Bungard CCD machines: it opens drill
 - Every input file is hostile until it is shown otherwise: sizes, counts, number formats and file names are checked before use, and everything is bounded.
 - No `unwrap` or `expect` in code that handles an external value. No `unsafe`.
 - A rule of safety only ever makes a job refused or a warning louder. A change that would relax one after a trouble is a defect: the tests that fail for it must stay.
-- Every word of the window is in the eight languages of the README and in the catalogue of the 37 languages; none is written in the painting code.
+- Every word of the window is in the eight languages of the project; none is written in the painting code.
 - Every value that is tuned (a limit, a tolerance, a time) is a setting in a configuration file, not a constant in the code; every option of security has a switch with the conservative value as its default.
 - Output carries no date, host name or user name that the person did not give.
 

@@ -1,6 +1,6 @@
 # EH3D-BUNGARD-GUI: scope
 
-Status: **simulator**. EH3D-BUNGARD-GUI is the modern window for the Bungard CCD machines: a launcher, a plan view and a 3D view of the job, drilling and routing together, in 37 languages. It is tried on a computer and on the simulator; it has never driven a real machine. This page says what it is for, what it will not do and where it sits among the other programs of the suite.
+Status: **simulator**. EH3D-BUNGARD-GUI is the modern window for the Bungard CCD machines: a launcher, a plan view and a 3D view of the job, drilling and routing together, in eight languages. It is tried on a computer and on the simulator; it has never driven a real machine. This page says what it is for, what it will not do and where it sits among the other programs of the suite.
 
 ## Purpose
 
@@ -13,6 +13,7 @@ The window from which a person opens a drilling file, a plot file or a ZIP archi
 * Panelizes the board in three modes, edits the job (take a tool out, choose, move, copy, undo and redo) and refuses a job that does not fit the table before it starts; the design is locked while the machine works.
 * Runs the job through the engines: drilling and routing one after the other, the tool changer of the ATC models with its places in the bar and its loads, a job that is cut and resumed, a pause between two moves and an emergency button that stops the job and blocks the start.
 * Jogs the head by hand inside the travel, measures the table with a probe and corrects the jobs only when the person asks, and looks at the board with the camera of the head after the job.
+* Speaks the eight languages of the suite (English, Spanish, Italian, German, French, Portuguese of Portugal, Chinese and Japanese); a language it had before gives English and a notice.
 * Keeps the settings in the machine file, a log without secrets, a report of the job with an estimate of the time, and looks for a new release, which it installs only after the checksum and, when asked, the signature agree.
 * Shows the machines and stations of the server, chooses the one the jobs go to, and prints the status of the server from the command line.
 

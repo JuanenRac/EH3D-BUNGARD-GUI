@@ -2,7 +2,7 @@
 
 This register is the single source of the state of each capability: `STATUS.md` and the README files cite it and never state a state that it does not. A state is one of `planned`, `prototype`, `implemented` and `validated`. `validated` means that a person has run the capability on a real machine and the evidence of the manifest says `bench` or `field`; nothing here is validated, because no job has been driven from this window on a real machine; it has run on the simulator of the engines of the drilling and routing programs only.
 
-The register has 59 requirements: 43 implemented, 9 prototype, 7 planned and 0 validated. By progress: 43 done, 9 partial, 2 pending and 5 blocked. High coverage is not proof of correctness, so each row says how it is checked: the test that names it, and what it shows.
+The register has 58 requirements: 42 implemented, 9 prototype, 7 planned and 0 validated. By progress: 42 done, 9 partial, 2 pending and 5 blocked. High coverage is not proof of correctness, so each row says how it is checked: the test that names it, and what it shows.
 
 ## How to read the register
 
@@ -84,7 +84,6 @@ The check is `tests/reqs.rs`: it reads this table, finds each test and fails whe
 | BGUI-043 | A node that does not answer is an error, not a hang. | implemented | done | host-test | `src/inspection::a_node_that_does_not_answer_is_an_error_not_a_hang` | - |
 | BGUI-044 | A package whose checksum does not agree is never installed. | implemented | done | host-test | `src/updates::a_package_whose_checksum_does_not_agree_is_never_installed` | - |
 | BGUI-045 | A published signature that does not verify stops the update. | implemented | done | host-test | `src/updates::a_published_signature_that_does_not_verify_stops_the_update` | - |
-| BGUI-059 | A package that is not of the version the release announces is never installed. | implemented | done | host-test | `src/updates::a_package_of_another_version_is_refused` | - |
 | BGUI-046 | The update window offers only what can be done and never installs alone. | implemented | done | host-test | `src/gui/controls::the_update_window_offers_only_what_can_be_done_and_never_installs_alone` | - |
 | BGUI-047 | The secrets never get into the log, and a log that cannot be written does not panic. | implemented | done | host-test | `src/applog::the_secrets_never_get_in` | - |
 

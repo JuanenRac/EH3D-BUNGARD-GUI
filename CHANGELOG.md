@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.3.1] - The eight languages of the project, the current shared base and safer resume files
+
 - **Removed: 29 languages. The window now has the eight of the project** (English, Spanish, Italian, German, French, Portuguese of Portugal, Chinese and Japanese). Bulgarian, Croatian, Czech, Danish, Dutch, Estonian, Finnish, Greek, Hungarian, Irish, Latvian, Lithuanian, Maltese, Polish, Romanian, Slovak, Slovenian, Swedish, Norwegian, Icelandic, Ukrainian, Russian, Serbian, Albanian, Catalan, Galician, Basque, Brazilian Portuguese and Canadian French are no longer in the window, in the report, in the notices of the updates or in the spoken notices. `--lang` with one of them (also `pt-br` and `fr-ca`) gives English and says so on the terminal and in the log; a settings file that names one starts in English.
 - **Removed: the spoken notices of the retired languages** (their folders under `voices/` and their sentences). The packages carry the voices of English, Spanish, Italian, German, French, Portuguese and Chinese; a machine file that names a voice that is gone plays the tone.
 - The shared library is taken at the tag v0.3.5 of EH3D-COMMON, with EH3D-DRILLPRO at v0.2.2 and EH3D-ROUTEPRO at v0.1.9. The window of the machines and the jobs sent to the server go through the client of the suite that those engines use now, which asks the server only with a token: the machine file needs `server_token`.

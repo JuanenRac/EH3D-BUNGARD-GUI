@@ -13,7 +13,7 @@
   "deployment_target": "user-pc",
   "maturity": "functional",
   "evidence": "simulator",
-  "min_common": "0.2.5",
+  "min_common": "0.3.5",
   "family": "CNC Workflow Tools",
   "parent": null,
   "depends_on": [

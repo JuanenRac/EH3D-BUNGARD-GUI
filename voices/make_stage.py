@@ -14,7 +14,7 @@ SOURCES.txt, so a voice that is changed there is changed here.
     python voices/make_stage.py --models PATH_TO_THE_MODELS --force    makes them again
     python voices/make_stage.py --list                                 shows what would be done and what is missing, without Piper
 
-The sentences are in the table below; those of the languages other than the first eight wait for a review by a native speaker.
+The sentences are in the table below, one for each language of the program.
 """
 
 import argparse
@@ -26,7 +26,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 
-# the sentence of each language: "The drilling is done. Now comes the routing." (Portuguese of Portugal for pt, Brazilian for pt-br)
+# the sentence of each language: "The drilling is done. Now comes the routing." (Portuguese of Portugal for pt)
 STAGE = {
     "en": "The drilling is done. Now comes the routing.",
     "es": "El taladrado ha terminado. Ahora viene el fresado.",
@@ -36,26 +36,6 @@ STAGE = {
     "pt": "A furação está concluída. Segue-se a fresagem.",
     "zh": "钻孔已完成。接下来是铣削。",
     "ja": "穴あけが完了しました。次はルーター加工です。",
-    "pt-br": "A furação terminou. Agora vem a fresagem.",
-    "bg": "Пробиването приключи. Сега следва фрезоването.",
-    "cs": "Vrtání je hotové. Nyní následuje frézování.",
-    "da": "Boringen er færdig. Nu kommer fræsningen.",
-    "nl": "Het boren is klaar. Nu volgt het frezen.",
-    "et": "Puurimine on valmis. Nüüd tuleb freesimine.",
-    "fi": "Poraus on valmis. Nyt on jyrsinnän vuoro.",
-    "el": "Η διάτρηση ολοκληρώθηκε. Τώρα ακολουθεί το φρεζάρισμα.",
-    "hu": "A fúrás kész. Most jön a marás.",
-    "lv": "Urbšana ir pabeigta. Tagad seko frēzēšana.",
-    "no": "Boringen er ferdig. Nå kommer fresingen.",
-    "pl": "Wiercenie zakończone. Teraz frezowanie.",
-    "ro": "Găurirea s-a terminat. Urmează frezarea.",
-    "sk": "Vŕtanie je hotové. Teraz nasleduje frézovanie.",
-    "sl": "Vrtanje je končano. Zdaj sledi rezkanje.",
-    "sv": "Borrningen är klar. Nu kommer fräsningen.",
-    "uk": "Свердління завершено. Тепер буде фрезерування.",
-    "ru": "Сверление завершено. Теперь следует фрезерование.",
-    "sq": "Shpimi mbaroi. Tani vjen frezimi.",
-    "eu": "Zulaketa amaitu da. Orain fresaketa dator.",
 }
 
 # the speed of the voices: Piper's length scale (above 1 is slower). The notices of this folder last about 2% longer than Piper's own speed (measured on en/m finished.wav);

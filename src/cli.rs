@@ -40,6 +40,26 @@ pub const COMBOS: [&str; 10] = [
     "tabs",
 ];
 
+/// The languages the window had and has no more: asking for one of them gives English and a notice, never an error.
+pub const RETIRED_LANGS: [&str; 29] = [
+    "bg", "hr", "cs", "da", "nl", "et", "fi", "el", "hu", "ga", "lv", "lt", "mt", "pl", "ro", "sk",
+    "sl", "sv", "no", "is", "uk", "ru", "sr", "sq", "ca", "gl", "eu", "pt-br", "fr-ca",
+];
+
+/// The language a code of `--lang` gives, and whether it asked for a retired one (which gives English). A code that is neither is `None`.
+fn language_of(code: &str) -> Option<(Lang, bool)> {
+    let c = code.trim().to_ascii_lowercase().replace('_', "-");
+    if RETIRED_LANGS.contains(&c.as_str()) {
+        return Some((Lang::En, true));
+    }
+    if let Some(lang) = Lang::from_code(&c) {
+        return Some((lang, false));
+    }
+    // a region of a retired language, as `cs-CZ`
+    let main = c.split('-').next().unwrap_or("");
+    RETIRED_LANGS.contains(&main).then_some((Lang::En, true))
+}
+
 /// The most frames `--wait` can ask for before the picture is taken.
 pub const MAX_WAIT: u32 = 3600;
 /// The most tabs `--tabs` can ask for on each side (the window holds it between 1 and this).
@@ -75,7 +95,7 @@ For the pictures of the window (none of them is remembered):
   --yaw DEGREES   --zoom FACTOR (above 0)   --panes LEFT,RIGHT   --hole N (from 1)   --fleet FILE.json
   --start   --check   --measure   --select   --auto-ok
 
---lang takes one of: {languages}
+--lang takes one of: {languages} (a language the program had before gives English and a notice)
 --theme takes one of: {themes}
 An option that is written wrong, given twice or given a value that makes no sense is an error, never something to ignore.",
         modals = MODALS.join(", "),
@@ -95,6 +115,8 @@ pub enum Screen {
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Options {
     pub lang: Option<Lang>,
+    /// What `--lang` asked for when it is a language the program has no more (then `lang` is English).
+    pub retired_lang: Option<String>,
     pub theme: Option<ThemeId>,
     /// The drilling file (`--drill FILE`) and the routing file (`--route FILE`) to show.
     pub drill: Option<PathBuf>,
@@ -156,6 +178,16 @@ pub struct Options {
 }
 
 impl Options {
+    /// What has to be said about the language asked for: nothing, or that it is not part of the program any more.
+    pub fn language_notice(&self) -> Option<String> {
+        let asked = self.retired_lang.as_deref()?;
+        let codes: Vec<&str> = Lang::ALL.into_iter().map(|l| l.code()).collect();
+        Some(format!(
+            "the language '{asked}' is not part of the program any more; English is used (the languages are: {})",
+            codes.join(", ")
+        ))
+    }
+
     pub fn parse<I: IntoIterator<Item = String>>(args: I) -> Result<Options, String> {
         let mut o = Options {
             wait: 6,
@@ -177,10 +209,12 @@ impl Options {
                 "--version" | "-V" => o.version = true,
                 "--lang" => {
                     let v = value("--lang")?;
-                    o.lang = Some(Lang::from_code(&v).ok_or_else(|| {
+                    let (lang, retired) = language_of(&v).ok_or_else(|| {
                         let codes: Vec<&str> = Lang::ALL.into_iter().map(|l| l.code()).collect();
                         format!("unknown language '{v}' (use one of: {})", codes.join(", "))
-                    })?);
+                    })?;
+                    o.lang = Some(lang);
+                    o.retired_lang = retired.then_some(v);
                 }
                 "--theme" => {
                     let v = value("--theme")?;
@@ -510,7 +544,7 @@ mod tests {
             );
         }
         assert!(text.contains("-h") && text.contains("-V"));
-        for l in ["en", "pt-br", "fr-ca"] {
+        for l in ["en", "es", "it", "de", "fr", "pt", "zh", "ja"] {
             assert!(text.contains(l), "{l}");
         }
         assert!(text.contains("windows-classic") && text.contains("inspect-tune"));
@@ -539,7 +573,7 @@ mod tests {
     fn an_unknown_language_or_theme_names_the_choices() {
         let e = parse("--lang xx").unwrap_err();
         assert!(
-            e.contains("unknown language 'xx'") && e.contains("en") && e.contains("pt-br"),
+            e.contains("unknown language 'xx'") && e.contains("en, es, it, de, fr, pt, zh, ja"),
             "{e}"
         );
         let e = parse("--theme pink").unwrap_err();
@@ -551,6 +585,45 @@ mod tests {
         );
         // a region that is not a variant still gives its main language
         assert_eq!(parse("--lang es-MX").unwrap().lang, Some(Lang::Es));
+    }
+
+    #[test]
+    fn a_language_the_program_has_no_more_gives_english_and_says_so() {
+        for code in RETIRED_LANGS {
+            let o = parse(&format!("--lang {code}")).unwrap();
+            assert_eq!(o.lang, Some(Lang::En), "{code}");
+            assert_eq!(o.retired_lang.as_deref(), Some(code), "{code}");
+            let notice = o.language_notice().unwrap();
+            assert!(
+                notice.contains(&format!("'{code}'")) && notice.contains("English is used"),
+                "{notice}"
+            );
+        }
+        // written in other ways: capitals, an underscore, a region
+        for code in ["CS", "pt_BR", "fr-CA", "cs-CZ", "nl_NL"] {
+            let o = parse(&format!("--lang {code}")).unwrap();
+            assert_eq!(o.lang, Some(Lang::En), "{code}");
+            assert!(o.language_notice().is_some(), "{code}");
+        }
+        // the languages of the program, their regions and no --lang at all say nothing
+        for line in [
+            "",
+            "--lang en",
+            "--lang pt",
+            "--lang pt-PT",
+            "--lang es-MX",
+            "--lang zh_CN",
+        ] {
+            assert_eq!(parse(line).unwrap().language_notice(), None, "{line}");
+        }
+        // a code that never was a language is still an error
+        assert!(parse("--lang xx-br")
+            .unwrap_err()
+            .contains("unknown language"));
+        // none of the retired codes is a language of the program
+        for l in Lang::ALL {
+            assert!(!RETIRED_LANGS.contains(&l.code()), "{}", l.code());
+        }
     }
 
     #[test]

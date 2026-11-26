@@ -3778,8 +3778,7 @@ mod updates_text_tests {
     }
 
     #[test]
-    fn every_language_gives_a_clean_phrase_for_both_states_and_the_variants_share_those_of_their_main(
-    ) {
+    fn every_language_gives_a_clean_phrase_for_both_states() {
         for l in Lang::ALL {
             for signed in [true, false] {
                 let p = signature_state(l, signed);
@@ -3793,15 +3792,6 @@ mod updates_text_tests {
                 "{}",
                 l.code()
             );
-        }
-        for (variant, main) in [("pt-br", "pt"), ("fr-ca", "fr")] {
-            for signed in [true, false] {
-                assert_eq!(
-                    signature_state(lang(variant), signed),
-                    signature_state(lang(main), signed),
-                    "{variant}"
-                );
-            }
         }
     }
 }

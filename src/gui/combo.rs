@@ -52,6 +52,10 @@ impl App {
             })
             .map(|d| sound::available_voices(&d))
             .unwrap_or_default()
+            .into_iter()
+            // the engines know recordings of more languages; the window offers those of its own languages only
+            .filter(|(code, _)| Lang::ALL.iter().any(|l| l.code() == *code))
+            .collect()
     }
 
     /// The name of a voice in the list: `Voice - Español (mujer)`.

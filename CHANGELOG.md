@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- The shared workflow checker (`tools/workflow_hygiene.py`) is the current one of the documentation hub: the filters under a trigger (branches, paths, types) are no longer read as events.
+
 ## [0.3.0] - Stricter update address check, slot numbering limit and groove depth validation, more tests
 
 - **Security: plain `http` is allowed only towards the real local computer:** the check of the update addresses took `http://127.0.0.1:80@evil.example/x` for an address of this computer, because the user name before the `@` was read as the host, and would have let a package or its checksum be fetched over plain `http` from another host. The authority is now read in full: an address with a user name, a `%` escape, a `\`, a space or a control character is not local; the host must be exactly `127.0.0.1`, `localhost` or `[::1]` (no trailing dot, no other case), and a port must be 1 to 5 digits within 16 bits. A test holds a list of hostile addresses and the forms that stay allowed.

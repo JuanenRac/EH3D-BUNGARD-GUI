@@ -192,6 +192,36 @@ fn twenty_thousand_holes_come_back_in_order() {
 }
 
 #[test]
+fn a_file_cut_inside_its_last_line_is_no_job() {
+    let mut r = full();
+    r.done = 41;
+    let text = r.to_text();
+    let cut = text.find("done=41").unwrap() + "done=4".len();
+    assert_eq!(Recovery::from_text(&text[..cut]), None);
+    assert_eq!(Recovery::from_text(text.trim_end()), None);
+    assert_eq!(Recovery::from_text(&text), Some(r));
+}
+
+#[test]
+fn a_panel_that_cannot_be_made_is_told_from_one_that_can() {
+    assert!(full().panel_is_sane() && minimal().panel_is_sane());
+    let with = |change: &dyn Fn(&mut Recovery)| {
+        let mut r = full();
+        change(&mut r);
+        r.panel_is_sane()
+    };
+    assert!(with(&|r| (r.columns, r.rows) = (100, 100)));
+    assert!(!with(&|r| (r.columns, r.rows) = (101, 100)));
+    assert!(!with(&|r| (r.columns, r.rows) = (u32::MAX, u32::MAX)));
+    assert!(!with(&|r| r.tab_count = u32::MAX));
+    assert!(!with(&|r| r.spacing.0 = f64::NAN));
+    assert!(!with(&|r| r.spacing.1 = f64::INFINITY));
+    assert!(!with(&|r| r.tab_width = 1e12));
+    assert!(!with(&|r| r.drilled.push((f64::NAN, 1.0))));
+    assert!(!with(&|r| r.drilled.push((1.0, f64::NEG_INFINITY))));
+}
+
+#[test]
 fn a_file_with_windows_line_ends_reads_the_same() {
     let text = full().to_text().replace('\n', "\r\n");
     assert_eq!(Recovery::from_text(&text), Some(full()));

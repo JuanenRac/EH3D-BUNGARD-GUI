@@ -172,10 +172,11 @@ impl App {
         };
         match Recovery::load(&path) {
             Some(r)
-                if r.drill
-                    .as_ref()
-                    .or(r.route.as_ref())
-                    .is_some_and(|f| f.exists()) =>
+                if r.panel_is_sane()
+                    && r.drill
+                        .as_ref()
+                        .or(r.route.as_ref())
+                        .is_some_and(|f| f.exists()) =>
             {
                 crate::applog::info("recovery", "a job left in the middle is offered");
                 self.resume = Some(r);

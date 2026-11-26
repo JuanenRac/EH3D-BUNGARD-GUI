@@ -34,6 +34,9 @@ pub struct Recovery {
     pub fingerprint: String,
 }
 
+/// The most copies of a board in the panel of a job that is gone on from.
+pub const MAX_COPIES: u64 = 10_000;
+
 /// A fingerprint (FNV-1a, 64 bits) of the content of some files and of a text that describes the settings; empty files are read as nothing.
 pub fn fingerprint(files: &[&Path], settings: &str) -> String {
     let mut h: u64 = 0xcbf2_9ce4_8422_2325;
@@ -92,8 +95,24 @@ impl Recovery {
         t
     }
 
-    /// Reads the file back; `None` when it is not the file of a job.
+    /// Whether the panel and the places of the holes are ones a job can be made of: at most [`MAX_COPIES`] copies, and every measure a number. A damaged file with
+    /// millions of copies would stop the window, and a hole at no place would mark a hole that was never drilled.
+    pub fn panel_is_sane(&self) -> bool {
+        let measure = |v: f64| v.is_finite() && v.abs() <= 100_000.0;
+        u64::from(self.columns.max(1)) * u64::from(self.rows.max(1)) <= MAX_COPIES
+            && u64::from(self.tab_count) <= MAX_COPIES
+            && measure(self.spacing.0)
+            && measure(self.spacing.1)
+            && measure(self.tab_width)
+            && self.drilled.iter().all(|&(x, y)| measure(x) && measure(y))
+    }
+
+    /// Reads the file back; `None` when it is not the file of a job, or when it was cut short: every line of the file ends with a line end, so a last line
+    /// without one may have lost a part (a count of 41 holes done read as 4).
     pub fn from_text(text: &str) -> Option<Recovery> {
+        if !text.ends_with('\n') {
+            return None;
+        }
         let mut r = Recovery::default();
         let pair = |v: &str| -> Option<(f64, f64)> {
             let (a, b) = v.split_once(',')?;

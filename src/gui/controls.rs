@@ -2012,6 +2012,24 @@ EOF
     }
 
     #[test]
+    fn a_job_file_with_a_panel_that_cannot_be_made_is_not_offered_and_goes() {
+        let mut a = app();
+        let file = std::env::temp_dir().join(format!("eh3d-bg-insane-{}.cfg", std::process::id()));
+        let job = crate::recovery::Recovery {
+            program: "drill".into(),
+            drill: Some(file.clone()),
+            columns: 100_000,
+            rows: 100_000,
+            ..Default::default()
+        };
+        job.save(&file);
+        assert!(file.exists());
+        a.recovery_path = Some(file.clone());
+        a.offer_resume();
+        assert!(a.modal.is_none() && a.resume.is_none() && !file.exists());
+    }
+
+    #[test]
     fn a_job_left_in_the_middle_does_not_go_on_when_the_files_or_the_settings_are_not_the_same() {
         let mut a = app();
         let file = std::env::temp_dir().join(format!("eh3d-bg-changed-{}.cfg", std::process::id()));

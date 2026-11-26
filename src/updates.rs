@@ -548,6 +548,56 @@ pub fn extract_program(archive: &Path, label: &str, out: &Path) -> Done<()> {
     Ok(())
 }
 
+/// The checksum and the signature cover the bytes of a package, not the release it is published under, so the package is asked which version it is: the releases pack one
+/// folder named like the file without its extension (`bungard-gui-<version>-<system>`), and the program has to be in it. A package of another version, renamed and published
+/// as a newer one, is refused. A package with no program at all is left to `extract_program` to tell.
+pub fn check_package_version(archive: &Path, label: &str, version: &str) -> Done<()> {
+    let want = program_file(label);
+    let file = package_name(version, label);
+    let folder = file.trim_end_matches(".zip").trim_end_matches(".tar.gz");
+    let inside = format!("{folder}/{want}");
+    let bad = |e: &dyn std::fmt::Display| Failure::Archive(e.to_string());
+    let disk = |e: std::io::Error| Failure::Disk(e.to_string());
+    let judge = |name: &str| {
+        let name = name.replace('\\', "/");
+        if last_part(&name) == want && name != inside {
+            return Err(Failure::Refused(format!(
+                "the package does not say it is version {version}: its program is at {name}, not at {inside}"
+            )));
+        }
+        Ok(())
+    };
+    if label.starts_with("windows") {
+        let mut z = zip::ZipArchive::new(std::fs::File::open(archive).map_err(disk)?)
+            .map_err(|e| bad(&e))?;
+        for i in 0..z.len() {
+            let entry = z.by_index(i).map_err(|e| bad(&e))?;
+            let Ok(name) = entry.name() else {
+                continue;
+            };
+            if !entry.is_dir() {
+                judge(&name)?;
+            }
+        }
+    } else {
+        let gz = flate2::read::GzDecoder::new(std::fs::File::open(archive).map_err(disk)?);
+        let mut t = tar::Archive::new(gz);
+        for entry in t.entries().map_err(|e| bad(&e))? {
+            let entry = entry.map_err(|e| bad(&e))?;
+            if !entry.header().entry_type().is_file() {
+                continue;
+            }
+            let name = entry
+                .path()
+                .map_err(|e| bad(&e))?
+                .to_string_lossy()
+                .into_owned();
+            judge(&name)?;
+        }
+    }
+    Ok(())
+}
+
 fn last_part(name: &str) -> &str {
     name.rsplit(['/', '\\']).next().unwrap_or("")
 }
@@ -975,10 +1025,12 @@ fn run_update(
     // 3. the program is taken out of the package and put in place
     step(st, Step::Install, StepState::Running, 0.0);
     let staged = staging_path(&t.exe);
-    let placed = extract_program(&file, t.label, &staged).and_then(|()| {
-        step(st, Step::Install, StepState::Running, 0.5);
-        install(&staged, &t.exe, &t.version)
-    });
+    let placed = check_package_version(&file, t.label, &release.version)
+        .and_then(|()| extract_program(&file, t.label, &staged))
+        .and_then(|()| {
+            step(st, Step::Install, StepState::Running, 0.5);
+            install(&staged, &t.exe, &t.version)
+        });
     if let Err(e) = placed {
         let _ = std::fs::remove_file(&staged);
         step(st, Step::Install, StepState::Failed, 0.0);
@@ -1380,6 +1432,58 @@ mod tests {
         assert!(extract_program(&z, "linux-x86_64", &d.join("o3")).is_err());
         std::fs::write(d.join("junk"), b"junk").unwrap();
         assert!(extract_program(&d.join("junk"), "linux-x86_64", &d.join("o4")).is_err());
+        let _ = std::fs::remove_dir_all(d);
+    }
+
+    #[test]
+    fn a_package_of_another_version_is_refused() {
+        let d = scratch("version");
+        let tgz = d.join("p.tar.gz");
+        std::fs::write(&tgz, tar_gz(b"LINUX")).unwrap();
+        let z = d.join("p.zip");
+        std::fs::write(&z, zip_of(b"WINDOWS")).unwrap();
+        assert_eq!(check_package_version(&tgz, "linux-x86_64", "0.2.0"), Ok(()));
+        assert_eq!(check_package_version(&z, "windows-x86_64", "0.2.0"), Ok(()));
+        for (archive, label) in [(&tgz, "linux-x86_64"), (&z, "windows-x86_64")] {
+            assert!(matches!(
+                check_package_version(archive, label, "0.3.0"),
+                Err(Failure::Refused(_))
+            ));
+        }
+        // the package of 0.2.0 published as 0.3.0 changes nothing, whatever the checksum says
+        let pkg = tar_gz(b"OLD PACKAGE");
+        let name = package_name("0.3.0", "linux-x86_64");
+        let mut routes = HashMap::new();
+        routes.insert(format!("/pkg/{name}"), pkg.clone());
+        routes.insert(
+            format!("/pkg/{name}.sha256"),
+            format!("{}  {name}\n", hex(&pkg)).into_bytes(),
+        );
+        routes.insert(
+            "/latest".into(),
+            release_json(0, "linux-x86_64", "0.3.0", true)
+                .replace("127.0.0.1:0", "127.0.0.1:{PORT}")
+                .into_bytes(),
+        );
+        let fake = serve(routes);
+        let st: State = Arc::default();
+        let c = cfg(fake.port);
+        let s = wait(&st, spawn_check(&st, c.clone(), Some("linux-x86_64")));
+        let t = target(&d, "linux-x86_64");
+        let cancel = Arc::new(AtomicBool::new(false));
+        let s = wait(
+            &st,
+            spawn_update(&st, c, s.release.unwrap(), t.clone(), cancel),
+        );
+        assert!(
+            s.error.as_deref().unwrap_or("").contains("version 0.3.0"),
+            "{:?}",
+            s.error
+        );
+        assert!(!s.restart_needed);
+        assert_eq!(std::fs::read(&t.exe).unwrap(), b"OLD");
+        assert!(!previous_path(&t.exe).exists());
+        assert!(!staging_path(&t.exe).exists());
         let _ = std::fs::remove_dir_all(d);
     }
 

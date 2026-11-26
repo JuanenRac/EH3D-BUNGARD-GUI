@@ -6,7 +6,7 @@ EH3D-BUNGARD-GUI works on a computer and on the simulator: the launcher, the vie
 
 ## Capabilities
 
-The official state of each capability is in `REQUIREMENTS.md`. The register has 58 requirements: 42 implemented, 9 prototype, 7 planned and 0 validated. By progress: 42 done, 9 partial, 2 pending and 5 blocked. This page never states a state that `REQUIREMENTS.md` does not.
+The official state of each capability is in `REQUIREMENTS.md`. The register has 59 requirements: 43 implemented, 9 prototype, 7 planned and 0 validated. By progress: 43 done, 9 partial, 2 pending and 5 blocked. This page never states a state that `REQUIREMENTS.md` does not.
 
 ## Open questions
 

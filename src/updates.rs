@@ -7,6 +7,12 @@
 //! The names of the packages are the ones the release workflow publishes: `bungard-gui-<version>-<system>.zip` (Windows) or `.tar.gz` (Linux and macOS), each with
 //! a `<name>.sha256` file, `<system>` being `windows-x86_64`, `windows-x86`, `linux-x86_64`, `macos-arm64` or `macos-x86_64`.
 //!
+//! A signature of a package does not say which program, version or system the package is for, and every program of the suite is signed with the same key. So a release also
+//! publishes its record, `eh3d-release.json` (the repository, the version and, for every file, its name, architecture, size and SHA-256), signed the same way
+//! (`eh3d-release.json.sig`). A version later than [`LAST_WITHOUT_RECORD`], the last one published without it, is installed only with a signed record that names this
+//! repository, this version and the downloaded package, whatever the settings say; so is any release that publishes the record or its signature. Earlier releases, which
+//! publish neither, are judged by their checksum and signature as before.
+//!
 //! A running program cannot be overwritten on Windows, but it can be renamed: the running file becomes `<name>.previous` and the new one takes its name. On the
 //! other systems the old file is copied to `<name>.previous` and the new one replaces it in one atomic step. The program is restarted afterwards to use the new one.
 
@@ -25,6 +31,14 @@ const MAX_JSON_BYTES: u64 = 4 * 1024 * 1024;
 const MAX_SUM_BYTES: u64 = 4 * 1024;
 const MAX_PACKAGE_BYTES: u64 = 400 * 1024 * 1024;
 const MAX_PROGRAM_BYTES: u64 = 600 * 1024 * 1024;
+const MAX_RECORD_BYTES: u64 = 256 * 1024;
+/// The record of a release and its signature.
+pub const RECORD: &str = "eh3d-release.json";
+pub const RECORD_SIG: &str = "eh3d-release.json.sig";
+/// The last version of the program that was published without a record: every later one has it.
+pub const LAST_WITHOUT_RECORD: &str = "0.3.0";
+/// What the record of a release of this program names as its repository.
+pub const REPOSITORY: &str = "JuanenRac/EH3D-BUNGARD-GUI";
 
 /// What is asked of the network.
 #[derive(Debug, Clone)]
@@ -174,6 +188,9 @@ pub struct Package {
     pub sum_url: String,
     /// The `.sig` file of the package (an OpenSSH signature of the release key), when the release publishes one.
     pub sig_url: Option<String>,
+    /// The record of the release and its signature, when the release publishes them.
+    pub record_url: Option<String>,
+    pub record_sig_url: Option<String>,
     pub size: u64,
     /// The checksum the API itself gives for the package (`sha256:...`), when it does; it has to agree with the checksum file.
     pub digest: Option<String>,
@@ -283,11 +300,14 @@ pub fn parse_release(text: &str, label: &str, api_url: &str) -> Done<Release> {
             };
             let (url, sum_url) = (url_of(p), url_of(sum));
             let sig_url = find(&wanted_sig).map(url_of);
+            let record_url = find(RECORD).map(url_of);
+            let record_sig_url = find(RECORD_SIG).map(url_of);
             if !address_allowed(&url, api_url)
                 || !address_allowed(&sum_url, api_url)
-                || sig_url
-                    .as_deref()
-                    .is_some_and(|u| !address_allowed(u, api_url))
+                || [&sig_url, &record_url, &record_sig_url]
+                    .into_iter()
+                    .flatten()
+                    .any(|u| !address_allowed(u, api_url))
             {
                 return Err(Failure::Refused(
                     "the package is not at a secure address".into(),
@@ -298,6 +318,8 @@ pub fn parse_release(text: &str, label: &str, api_url: &str) -> Done<Release> {
                 url,
                 sum_url,
                 sig_url,
+                record_url,
+                record_sig_url,
                 size: p.get("size").and_then(|n| n.as_u64()).unwrap_or(0),
                 digest: p
                     .get("digest")
@@ -489,6 +511,105 @@ pub fn check_signature(cfg: &Config, pkg: &Package, file: &Path) -> Done<bool> {
     };
     let text = read_text(cfg, url, crate::sshsig::MAX_SIGNATURE_BYTES)?;
     crate::sshsig::verify_file(&text, file).map_err(Failure::Signature)?;
+    Ok(true)
+}
+
+// ---- the record of the release
+
+/// Whether the release must have its record: it publishes the record or its signature, or its version is later than the last one published without.
+pub fn record_expected(version: &str, pkg: &Package) -> bool {
+    pkg.record_url.is_some()
+        || pkg.record_sig_url.is_some()
+        || is_newer(version, LAST_WITHOUT_RECORD)
+}
+
+/// What a record has to say about the downloaded package.
+#[derive(Debug, Clone, Copy)]
+pub struct Expected<'a> {
+    pub version: &'a str,
+    pub name: &'a str,
+    pub label: &'a str,
+    /// The SHA-256 of the file as it arrived, in lower-case hexadecimal.
+    pub sha256: &'a str,
+}
+
+/// Checks that `record` (the text of `eh3d-release.json`) is signed by the key `key_b64` (`signature`, the text of its `.sig`) and names this repository, version and package.
+pub fn check_record_with(
+    key_b64: &str,
+    record: &str,
+    signature: &str,
+    want: Expected,
+) -> Result<(), String> {
+    crate::sshsig::verify_with(signature, key_b64, &mut record.as_bytes())
+        .map_err(|e| format!("{RECORD}: {e}"))?;
+    read_record(record, want)
+}
+
+/// The part of [`check_record_with`] that reads the record.
+pub fn read_record(record: &str, want: Expected) -> Result<(), String> {
+    let bad = || format!("{RECORD} is not a record of a release");
+    let v: serde_json::Value = serde_json::from_str(record).map_err(|_| bad())?;
+    let s = |x: &serde_json::Value, k: &str| x.get(k).and_then(|y| y.as_str()).map(String::from);
+    if s(&v, "format").as_deref() != Some("eh3d-release")
+        || v.get("format_version").and_then(|x| x.as_u64()) != Some(1)
+    {
+        return Err(bad());
+    }
+    if s(&v, "repository").as_deref() != Some(REPOSITORY) {
+        return Err(format!("{RECORD} is the record of another program"));
+    }
+    if s(&v, "version").as_deref() != Some(want.version) {
+        return Err(format!(
+            "{RECORD} is not the record of the version {}",
+            want.version
+        ));
+    }
+    let files = v.get("files").and_then(|x| x.as_array()).ok_or_else(bad)?;
+    let mut named = files
+        .iter()
+        .filter(|f| s(f, "name").as_deref() == Some(want.name));
+    let (Some(file), None) = (named.next(), named.next()) else {
+        return Err(format!("{RECORD} does not name {} once", want.name));
+    };
+    if s(file, "sha256").as_deref() != Some(want.sha256) {
+        return Err(format!("{} is not the file that {RECORD} names", want.name));
+    }
+    if !matches!(s(file, "arch").as_deref(), Some(a) if a == want.label || a == "any") {
+        return Err(format!(
+            "{RECORD} says {} is built for another system",
+            want.name
+        ));
+    }
+    Ok(())
+}
+
+/// Checks the record of the release for the downloaded package. `Ok(true)`: it was demanded and it agrees. `Ok(false)`: an earlier release that publishes none.
+pub fn check_record(
+    cfg: &Config,
+    version: &str,
+    label: &str,
+    pkg: &Package,
+    file: &Path,
+) -> Done<bool> {
+    if !record_expected(version, pkg) {
+        return Ok(false);
+    }
+    let (Some(record_url), Some(sig_url)) = (&pkg.record_url, &pkg.record_sig_url) else {
+        return Err(Failure::Signature(format!(
+            "the release {version} must have {RECORD} and {RECORD_SIG}, and it does not"
+        )));
+    };
+    let record = read_text(cfg, record_url, MAX_RECORD_BYTES)?;
+    let signature = read_text(cfg, sig_url, crate::sshsig::MAX_SIGNATURE_BYTES)?;
+    let sha256 = sha256_file(file).map_err(|e| Failure::Disk(e.to_string()))?;
+    let want = Expected {
+        version,
+        name: &pkg.name,
+        label,
+        sha256: &sha256,
+    };
+    check_record_with(crate::sshsig::RELEASE_KEY, &record, &signature, want)
+        .map_err(Failure::Signature)?;
     Ok(true)
 }
 
@@ -1012,6 +1133,19 @@ fn run_update(
             return Err(e);
         }
     };
+    // the record of the release: demanded for every version later than the last one published without it, whatever the settings say
+    let recorded = match check_record(cfg, &release.version, t.label, &pkg, &file) {
+        Ok(recorded) => recorded,
+        Err(e) => {
+            step(st, Step::Verify, StepState::Failed, 0.0);
+            return Err(e);
+        }
+    };
+    if recorded {
+        say(st, "the signed record of the release agrees".into());
+    }
+    // a record that was accepted is a signature of the release key over the checksum of the package
+    let signed = signed || recorded;
     say(
         st,
         if signed {
@@ -1775,6 +1909,195 @@ aC1lZDI1NTE5AAAAQG5dEl9fVQM27oM/I+yNF5MJJCsAx6irR57Sd3Qow+H/e9KB/Wkury
         ));
     }
 
+    // A record of version 0.3.1 and its signature, made by `ssh-keygen -Y sign -n eh3d-release` with a key that exists only for these tests.
+    const RECORD_KEY: &str = "AAAAC3NzaC1lZDI1NTE5AAAAIAFUsLcCqoMDBShu4SfB1yzrFwOeU6b6ZcgYALJONIgu";
+    const RECORD_TEXT: &str = r#"{
+  "format": "eh3d-release",
+  "format_version": 1,
+  "repository": "JuanenRac/EH3D-BUNGARD-GUI",
+  "version": "0.3.1",
+  "files": [
+    {
+      "name": "bungard-gui-0.3.1-linux-x86_64.tar.gz",
+      "arch": "linux-x86_64",
+      "size": 23,
+      "sha256": "385a866ef9fe053776ac449c66414ca6889c2310416f2661e3137d8d6665c573"
+    }
+  ]
+}
+"#;
+    const RECORD_SIGNATURE: &str = "-----BEGIN SSH SIGNATURE-----
+U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgAVSwtwKqgwMFKG7hJ8HXLOsXA5
+5TpvplyBgAsk40iC4AAAAMZWgzZC1yZWxlYXNlAAAAAAAAAAZzaGE1MTIAAABTAAAAC3Nz
+aC1lZDI1NTE5AAAAQBeERe+KxKetFBuY3TKzlQf9Tyl9g1gPI82rxpBxKcEHW9oAsLJUxX
+MP5ybj3XrHMeWyyalsFfXyuNONOP/JdAI=
+-----END SSH SIGNATURE-----
+";
+    const PACKAGE_SHA: &str = "385a866ef9fe053776ac449c66414ca6889c2310416f2661e3137d8d6665c573";
+
+    fn wanted() -> Expected<'static> {
+        Expected {
+            version: "0.3.1",
+            name: "bungard-gui-0.3.1-linux-x86_64.tar.gz",
+            label: "linux-x86_64",
+            sha256: PACKAGE_SHA,
+        }
+    }
+
+    #[test]
+    fn a_signed_record_is_taken_only_for_what_it_names() {
+        let check = |w| check_record_with(RECORD_KEY, RECORD_TEXT, RECORD_SIGNATURE, w);
+        assert_eq!(check(wanted()), Ok(()));
+        let other_sum = "0".repeat(64);
+        for (want, said) in [
+            (
+                Expected {
+                    version: "0.3.2",
+                    ..wanted()
+                },
+                "version 0.3.2",
+            ),
+            (
+                Expected {
+                    name: "bungard-gui-0.3.1-macos-arm64.tar.gz",
+                    ..wanted()
+                },
+                "does not name",
+            ),
+            (
+                Expected {
+                    label: "macos-arm64",
+                    ..wanted()
+                },
+                "another system",
+            ),
+            (
+                Expected {
+                    sha256: &other_sum,
+                    ..wanted()
+                },
+                "is not the file",
+            ),
+        ] {
+            let error = check(want).unwrap_err();
+            assert!(error.contains(said), "{error}");
+        }
+        // a record changed after it was signed, and the same record against the key of the releases
+        let changed = RECORD_TEXT.replace("0.3.1", "0.3.2");
+        assert!(check_record_with(RECORD_KEY, &changed, RECORD_SIGNATURE, wanted()).is_err());
+        assert!(check_record_with(
+            crate::sshsig::RELEASE_KEY,
+            RECORD_TEXT,
+            RECORD_SIGNATURE,
+            wanted()
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn what_a_record_says_is_read_with_care() {
+        assert_eq!(read_record(RECORD_TEXT, wanted()), Ok(()));
+        for (from, to, said) in [
+            ("EH3D-BUNGARD-GUI", "EH3D-SERVER", "another program"),
+            ("\"eh3d-release\"", "\"something\"", "not a record"),
+            (
+                "\"format_version\": 1",
+                "\"format_version\": 2",
+                "not a record",
+            ),
+            ("\"files\"", "\"other\"", "not a record"),
+            ("linux-x86_64\",", "linux-aarch64\",", "another system"),
+        ] {
+            let text = RECORD_TEXT.replace(from, to);
+            assert_ne!(text, RECORD_TEXT, "{from}");
+            let error = read_record(&text, wanted()).unwrap_err();
+            assert!(error.contains(said), "{from}: {error}");
+        }
+        for text in ["", "[]", "{}", "not json"] {
+            assert!(read_record(text, wanted()).is_err(), "{text}");
+        }
+    }
+
+    #[test]
+    fn a_later_release_is_installed_only_with_its_signed_record() {
+        let plain = Package {
+            name: package_name("0.3.1", "linux-x86_64"),
+            url: "https://example.test/p".into(),
+            sum_url: "https://example.test/s".into(),
+            sig_url: None,
+            record_url: None,
+            record_sig_url: None,
+            size: 0,
+            digest: None,
+        };
+        // the version decides, so taking the record away does not make a release an old one
+        for version in ["0.3.0.1", "0.3.1", "0.4.0", "1.0.0"] {
+            assert!(record_expected(version, &plain), "{version}");
+        }
+        for version in ["0.2.0", "0.3.0", "0.3"] {
+            assert!(!record_expected(version, &plain), "{version}");
+        }
+        let recorded = Package {
+            record_url: Some("https://example.test/r".into()),
+            ..plain.clone()
+        };
+        let signed_only = Package {
+            record_sig_url: Some("https://example.test/rs".into()),
+            ..plain.clone()
+        };
+        assert!(record_expected("0.2.0", &recorded) && record_expected("0.2.0", &signed_only));
+
+        // the whole update: a later version without the record, and with a record signed by another key
+        for (scratch_name, with_record, said) in [
+            ("norecord", false, "must have eh3d-release.json"),
+            ("otherrecord", true, "not made with the key"),
+        ] {
+            let d = scratch(scratch_name);
+            let pkg = tar_gz(b"NEW PROGRAM");
+            let name = package_name("0.3.1", "linux-x86_64");
+            let mut routes = HashMap::new();
+            routes.insert(format!("/pkg/{name}"), pkg.clone());
+            routes.insert(
+                format!("/pkg/{name}.sha256"),
+                format!("{}  {name}\n", hex(&pkg)).into_bytes(),
+            );
+            let mut latest = release_json(0, "linux-x86_64", "0.3.1", true);
+            if with_record {
+                routes.insert("/pkg/record".into(), RECORD_TEXT.as_bytes().to_vec());
+                routes.insert(
+                    "/pkg/record.sig".into(),
+                    RECORD_SIGNATURE.as_bytes().to_vec(),
+                );
+                latest = latest.replace(
+                    r#""assets":["#,
+                    r#""assets":[{"name":"eh3d-release.json","browser_download_url":"http://127.0.0.1:0/pkg/record"},{"name":"eh3d-release.json.sig","browser_download_url":"http://127.0.0.1:0/pkg/record.sig"},"#,
+                );
+            }
+            routes.insert(
+                "/latest".into(),
+                latest
+                    .replace("127.0.0.1:0", "127.0.0.1:{PORT}")
+                    .into_bytes(),
+            );
+            let fake = serve(routes);
+            let st: State = Arc::default();
+            let c = cfg(fake.port);
+            let found = wait(&st, spawn_check(&st, c.clone(), Some("linux-x86_64")));
+            let t = target(&d, "linux-x86_64");
+            let cancel = Arc::new(AtomicBool::new(false));
+            let done = wait(
+                &st,
+                spawn_update(&st, c, found.release.unwrap(), t.clone(), cancel),
+            );
+            let error = done.error.clone().unwrap_or_default();
+            assert!(error.contains(said), "{scratch_name}: {error}");
+            assert!(!done.restart_needed && done.signed.is_none());
+            assert_eq!(std::fs::read(&t.exe).unwrap(), b"OLD");
+            assert!(!previous_path(&t.exe).exists() && !staging_path(&t.exe).exists());
+            let _ = std::fs::remove_dir_all(d);
+        }
+    }
+
     #[test]
     fn a_release_that_is_not_newer_or_has_no_package_changes_nothing() {
         let d = scratch("notnewer");
@@ -1797,6 +2120,8 @@ aC1lZDI1NTE5AAAAQG5dEl9fVQM27oM/I+yNF5MJJCsAx6irR57Sd3Qow+H/e9KB/Wkury
             url: "http://127.0.0.1:1/p".into(),
             sum_url: "http://127.0.0.1:1/s".into(),
             sig_url: None,
+            record_url: None,
+            record_sig_url: None,
             size: 0,
             digest: None,
         };

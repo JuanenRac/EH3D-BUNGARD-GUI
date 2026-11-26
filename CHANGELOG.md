@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **Security: a later release is installed only with its signed record:** `eh3d-release.json`, signed with the key of the releases, names the program, the version and every package with its system and SHA-256. Every version after 0.3.0 must have it, whatever the settings say, and a record that any release publishes must agree with the download; earlier releases are judged by their checksum and signature as before.
 - **Security: the update asks the package which version it is:** besides the checksum and the signature, the program must be in the folder of the version the release announces (`bungard-gui-<version>-<system>`), or the package is not installed. The published releases are packed that way.
 - Fix the file of the job that was left in the middle (safety): a file cut inside its last line could read a shorter count of holes done (41 as 4), and a damaged one with millions of copies or a hole at no place could stop the window or mark holes that were never drilled. A cut or impossible file is no longer offered.
 - The shared workflow checker (`tools/workflow_hygiene.py`) is the current one of the documentation hub: the filters under a trigger (branches, paths, types) are no longer read as events.

@@ -2502,6 +2502,8 @@ mod updates_tests {
             url: "https://example.test/p".into(),
             sum_url: "https://example.test/s".into(),
             sig_url: None,
+            record_url: None,
+            record_sig_url: None,
             size: 0,
             digest: None,
         }

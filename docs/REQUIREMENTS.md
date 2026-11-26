@@ -2,7 +2,7 @@
 
 This register is the single source of the state of each capability: `STATUS.md` and the README files cite it and never state a state that it does not. A state is one of `planned`, `prototype`, `implemented` and `validated`. `validated` means that a person has run the capability on a real machine and the evidence of the manifest says `bench` or `field`; nothing here is validated, because no job has been driven from this window on a real machine; it has run on the simulator of the engines of the drilling and routing programs only.
 
-The register has 58 requirements: 42 implemented, 9 prototype, 7 planned and 0 validated. By progress: 42 done, 9 partial, 2 pending and 5 blocked. High coverage is not proof of correctness, so each row says how it is checked: the test that names it, and what it shows.
+The register has 59 requirements: 43 implemented, 9 prototype, 7 planned and 0 validated. By progress: 43 done, 9 partial, 2 pending and 5 blocked. High coverage is not proof of correctness, so each row says how it is checked: the test that names it, and what it shows.
 
 ## How to read the register
 
@@ -107,3 +107,9 @@ The check is `tests/reqs.rs`: it reads this table, finds each test and fails whe
 | BGUI-056 | The CCD Premium and the CCD XL are driven. | planned | blocked | none | `planned:other_models::the_premium_and_the_xl_are_driven` | Needs their protocol and a machine. |
 | BGUI-057 | The job goes through a running server and a running node to a machine. | planned | blocked | none | `planned:real_link::a_job_goes_through_a_running_server_and_node` | Needs the server, the node and a machine. |
 | BGUI-058 | A release package is published and the window updates itself from it. | planned | blocked | none | `planned:real_release::the_window_updates_itself_from_a_published_release` | Needs a published release. |
+
+## Release records
+
+| ID | Requirement | State | Progress | Evidence | Test | Limits |
+|---|---|---|---|---|---|---|
+| BGUI-059 | A release later than the last one published without a record is installed only with its signed record, which names the program, the version and the package. | implemented | done | host-test | `src/updates::a_later_release_is_installed_only_with_its_signed_record` | - |

@@ -112,7 +112,7 @@ pub(crate) struct Preview {
 /// The largest file the preview reads (a bigger one would make the window wait).
 const PREVIEW_MAX_BYTES: u64 = 8_000_000;
 
-/// Reads a drilling or routing file to draw it; `None` when it is neither, is too big or cannot be read. `unit_mm` is the unit of the coordinates of a drilling
+/// Reads a drilling or routing file to draw it; `None` when it is neither, is too big or cannot be read whole. `unit_mm` is the unit of the coordinates of a drilling
 /// file, the one of the settings (0.0254 for mils), so the preview shows the board as the job will have it.
 pub(crate) fn preview_of(path: &Path, unit_mm: f64) -> Option<Preview> {
     let name = path.file_name()?.to_string_lossy().to_string();
@@ -122,7 +122,8 @@ pub(crate) fn preview_of(path: &Path, unit_mm: f64) -> Option<Preview> {
     let (mut holes, mut paths) = (Vec::new(), Vec::new());
     let drill = match eh3d_archive::kind_of(&name) {
         Kind::Drill => {
-            let file = eh3d_drillpro::ncd::parse(&crate::jobs::read_latin1(path).ok()?).ok()?;
+            // a file that is not read whole is not drawn: the holes alone would show another job
+            let file = crate::jobs::whole_drill(&crate::jobs::read_latin1(path).ok()?)?;
             for h in &file.holes {
                 holes.push((
                     h.x_mil as f64 * unit_mm,
@@ -139,10 +140,12 @@ pub(crate) fn preview_of(path: &Path, unit_mm: f64) -> Option<Preview> {
             {
                 return None;
             }
-            let plot = eh3d_routepro::hpgl::parse_with(
-                &crate::jobs::read_latin1(path).ok()?,
-                eh3d_routepro::hpgl::SEGMENTS_PER_CIRCLE,
-            );
+            let text = crate::jobs::read_latin1(path).ok()?;
+            if crate::jobs::unread_plot(&text).is_some() {
+                return None;
+            }
+            let plot =
+                eh3d_routepro::hpgl::parse_with(&text, eh3d_routepro::hpgl::SEGMENTS_PER_CIRCLE);
             for p in &plot.paths {
                 paths.push(
                     p.points
@@ -1116,6 +1119,27 @@ mod tests {
         let tenths = preview_of(&file, 0.00254).unwrap();
         assert!((mils.holes[0].0 - 25.4).abs() < 1e-9 && (mils.holes[0].1 - 50.8).abs() < 1e-9);
         assert!((tenths.holes[0].0 - 2.54).abs() < 1e-9 && (tenths.holes[0].1 - 5.08).abs() < 1e-9);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_file_that_is_not_read_whole_is_not_drawn_in_the_preview() {
+        let dir = std::env::temp_dir().join(format!("eh3d-preview-part-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        // a slot beside a hole: drawing only the hole would show another job
+        let drill = dir.join("slot.ncd");
+        std::fs::write(
+            &drill,
+            "M48\nINCH\nT1C0.0315\n%\nT1\nX1000Y2000\nG00X2000Y2000\nM15\nG01X3000Y2000\nM16\nM30\n",
+        )
+        .unwrap();
+        assert!(preview_of(&drill, 0.0254).is_none());
+        // a coordinate that cannot be read pairs the ones after it the other way round
+        let route = dir.join("bad.plt");
+        std::fs::write(&route, "IN;SP1;PU0,0;PD400,x,400,800,0,0;\n").unwrap();
+        assert!(preview_of(&route, 0.0254).is_none());
+        std::fs::write(&route, "IN;SP1;PU0,0;PD400,0,400,800;\n").unwrap();
+        assert_eq!(preview_of(&route, 0.0254).unwrap().count, 1);
         let _ = std::fs::remove_dir_all(&dir);
     }
 

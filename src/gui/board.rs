@@ -1747,6 +1747,24 @@ impl App {
                 Act::Tab(i as u8),
             );
         }
+        // the format of the drill files that declare none, next to the title of the tab of the job
+        if self.settings_tab == 2 {
+            let lang = super::drill_lang(self.lang);
+            let format = format!(
+                "{}: {}",
+                eh3d_drillpro::texts::tr(lang, eh3d_drillpro::texts::Text::FormatLabel),
+                eh3d_drillpro::drill_format::label(lang, self.drill.engine.drill_format())
+            );
+            cv.chip(
+                x + 430.0,
+                y + 14.0,
+                380.0,
+                38.0,
+                &format,
+                false,
+                Act::AskDrillFormat,
+            );
+        }
         let top = y + 120.0;
         match self.settings_tab {
             0 => {

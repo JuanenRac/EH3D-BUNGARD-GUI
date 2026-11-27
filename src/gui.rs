@@ -118,6 +118,10 @@ enum Act {
     Entry(usize),
     Show(Modal),
     CloseModal,
+    /// The window of the number format of the drill files, opened from the settings.
+    AskDrillFormat,
+    /// A choice of that window, by its place in the list (the first is no format).
+    DrillFormat(u8),
     Board(BoardPick),
     BoardAdj(bool, f32),
     ToolAdj(Program, usize, usize, f32),
@@ -313,6 +317,8 @@ pub struct App {
     screen: Screen,
     drill: Side,
     route: Side,
+    /// The drill files that were refused because they declare no number format, while the person is asked for it.
+    format_ask: Vec<PathBuf>,
     table: Table,
     layers: [bool; 4],
     remember: bool,
@@ -576,6 +582,7 @@ impl App {
             settings_path,
             lang,
             theme: Theme::for_id(theme_id),
+            format_ask: Vec::new(),
             drill: Side::new(Box::new(drill)),
             route: Side::new(Box::new(route)),
             table: jobs::DEFAULT_TABLE,
@@ -903,6 +910,7 @@ impl App {
             format!("loading the drilling file {}", path.display()),
         );
         self.drill_path = Some(path.to_path_buf());
+        let asked = path.to_path_buf();
         let turned = self.source_for(path, true);
         let path = turned.as_path();
         self.drill.engine.load(path);
@@ -948,7 +956,12 @@ impl App {
             None => {
                 let why = self.drill.engine.error().unwrap_or("?").to_string();
                 crate::applog::error("file", format!("the drilling file was not loaded: {why}"));
-                self.message = Some(why)
+                self.message = Some(why);
+                // a file that does not say how its numbers are written is not guessed: the person is asked
+                if self.drill.engine.format_refused() {
+                    self.format_ask = vec![asked];
+                    self.show_modal(Modal::DrillFormat);
+                }
             }
         }
         self.drill.last_done = 0;
@@ -1861,6 +1874,7 @@ impl App {
                     | Act::UndoEdit
                     | Act::RedoEdit
                     | Act::RemoveTool(..)
+                    | Act::DrillFormat(_)
             )
         {
             return;
@@ -1891,6 +1905,11 @@ impl App {
             }
             Act::Show(m) => self.show_modal(m),
             Act::CloseModal => self.modal = None,
+            Act::AskDrillFormat => {
+                self.format_ask.clear();
+                self.show_modal(Modal::DrillFormat);
+            }
+            Act::DrillFormat(i) => self.choose_drill_format(usize::from(i)),
             Act::Board(p) => self.board_pick(p),
             Act::BoardAdj(width, d) => self.board_adjust(width, d),
             Act::ToolAdj(p, row, c, d) => self.tool_adjust(p, row, c, d),

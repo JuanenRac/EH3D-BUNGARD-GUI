@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The preview of the Open window draws only files that are read whole (safety):** a drilling file with slots was drawn with its holes alone, and a plot with a number that cannot be read with its points paired the other way round, as if that were the job. Such a file has no preview now. 1 test. Host-tested only.
+
 - **A file that is not read whole is not merged, turned, edited or taken (safety):** merging or turning a drilling file with slots wrote a copy with only its holes, which then loaded without a word; a plot with a coordinate that is not a number lost it, so the coordinates after it were paired the other way round. Host-tested only.
 
 - **`pt-br` is Portuguese and `fr-ca` is French:** `--lang` with one of these codes of earlier versions now gives the Portuguese of Portugal or French instead of English with a notice, the same as a settings or machine file that names them.

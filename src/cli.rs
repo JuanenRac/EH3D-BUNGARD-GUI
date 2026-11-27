@@ -78,7 +78,7 @@ pub fn usage() -> String {
         "bungard-gui: the modern interface for the Bungard machines
 
   bungard-gui [FILE...] [--drill FILE.NCD] [--route FILE.PLT] [--zip JOB.ZIP]
-              [--lang CODE] [--theme NAME] [--data DIR] [--connection FILE]
+              [--lang CODE] [--theme NAME] [--data DIR] [--drill-format NAME] [--connection FILE]
               [--screen launcher|viewer] [--machine MODEL]
 
   FILE        opened as what its extension says (a drilling file, a routing file or a ZIP archive)
@@ -123,6 +123,8 @@ pub struct Options {
     /// The drilling file (`--drill FILE`) and the routing file (`--route FILE`) to show.
     pub drill: Option<PathBuf>,
     pub route: Option<PathBuf>,
+    /// `--drill-format NAME`: how drill files that do not declare their number format are read (`ask` refuses them again); it is kept in the data folder.
+    pub drill_format: Option<Option<eh3d_drillpro::drill_format::NumberFormat>>,
     /// A job packed in a ZIP archive (`--zip FILE`): its first drilling file and its first routing file are shown.
     pub zip: Option<PathBuf>,
     /// Files given without an option: each one is opened as what its extension says (a drilling file, a routing file or a ZIP archive).
@@ -229,6 +231,17 @@ impl Options {
                 "--route" => o.route = Some(PathBuf::from(value("--route")?)),
                 "--zip" => o.zip = Some(PathBuf::from(value("--zip")?)),
                 "--data" => o.data = Some(PathBuf::from(value("--data")?)),
+                "--drill-format" => {
+                    let name = value("--drill-format")?;
+                    let chosen = eh3d_drillpro::drill_format::NumberFormat::from_setting(&name)
+                        .map_err(|wrong| {
+                            format!(
+                                "--drill-format '{wrong}': {}",
+                                eh3d_drillpro::drill_format::how_to_choose("en")
+                            )
+                        })?;
+                    o.drill_format = Some(chosen);
+                }
                 "--machine" => o.machine = Some(value("--machine")?),
                 "--connection" => o.connection = Some(PathBuf::from(value("--connection")?)),
                 "--screen" => {

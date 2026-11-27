@@ -170,7 +170,11 @@ mod tests {
         let mut a = app();
         a.lang = Lang::En;
         let ncd = std::env::temp_dir().join(format!("eh3d-bg-report-{}.ncd", std::process::id()));
-        std::fs::write(&ncd, "%\nT10\nX1000Y1000\nX2000Y1000\nT30\nX100Y100\nM30\n").unwrap();
+        std::fs::write(
+            &ncd,
+            "M48\n;FILE_FORMAT=3:3\nINCH,TZ\n%\nT10\nX1000Y1000\nX2000Y1000\nT30\nX100Y100\nM30\n",
+        )
+        .unwrap();
         a.open_path(&ncd);
         a.report_open();
         let all = a.report_lines.join("\n");

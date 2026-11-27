@@ -1029,7 +1029,7 @@ mod reportcmd_tests {
     use std::path::Path;
 
     fn ncd(holes: usize) -> String {
-        let mut t = String::from("%\nT10\n");
+        let mut t = String::from("M48\n;FILE_FORMAT=3:3\nINCH,TZ\n%\nT10\n");
         for i in 0..holes {
             t.push_str(&format!("X{}Y1000\n", 1000 + (i % 200) * 10));
         }

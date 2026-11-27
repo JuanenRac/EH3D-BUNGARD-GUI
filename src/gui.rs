@@ -531,6 +531,10 @@ impl App {
                 .clone()
                 .unwrap_or_else(|| eh3d_drillpro::config::find_data_dir(file))
         };
+        // `--drill-format` is kept with the machine file, where the engine reads it
+        if let Some(chosen) = o.drill_format {
+            let _ = eh3d_drillpro::drill_format::save(&data("DRILLPRO.DCF"), chosen);
+        }
         let mut drill = eh3d_drillpro::app::App::new(dlang, &data("DRILLPRO.DCF"));
         let mut route = eh3d_routepro::app::App::new(dlang, &data("ROUTEPRO.RCF"));
         let mut connection = String::from("demo");
@@ -903,10 +907,10 @@ impl App {
         let path = turned.as_path();
         self.drill.engine.load(path);
         // the size limits of the readers (reader_limits.cfg of the shared crate): a file past a hard limit is not drawn, one past a warning limit is drawn and said
-        let (file, big) = match jobs::read_latin1(path)
-            .ok()
-            .and_then(|t| eh3d_drillpro::ncd::parse_limited(&t, &ReaderLimits::default()).ok())
-        {
+        let (file, big) = match jobs::read_latin1(path).ok().and_then(|t| {
+            let chosen = self.drill.engine.drill_format();
+            eh3d_drillpro::ncd::parse_as_limited(&t, chosen, &ReaderLimits::default()).ok()
+        }) {
             Some((f, verdict)) => (
                 Some(f),
                 eh3d_drillpro::summary::size_warning(verdict, self.lang),

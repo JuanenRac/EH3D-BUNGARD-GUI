@@ -15,6 +15,8 @@
 //!
 //! A running program cannot be overwritten on Windows, but it can be renamed: the running file becomes `<name>.previous` and the new one takes its name. On the
 //! other systems the old file is copied to `<name>.previous` and the new one replaces it in one atomic step. The program is restarted afterwards to use the new one.
+//! Linux refuses for a moment to start a program whose file is still open for writing ("Text file busy"), and the new one has just been written: the start is tried
+//! again for about a second and then told as a failure.
 
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -1203,12 +1205,25 @@ pub fn run_undo(st: &State, target: &Target) -> Done<String> {
     r
 }
 
-/// Starts the program again (the one now at `exe`) with the same arguments; the caller closes the window afterwards.
+/// How many times a program whose file is busy is started, and the pause between two tries: about a second in all.
+const BUSY_TRIES: u32 = 50;
+const BUSY_PAUSE: std::time::Duration = std::time::Duration::from_millis(20);
+
+/// Starts the program again (the one now at `exe`) with the same arguments; the caller closes the window afterwards. A start refused because the file is
+/// still open for writing is tried again, a limited number of times; every other error is given at once.
 pub fn restart(exe: &Path) -> std::io::Result<()> {
-    std::process::Command::new(exe)
-        .args(std::env::args_os().skip(1))
-        .spawn()
-        .map(|_| ())
+    let mut command = std::process::Command::new(exe);
+    command.args(std::env::args_os().skip(1));
+    let mut tries = 1;
+    loop {
+        match command.spawn() {
+            Err(e) if e.kind() == std::io::ErrorKind::ExecutableFileBusy && tries < BUSY_TRIES => {
+                tries += 1;
+                std::thread::sleep(BUSY_PAUSE);
+            }
+            other => return other.map(|_| ()),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -2180,5 +2195,39 @@ MP5ybj3XrHMeWyyalsFfXyuNONOP/JdAI=
             "{:?}",
             s.error
         );
+    }
+
+    // Linux does not start a program while its file is open for writing ("Text file busy"): here the file is held open on purpose.
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn a_new_program_still_open_for_writing_is_started_again_and_then_told() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = scratch("busy");
+        let exe = dir.join("later");
+        let mark = dir.join("started");
+        std::fs::write(&exe, format!("#!/bin/sh\n: > '{}'\n", mark.display())).unwrap();
+        std::fs::set_permissions(&exe, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let hold = || std::fs::OpenOptions::new().write(true).open(&exe).unwrap();
+        // closed a moment later: the program is started
+        let held = hold();
+        let release = std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(150));
+            drop(held);
+        });
+        restart(&exe).unwrap();
+        release.join().unwrap();
+        let began = std::time::Instant::now();
+        while !mark.exists() && began.elapsed().as_secs() < 10 {
+            std::thread::sleep(BUSY_PAUSE);
+        }
+        assert!(mark.exists());
+        // never closed: given up after a limited time and told
+        let held = hold();
+        let began = std::time::Instant::now();
+        let refused = restart(&exe).unwrap_err();
+        assert_eq!(refused.kind(), std::io::ErrorKind::ExecutableFileBusy);
+        assert!(began.elapsed().as_secs_f64() < 15.0);
+        drop(held);
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

@@ -118,7 +118,7 @@ mod tests {
     fn a_drilling_and_a_routing_file_give_their_counts_and_a_panel_multiplies_them() {
         let ncd = file(
             "a.ncd",
-            "%\nT10\nX1000Y1000\nX2000Y1000\nT30\nX100Y100\nM30\n",
+            "M48\n;FILE_FORMAT=3:3\nINCH,TZ\n%\nT10\nX1000Y1000\nX2000Y1000\nT30\nX100Y100\nM30\n",
         );
         let plt = file("a.plt", "IN;SP1;PU0,0;PD400,0,400,800;");
         let one = Options {

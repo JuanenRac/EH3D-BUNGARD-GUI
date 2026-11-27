@@ -2064,11 +2064,14 @@ mod tests {
             std::fs::write(&p, text).unwrap();
             p
         };
-        let good = write("good.ncd", "M48\nMETRIC\nT1C0.8\n%\nT1\nX1000Y1000\nM30\n");
+        let good = write(
+            "good.ncd",
+            "M48\n;FILE_FORMAT=3:3\nMETRIC,TZ\nT1C0.8\n%\nT1\nX1000Y1000\nM30\n",
+        );
         // a routed slot is not a hole: writing the file again from its holes would lose it
         let slot = write(
             "slot.ncd",
-            "M48\nMETRIC\nT1C0.8\n%\nT1\nX1000Y1000\nG00X2000Y2000\nM30\n",
+            "M48\n;FILE_FORMAT=3:3\nMETRIC,TZ\nT1C0.8\n%\nT1\nX1000Y1000\nG00X2000Y2000\nM30\n",
         );
         let plot = write("good.plt", "PU0,0;PD100,200,300,300;PU;\n");
         let bad = write("bad.plt", "PU0,0;PD100,2O0,300,300;PU;\n");

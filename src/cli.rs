@@ -78,7 +78,7 @@ pub fn usage() -> String {
         "bungard-gui: the modern interface for the Bungard machines
 
   bungard-gui [FILE...] [--drill FILE.NCD] [--route FILE.PLT] [--zip JOB.ZIP]
-              [--lang CODE] [--theme NAME] [--data DIR] [--connection FILE]
+              [--lang CODE] [--theme NAME] [--data DIR] [--drill-format NAME] [--connection FILE]
               [--screen launcher|viewer] [--machine MODEL]
 
   FILE        opened as what its extension says (a drilling file, a routing file or a ZIP archive)

@@ -144,7 +144,7 @@ jobs:
           name="bungard-gui-${version}-${MATRIX_LABEL}"
           mkdir "$name"
           cp "target/${MATRIX_TARGET}/release/bungard-gui${MATRIX_EXT}" "$name/"
-          cp LICENSE README.md CHANGELOG.md "$name/"
+          cp LICENSE README.md CHANGELOG.md docs/THIRD_PARTY_NOTICES "$name/"
           # the test files and the sample machine and tool files, as examples
           cp -r testdata "$name/examples"
           cp -r voices "$name/voices"

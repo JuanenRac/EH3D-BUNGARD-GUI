@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **Third-party notices in every package (`docs/THIRD_PARTY_NOTICES`):** the packages of the releases now carry the copyright notices and licence texts of the Rust crates and of the data the program is built with, and the CI fails when a new dependency or licence is not in the file.
+
 - **A drill file that does not declare its number format is refused until one is chosen (safety, changes what is accepted):** the window, the job tools and `--report` no longer read such a file (a machine file without a header, `INCH` alone) as mils without being told. Choose with `--drill-format mils` (the old reading), `inch-2.4-tz`, `inch-2.4-lz`, `metric-3.3-tz` or `metric-3.3-lz`; it is kept in `DRILLPRO.FMT` of the data folder and the message says so in the eight languages. The window has no menu for it yet.
 - **The example jobs declare their number format**, so they open without a choice.
 - **Turned, edited and merged drill files declare their format and keep their scale:** they are written in whole mils with `;FILE_FORMAT=3:3` and `INCH,TZ`; a turned copy of a file in millimetres was written under a `METRIC` header with numbers in mils and was read back at another scale.

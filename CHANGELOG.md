@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.3.4] - A window to choose the number format, rotated copies keep their scale and a safer restart (not tried on a machine)
+
 - **The restart after an update is tried again when the new program is still busy:** on Linux a file that is still open for writing is refused for a moment ("Text file busy"); the start is tried again for about a second and then told as a failure. 1 new test (Linux only).
 - **Third-party notices in every package (`docs/THIRD_PARTY_NOTICES`):** the packages of the releases now carry the copyright notices and licence texts of the Rust crates and of the data the program is built with, and the CI fails when a new dependency or licence is not in the file.
 

@@ -158,17 +158,21 @@ impl App {
         let out = dir.join(name);
         let text = if drill {
             let unit = self.drill.engine.settings().map_or(0.0254, |s| s.unit.mm());
+            // a file that is not read whole is not written again: the loader gets the original and refuses it
             jobs::read_latin1(path)
                 .ok()
-                .and_then(|t| eh3d_drillpro::ncd::parse(&t).ok())
+                .and_then(|t| jobs::whole_drill(&t))
                 .map(|f| rotated_drill_text(&f, &rot, unit))
         } else {
-            jobs::read_latin1(path).ok().map(|t| {
-                rotated_plot_text(
-                    &eh3d_routepro::hpgl::parse_with(&t, self.route_segments()),
-                    &rot,
-                )
-            })
+            jobs::read_latin1(path)
+                .ok()
+                .filter(|t| jobs::unread_plot(t).is_none())
+                .map(|t| {
+                    rotated_plot_text(
+                        &eh3d_routepro::hpgl::parse_with(&t, self.route_segments()),
+                        &rot,
+                    )
+                })
         };
         match text {
             Some(t) if std::fs::write(&out, &t).is_ok() => out,

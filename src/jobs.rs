@@ -78,6 +78,20 @@ pub fn read_latin1(path: &std::path::Path) -> std::io::Result<String> {
     Ok(std::fs::read(path)?.iter().map(|&c| c as char).collect())
 }
 
+/// The drilling file of `text` when every line of it was read: a slot or a routed move the reader leaves out would be lost in a copy written again from the holes.
+pub fn whole_drill(text: &str) -> Option<eh3d_drillpro::ncd::DrillFile> {
+    eh3d_drillpro::ncd::parse(text)
+        .ok()
+        .filter(|f| f.ignored.is_empty() && f.ignored_more == 0)
+}
+
+/// Why a plot is not read whole: a number the reader would drop, which moves every coordinate after it to another place.
+pub fn unread_plot(text: &str) -> Option<String> {
+    eh3d_bungard_formats::hpgl::diagnose(text)
+        .first()
+        .map(ToString::to_string)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -443,7 +443,7 @@ impl App {
         };
         let Some(mut file) = jobs::read_latin1(&path)
             .ok()
-            .and_then(|t| eh3d_drillpro::ncd::parse(&t).ok())
+            .and_then(|t| jobs::whole_drill(&t))
         else {
             return false;
         };
@@ -477,6 +477,7 @@ impl App {
         };
         let Some(mut plot) = jobs::read_latin1(&path)
             .ok()
+            .filter(|t| jobs::unread_plot(t).is_none())
             .map(|t| eh3d_routepro::hpgl::parse_with(&t, self.route_segments()))
         else {
             return false;

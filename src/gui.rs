@@ -1012,6 +1012,14 @@ impl App {
         } else {
             path
         };
+        // a plot with a number that cannot be read is not taken: nothing of it is shown or cut
+        if let Some(why) = jobs::read_latin1(path)
+            .ok()
+            .and_then(|t| jobs::unread_plot(&t))
+        {
+            self.say_not_whole(path, Some(why));
+            return;
+        }
         crate::applog::info(
             "file",
             format!("loading the routing file {}", path.display()),

@@ -990,6 +990,18 @@ log_level = loud
     }
 
     #[test]
+    fn a_settings_file_with_the_code_of_a_former_variant_is_read_and_kept_under_the_present_code() {
+        for (written, lang, code) in [("pt-br", Lang::Pt, "pt"), ("fr-ca", Lang::Fr, "fr")] {
+            let s = Settings::parse(&format!("lang = {written}\n"));
+            assert_eq!(s.lang, lang, "{written}");
+            assert!(
+                s.to_text().contains(&format!("\nlang = {code}\n")),
+                "{written}"
+            );
+        }
+    }
+
+    #[test]
     fn a_wrong_setting_keeps_the_default() {
         let s =
             Settings::parse("choice = fast\nlang = xx\ntheme = pink\nsomething else\nlang = pt\n");

@@ -40,10 +40,11 @@ pub const COMBOS: [&str; 10] = [
     "tabs",
 ];
 
-/// The languages the window had and has no more: asking for one of them gives English and a notice, never an error.
-pub const RETIRED_LANGS: [&str; 29] = [
+/// The languages the window had and has no more: asking for one of them gives English and a notice, never an error. `pt-br` and `fr-ca` are not among them: they
+/// are read as `pt` (the Portuguese of Portugal) and `fr`.
+pub const RETIRED_LANGS: [&str; 27] = [
     "bg", "hr", "cs", "da", "nl", "et", "fi", "el", "hu", "ga", "lv", "lt", "mt", "pl", "ro", "sk",
-    "sl", "sv", "no", "is", "uk", "ru", "sr", "sq", "ca", "gl", "eu", "pt-br", "fr-ca",
+    "sl", "sv", "no", "is", "uk", "ru", "sr", "sq", "ca", "gl", "eu",
 ];
 
 /// The language a code of `--lang` gives, and whether it asked for a retired one (which gives English). A code that is neither is `None`.
@@ -601,7 +602,7 @@ mod tests {
             );
         }
         // written in other ways: capitals, an underscore, a region
-        for code in ["CS", "pt_BR", "fr-CA", "cs-CZ", "nl_NL"] {
+        for code in ["CS", "RU", "cs-CZ", "nl_NL"] {
             let o = parse(&format!("--lang {code}")).unwrap();
             assert_eq!(o.lang, Some(Lang::En), "{code}");
             assert!(o.language_notice().is_some(), "{code}");
@@ -624,6 +625,20 @@ mod tests {
         // none of the retired codes is a language of the program
         for l in Lang::ALL {
             assert!(!RETIRED_LANGS.contains(&l.code()), "{}", l.code());
+        }
+    }
+
+    #[test]
+    fn the_codes_of_the_former_variants_are_the_languages_of_the_program() {
+        for (code, lang) in [
+            ("pt-br", Lang::Pt),
+            ("pt_BR", Lang::Pt),
+            ("fr-ca", Lang::Fr),
+            ("fr-CA", Lang::Fr),
+        ] {
+            let o = parse(&format!("--lang {code}")).unwrap();
+            assert_eq!(o.lang, Some(lang), "{code}");
+            assert_eq!(o.language_notice(), None, "{code}");
         }
     }
 

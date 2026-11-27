@@ -53,13 +53,11 @@ pub fn rotated_drill_text(
     rot: &Rotation,
     unit_mm: f64,
 ) -> String {
-    let mut out = String::new();
-    if !file.diameters.is_empty() {
-        out.push_str("M48\n");
-        out.push_str(if file.metric { "METRIC\n" } else { "INCH\n" });
-        for (t, d) in &file.diameters {
-            out.push_str(&format!("T{t:02}C{d}\n"));
-        }
+    // the numbers written are the whole numbers the holes were read as, whatever the unit of the file was: the header declares them, with the diameters in inches
+    let mut out = format!("M48\n{}", eh3d_drillpro::ncd::MILS_DECLARATION);
+    for (t, d) in &file.diameters {
+        let inches = if file.metric { d / 25.4 } else { *d };
+        out.push_str(&format!("T{t:02}C{inches}\n"));
     }
     out.push_str("%\n");
     let mut tool = None;
@@ -105,10 +103,9 @@ impl App {
         let mut pts: Vec<(f64, f64)> = Vec::new();
         if let Some(p) = &self.drill_path {
             let unit = self.drill.engine.settings().map_or(0.0254, |s| s.unit.mm());
-            if let Some(f) = jobs::read_latin1(p)
-                .ok()
-                .and_then(|t| eh3d_drillpro::ncd::parse(&t).ok())
-            {
+            if let Some(f) = jobs::read_latin1(p).ok().and_then(|t| {
+                eh3d_drillpro::ncd::parse_as(&t, self.drill.engine.drill_format()).ok()
+            }) {
                 pts.extend(
                     f.holes
                         .iter()
@@ -161,7 +158,7 @@ impl App {
             // a file that is not read whole is not written again: the loader gets the original and refuses it
             jobs::read_latin1(path)
                 .ok()
-                .and_then(|t| jobs::whole_drill(&t))
+                .and_then(|t| jobs::whole_drill_as(&t, self.drill.engine.drill_format()))
                 .map(|f| rotated_drill_text(&f, &rot, unit))
         } else {
             jobs::read_latin1(path)

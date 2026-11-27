@@ -44,8 +44,26 @@ pub fn run(o: &Options, cfg: &Config) -> Result<String, String> {
     }
     let mut scene = eh3d_view::scene::Scene::new(jobs::DEFAULT_TABLE);
     if let Some(p) = &drill {
-        let file = eh3d_drillpro::ncd::parse(&read(p)?)
-            .map_err(|_| format!("{}: not a drilling file", p.display()))?;
+        let data = o
+            .data
+            .clone()
+            .unwrap_or_else(|| eh3d_drillpro::config::find_data_dir("DRILLPRO.DCF"));
+        let chosen = match o.drill_format {
+            Some(chosen) => chosen,
+            None => eh3d_drillpro::drill_format::load(&data).unwrap_or(None),
+        };
+        let file = eh3d_drillpro::ncd::parse_as(&read(p)?, chosen).map_err(|e| {
+            if e.code.id() == "EH3D-FORMATS-014" {
+                let lang = o.lang.unwrap_or(Lang::En);
+                format!(
+                    "{}: {e}. {} (--drill-format)",
+                    p.display(),
+                    eh3d_drillpro::drill_format::how_to_choose(lang.code())
+                )
+            } else {
+                format!("{}: not a drilling file", p.display())
+            }
+        })?;
         scene.overlay(&jobs::scene_from_drill(&file, jobs::DEFAULT_TABLE, 0.0254));
     }
     if let Some(p) = &route {

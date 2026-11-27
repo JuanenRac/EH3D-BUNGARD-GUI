@@ -85,6 +85,17 @@ pub fn whole_drill(text: &str) -> Option<eh3d_drillpro::ncd::DrillFile> {
         .filter(|f| f.ignored.is_empty() && f.ignored_more == 0)
 }
 
+/// [`whole_drill`] for a copy that is written, drawn on the table of the machine or reported: a file that does not declare its number format is read only with the
+/// format the person chose.
+pub fn whole_drill_as(
+    text: &str,
+    chosen: Option<eh3d_drillpro::drill_format::NumberFormat>,
+) -> Option<eh3d_drillpro::ncd::DrillFile> {
+    eh3d_drillpro::ncd::parse_as(text, chosen)
+        .ok()
+        .filter(|f| f.ignored.is_empty() && f.ignored_more == 0)
+}
+
 /// Why a plot is not read whole: a number the reader would drop, which moves every coordinate after it to another place.
 pub fn unread_plot(text: &str) -> Option<String> {
     eh3d_bungard_formats::hpgl::diagnose(text)

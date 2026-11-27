@@ -443,7 +443,7 @@ impl App {
         };
         let Some(mut file) = jobs::read_latin1(&path)
             .ok()
-            .and_then(|t| jobs::whole_drill(&t))
+            .and_then(|t| jobs::whole_drill_as(&t, self.drill.engine.drill_format()))
         else {
             return false;
         };

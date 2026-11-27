@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **A drill file that does not declare its number format is refused until one is chosen (safety, changes what is accepted):** the window, the job tools and `--report` no longer read such a file (a machine file without a header, `INCH` alone) as mils without being told. Choose with `--drill-format mils` (the old reading), `inch-2.4-tz`, `inch-2.4-lz`, `metric-3.3-tz` or `metric-3.3-lz`; it is kept in `DRILLPRO.FMT` of the data folder and the message says so in the eight languages. The window has no menu for it yet.
+- **Turned, edited and merged drill files declare their format and keep their scale:** they are written in whole mils with `;FILE_FORMAT=3:3` and `INCH,TZ`; a turned copy of a file in millimetres was written under a `METRIC` header with numbers in mils and was read back at another scale.
+
 ## [0.3.3] - Edits no longer drop slots and a file that is not read whole is not drawn (not tried on a machine)
 
 - **The preview of the Open window draws only files that are read whole (safety):** a drilling file with slots was drawn with its holes alone, and a plot with a number that cannot be read with its points paired the other way round, as if that were the job. Such a file has no preview now. 1 test. Host-tested only.

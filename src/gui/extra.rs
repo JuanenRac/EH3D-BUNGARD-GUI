@@ -405,7 +405,14 @@ impl App {
             .file_name()
             .map(|n| n.to_string_lossy().to_string())
             .unwrap_or_default();
-        let why = why.unwrap_or_else(|| {
+        // a drill file with no declared format and no choice is said as that, with how to choose
+        let format = (self.drill.engine.drill_format().is_none()
+            && jobs::read_latin1(path).is_ok_and(|t| {
+                eh3d_drillpro::ncd::parse_as(&t, None)
+                    .is_err_and(|e| e.code.id() == "EH3D-FORMATS-014")
+            }))
+        .then(|| eh3d_drillpro::drill_format::help(super::drill_lang(self.lang)));
+        let why = why.or(format).unwrap_or_else(|| {
             eh3d_drillpro::texts::tr(
                 super::drill_lang(self.lang),
                 eh3d_drillpro::texts::Text::IgnoredLines,
@@ -431,7 +438,7 @@ impl App {
             for p in files {
                 let Some(file) = jobs::read_latin1(p)
                     .ok()
-                    .and_then(|t| jobs::whole_drill(&t))
+                    .and_then(|t| jobs::whole_drill_as(&t, self.drill.engine.drill_format()))
                 else {
                     self.say_not_whole(p, None);
                     return None;
@@ -1476,11 +1483,7 @@ fn merged_drill_text(files: &[eh3d_drillpro::ncd::DrillFile]) -> Option<String> 
             .map_or(1, |(_, n)| *n)
     };
     holes.sort_by_key(|(size, _, _)| number(*size));
-    let mut s = String::from(
-        "M48
-INCH
-",
-    );
+    let mut s = format!("M48\n{}", eh3d_drillpro::ncd::MILS_DECLARATION);
     for (size, n) in &numbered {
         s.push_str(&format!(
             "T{n:02}C{:.4}

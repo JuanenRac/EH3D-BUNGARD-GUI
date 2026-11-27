@@ -11,14 +11,14 @@
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
-  <img src="https://img.shields.io/badge/Tests-716-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-717-0f6cbd.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.3.3-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
 ---
 
-**Comprobación de honestidad - lo que se ejecuta hoy:** un programa en Rust con una ventana y 716 pruebas que se ejecutan en un ordenador. El lanzador ofrece la interfaz moderna o los programas clásicos de taladrado y fresado para una máquina con cambio de herramienta manual (MTC) o automático (ATC). El visor abre ficheros de taladrado, ficheros de trazado HP-GL y archivos ZIP de trabajos (desde un explorador de carpetas, arrastrando y soltando o desde la línea de órdenes), dibuja la vista en planta con cada agujero por diámetro de broca y las trayectorias de fresado encima, muestra la máquina en 3D con la mesa del tamaño elegido en la configuración, paneliza la placa y sigue el trabajo mientras corre. El trabajo se ejecuta en el **simulador** de los motores de EH3D-DRILLPRO y EH3D-ROUTEPRO; el mismo fichero de máquina que ellos leen decide cómo se llega a una máquina real (el RS-232 del ordenador, un adaptador USB-RS232, o el EH3D-NODE-BUNGARD directamente o a través de EH3D-SERVER), y **ninguna de esas vías se ha probado desde esta ventana**. Las ventanas de conexión, ajustes y herramientas cambian los valores que ofrecen, aún no se pueden editar los ficheros enteros de máquina y herramientas, y la vista 3D no muestra la altura de las trayectorias.
+**Comprobación de honestidad - lo que se ejecuta hoy:** un programa en Rust con una ventana y 717 pruebas que se ejecutan en un ordenador. El lanzador ofrece la interfaz moderna o los programas clásicos de taladrado y fresado para una máquina con cambio de herramienta manual (MTC) o automático (ATC). El visor abre ficheros de taladrado, ficheros de trazado HP-GL y archivos ZIP de trabajos (desde un explorador de carpetas, arrastrando y soltando o desde la línea de órdenes), dibuja la vista en planta con cada agujero por diámetro de broca y las trayectorias de fresado encima, muestra la máquina en 3D con la mesa del tamaño elegido en la configuración, paneliza la placa y sigue el trabajo mientras corre. El trabajo se ejecuta en el **simulador** de los motores de EH3D-DRILLPRO y EH3D-ROUTEPRO; el mismo fichero de máquina que ellos leen decide cómo se llega a una máquina real (el RS-232 del ordenador, un adaptador USB-RS232, o el EH3D-NODE-BUNGARD directamente o a través de EH3D-SERVER), y **ninguna de esas vías se ha probado desde esta ventana**. Las ventanas de conexión, ajustes y herramientas cambian los valores que ofrecen, aún no se pueden editar los ficheros enteros de máquina y herramientas, y la vista 3D no muestra la altura de las trayectorias.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Versión | `0.3.3` |
 | Madurez | Andamiaje |
-| Pruebas | 716 |
+| Pruebas | 717 |
 | Pila tecnológica | Rust |
 | En hardware real | No. Se ha ejecutado solo en el simulador y en un ordenador; no se ha manejado ninguna máquina desde esta ventana |
 
@@ -49,7 +49,7 @@ Cada línea es una parte de este repositorio y la luz dice hasta dónde llega ho
 | Ficheros y panelización | 🟡 | Los ficheros de taladrado, HP-GL y los archivos ZIP se abren desde un explorador, arrastrando y soltando o desde la línea de órdenes; la placa se repite en tres modos. Probado con los pequeños ficheros de muestra de este repositorio. |
 | Ajustes | 🟠 | El ancho y el fondo útiles de la mesa se cambian y se guardan en los ficheros de la máquina; el resto de los ficheros de máquina y herramientas se sigue editando con los programas clásicos. |
 | Control de la máquina | 🔴 | El trabajo pasa por los motores de EH3D-DRILLPRO y EH3D-ROUTEPRO, así que en principio están todas sus conexiones; solo ha corrido en el simulador. La ventana de Conexión elige el enlace (el RS-232 del ordenador, un adaptador USB-RS232, el nodo EH3D o el servidor EH3D), lo prueba y lo guarda en el fichero de la máquina, y Pausa detiene el trabajo entre dos movimientos. |
-| Pruebas | 🟡 | Pasan 716 pruebas en un ordenador (`cargo test --all-targets --features gui`): el lanzador, los ajustes, la lectura de los ficheros a la escena, los perfiles de máquina, el panel y la línea de órdenes. Ninguna toca una máquina. Incluyen una simulación con semilla fija de un trabajo que se corta y se reanuda, con fallos inyectados y recuperación. |
+| Pruebas | 🟡 | Pasan 717 pruebas en un ordenador (`cargo test --all-targets --features gui`): el lanzador, los ajustes, la lectura de los ficheros a la escena, los perfiles de máquina, el panel y la línea de órdenes. Ninguna toca una máquina. Incluyen una simulación con semilla fija de un trabajo que se corta y se reanuda, con fallos inyectados y recuperación. |
 | Paquetes ya compilados | 🟠 | Un flujo de trabajo compila el programa para Windows (64 y 32 bits), Linux y macOS con los ficheros de muestra; todavía no se ha publicado ninguna versión. |
 
 ## 🎯 Resumen
@@ -173,7 +173,7 @@ Cómo encajan las partes de este repositorio: quién lo usa, qué contiene y de 
 
 ## ⚙️ Configuración
 
-La conexión es el **fichero de la máquina** de EH3D-DRILLPRO y EH3D-ROUTEPRO (`machine.cfg`, con `connection = demo|rs232|usb|node|server` y cada valor afinado en una máquina real): `--connection FICHERO` apunta a él, y sin uno el trabajo se ejecuta en el simulador. `--data DIR` es la carpeta con los ficheros de máquina y herramientas de los programas clásicos (`DRILLPRO.DCF`, `DRILLPRO.DTD`, `ROUTEPRO.RCF`, `ROUTEPRO.RTD`; la carpeta `testdata/` tiene muestras). La ventana de ajustes cambia el ancho y el fondo útiles de la mesa y los guarda en esos ficheros. Lo que la ventana recuerda (la elección del lanzador, el idioma y el tema) se guarda en un pequeño fichero en la carpeta de ajustes del usuario, con los demás programas de EH3D. `--theme forge|neon|glass|windows-classic|system` y `--lang en|es|it|de|fr|pt|zh|ja` eligen el aspecto y el idioma. Un archivo de taladros que no declara el formato de sus números se rechaza hasta elegirlo con `--drill-format NOMBRE` (`mils`, `inch-2.4-tz`, `inch-2.4-lz`, `metric-3.3-tz`, `metric-3.3-lz`; guardado en `DRILLPRO.FMT` de la carpeta de datos).
+La conexión es el **fichero de la máquina** de EH3D-DRILLPRO y EH3D-ROUTEPRO (`machine.cfg`, con `connection = demo|rs232|usb|node|server` y cada valor afinado en una máquina real): `--connection FICHERO` apunta a él, y sin uno el trabajo se ejecuta en el simulador. `--data DIR` es la carpeta con los ficheros de máquina y herramientas de los programas clásicos (`DRILLPRO.DCF`, `DRILLPRO.DTD`, `ROUTEPRO.RCF`, `ROUTEPRO.RTD`; la carpeta `testdata/` tiene muestras). La ventana de ajustes cambia el ancho y el fondo útiles de la mesa y los guarda en esos ficheros. Lo que la ventana recuerda (la elección del lanzador, el idioma y el tema) se guarda en un pequeño fichero en la carpeta de ajustes del usuario, con los demás programas de EH3D. `--theme forge|neon|glass|windows-classic|system` y `--lang en|es|it|de|fr|pt|zh|ja` eligen el aspecto y el idioma. Un archivo de taladros que no declara el formato de sus números se rechaza hasta elegirlo con `--drill-format NOMBRE` (`mils`, `inch-2.4-tz`, `inch-2.4-lz`, `metric-3.3-tz`, `metric-3.3-lz`; guardado en `DRILLPRO.FMT` de la carpeta de datos). En la ventana, un taladrado rechazado abre una pregunta con los formatos y su explicación: solo un clic elige, un formato que no lee el archivo no se guarda, y la pestaña del trabajo de los ajustes lo cambia después.
 
 **Cambiador de herramientas (modelos ATC).** El cambiador lee cinco líneas más del fichero de la máquina, después de las posiciones del soporte, cada una con una clave y un valor en mm: `RACK_TOOL_LENGTH` (38), `RACK_RING_TO_TIP` (21), `RACK_CLEARANCE` (8: cuánto por encima de las puntas de las herramientas viaja el mandril de una posición a otra), `RACK_APPROACH` (-8: el lado de la barra por el que entra el mandril en X, negativo desde el lado de la mesa, 0 directo hacia abajo sobre la posición) y `RACK_REACH_X` (150: cuánto más allá del borde de la mesa puede estar la barra). Un fichero sin ellas usa estos valores. La altura a la que se agarra una herramienta es la Z de su posición (se fija en la ventana de la barra de herramientas). **Nada de esto se ha comprobado en una máquina ATC real y quedan cuatro dudas:** el lado por el que debe entrar el mandril, la Z a la que se agarra una herramienta, cuántas posiciones tiene la barra de cada modelo (15 aquí: la herramienta de prueba, 14 herramientas y el detector de rotura) y si el lector DOS original del fichero de la máquina acepta las líneas `RACK_`. Hasta que una máquina responda, se ajustan en el fichero.
 
@@ -191,7 +191,7 @@ Ejecútalo con `run.bat` (Windows) o `./run.sh` (Linux y macOS); ambos compilan 
 
 ## 🧪 Pruebas
 
-La suite tiene 716 pruebas (`cargo test --all-targets --features gui`). Comprueban el lanzador y lo que recuerda, los ajustes, cómo un fichero de taladrado o HP-GL se convierte en la escena, los perfiles de máquina, el panel y la línea de órdenes. Los motores que usa (protocolo, movimiento, puerta de seguridad) se prueban en EH3D-DRILLPRO y EH3D-ROUTEPRO. La CI también ejecuta `cargo fmt --check` y `cargo clippy` con los avisos como errores, y `python -I tools/ci_validate.py` comprueba el manifiesto, las versiones, el registro de cambios y los ocho README.
+La suite tiene 717 pruebas (`cargo test --all-targets --features gui`). Comprueban el lanzador y lo que recuerda, los ajustes, cómo un fichero de taladrado o HP-GL se convierte en la escena, los perfiles de máquina, el panel y la línea de órdenes. Los motores que usa (protocolo, movimiento, puerta de seguridad) se prueban en EH3D-DRILLPRO y EH3D-ROUTEPRO. La CI también ejecuta `cargo fmt --check` y `cargo clippy` con los avisos como errores, y `python -I tools/ci_validate.py` comprueba el manifiesto, las versiones, el registro de cambios y los ocho README.
 
 ## 🏗️ Compilación y publicación
 

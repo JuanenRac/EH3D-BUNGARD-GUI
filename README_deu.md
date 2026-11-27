@@ -11,14 +11,14 @@
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
-  <img src="https://img.shields.io/badge/Tests-716-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-717-0f6cbd.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.3.3-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
 ---
 
-**Ehrlichkeitscheck - was heute tatsächlich läuft:** ein Rust-Programm mit einem Fenster und 716 Tests, die auf einem Rechner laufen. Der Starter bietet die moderne Oberfläche oder die klassischen Bohr- und Fräsprogramme für eine Maschine mit manuellem (MTC) oder automatischem (ATC) Werkzeugwechsel. Der Betrachter öffnet Bohrdateien, HP-GL-Plotdateien und ZIP-Archive mit Aufträgen (aus einem Ordnerbrowser, per Drag and Drop oder von der Befehlszeile), zeichnet die Draufsicht mit jedem Loch nach Bohrergröße und den Fräsbahnen darüber, zeigt die Maschine in 3D mit dem in der Konfiguration gewählten Tisch, bildet Nutzen und verfolgt den Auftrag während des Laufs. Der Auftrag läuft im **Simulator** der Engines von EH3D-DRILLPRO und EH3D-ROUTEPRO; dieselbe Maschinendatei, die sie lesen, bestimmt, wie eine echte Maschine erreicht wird (die RS-232-Schnittstelle des Rechners, ein USB-RS232-Adapter oder der EH3D-NODE-BUNGARD direkt oder über EH3D-SERVER), und **keiner dieser Wege wurde von diesem Fenster aus ausprobiert**. Die Fenster für Verbindung, Einstellungen und Werkzeuge ändern die Werte, die sie anbieten, die vollständigen Maschinen- und Werkzeugdateien lassen sich noch nicht bearbeiten, und die 3D-Ansicht zeigt die Höhe der Bahnen nicht.
+**Ehrlichkeitscheck - was heute tatsächlich läuft:** ein Rust-Programm mit einem Fenster und 717 Tests, die auf einem Rechner laufen. Der Starter bietet die moderne Oberfläche oder die klassischen Bohr- und Fräsprogramme für eine Maschine mit manuellem (MTC) oder automatischem (ATC) Werkzeugwechsel. Der Betrachter öffnet Bohrdateien, HP-GL-Plotdateien und ZIP-Archive mit Aufträgen (aus einem Ordnerbrowser, per Drag and Drop oder von der Befehlszeile), zeichnet die Draufsicht mit jedem Loch nach Bohrergröße und den Fräsbahnen darüber, zeigt die Maschine in 3D mit dem in der Konfiguration gewählten Tisch, bildet Nutzen und verfolgt den Auftrag während des Laufs. Der Auftrag läuft im **Simulator** der Engines von EH3D-DRILLPRO und EH3D-ROUTEPRO; dieselbe Maschinendatei, die sie lesen, bestimmt, wie eine echte Maschine erreicht wird (die RS-232-Schnittstelle des Rechners, ein USB-RS232-Adapter oder der EH3D-NODE-BUNGARD direkt oder über EH3D-SERVER), und **keiner dieser Wege wurde von diesem Fenster aus ausprobiert**. Die Fenster für Verbindung, Einstellungen und Werkzeuge ändern die Werte, die sie anbieten, die vollständigen Maschinen- und Werkzeugdateien lassen sich noch nicht bearbeiten, und die 3D-Ansicht zeigt die Höhe der Bahnen nicht.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Version | `0.3.3` |
 | Reifegrad | Gerüst |
-| Tests | 716 |
+| Tests | 717 |
 | Technologie-Stack | Rust |
 | Auf echter Hardware | Nein. Es lief nur im Simulator und auf einem Rechner; von diesem Fenster aus wurde keine Maschine betrieben |
 
@@ -49,7 +49,7 @@ Jede Zeile ist ein Teil dieses Repositorys, und die Ampel sagt, wie weit er heut
 | Dateien und Nutzenbildung | 🟡 | Bohrdateien, HP-GL-Dateien und ZIP-Archive werden aus einem Browser, per Drag and Drop oder von der Befehlszeile geöffnet; die Platine wird in drei Modi vervielfacht. Mit den kleinen Beispieldateien dieses Repositorys ausprobiert. |
 | Einstellungen | 🟠 | Nutzbare Breite und Tiefe des Tisches werden geändert und in den Maschinendateien gespeichert; der Rest der Maschinen- und Werkzeugdateien wird weiter mit den klassischen Programmen bearbeitet. |
 | Maschinensteuerung | 🔴 | Der Auftrag läuft über die Engines von EH3D-DRILLPRO und EH3D-ROUTEPRO, also sind im Prinzip alle ihre Verbindungen da; er lief nur im Simulator. Das Verbindungsfenster wählt die Verbindung (den RS-232 des Rechners, einen USB-RS232-Adapter, den EH3D-Knoten oder den EH3D-Server), testet sie und speichert sie in der Maschinendatei, und Pause hält den Auftrag zwischen zwei Bewegungen an. |
-| Tests | 🟡 | 716 Tests bestehen auf einem Rechner (`cargo test --all-targets --features gui`): der Starter, die Einstellungen, das Einlesen der Dateien in die Szene, die Maschinenprofile, der Nutzen und die Befehlszeile. Keiner berührt eine Maschine. Dazu gehört eine Simulation mit festem Seed für einen unterbrochenen und fortgesetzten Auftrag, mit eingespeisten Fehlern und Wiederherstellung. |
+| Tests | 🟡 | 717 Tests bestehen auf einem Rechner (`cargo test --all-targets --features gui`): der Starter, die Einstellungen, das Einlesen der Dateien in die Szene, die Maschinenprofile, der Nutzen und die Befehlszeile. Keiner berührt eine Maschine. Dazu gehört eine Simulation mit festem Seed für einen unterbrochenen und fortgesetzten Auftrag, mit eingespeisten Fehlern und Wiederherstellung. |
 | Fertige Pakete | 🟠 | Ein Workflow baut das Programm für Windows (64 und 32 Bit), Linux und macOS mit den Beispieldateien; eine Version wurde noch nicht veröffentlicht. |
 
 ## 🎯 Überblick
@@ -173,7 +173,7 @@ Wie die Teile dieses Repositorys zusammenpassen: wer es nutzt, was es enthält u
 
 ## ⚙️ Konfiguration
 
-Die Verbindung ist die **Maschinendatei** von EH3D-DRILLPRO und EH3D-ROUTEPRO (`machine.cfg`, mit `connection = demo|rs232|usb|node|server` und jedem an einer echten Maschine abgestimmten Wert): `--connection DATEI` zeigt auf sie, ohne sie läuft der Auftrag im Simulator. `--data ORDNER` ist der Ordner mit den Maschinen- und Werkzeugdateien der klassischen Programme (`DRILLPRO.DCF`, `DRILLPRO.DTD`, `ROUTEPRO.RCF`, `ROUTEPRO.RTD`; der Ordner `testdata/` enthält Beispiele). Das Einstellungsfenster ändert nutzbare Breite und Tiefe des Tisches und speichert sie in diesen Dateien. Was das Fenster sich merkt (die Wahl des Starters, die Sprache und das Design), liegt in einer kleinen Datei im Einstellungsordner des Benutzers, bei den anderen EH3D-Programmen. `--theme forge|neon|glass|windows-classic|system` und `--lang en|es|it|de|fr|pt|zh|ja` wählen Aussehen und Sprache. Eine Bohrdatei ohne angegebenes Zahlenformat wird abgelehnt, bis es mit `--drill-format NAME` gewählt ist (`mils`, `inch-2.4-tz`, `inch-2.4-lz`, `metric-3.3-tz`, `metric-3.3-lz`; gespeichert in `DRILLPRO.FMT` im Datenordner).
+Die Verbindung ist die **Maschinendatei** von EH3D-DRILLPRO und EH3D-ROUTEPRO (`machine.cfg`, mit `connection = demo|rs232|usb|node|server` und jedem an einer echten Maschine abgestimmten Wert): `--connection DATEI` zeigt auf sie, ohne sie läuft der Auftrag im Simulator. `--data ORDNER` ist der Ordner mit den Maschinen- und Werkzeugdateien der klassischen Programme (`DRILLPRO.DCF`, `DRILLPRO.DTD`, `ROUTEPRO.RCF`, `ROUTEPRO.RTD`; der Ordner `testdata/` enthält Beispiele). Das Einstellungsfenster ändert nutzbare Breite und Tiefe des Tisches und speichert sie in diesen Dateien. Was das Fenster sich merkt (die Wahl des Starters, die Sprache und das Design), liegt in einer kleinen Datei im Einstellungsordner des Benutzers, bei den anderen EH3D-Programmen. `--theme forge|neon|glass|windows-classic|system` und `--lang en|es|it|de|fr|pt|zh|ja` wählen Aussehen und Sprache. Eine Bohrdatei ohne angegebenes Zahlenformat wird abgelehnt, bis es mit `--drill-format NAME` gewählt ist (`mils`, `inch-2.4-tz`, `inch-2.4-lz`, `metric-3.3-tz`, `metric-3.3-lz`; gespeichert in `DRILLPRO.FMT` im Datenordner). Im Fenster öffnet eine abgelehnte Bohrdatei eine Frage mit den Formaten und ihrer Erklärung: nur ein Klick wählt, ein Format, das die Datei nicht liest, wird nicht behalten, und der Reiter des Auftrags in den Einstellungen ändert es später.
 
 **Werkzeugwechsler (ATC-Modelle).** Der Wechsler liest fünf weitere Zeilen der Maschinendatei, nach den Plätzen der Leiste, jeweils ein Schlüssel und ein Wert in mm: `RACK_TOOL_LENGTH` (38), `RACK_RING_TO_TIP` (21), `RACK_CLEARANCE` (8: wie hoch über den Spitzen der Werkzeuge das Spannfutter von einem Platz zum anderen fährt), `RACK_APPROACH` (-8: die Seite der Leiste, von der das Spannfutter in X einfährt, negativ von der Tischseite, 0 gerade von oben auf den Platz) und `RACK_REACH_X` (150: wie weit hinter der Tischkante die Leiste stehen darf). Eine Datei ohne diese Zeilen ergibt diese Werte. Die Höhe, in der ein Werkzeug gegriffen wird, ist das Z seines Platzes (im Fenster der Werkzeugleiste eingestellt). **Nichts davon wurde an einer echten ATC-Maschine geprüft, und vier Dinge sind offen:** die Seite, von der das Spannfutter einfahren muss, das Z, in dem ein Werkzeug gegriffen wird, wie viele Plätze die Leiste jedes Modells hat (hier 15: das Testwerkzeug, 14 Werkzeuge und der Bruchmelder) und ob der ursprüngliche DOS-Leser der Maschinendatei die `RACK_`-Zeilen annimmt. Bis eine Maschine antwortet, werden sie in der Datei eingestellt.
 
@@ -191,7 +191,7 @@ Starte es mit `run.bat` (Windows) oder `./run.sh` (Linux und macOS); beide bauen
 
 ## 🧪 Tests
 
-Die Suite hat 716 Tests (`cargo test --all-targets --features gui`). Sie prüfen den Starter und was er sich merkt, die Einstellungen, wie eine Bohr- oder HP-GL-Datei zur Szene wird, die Maschinenprofile, den Nutzen und die Befehlszeile. Die Engines, die es nutzt (Protokoll, Bewegung, Sicherheitsschranke), werden in EH3D-DRILLPRO und EH3D-ROUTEPRO getestet. Die CI führt außerdem `cargo fmt --check` und `cargo clippy` mit Warnungen als Fehler aus, und `python -I tools/ci_validate.py` prüft Manifest, Versionen, Changelog und die acht READMEs.
+Die Suite hat 717 Tests (`cargo test --all-targets --features gui`). Sie prüfen den Starter und was er sich merkt, die Einstellungen, wie eine Bohr- oder HP-GL-Datei zur Szene wird, die Maschinenprofile, den Nutzen und die Befehlszeile. Die Engines, die es nutzt (Protokoll, Bewegung, Sicherheitsschranke), werden in EH3D-DRILLPRO und EH3D-ROUTEPRO getestet. Die CI führt außerdem `cargo fmt --check` und `cargo clippy` mit Warnungen als Fehler aus, und `python -I tools/ci_validate.py` prüft Manifest, Versionen, Changelog und die acht READMEs.
 
 ## 🏗️ Build und Veröffentlichung
 

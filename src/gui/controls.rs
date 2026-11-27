@@ -933,6 +933,7 @@ mod tests {
             extra::Modal::Inspect,
             extra::Modal::InspectTune,
             extra::Modal::Bar,
+            extra::Modal::DrillFormat,
         ] {
             a.screen = Screen::Viewer;
             a.show_modal(m);

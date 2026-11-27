@@ -79,6 +79,8 @@ pub(crate) enum Modal {
     Report,
     /// The update of the program from the releases of GitHub.
     Update,
+    /// The number format of the drill files that declare none.
+    DrillFormat,
 }
 
 /// A text box of the Connection window.
@@ -421,6 +423,105 @@ impl App {
         });
         crate::applog::info("file", format!("{name}: not taken: {why}"));
         self.message = Some(format!("{name}: {why}"));
+    }
+
+    /// Takes a choice of the format window (the first entry is no format). A format that was asked for a refused file reads it again; one that cannot read it is
+    /// not kept. A drill file that is open is read again too, so what is drawn and what the machine would do stay the same.
+    pub(crate) fn choose_drill_format(&mut self, place: usize) {
+        let before = self.drill.engine.drill_format();
+        let chosen = eh3d_drillpro::drill_format::choices(before)
+            .get(place)
+            .copied()
+            .flatten();
+        let mut files = std::mem::take(&mut self.format_ask);
+        self.modal = None;
+        if files.is_empty() {
+            let open = self.drill_path.clone();
+            files.extend(open.filter(|_| !self.drill.scene.holes.is_empty()));
+        } else if chosen.is_none() {
+            return;
+        }
+        let mut kept = self.drill.engine.choose_drill_format(chosen);
+        let again = files.clone();
+        match files.as_slice() {
+            [] => {}
+            [one] => self.open_path(one),
+            many => self.open_many(many),
+        }
+        if !self.format_ask.is_empty() || self.drill.engine.format_refused() {
+            // the choice does not read the file: the one that was in use comes back and the person is asked again
+            let why = self.message.clone();
+            kept = self.drill.engine.choose_drill_format(before);
+            self.message = why;
+            self.format_ask = again;
+            self.show_modal(Modal::DrillFormat);
+        }
+        if let Err(e) = kept {
+            self.message = Some(e);
+        }
+    }
+
+    /// The window that asks for the number format: no format is marked unless one is already kept.
+    pub(super) fn paint_drill_format(&self, cv: &mut Cv) {
+        use eh3d_drillpro::drill_format::{choices, how_to_choose, label, wrap};
+        use eh3d_drillpro::texts::{tr, Text as D};
+        let t = cv.t.clone();
+        let lang = super::drill_lang(self.lang);
+        let (x, y) = self.modal_card(cv, tr(lang, D::FormatTitle), 560.0);
+        let files: Vec<String> = self
+            .format_ask
+            .iter()
+            .filter_map(|p| p.file_name())
+            .map(|n| n.to_string_lossy().into_owned())
+            .collect();
+        cv.text(
+            x + 30.0,
+            y + 90.0,
+            Align2::LEFT_BOTTOM,
+            &files.join(", "),
+            17.0,
+            col(t.accent),
+        );
+        for (i, line) in wrap(how_to_choose(lang.code()), 64).iter().enumerate() {
+            cv.text(
+                x + 30.0,
+                y + 124.0 + i as f32 * 24.0,
+                Align2::LEFT_BOTTOM,
+                line,
+                16.0,
+                col(t.text),
+            );
+        }
+        let current = self.drill.engine.drill_format();
+        for (i, choice) in choices(current).into_iter().enumerate().take(9) {
+            let (column, row) = ((i % 3) as f32, (i / 3) as f32);
+            cv.chip(
+                x + 30.0 + column * 230.0,
+                y + 310.0 + row * 54.0,
+                218.0,
+                44.0,
+                &label(lang, choice),
+                choice.is_some() && choice == current,
+                Act::DrillFormat(i as u8),
+            );
+        }
+        cv.text(
+            x + 30.0,
+            y + 478.0,
+            Align2::LEFT_BOTTOM,
+            tr(lang, D::FormatKept),
+            14.0,
+            col(t.dim),
+        );
+        cv.chip(
+            x + 540.0,
+            y + 494.0,
+            170.0,
+            44.0,
+            self.tr(Text::Close),
+            true,
+            Act::CloseModal,
+        );
     }
 
     /// The files of one kind written as one file in the work folder.
@@ -1032,6 +1133,7 @@ impl App {
             Modal::Inspect => self.paint_inspect(cv),
             Modal::InspectTune => self.paint_inspect_tune(cv),
             Modal::Update => self.paint_update(cv),
+            Modal::DrillFormat => self.paint_drill_format(cv),
             Modal::About => {
                 let (x, y) = self.modal_card(cv, self.tr(Text::About), 420.0);
                 cv.text(
@@ -1960,6 +2062,49 @@ mod tests {
             a.drill.engine.done()
         );
         assert!(a.progress() > progress);
+    }
+
+    #[test]
+    fn a_refused_drill_file_asks_for_its_format_and_only_a_choice_reads_it() {
+        let data = std::env::temp_dir().join(format!("eh3d-bg-format-{}", std::process::id()));
+        std::fs::create_dir_all(&data).unwrap();
+        let testdata = Path::new(env!("CARGO_MANIFEST_DIR")).join("testdata");
+        for f in [
+            "DRILLPRO.DCF",
+            "DRILLPRO.DTD",
+            "ROUTEPRO.RCF",
+            "ROUTEPRO.RTD",
+        ] {
+            let _ = std::fs::copy(testdata.join(f), data.join(f));
+        }
+        let bare = data.join("bare.ncd");
+        std::fs::write(&bare, "%\r\nT01\r\nX1000Y2000\r\nM30\r\n").unwrap();
+        let mut a = App::new(&Options {
+            data: Some(data.clone()),
+            screen: Some(Screen::Viewer),
+            ..Default::default()
+        });
+        a.open_path_asking(&bare);
+        assert_eq!(a.modal, Some(Modal::DrillFormat));
+        assert!(a.drill.scene.holes.is_empty());
+        assert_eq!(a.drill.engine.drill_format(), None);
+        // the first entry is no format: the file stays refused and nothing is kept
+        a.choose_drill_format(0);
+        assert_eq!(a.modal, None);
+        assert!(a.drill.scene.holes.is_empty());
+        a.open_path(&bare);
+        a.choose_drill_format(1);
+        let read = (a.drill.scene.holes.len(), a.drill.engine.drill_format());
+        let kept = eh3d_drillpro::drill_format::load(&data);
+        let _ = std::fs::remove_dir_all(&data);
+        assert_eq!(
+            read,
+            (1, Some(eh3d_drillpro::drill_format::NumberFormat::Mils))
+        );
+        assert_eq!(
+            kept,
+            Ok(Some(eh3d_drillpro::drill_format::NumberFormat::Mils))
+        );
     }
 
     #[test]

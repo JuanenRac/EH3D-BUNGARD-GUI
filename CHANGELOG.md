@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.3.2] - The current drilling and routing protocols with safer waits and stops (not tried on a machine)
+
 - **The window drives the machine with the current engines (safety):** EH3D-DRILLPRO at v0.2.4 (it was v0.2.2) and EH3D-ROUTEPRO with its latest tool changer fix (it was v0.1.9): the spindle and chuck pauses last their whole time on the node, a stop also releases the run bit of the spindle, and after the tool changer the head crosses to the work before the tool goes down. Checked by the tests against the simulator; not tried on a machine.
 
 ## [0.3.1] - The eight languages of the project, the current shared base and safer resume files

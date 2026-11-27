@@ -399,6 +399,23 @@ impl App {
         }
     }
 
+    /// Says that a file is not taken because not all of it is read: the reason of the reader, or the words for the lines of a drilling file that are not holes.
+    pub(crate) fn say_not_whole(&mut self, path: &Path, why: Option<String>) {
+        let name = path
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_default();
+        let why = why.unwrap_or_else(|| {
+            eh3d_drillpro::texts::tr(
+                super::drill_lang(self.lang),
+                eh3d_drillpro::texts::Text::IgnoredLines,
+            )
+            .to_string()
+        });
+        crate::applog::info("file", format!("{name}: not taken: {why}"));
+        self.message = Some(format!("{name}: {why}"));
+    }
+
     /// The files of one kind written as one file in the work folder.
     fn merge_sources(&mut self, files: &[&PathBuf], drill: bool) -> Option<PathBuf> {
         let dir = self.archive_dir.join("merged");
@@ -412,17 +429,24 @@ impl App {
         let text = if drill {
             let mut parsed = Vec::new();
             for p in files {
-                parsed.push(
-                    jobs::read_latin1(p)
-                        .ok()
-                        .and_then(|t| eh3d_drillpro::ncd::parse(&t).ok())?,
-                );
+                let Some(file) = jobs::read_latin1(p)
+                    .ok()
+                    .and_then(|t| jobs::whole_drill(&t))
+                else {
+                    self.say_not_whole(p, None);
+                    return None;
+                };
+                parsed.push(file);
             }
             merged_drill_text(&parsed)?
         } else {
             let mut plot = eh3d_routepro::hpgl::Plot::default();
             for p in files {
                 let t = jobs::read_latin1(p).ok()?;
+                if let Some(why) = jobs::unread_plot(&t) {
+                    self.say_not_whole(p, Some(why));
+                    return None;
+                }
                 plot.paths
                     .extend(eh3d_routepro::hpgl::parse_with(&t, self.route_segments()).paths);
             }

@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **A file that is not read whole is not merged, turned, edited or taken (safety):** merging or turning a drilling file with slots wrote a copy with only its holes, which then loaded without a word; a plot with a coordinate that is not a number lost it, so the coordinates after it were paired the other way round. Host-tested only.
+
 - **`pt-br` is Portuguese and `fr-ca` is French:** `--lang` with one of these codes of earlier versions now gives the Portuguese of Portugal or French instead of English with a notice, the same as a settings or machine file that names them.
 
 ## [0.3.2] - The current drilling and routing protocols with safer waits and stops (not tried on a machine)

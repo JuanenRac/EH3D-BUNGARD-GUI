@@ -2027,4 +2027,43 @@ mod tests {
         }
         assert!(seen >= 4);
     }
+
+    #[test]
+    fn a_file_that_is_not_read_whole_is_not_merged_turned_or_taken() {
+        let dir = std::env::temp_dir().join(format!("eh3d_bungard_unread_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let write = |name: &str, text: &str| {
+            let p = dir.join(name);
+            std::fs::write(&p, text).unwrap();
+            p
+        };
+        let good = write("good.ncd", "M48\nMETRIC\nT1C0.8\n%\nT1\nX1000Y1000\nM30\n");
+        // a routed slot is not a hole: writing the file again from its holes would lose it
+        let slot = write(
+            "slot.ncd",
+            "M48\nMETRIC\nT1C0.8\n%\nT1\nX1000Y1000\nG00X2000Y2000\nM30\n",
+        );
+        let plot = write("good.plt", "PU0,0;PD100,200,300,300;PU;\n");
+        let bad = write("bad.plt", "PU0,0;PD100,2O0,300,300;PU;\n");
+        let mut a = app();
+        a.archive_dir = dir.join("work");
+        assert!(a.merge_sources(&[&good, &good], true).is_some());
+        assert!(a.merge_sources(&[&good, &slot], true).is_none());
+        assert!(a.message.is_some());
+        a.message = None;
+        assert!(a.merge_sources(&[&plot, &bad], false).is_none());
+        assert!(a.message.is_some());
+        a.rotation = 1;
+        a.drill_path = Some(good.clone());
+        a.route_path = Some(plot.clone());
+        assert_ne!(a.source_for(&good, true), good);
+        assert_eq!(a.source_for(&slot, true), slot);
+        assert_ne!(a.source_for(&plot, false), plot);
+        assert_eq!(a.source_for(&bad, false), bad);
+        let mut a = app();
+        a.open_path(&bad);
+        assert!(a.route.scene.paths.is_empty());
+        assert!(a.message.is_some());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }

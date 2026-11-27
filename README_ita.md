@@ -11,14 +11,14 @@
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
-  <img src="https://img.shields.io/badge/Tests-716-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-717-0f6cbd.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.3.3-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
 ---
 
-**Verifica di onestà - cosa funziona oggi:** un programma Rust con una finestra e 716 test che girano su un computer. L'avviatore offre l'interfaccia moderna o i programmi classici di foratura e fresatura per una macchina con cambio utensile manuale (MTC) o automatico (ATC). Il visualizzatore apre file di foratura, file di tracciato HP-GL e archivi ZIP di lavori (da un browser di cartelle, con trascinamento o dalla riga di comando), disegna la vista in pianta con ogni foro per diametro di punta e i percorsi di fresatura sopra, mostra la macchina in 3D con il piano della misura scelta nella configurazione, pannellizza la scheda e segue il lavoro mentre procede. Il lavoro gira nel **simulatore** dei motori di EH3D-DRILLPRO e EH3D-ROUTEPRO; lo stesso file di macchina che essi leggono decide come si raggiunge una macchina reale (l'RS-232 del computer, un adattatore USB-RS232, o l'EH3D-NODE-BUNGARD direttamente o tramite EH3D-SERVER), e **nessuna di queste vie è stata provata da questa finestra**. Le finestre di connessione, impostazioni e utensili cambiano i valori che offrono, i file interi di macchina e utensili non sono ancora modificabili, e la vista 3D non mostra l'altezza dei percorsi.
+**Verifica di onestà - cosa funziona oggi:** un programma Rust con una finestra e 717 test che girano su un computer. L'avviatore offre l'interfaccia moderna o i programmi classici di foratura e fresatura per una macchina con cambio utensile manuale (MTC) o automatico (ATC). Il visualizzatore apre file di foratura, file di tracciato HP-GL e archivi ZIP di lavori (da un browser di cartelle, con trascinamento o dalla riga di comando), disegna la vista in pianta con ogni foro per diametro di punta e i percorsi di fresatura sopra, mostra la macchina in 3D con il piano della misura scelta nella configurazione, pannellizza la scheda e segue il lavoro mentre procede. Il lavoro gira nel **simulatore** dei motori di EH3D-DRILLPRO e EH3D-ROUTEPRO; lo stesso file di macchina che essi leggono decide come si raggiunge una macchina reale (l'RS-232 del computer, un adattatore USB-RS232, o l'EH3D-NODE-BUNGARD direttamente o tramite EH3D-SERVER), e **nessuna di queste vie è stata provata da questa finestra**. Le finestre di connessione, impostazioni e utensili cambiano i valori che offrono, i file interi di macchina e utensili non sono ancora modificabili, e la vista 3D non mostra l'altezza dei percorsi.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Versione | `0.3.3` |
 | Maturità | Impalcatura |
-| Test | 716 |
+| Test | 717 |
 | Stack tecnologico | Rust |
 | Su hardware reale | No. Ha girato solo sul simulatore e su un computer; nessuna macchina è stata pilotata da questa finestra |
 
@@ -49,7 +49,7 @@ Ogni riga è una parte di questo repository e il semaforo dice a che punto è og
 | File e pannellizzazione | 🟡 | I file di foratura, HP-GL e gli archivi ZIP si aprono da un browser, con trascinamento o dalla riga di comando; la scheda si ripete in tre modi. Provato con i piccoli file di esempio di questo repository. |
 | Impostazioni | 🟠 | Larghezza e profondità utili del piano si cambiano e si salvano nei file della macchina; il resto dei file di macchina e utensili si modifica ancora con i programmi classici. |
 | Controllo della macchina | 🔴 | Il lavoro passa per i motori di EH3D-DRILLPRO e EH3D-ROUTEPRO, quindi in linea di principio ci sono tutte le loro connessioni; ha girato solo sul simulatore. La finestra di Connessione sceglie il collegamento (l'RS-232 del computer, un adattatore USB-RS232, il nodo EH3D o il server EH3D), lo prova e lo salva nel file della macchina, e Pausa ferma il lavoro tra due movimenti. |
-| Test | 🟡 | 716 test passano su un computer (`cargo test --all-targets --features gui`): l'avviatore, le impostazioni, la lettura dei file nella scena, i profili di macchina, il pannello e la riga di comando. Nessuno tocca una macchina. Includono una simulazione a seme fisso di un lavoro interrotto e ripreso, con guasti iniettati e ripristino. |
+| Test | 🟡 | 717 test passano su un computer (`cargo test --all-targets --features gui`): l'avviatore, le impostazioni, la lettura dei file nella scena, i profili di macchina, il pannello e la riga di comando. Nessuno tocca una macchina. Includono una simulazione a seme fisso di un lavoro interrotto e ripreso, con guasti iniettati e ripristino. |
 | Pacchetti già pronti | 🟠 | Un workflow compila il programma per Windows (64 e 32 bit), Linux e macOS con i file di esempio; nessuna versione è ancora stata pubblicata. |
 
 ## 🎯 Panoramica
@@ -173,7 +173,7 @@ Come si incastrano le parti di questo repository: chi lo usa, che cosa contiene 
 
 ## ⚙️ Configurazione
 
-La connessione è il **file di macchina** di EH3D-DRILLPRO e EH3D-ROUTEPRO (`machine.cfg`, con `connection = demo|rs232|usb|node|server` e ogni valore tarato su una macchina reale): `--connection FILE` vi punta, e senza di esso il lavoro gira sul simulatore. `--data CARTELLA` è la cartella con i file di macchina e utensili dei programmi classici (`DRILLPRO.DCF`, `DRILLPRO.DTD`, `ROUTEPRO.RCF`, `ROUTEPRO.RTD`; la cartella `testdata/` ha esempi). La finestra delle impostazioni cambia larghezza e profondità utili del piano e le salva in quei file. Ciò che la finestra ricorda (la scelta dell'avviatore, la lingua e il tema) è conservato in un piccolo file nella cartella delle impostazioni dell'utente, con gli altri programmi EH3D. `--theme forge|neon|glass|windows-classic|system` e `--lang en|es|it|de|fr|pt|zh|ja` scelgono l'aspetto e la lingua. Un file di foratura che non dichiara il formato dei numeri è rifiutato finché non si sceglie con `--drill-format NOME` (`mils`, `inch-2.4-tz`, `inch-2.4-lz`, `metric-3.3-tz`, `metric-3.3-lz`; conservato in `DRILLPRO.FMT` della cartella dei dati).
+La connessione è il **file di macchina** di EH3D-DRILLPRO e EH3D-ROUTEPRO (`machine.cfg`, con `connection = demo|rs232|usb|node|server` e ogni valore tarato su una macchina reale): `--connection FILE` vi punta, e senza di esso il lavoro gira sul simulatore. `--data CARTELLA` è la cartella con i file di macchina e utensili dei programmi classici (`DRILLPRO.DCF`, `DRILLPRO.DTD`, `ROUTEPRO.RCF`, `ROUTEPRO.RTD`; la cartella `testdata/` ha esempi). La finestra delle impostazioni cambia larghezza e profondità utili del piano e le salva in quei file. Ciò che la finestra ricorda (la scelta dell'avviatore, la lingua e il tema) è conservato in un piccolo file nella cartella delle impostazioni dell'utente, con gli altri programmi EH3D. `--theme forge|neon|glass|windows-classic|system` e `--lang en|es|it|de|fr|pt|zh|ja` scelgono l'aspetto e la lingua. Un file di foratura che non dichiara il formato dei numeri è rifiutato finché non si sceglie con `--drill-format NOME` (`mils`, `inch-2.4-tz`, `inch-2.4-lz`, `metric-3.3-tz`, `metric-3.3-lz`; conservato in `DRILLPRO.FMT` della cartella dei dati). Nella finestra, un file di foratura rifiutato apre una domanda con i formati e la loro spiegazione: sceglie solo un clic, un formato che non legge il file non è conservato, e la scheda del lavoro nelle impostazioni lo cambia in seguito.
 
 **Cambio utensili (modelli ATC).** Il cambio utensili legge cinque righe in più del file di macchina, dopo le posizioni del supporto, ciascuna con una chiave e un valore in mm: `RACK_TOOL_LENGTH` (38), `RACK_RING_TO_TIP` (21), `RACK_CLEARANCE` (8: di quanto sopra le punte degli utensili viaggia il mandrino da una posizione all'altra), `RACK_APPROACH` (-8: il lato della barra da cui entra il mandrino in X, negativo dal lato del tavolo, 0 dritto verso il basso sulla posizione) e `RACK_REACH_X` (150: di quanto oltre il bordo del tavolo può stare la barra). Un file senza queste righe usa questi valori. L'altezza a cui si afferra un utensile è la Z della sua posizione (si imposta nella finestra della barra utensili). **Niente di questo è stato verificato su una vera macchina ATC e restano quattro dubbi:** il lato da cui deve entrare il mandrino, la Z a cui si afferra un utensile, quante posizioni ha la barra di ogni modello (15 qui: l'utensile di prova, 14 utensili e il rilevatore di rottura) e se il lettore DOS originale del file di macchina accetta le righe `RACK_`. Finché una macchina non risponde, si regolano nel file.
 
@@ -191,7 +191,7 @@ Avvialo con `run.bat` (Windows) o `./run.sh` (Linux e macOS); entrambi compilano
 
 ## 🧪 Test
 
-La suite ha 716 test (`cargo test --all-targets --features gui`). Verificano l'avviatore e ciò che ricorda, le impostazioni, come un file di foratura o HP-GL diventa la scena, i profili di macchina, il pannello e la riga di comando. I motori che usa (protocollo, movimento, porta di sicurezza) sono testati in EH3D-DRILLPRO e EH3D-ROUTEPRO. La CI esegue anche `cargo fmt --check` e `cargo clippy` con gli avvisi come errori, e `python -I tools/ci_validate.py` controlla il manifesto, le versioni, il changelog e gli otto README.
+La suite ha 717 test (`cargo test --all-targets --features gui`). Verificano l'avviatore e ciò che ricorda, le impostazioni, come un file di foratura o HP-GL diventa la scena, i profili di macchina, il pannello e la riga di comando. I motori che usa (protocollo, movimento, porta di sicurezza) sono testati in EH3D-DRILLPRO e EH3D-ROUTEPRO. La CI esegue anche `cargo fmt --check` e `cargo clippy` con gli avvisi come errori, e `python -I tools/ci_validate.py` controlla il manifesto, le versioni, il changelog e gli otto README.
 
 ## 🏗️ Compilazione e rilascio
 

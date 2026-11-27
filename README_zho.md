@@ -11,14 +11,14 @@
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Stack-Rust-DEA584.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Languages-8-00E5FF.svg" alt="Languages">
-  <img src="https://img.shields.io/badge/Tests-716-0f6cbd.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-717-0f6cbd.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.3.3-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-scaffolding-FFB020.svg" alt="Maturity">
 </p>
 
 ---
 
-**诚实性检查 - 今天实际能运行的内容：**一个带窗口的 Rust 程序，有 716 项可在电脑上运行的测试。启动器提供现代界面，或用于手动 (MTC) 或自动 (ATC) 换刀机器的经典钻孔与铣削程序。查看器可从文件夹浏览器、拖放或命令行打开钻孔文件、HP-GL 绘图文件和包含作业的 ZIP 压缩包，在平面视图中按钻头尺寸绘出每个孔并在其上叠加铣削路径，用配置中选定尺寸的工作台以 3D 显示机器，对电路板拼板，并在作业运行时跟踪进度。作业运行在 EH3D-DRILLPRO 和 EH3D-ROUTEPRO 引擎的**模拟器**上；如何连接真实机器（电脑的 RS-232、USB-RS232 适配器，或直接或经由 EH3D-SERVER 连接 EH3D-NODE-BUNGARD）由它们读取的同一个机器文件决定，而**这些方式都没有在此窗口中试过**。连接、设置和刀具窗口只更改它们提供的值，完整的机器和刀具文件还不能编辑，3D 视图也不显示路径的高度。
+**诚实性检查 - 今天实际能运行的内容：**一个带窗口的 Rust 程序，有 717 项可在电脑上运行的测试。启动器提供现代界面，或用于手动 (MTC) 或自动 (ATC) 换刀机器的经典钻孔与铣削程序。查看器可从文件夹浏览器、拖放或命令行打开钻孔文件、HP-GL 绘图文件和包含作业的 ZIP 压缩包，在平面视图中按钻头尺寸绘出每个孔并在其上叠加铣削路径，用配置中选定尺寸的工作台以 3D 显示机器，对电路板拼板，并在作业运行时跟踪进度。作业运行在 EH3D-DRILLPRO 和 EH3D-ROUTEPRO 引擎的**模拟器**上；如何连接真实机器（电脑的 RS-232、USB-RS232 适配器，或直接或经由 EH3D-SERVER 连接 EH3D-NODE-BUNGARD）由它们读取的同一个机器文件决定，而**这些方式都没有在此窗口中试过**。连接、设置和刀具窗口只更改它们提供的值，完整的机器和刀具文件还不能编辑，3D 视图也不显示路径的高度。
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | 版本 | `0.3.3` |
 | 成熟度 | 脚手架 |
-| 测试 | 716 |
+| 测试 | 717 |
 | 技术栈 | Rust |
 | 真实硬件 | 否。只在模拟器和电脑上运行过；从未通过此窗口驱动过任何机器 |
 
@@ -49,7 +49,7 @@
 | 文件与拼板 | 🟡 | 钻孔文件、HP-GL 文件和 ZIP 压缩包可从浏览器、拖放或命令行打开；电路板可按三种模式重复。已用本仓库的小型示例文件试过。 |
 | 设置 | 🟠 | 可更改工作台的可用宽度和深度并保存到机器文件；机器和刀具文件的其余部分仍用经典程序编辑。 |
 | 机器控制 | 🔴 | 作业通过 EH3D-DRILLPRO 和 EH3D-ROUTEPRO 的引擎，因此原则上具备它们的所有连接；只在模拟器上运行过。连接窗口可选择连接方式（计算机的 RS-232、USB-RS232 适配器、EH3D 节点或 EH3D 服务器），测试并保存到机器文件；暂停会在两次移动之间保持作业。 |
-| 测试 | 🟡 | 电脑上通过 716 项测试（`cargo test --all-targets --features gui`）：启动器、设置、把文件读入场景、机器配置、面板和命令行。没有任何一项接触真实机器。其中包括对中断后恢复的作业的固定种子模拟，含注入故障与恢复。 |
+| 测试 | 🟡 | 电脑上通过 717 项测试（`cargo test --all-targets --features gui`）：启动器、设置、把文件读入场景、机器配置、面板和命令行。没有任何一项接触真实机器。其中包括对中断后恢复的作业的固定种子模拟，含注入故障与恢复。 |
 | 预编译包 | 🟠 | 工作流为 Windows（64 位和 32 位）、Linux 和 macOS 构建带示例文件的程序；尚未发布版本。 |
 
 ## 🎯 概述
@@ -173,7 +173,7 @@ EH3D-BUNGARD-GUI 是 EH3D 家族中 Bungard 机器的现代界面。它按路径
 
 ## ⚙️ 配置
 
-连接由 EH3D-DRILLPRO 和 EH3D-ROUTEPRO 的**机器文件**决定（`machine.cfg`，含 `connection = demo|rs232|usb|node|server` 以及在真实机器上调好的每个值）：`--connection FILE` 指向它，没有它时作业在模拟器上运行。`--data DIR` 是经典程序的机器和刀具文件所在的文件夹（`DRILLPRO.DCF`、`DRILLPRO.DTD`、`ROUTEPRO.RCF`、`ROUTEPRO.RTD`；`testdata/` 中有示例）。设置窗口可更改工作台的可用宽度和深度，并保存到这些文件。窗口记住的内容（启动器的选择、语言和主题）保存在用户设置文件夹里的一个小文件中，与其他 EH3D 程序放在一起。`--theme forge|neon|glass|windows-classic|system` 和 `--lang en|es|it|de|fr|pt|zh|ja` 选择外观和语言。未声明数值格式的钻孔文件会被拒绝，直到用 `--drill-format 名称` 选择（`mils`、`inch-2.4-tz`、`inch-2.4-lz`、`metric-3.3-tz`、`metric-3.3-lz`；保存在数据文件夹的 `DRILLPRO.FMT` 中）。
+连接由 EH3D-DRILLPRO 和 EH3D-ROUTEPRO 的**机器文件**决定（`machine.cfg`，含 `connection = demo|rs232|usb|node|server` 以及在真实机器上调好的每个值）：`--connection FILE` 指向它，没有它时作业在模拟器上运行。`--data DIR` 是经典程序的机器和刀具文件所在的文件夹（`DRILLPRO.DCF`、`DRILLPRO.DTD`、`ROUTEPRO.RCF`、`ROUTEPRO.RTD`；`testdata/` 中有示例）。设置窗口可更改工作台的可用宽度和深度，并保存到这些文件。窗口记住的内容（启动器的选择、语言和主题）保存在用户设置文件夹里的一个小文件中，与其他 EH3D 程序放在一起。`--theme forge|neon|glass|windows-classic|system` 和 `--lang en|es|it|de|fr|pt|zh|ja` 选择外观和语言。未声明数值格式的钻孔文件会被拒绝，直到用 `--drill-format 名称` 选择（`mils`、`inch-2.4-tz`、`inch-2.4-lz`、`metric-3.3-tz`、`metric-3.3-lz`；保存在数据文件夹的 `DRILLPRO.FMT` 中）。在窗口中，被拒绝的钻孔文件会弹出列出各格式及说明的询问：只有点击才会选择，无法读取该文件的格式不会被保存；之后可在设置的作业页签中更改。
 
 **换刀器（ATC 型号）。** 换刀器会在机器文件中刀架位置之后再读取五行，每行是一个键和一个以毫米为单位的值：`RACK_TOOL_LENGTH`（38）、`RACK_RING_TO_TIP`（21）、`RACK_CLEARANCE`（8：夹头在各位置之间移动时高出刀尖多少）、`RACK_APPROACH`（-8：夹头沿 X 从刀架的哪一侧进入，负值表示从工作台一侧，0 表示直接下落到该位置）和 `RACK_REACH_X`（150：刀架可以超出工作台边缘多远）。文件中没有这些行时使用上述值。抓取刀具的高度就是其位置的 Z（在刀具架窗口中设置）。**以上内容均未在真实的 ATC 机器上验证，仍有四点待定：** 夹头必须从哪一侧进入、抓取刀具时的 Z、每个型号的刀架有多少个位置（此处为 15：测试刀具、14 把刀具和断刀检测器），以及原始 DOS 程序读取机器文件时是否接受 `RACK_` 行。在机器给出答案之前，请在文件中自行调整。
 
@@ -191,7 +191,7 @@ python -I tools/ci_validate.py
 
 ## 🧪 测试
 
-测试套件有 716 项测试（`cargo test --all-targets --features gui`）。它们检查启动器及其记住的内容、设置、钻孔或 HP-GL 文件如何变成场景、机器配置、面板和命令行。它使用的引擎（协议、运动、安全门）在 EH3D-DRILLPRO 和 EH3D-ROUTEPRO 中测试。CI 还运行 `cargo fmt --check` 和把警告当作错误的 `cargo clippy`，`python -I tools/ci_validate.py` 检查清单、版本、更新日志和八个 README。
+测试套件有 717 项测试（`cargo test --all-targets --features gui`）。它们检查启动器及其记住的内容、设置、钻孔或 HP-GL 文件如何变成场景、机器配置、面板和命令行。它使用的引擎（协议、运动、安全门）在 EH3D-DRILLPRO 和 EH3D-ROUTEPRO 中测试。CI 还运行 `cargo fmt --check` 和把警告当作错误的 `cargo clippy`，`python -I tools/ci_validate.py` 检查清单、版本、更新日志和八个 README。
 
 ## 🏗️ 构建与发布
 

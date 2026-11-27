@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **Third-party notices in every package (`docs/THIRD_PARTY_NOTICES`):** the packages of the releases now carry the copyright notices and licence texts of the Rust crates and of the data the program is built with, and the CI fails when a new dependency or licence is not in the file.
+
 - **A refused drilling file asks for its format in the window:** when a drill file does not declare how its numbers are written, the window shows the formats of DRILLPRO with their explanation in its eight languages. Only a click chooses, the choice is kept in `DRILLPRO.FMT` of the data folder, a format that does not read the file is not kept, and the tab of the job in the settings changes it later. 1 new test; not tried on a machine.
 
 - **A drill file that does not declare its number format is refused until one is chosen (safety, changes what is accepted):** the window, the job tools and `--report` no longer read such a file (a machine file without a header, `INCH` alone) as mils without being told. Choose with `--drill-format mils` (the old reading), `inch-2.4-tz`, `inch-2.4-lz`, `metric-3.3-tz` or `metric-3.3-lz`; it is kept in `DRILLPRO.FMT` of the data folder and the message says so in the eight languages. The window has no menu for it yet.

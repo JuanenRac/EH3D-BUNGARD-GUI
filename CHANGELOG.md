@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **Pause now holds the machine (safety):** until now the button only stopped the drawing of the window, and a real machine went on drilling or routing. It now asks the engine to hold at the end of the hole or path it is on, with the head clear of the board, and says so on the screen; Start goes on and Pause again takes it back before it holds. `pause_spindle = stop` in the machine file (off by default) also stops the spindle and asks again before the head moves. A job on EH3D-SERVER cannot be paused from here, and its Pause button stays off. Jobs run directly on a machine are now written to `eh3d-jobs.log` by the engines. Tried on the simulator, not on a machine.
+- **Built against the current EH3D-DRILLPRO and EH3D-ROUTEPRO:** with them a node connection stays alive while a dialog waits, and the router takes `cutter_mm` of the machine file (off by default) to offset closed paths by the radius of the cutter.
 ## [0.3.4] - A window to choose the number format, rotated copies keep their scale and a safer restart (not tried on a machine)
 
 - **The restart after an update is tried again when the new program is still busy:** on Linux a file that is still open for writing is refused for a moment ("Text file busy"); the start is tried again for about a second and then told as a failure. 1 new test (Linux only).

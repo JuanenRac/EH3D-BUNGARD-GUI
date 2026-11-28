@@ -238,11 +238,8 @@ impl App {
     /// The state of the buttons of the job: Start works when nothing runs or the job is paused; Pause and Stop only while it runs.
     pub(super) fn job_buttons(&self) -> (bool, bool, bool) {
         let running = self.running.is_some();
-        (
-            (!running || self.paused) && !self.estop,
-            running && !self.paused,
-            running || self.stage_wait,
-        )
+        let (start, pause) = crate::jobflow::pause_buttons(running, self.hold());
+        (start && !self.estop, pause, running || self.stage_wait)
     }
 
     /// The emergency button: a red cap on a yellow plate, with a shadow and a ring that glows under the pointer and pulses when the stop is
@@ -1360,7 +1357,16 @@ mod tests {
         a.auto_ok = true;
         a.act(Act::Start);
         assert_eq!(a.job_buttons(), (false, true, true));
+        // the pause is asked and holds at the end of a hole; until then Pause takes it back
         a.act(Act::Pause);
+        assert_eq!(a.job_buttons(), (false, true, true));
+        a.fixed_dt = Some(0.2);
+        for _ in 0..4000 {
+            a.tick();
+            if a.job_buttons().0 {
+                break;
+            }
+        }
         assert_eq!(a.job_buttons(), (true, false, true));
         // Start while it is paused goes on
         a.act(Act::Start);

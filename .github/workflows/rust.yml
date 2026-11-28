@@ -55,14 +55,14 @@ jobs:
         with:
           persist-credentials: false
           repository: JuanenRac/EH3D-DRILLPRO
-          ref: 89779ab895b8874699adce4f1249ad5f17aec750
+          ref: ed4c96fc6fffd1f1f1b68045eaa9979218d96840
           path: EH3D-DRILLPRO
       - name: Check out the sibling EH3D-ROUTEPRO (a path dependency)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           repository: JuanenRac/EH3D-ROUTEPRO
-          ref: ee675bde8c41dd56937c9027196c3bf360238794
+          ref: b9edd0d0eb1154c483edbb1449c8c1399afdf3db
           path: EH3D-ROUTEPRO
       - name: Linux libraries of the window
         if: runner.os == 'Linux'

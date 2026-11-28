@@ -2,7 +2,7 @@
 
 ## Current state
 
-EH3D-BUNGARD-GUI works on a computer and on the simulator: the launcher, the views, the opening and editing of jobs, the panel, the tool changer, the resume of a job, the jog, the probe, the report, the server window and the update are covered by tests, and the window has been looked at with pictures of the simulated job. It has never driven a real machine; the pause holds the job between two moves, the 3D view shows no height of the tool paths, and the window needs its three sibling folders next to it.
+EH3D-BUNGARD-GUI works on a computer and on the simulator: the launcher, the views, the opening and editing of jobs, the panel, the tool changer, the resume of a job, the jog, the probe, the report, the server window and the update are covered by tests, and the window has been looked at with pictures of the simulated job. It has never driven a real machine; the pause holds at the end of a hole or path (tried on the simulator only), the 3D view shows no height of the tool paths, and the window needs its three sibling folders next to it.
 
 ## Capabilities
 
@@ -10,7 +10,7 @@ The official state of each capability is in `REQUIREMENTS.md`. The register has 
 
 ## Open questions
 
-* Whether the pause should stop in the middle of a move, which depends on what the control unit allows.
+* Whether the pause should stop in the middle of a hole or path, which depends on what the control unit allows.
 * Whether the whole machine file should be edited from the window or only the keys it offers.
 
 ## What it needs from other repositories

@@ -8,7 +8,7 @@ impl App {
     /// The state of the machine in a word: working with the kind of tool, holding, or waiting for a tool change.
     fn hud_state(&self) -> Option<&'static str> {
         let p = self.running?;
-        if self.paused {
+        if matches!(self.hold(), Hold::Paused { .. }) {
             return Some(self.tr(Text::Pause));
         }
         let side = if p == Program::Drill {
@@ -19,6 +19,9 @@ impl App {
         Some(match side.engine.question() {
             Some(Question::ToolChange(_)) => self.tr(Text::HudChanging),
             Some(Question::SpindleStart) => self.tr(Text::AskSpindle),
+            Some(Question::SpindleRestarted) => {
+                hold::status_text(drill_lang(self.lang), Hold::SpindleRestarted).unwrap_or_default()
+            }
             None => match p {
                 Program::Drill => self.tr(Text::Drilling),
                 Program::Route => self.tr(Text::Routing),

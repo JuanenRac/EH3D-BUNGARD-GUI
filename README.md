@@ -48,7 +48,7 @@ Each line is one part of this repository and the light says how far it is today.
 | Views | 🟡 | The plan view (holes by drill size, routing paths) and the 3D view of the machine with rails, perforated table, moving gantry and tool rack, fitted to the table size; both are dragged and zoomed. The 3D view shows no height of the tool paths yet. |
 | Files and panelization | 🟡 | Drilling files, HP-GL files and ZIP archives are opened from a browser, by drag and drop or from the command line; the board is repeated in three modes. Tried with the small sample files of this repository. |
 | Settings | 🟠 | The usable width and depth of the table are changed and saved to the machine files; the rest of the machine and tool files is still edited with the classic programs. |
-| Machine control | 🔴 | The job goes through the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO, so every connection they have is there in principle; it has run on the simulator only. The Connection window chooses the link (the computer's RS-232, a USB-RS232 adapter, the EH3D node or the EH3D server), tests it and saves it to the machine file, and Pause holds the job between two moves. |
+| Machine control | 🔴 | The job goes through the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO, so every connection they have is there in principle; it has run on the simulator only. The Connection window chooses the link (the computer's RS-232, a USB-RS232 adapter, the EH3D node or the EH3D server), tests it and saves it to the machine file, and Pause holds the machine at the end of the hole or path it is on, with the head clear of the board (a job on the server cannot be paused from here). |
 | Tests | 🟡 | 718 tests pass on a computer (`cargo test --all-targets --features gui`): the launcher, the settings, the reading of the files into the scene, the machine profiles, the panel and the command line. None of them touches a machine. They include a seeded simulation of a job that is cut and resumed with injected faults and recovery. |
 | Ready-made packages | 🟠 | A workflow builds the program for Windows (64 and 32 bits), Linux and macOS with the sample files; no release has been published yet. |
 
@@ -255,13 +255,13 @@ EH3D-BUNGARD-GUI/
 
 * No job has been driven from this window on a real machine: it has run on the simulator of the engines of EH3D-DRILLPRO and EH3D-ROUTEPRO only.
 * The Connection window writes only the keys of the link into the machine file; the settings window writes the keys it offers (the table, the model, the units, the sounds and the speed of the simulation) and the tools window the feeds, the speeds and the depths; the rest of the machine and tool files is not edited here.
-* The pause holds the job between two moves, not in the middle of one, and the 3D view does not show the height of the tool paths.
+* The pause holds at the end of a hole or path, not in the middle of one, and the 3D view does not show the height of the tool paths.
 * Only the CCD and CCD/2 machines are driven; the profiles of the CCD Premium and the CCD XL are drawn, but their own control unit is not supported.
 * The window needs the sibling folders EH3D-COMMON, EH3D-DRILLPRO and EH3D-ROUTEPRO next to it, because it depends on them by path.
 
 **Next**
 
-* A pause in the middle of a move, not only between two moves.
+* A pause in the middle of a hole or path, not only at its end.
 * The height (Z) of the tool paths in the 3D view.
 * Loading and saving the whole configuration, not only the table size.
 * Packaging with the classic programs, so one download has everything.

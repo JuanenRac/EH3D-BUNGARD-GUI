@@ -11,7 +11,7 @@ The window from which a person opens a drilling file, a plot file or a ZIP archi
 * Opens drilling files, HP-GL plot files, DXF drawings, the outline of a Gerber board and ZIP archives, refuses a name that would leave the work folder and reads no file past a size limit.
 * Draws the plan view with every hole by drill size and the routing paths over it, and the 3D view of the machine fitted to the table of the model chosen, with the head following the job.
 * Panelizes the board in three modes, edits the job (take a tool out, choose, move, copy, undo and redo) and refuses a job that does not fit the table before it starts; the design is locked while the machine works.
-* Runs the job through the engines: drilling and routing one after the other, the tool changer of the ATC models with its places in the bar and its loads, a job that is cut and resumed, a pause between two moves and an emergency button that stops the job and blocks the start.
+* Runs the job through the engines: drilling and routing one after the other, the tool changer of the ATC models with its places in the bar and its loads, a job that is cut and resumed, a pause at the end of a hole or path and an emergency button that stops the job and blocks the start.
 * Jogs the head by hand inside the travel, measures the table with a probe and corrects the jobs only when the person asks, and looks at the board with the camera of the head after the job.
 * Speaks the eight languages of the suite (English, Spanish, Italian, German, French, Portuguese of Portugal, Chinese and Japanese); a language it had before gives English and a notice.
 * Keeps the settings in the machine file, a log without secrets, a report of the job with an estimate of the time, and looks for a new release, which it installs only after the checksum and, when asked, the signature agree.
@@ -21,7 +21,7 @@ The window from which a person opens a drilling file, a plot file or a ZIP archi
 
 * No emergency stop of its own beyond the button of the window: the control unit of the machine watches the limit switches and the power switch is the real stop (see below).
 * No drive of the CCD Premium and the CCD XL: their profiles are drawn, but their own control unit is not supported.
-* No pause in the middle of a move: the pause holds the job between two moves.
+* No pause in the middle of a hole or path: the pause holds the machine at its end.
 * No edit of the whole machine and tool files: it writes the keys it offers and leaves every other line as it was.
 * No installation of an update without a person clicking it, and none whose checksum does not agree.
 

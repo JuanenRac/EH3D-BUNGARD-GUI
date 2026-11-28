@@ -48,7 +48,7 @@ Jede Zeile ist ein Teil dieses Repositorys, und die Ampel sagt, wie weit er heut
 | Ansichten | 🟡 | Die Draufsicht (Löcher nach Bohrergröße, Fräsbahnen) und die 3D-Ansicht der Maschine mit Schienen, gelochtem Tisch, fahrendem Portal und Werkzeugablage, angepasst an die Tischgröße; beide lassen sich ziehen und zoomen. Die 3D-Ansicht zeigt noch keine Höhe der Bahnen. |
 | Dateien und Nutzenbildung | 🟡 | Bohrdateien, HP-GL-Dateien und ZIP-Archive werden aus einem Browser, per Drag and Drop oder von der Befehlszeile geöffnet; die Platine wird in drei Modi vervielfacht. Mit den kleinen Beispieldateien dieses Repositorys ausprobiert. |
 | Einstellungen | 🟠 | Nutzbare Breite und Tiefe des Tisches werden geändert und in den Maschinendateien gespeichert; der Rest der Maschinen- und Werkzeugdateien wird weiter mit den klassischen Programmen bearbeitet. |
-| Maschinensteuerung | 🔴 | Der Auftrag läuft über die Engines von EH3D-DRILLPRO und EH3D-ROUTEPRO, also sind im Prinzip alle ihre Verbindungen da; er lief nur im Simulator. Das Verbindungsfenster wählt die Verbindung (den RS-232 des Rechners, einen USB-RS232-Adapter, den EH3D-Knoten oder den EH3D-Server), testet sie und speichert sie in der Maschinendatei, und Pause hält den Auftrag zwischen zwei Bewegungen an. |
+| Maschinensteuerung | 🔴 | Der Auftrag läuft über die Engines von EH3D-DRILLPRO und EH3D-ROUTEPRO, also sind im Prinzip alle ihre Verbindungen da; er lief nur im Simulator. Das Verbindungsfenster wählt die Verbindung (den RS-232 des Rechners, einen USB-RS232-Adapter, den EH3D-Knoten oder den EH3D-Server), testet sie und speichert sie in der Maschinendatei, und Pause hält die Maschine nach dem laufenden Loch oder Pfad mit dem Kopf frei über der Platine an (ein Auftrag auf dem Server kann von hier nicht pausiert werden). |
 | Tests | 🟡 | 718 Tests bestehen auf einem Rechner (`cargo test --all-targets --features gui`): der Starter, die Einstellungen, das Einlesen der Dateien in die Szene, die Maschinenprofile, der Nutzen und die Befehlszeile. Keiner berührt eine Maschine. Dazu gehört eine Simulation mit festem Seed für einen unterbrochenen und fortgesetzten Auftrag, mit eingespeisten Fehlern und Wiederherstellung. |
 | Fertige Pakete | 🟠 | Ein Workflow baut das Programm für Windows (64 und 32 Bit), Linux und macOS mit den Beispieldateien; eine Version wurde noch nicht veröffentlicht. |
 
@@ -255,13 +255,13 @@ EH3D-BUNGARD-GUI/
 
 * Von diesem Fenster aus wurde noch kein Auftrag auf einer echten Maschine gefahren: es lief nur im Simulator der Engines von EH3D-DRILLPRO und EH3D-ROUTEPRO.
 * Das Verbindungsfenster schreibt nur die Schlüssel der Verbindung in die Maschinendatei; das Einstellungsfenster schreibt die Schlüssel, die es anbietet (Tisch, Modell, Einheiten, Töne und Simulationsgeschwindigkeit), das Werkzeugfenster die Vorschübe, Drehzahlen und Tiefen; der Rest der Maschinen- und Werkzeugdateien wird hier nicht bearbeitet.
-* Die Pause hält den Auftrag zwischen zwei Bewegungen an, nicht mitten in einer, und die 3D-Ansicht zeigt die Höhe der Bahnen nicht.
+* Die Pause hält nach einem Loch oder Pfad an, nicht mittendrin, und die 3D-Ansicht zeigt die Höhe der Bahnen nicht.
 * Nur die Maschinen CCD und CCD/2 werden gesteuert; die Profile der CCD Premium und der CCD XL werden gezeichnet, ihre eigene Steuereinheit wird aber nicht unterstützt.
 * Das Fenster braucht die Nachbarordner EH3D-COMMON, EH3D-DRILLPRO und EH3D-ROUTEPRO neben sich, weil es per Pfad von ihnen abhängt.
 
 **Als Nächstes**
 
-* Eine Pause mitten in einer Bewegung, nicht nur zwischen zwei Bewegungen.
+* Eine Pause mitten in einem Loch oder Pfad, nicht erst an dessen Ende.
 * Die Höhe (Z) der Bahnen in der 3D-Ansicht.
 * Die ganze Konfiguration laden und speichern, nicht nur die Tischgröße.
 * Verpacken mit den klassischen Programmen, damit ein Download alles enthält.

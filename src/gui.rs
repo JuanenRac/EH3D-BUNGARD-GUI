@@ -16,6 +16,7 @@ use eframe::egui::{
 use eh3d_archive::{Archive, Kind};
 use eh3d_bungard_formats::limits::ReaderLimits;
 use eh3d_drillpro::classic::engine::{ClassicEngine, Question};
+use eh3d_drillpro::hold::{self, Hold};
 use eh3d_drillpro::job::{JobOptions, Panel};
 use eh3d_drillpro::protocol::connection::{ConnectionConfig, Kind as LinkKind};
 use eh3d_view::scene::{Iso, Scene, Table};
@@ -324,7 +325,6 @@ pub struct App {
     remember: bool,
     running: Option<Program>,
     /// The job is held between two moves: the engine is not asked for the next one.
-    paused: bool,
     message: Option<String>,
     /// Text for the clipboard, which the window hands over at the start of the next frame.
     pending_copy: Option<String>,
@@ -589,7 +589,6 @@ impl App {
             layers: [true; 4],
             remember: false,
             running: None,
-            paused: false,
             message: None,
             pending_copy: None,
             report_lines: Vec::new(),
@@ -1467,7 +1466,6 @@ impl App {
             self.running = Some(p);
             self.job_started = Some(std::time::Instant::now());
             self.m3d.begin(self.m3d_first);
-            self.paused = false;
             self.resume_skip = skip;
             self.recovery_done = usize::MAX;
             self.recovery_at = None;
@@ -1580,7 +1578,6 @@ impl App {
 
     fn stop_job(&mut self) {
         crate::applog::info("job", format!("stop requested; running {:?}", self.running));
-        self.paused = false;
         self.stage_wait = false;
         self.job_queue.clear();
         self.rack_clear();
@@ -1592,6 +1589,21 @@ impl App {
             self.side_mut(p).engine.stop();
         }
         self.m3d.finish();
+    }
+
+    /// Where the running job is with respect to a pause.
+    fn hold(&self) -> Hold {
+        match self.running {
+            Some(Program::Drill) => self.drill.engine.hold(),
+            Some(Program::Route) => self.route.engine.hold(),
+            None => Hold::Off,
+        }
+    }
+
+    fn with_running(&mut self, what: impl FnOnce(&mut dyn ClassicEngine)) {
+        if let Some(p) = self.running {
+            what(self.side_mut(p).engine.as_mut());
+        }
     }
 
     fn side_mut(&mut self, p: Program) -> &mut Side {
@@ -1622,9 +1634,6 @@ impl App {
             self.m3d.advance(dt);
             return;
         };
-        if self.paused {
-            return;
-        }
         // the machine powers up, goes home and travels to the first point before the job moves; the engine waits for it
         if self.m3d.phase() == machine3d::Phase::Parked {
             self.m3d.begin(self.m3d_first);
@@ -1636,8 +1645,9 @@ impl App {
         let skip = self.resume_skip;
         let off = self.tools_off(p);
         let side = self.side_mut(p);
-        if side.engine.question().is_some() {
-            if auto_ok {
+        if let Some(q) = side.engine.question() {
+            // the confirmation after a pause is never given by itself
+            if auto_ok && q != Question::SpindleRestarted {
                 side.engine.answer(true);
             }
             return;
@@ -2077,15 +2087,17 @@ impl App {
             Act::ResetView(z) => self.reset_view(z),
             Act::Start if self.stage_wait && !self.estop => self.continue_job(),
             Act::Start => {
-                if self.paused {
-                    self.paused = false;
+                if matches!(self.hold(), Hold::Paused { .. } | Hold::Asked) {
+                    self.with_running(|e| e.resume_job());
                 } else if !self.estop {
                     self.start_job();
                 }
             }
-            Act::Pause => {
-                self.paused = crate::jobflow::toggle_pause(self.running.is_some(), self.paused)
-            }
+            Act::Pause => match self.hold() {
+                Hold::Off => self.with_running(|e| e.pause_job()),
+                Hold::Asked => self.with_running(|e| e.resume_job()),
+                _ => {}
+            },
             Act::Stop => self.stop_job(),
             Act::Back => {
                 self.stop_job();
@@ -3744,7 +3756,7 @@ impl App {
         let (can_start, can_pause, can_stop) = self.job_buttons();
         // bright colours that mean the same in every theme: green to go, blue to hold (brighter while it holds), red to stop
         let (pause_c, start_c, stop_c) = (
-            if self.paused {
+            if !matches!(self.hold(), Hold::Off | Hold::Impossible) {
                 Color32::from_rgb(90, 200, 255)
             } else {
                 Color32::from_rgb(40, 150, 255)
@@ -3849,6 +3861,11 @@ impl App {
                 let text = match q {
                     Question::SpindleStart => self.tr(Text::AskSpindle).to_string(),
                     Question::ToolChange(n) => format!("{} {n:02}", self.tr(Text::AskTool)),
+                    Question::SpindleRestarted => {
+                        hold::status_text(drill_lang(self.lang), Hold::SpindleRestarted)
+                            .unwrap_or_default()
+                            .to_string()
+                    }
                 };
                 cv.p.rect_filled(
                     Rect::from_min_size(Pos2::new(0.0, 0.0), Vec2::new(10_000.0, 10_000.0)),
@@ -3881,6 +3898,22 @@ impl App {
                     self.tr(Text::Abort),
                     col(t.danger),
                     Act::Answer(false),
+                );
+            }
+        }
+        // ---- where the pause is (the confirmation after a stopped spindle is the question above)
+        let hold = self.hold();
+        if !matches!(hold, Hold::Off | Hold::Impossible | Hold::SpindleRestarted) {
+            if let Some(line) = hold::status_text(drill_lang(self.lang), hold) {
+                cv.card(500.0, 96.0, 600.0, 56.0, true, None);
+                cv.text_fit(
+                    800.0,
+                    134.0,
+                    Align2::CENTER_BOTTOM,
+                    line,
+                    22.0,
+                    col(t.text),
+                    560.0,
                 );
             }
         }

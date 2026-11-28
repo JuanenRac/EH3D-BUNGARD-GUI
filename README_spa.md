@@ -48,7 +48,7 @@ Cada línea es una parte de este repositorio y la luz dice hasta dónde llega ho
 | Vistas | 🟡 | La vista en planta (agujeros por diámetro, trayectorias de fresado) y la vista 3D de la máquina con raíles, mesa perforada, puente móvil y almacén de herramientas, ajustada al tamaño de la mesa; ambas se arrastran y se amplían. La vista 3D aún no muestra la altura de las trayectorias. |
 | Ficheros y panelización | 🟡 | Los ficheros de taladrado, HP-GL y los archivos ZIP se abren desde un explorador, arrastrando y soltando o desde la línea de órdenes; la placa se repite en tres modos. Probado con los pequeños ficheros de muestra de este repositorio. |
 | Ajustes | 🟠 | El ancho y el fondo útiles de la mesa se cambian y se guardan en los ficheros de la máquina; el resto de los ficheros de máquina y herramientas se sigue editando con los programas clásicos. |
-| Control de la máquina | 🔴 | El trabajo pasa por los motores de EH3D-DRILLPRO y EH3D-ROUTEPRO, así que en principio están todas sus conexiones; solo ha corrido en el simulador. La ventana de Conexión elige el enlace (el RS-232 del ordenador, un adaptador USB-RS232, el nodo EH3D o el servidor EH3D), lo prueba y lo guarda en el fichero de la máquina, y Pausa detiene el trabajo entre dos movimientos. |
+| Control de la máquina | 🔴 | El trabajo pasa por los motores de EH3D-DRILLPRO y EH3D-ROUTEPRO, así que en principio están todas sus conexiones; solo ha corrido en el simulador. La ventana de Conexión elige el enlace (el RS-232 del ordenador, un adaptador USB-RS232, el nodo EH3D o el servidor EH3D), lo prueba y lo guarda en el fichero de la máquina, y Pausa detiene la máquina al acabar el taladro o tramo en curso, con el cabezal separado de la placa (un trabajo del servidor no se puede pausar desde aquí). |
 | Pruebas | 🟡 | Pasan 718 pruebas en un ordenador (`cargo test --all-targets --features gui`): el lanzador, los ajustes, la lectura de los ficheros a la escena, los perfiles de máquina, el panel y la línea de órdenes. Ninguna toca una máquina. Incluyen una simulación con semilla fija de un trabajo que se corta y se reanuda, con fallos inyectados y recuperación. |
 | Paquetes ya compilados | 🟠 | Un flujo de trabajo compila el programa para Windows (64 y 32 bits), Linux y macOS con los ficheros de muestra; todavía no se ha publicado ninguna versión. |
 
@@ -255,13 +255,13 @@ EH3D-BUNGARD-GUI/
 
 * Ningún trabajo se ha manejado desde esta ventana en una máquina real: solo ha corrido en el simulador de los motores de EH3D-DRILLPRO y EH3D-ROUTEPRO.
 * La ventana de Conexión escribe en el fichero de la máquina solo las claves del enlace; la de ajustes escribe las claves que ofrece (la mesa, el modelo, las unidades, los sonidos y la velocidad de la simulación) y la de herramientas los avances, las velocidades y las profundidades; el resto de los ficheros de máquina y herramientas no se edita aquí.
-* La pausa detiene el trabajo entre dos movimientos, no en mitad de uno, y la vista 3D no muestra la altura de las trayectorias.
+* La pausa detiene al acabar un taladro o tramo, no en mitad de él, y la vista 3D no muestra la altura de las trayectorias.
 * Solo se manejan las máquinas CCD y CCD/2; los perfiles de la CCD Premium y la CCD XL se dibujan, pero su propia unidad de control no está soportada.
 * La ventana necesita las carpetas hermanas EH3D-COMMON, EH3D-DRILLPRO y EH3D-ROUTEPRO junto a ella, porque depende de ellas por ruta.
 
 **Siguiente**
 
-* Una pausa en mitad de un movimiento, no solo entre dos movimientos.
+* Una pausa en mitad de un taladro o tramo, no solo al acabarlo.
 * La altura (Z) de las trayectorias en la vista 3D.
 * Cargar y guardar toda la configuración, no solo el tamaño de la mesa.
 * Empaquetar con los programas clásicos, para que una sola descarga lo tenga todo.

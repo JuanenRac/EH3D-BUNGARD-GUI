@@ -4,7 +4,7 @@ Good ideas that are not in the current version. Writing them here keeps anybody 
 
 | Idea | Why not yet | Revisit when |
 |---|---|---|
-| A pause in the middle of a move | The pause holds the job between two moves; stopping in the middle depends on what the control unit allows and has not been tried on a machine | a person tries a stop in the middle of a move on a real machine |
+| A pause in the middle of a hole or path | The pause holds at the end of a hole or path; stopping in the middle depends on what the control unit allows and has not been tried on a machine | a person tries a stop in the middle of a move on a real machine |
 | The height of the tool paths in the 3D view | The view shows where the head goes in the plane and not how deep | the drawing of a path in three dimensions has a design and a test |
 | Loading and saving the whole configuration | Only the keys the window offers are written and the rest of the machine file is kept as it was | the machine file has a schema that the window can edit without losing a line |
 | Drive of the CCD Premium and the CCD XL | Their control unit is not supported and no such machine is available to try | a person with such a machine gives its protocol |

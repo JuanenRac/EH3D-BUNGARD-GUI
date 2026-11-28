@@ -48,7 +48,7 @@ Chaque ligne est une partie de ce dépôt et le feu dit où elle en est aujourd'
 | Vues | 🟡 | La vue en plan (trous par diamètre, trajets de fraisage) et la vue 3D de la machine avec rails, table perforée, portique mobile et rack d'outils, ajustée à la taille de la table ; toutes deux se déplacent et se zooment. La vue 3D ne montre pas encore la hauteur des trajets. |
 | Fichiers et panélisation | 🟡 | Les fichiers de perçage, HP-GL et les archives ZIP s'ouvrent depuis un navigateur, par glisser-déposer ou depuis la ligne de commande ; la carte est répétée en trois modes. Essayé avec les petits fichiers d'exemple de ce dépôt. |
 | Réglages | 🟠 | La largeur et la profondeur utiles de la table se changent et s'enregistrent dans les fichiers de la machine ; le reste des fichiers de machine et d'outils s'édite encore avec les programmes classiques. |
-| Pilotage de la machine | 🔴 | Le travail passe par les moteurs de EH3D-DRILLPRO et EH3D-ROUTEPRO, donc en principe toutes leurs connexions sont là ; il n'a tourné que sur le simulateur. La fenêtre de Connexion choisit la liaison (le RS-232 de l'ordinateur, un adaptateur USB-RS232, le nœud EH3D ou le serveur EH3D), la teste et l'enregistre dans le fichier de la machine, et Pause retient le travail entre deux mouvements. |
+| Pilotage de la machine | 🔴 | Le travail passe par les moteurs de EH3D-DRILLPRO et EH3D-ROUTEPRO, donc en principe toutes leurs connexions sont là ; il n'a tourné que sur le simulateur. La fenêtre de Connexion choisit la liaison (le RS-232 de l'ordinateur, un adaptateur USB-RS232, le nœud EH3D ou le serveur EH3D), la teste et l'enregistre dans le fichier de la machine, et Pause retient la machine à la fin du trou ou du tracé en cours, tête dégagée de la carte (un travail du serveur ne se met pas en pause d'ici). |
 | Tests | 🟡 | 718 tests passent sur un ordinateur (`cargo test --all-targets --features gui`) : le lanceur, les réglages, la lecture des fichiers vers la scène, les profils de machine, le panneau et la ligne de commande. Aucun ne touche une machine. Elles incluent une simulation à graine fixe de un travail coupé puis repris, avec pannes injectées et reprise. |
 | Paquets prêts à l'emploi | 🟠 | Un workflow compile le programme pour Windows (64 et 32 bits), Linux et macOS avec les fichiers d'exemple ; aucune version n'a encore été publiée. |
 
@@ -255,13 +255,13 @@ EH3D-BUNGARD-GUI/
 
 * Aucun travail n'a été piloté depuis cette fenêtre sur une vraie machine : il n'a tourné que sur le simulateur des moteurs de EH3D-DRILLPRO et EH3D-ROUTEPRO.
 * La fenêtre de Connexion n'écrit dans le fichier de la machine que les clés de la liaison ; celle des réglages écrit les clés qu'elle offre (la table, le modèle, les unités, les sons et la vitesse de la simulation) et celle des outils les avances, les vitesses et les profondeurs ; le reste des fichiers de machine et d'outils n'est pas modifié ici.
-* La pause retient le travail entre deux mouvements, pas au milieu d'un, et la vue 3D ne montre pas la hauteur des trajets.
+* La pause retient à la fin d'un trou ou d'un tracé, pas au milieu, et la vue 3D ne montre pas la hauteur des trajets.
 * Seules les machines CCD et CCD/2 sont pilotées ; les profils de la CCD Premium et de la CCD XL sont dessinés, mais leur propre unité de commande n'est pas prise en charge.
 * La fenêtre demande les dossiers voisins EH3D-COMMON, EH3D-DRILLPRO et EH3D-ROUTEPRO à côté d'elle, car elle en dépend par chemin.
 
 **Ensuite**
 
-* Une pause au milieu d'un mouvement, pas seulement entre deux mouvements.
+* Une pause au milieu d'un trou ou d'un tracé, pas seulement à sa fin.
 * La hauteur (Z) des trajets dans la vue 3D.
 * Charger et enregistrer toute la configuration, pas seulement la taille de la table.
 * Un paquet avec les programmes classiques, pour qu'un seul téléchargement contienne tout.

@@ -2,6 +2,7 @@
 //! rack and which slot holds which tool. The window asks this module and keeps only the drawing and the buttons.
 
 use crate::launcher::Program;
+use eh3d_drillpro::hold::Hold;
 
 /// The tools of one program that go into the rack together, in the order the job uses them.
 pub type Piece = (Program, Vec<u8>);
@@ -86,9 +87,16 @@ pub fn programs_for_start(on: Vec<Program>, running: Option<Program>, skip: usiz
     }
 }
 
-/// The state of the pause after the Pause button: it toggles while a program runs and is never on when none does.
-pub fn toggle_pause(running: bool, paused: bool) -> bool {
-    running && !paused
+/// Whether the Start and the Pause buttons work: Start with nothing running or to go on from a pause; Pause while a job runs that can be paused (again
+/// to take the pause back before the machine holds).
+pub fn pause_buttons(running: bool, hold: Hold) -> (bool, bool) {
+    if !running {
+        return (true, false);
+    }
+    (
+        matches!(hold, Hold::Paused { .. }),
+        matches!(hold, Hold::Off | Hold::Asked),
+    )
 }
 
 /// What the job does when a program of it has ended.
@@ -247,11 +255,16 @@ mod tests {
     }
 
     #[test]
-    fn the_pause_toggles_only_while_a_program_runs() {
-        assert!(toggle_pause(true, false));
-        assert!(!toggle_pause(true, true));
-        assert!(!toggle_pause(false, false));
-        assert!(!toggle_pause(false, true));
+    fn start_and_pause_follow_the_state_of_the_job() {
+        let paused = Hold::Paused {
+            spindle_stopped: false,
+        };
+        assert_eq!(pause_buttons(false, Hold::Off), (true, false));
+        assert_eq!(pause_buttons(true, Hold::Off), (false, true));
+        assert_eq!(pause_buttons(true, Hold::Asked), (false, true));
+        assert_eq!(pause_buttons(true, paused), (true, false));
+        assert_eq!(pause_buttons(true, Hold::SpindleRestarted), (false, false));
+        assert_eq!(pause_buttons(true, Hold::Impossible), (false, false));
     }
 
     /// A small generator with a fixed seed: the same cases on every run.

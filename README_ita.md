@@ -48,7 +48,7 @@ Ogni riga è una parte di questo repository e il semaforo dice a che punto è og
 | Viste | 🟡 | La vista in pianta (fori per diametro, percorsi di fresatura) e la vista 3D della macchina con guide, piano forato, portale mobile e magazzino utensili, adattata alla misura del piano; entrambe si trascinano e si ingrandiscono. La vista 3D non mostra ancora l'altezza dei percorsi. |
 | File e pannellizzazione | 🟡 | I file di foratura, HP-GL e gli archivi ZIP si aprono da un browser, con trascinamento o dalla riga di comando; la scheda si ripete in tre modi. Provato con i piccoli file di esempio di questo repository. |
 | Impostazioni | 🟠 | Larghezza e profondità utili del piano si cambiano e si salvano nei file della macchina; il resto dei file di macchina e utensili si modifica ancora con i programmi classici. |
-| Controllo della macchina | 🔴 | Il lavoro passa per i motori di EH3D-DRILLPRO e EH3D-ROUTEPRO, quindi in linea di principio ci sono tutte le loro connessioni; ha girato solo sul simulatore. La finestra di Connessione sceglie il collegamento (l'RS-232 del computer, un adattatore USB-RS232, il nodo EH3D o il server EH3D), lo prova e lo salva nel file della macchina, e Pausa ferma il lavoro tra due movimenti. |
+| Controllo della macchina | 🔴 | Il lavoro passa per i motori di EH3D-DRILLPRO e EH3D-ROUTEPRO, quindi in linea di principio ci sono tutte le loro connessioni; ha girato solo sul simulatore. La finestra di Connessione sceglie il collegamento (l'RS-232 del computer, un adattatore USB-RS232, il nodo EH3D o il server EH3D), lo prova e lo salva nel file della macchina, e Pausa ferma la macchina alla fine del foro o del tratto in corso, con la testa libera dalla scheda (un lavoro del server non si può mettere in pausa da qui). |
 | Test | 🟡 | 718 test passano su un computer (`cargo test --all-targets --features gui`): l'avviatore, le impostazioni, la lettura dei file nella scena, i profili di macchina, il pannello e la riga di comando. Nessuno tocca una macchina. Includono una simulazione a seme fisso di un lavoro interrotto e ripreso, con guasti iniettati e ripristino. |
 | Pacchetti già pronti | 🟠 | Un workflow compila il programma per Windows (64 e 32 bit), Linux e macOS con i file di esempio; nessuna versione è ancora stata pubblicata. |
 
@@ -255,13 +255,13 @@ EH3D-BUNGARD-GUI/
 
 * Nessun lavoro è stato pilotato da questa finestra su una macchina reale: ha girato solo sul simulatore dei motori di EH3D-DRILLPRO e EH3D-ROUTEPRO.
 * La finestra di Connessione scrive nel file della macchina solo le chiavi del collegamento; quella delle impostazioni scrive le chiavi che offre (la tavola, il modello, le unità, i suoni e la velocità della simulazione) e quella degli utensili gli avanzamenti, le velocità e le profondità; il resto dei file di macchina e utensili non si modifica qui.
-* La pausa ferma il lavoro tra due movimenti, non a metà di uno, e la vista 3D non mostra l'altezza dei percorsi.
+* La pausa ferma alla fine di un foro o tratto, non a metà, e la vista 3D non mostra l'altezza dei percorsi.
 * Si pilotano solo le macchine CCD e CCD/2; i profili della CCD Premium e della CCD XL sono disegnati, ma la loro unità di controllo non è supportata.
 * La finestra richiede le cartelle sorelle EH3D-COMMON, EH3D-DRILLPRO e EH3D-ROUTEPRO accanto a sé, perché dipende da esse per percorso.
 
 **Prossimi passi**
 
-* Una pausa a metà di un movimento, non solo tra due movimenti.
+* Una pausa a metà di un foro o tratto, non solo alla sua fine.
 * L'altezza (Z) dei percorsi nella vista 3D.
 * Caricare e salvare tutta la configurazione, non solo la misura del piano.
 * Un pacchetto con i programmi classici, così un solo download ha tutto.

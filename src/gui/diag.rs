@@ -172,8 +172,11 @@ impl App {
     /// The things of the program whose changes are logged.
     fn diag_watch(&mut self) {
         let job = format!(
-            "running {:?}, paused {}, waiting for the next stage {}, queue {:?}",
-            self.running, self.paused, self.stage_wait, self.job_queue
+            "running {:?}, pause {:?}, waiting for the next stage {}, queue {:?}",
+            self.running,
+            self.hold(),
+            self.stage_wait,
+            self.job_queue
         );
         let question = match self.running {
             Some(Program::Drill) => self.drill.engine.question(),

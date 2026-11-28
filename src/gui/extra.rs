@@ -2044,12 +2044,21 @@ mod tests {
             a.tick();
         }
         a.act(Act::Pause);
+        // the job goes on to the end of the hole it is on and holds there
+        let holding = |a: &App| matches!(a.hold(), eh3d_drillpro::hold::Hold::Paused { .. });
+        for _ in 0..20_000 {
+            if holding(&a) {
+                break;
+            }
+            a.tick();
+        }
+        assert!(holding(&a), "the pause never held");
         let (done, progress) = (a.drill.engine.done(), a.progress());
         for _ in 0..200 {
             a.tick();
         }
         assert_eq!((a.drill.engine.done(), a.progress()), (done, progress));
-        a.act(Act::Pause);
+        a.act(Act::Start);
         for _ in 0..200_000 {
             if a.running.is_none() {
                 break;
